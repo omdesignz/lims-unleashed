@@ -2,35 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SetCollectionAccessionArchived;
+use App\Actions\UpdateCollectionAccession;
 use App\Exports\CollectionParametersSheetExport;
 use App\Http\Requests\ProgrammedCollectionRequest;
+use App\Http\Resources\CollectionAccessionResource;
 use App\Http\Resources\CollectionProductResource;
 use App\Jobs\PlaceProductsInAnalysis;
-use App\Jobs\ProcessProgrammedCollectionProducts;
-use App\Models\Analysis;
 use App\Models\CollectionProduct;
 use App\Models\CollectionReason;
-use App\Models\Customer;
-use App\Models\LabCode;
 use App\Models\ProgrammedCollection;
 use App\Models\Sample;
-use App\Models\User;
-use App\Settings\GeneralSettings;
+use App\Services\LaboratoryWorkflowOwnership;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\DuplicateSubmissionGuard;
 use App\Support\SpreadsheetDownloadResponder;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use NumberToWords\NumberToWords;
+use Inertia\Response as InertiaResponse;
 use PDF;
 
 class ProgrammedCollectionController extends Controller
 {
+    public function __construct(
+        private readonly LaboratoryWorkflowOwnership $ownership,
+        private readonly SampleLaboratoryAccess $laboratory,
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): InertiaResponse
     {
         abort_if(! auth()->user()->can('view_programmed_collections'), 403, '');
 
@@ -39,14 +45,15 @@ class ProgrammedCollectionController extends Controller
 
         return Inertia::render('ProgrammedCollections/Index', [
             'record' => CollectionProductResource::collection(
-                CollectionProduct::query()->{$scope}()->with('product', 'code', 'end_result', 'customer', 'warehouse', 'temperature', 'packaging', 'vehicle', 'collection', 'quality_certificate', 'sampleEntry')
-                    ->whereRelation('collection', 'collectionable_type', 'programmed')
-                    ->when(request()->input('search'), function ($query, $search) {
-                        $query->where('lot', 'like', "%{$search}%")
-                            ->orWhereRelation('code', 'code', 'like', "%{$search}%")
-                            ->orWhereRelation('product', 'name', 'like', "%{$search}%")
-                            ->orWhereRelation('customer', 'name', 'like', "%{$search}%")
-                            ->orWhereRelation('warehouse', 'address', 'like', "%{$search}%");
+                $this->ownedCollectionProducts(request()->input('filter') === 'trashed')->{$scope}()->with(['owner', 'product', 'code', 'end_result', 'customer', 'warehouse', 'temperature', 'packaging', 'vehicle', 'collection.collectionable', 'quality_certificate', 'code.samples', 'code.completed_analysis', 'code.pending_analysis', 'code.in_progress_analysis', 'sampleEntry' => fn (HasOne $entry): HasOne => $entry->withTrashed()])
+                    ->when(request()->input('search'), function (Builder $query, string $search): void {
+                        $query->where(function (Builder $matches) use ($search): void {
+                            $matches->where('lot', 'like', "%{$search}%")
+                                ->orWhereRelation('code', 'code', 'like', "%{$search}%")
+                                ->orWhereRelation('product', 'name', 'like', "%{$search}%")
+                                ->orWhereRelation('customer', 'name', 'like', "%{$search}%")
+                                ->orWhereRelation('warehouse', 'address', 'like', "%{$search}%");
+                        });
                     })
                     ->when(request()->input('filter'), function ($query, $filter) {
                         if ($filter === 'trashed') {
@@ -119,80 +126,21 @@ class ProgrammedCollectionController extends Controller
             }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
                 return $item.'_'.ProgrammedCollection::MENU_NAME;
             }),
-            'query' => array_merge(request()->only(['search', 'trashed']), ['category' => $category]),
+            'query' => array_merge(request()->only(['search', 'filter', 'trashed']), ['category' => $category]),
         ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        abort_if(! auth()->user()->can('add_programmed_collections'), 403, '');
-
-        return Inertia::render('ProgrammedCollections/Create', [
-            'entrypoint' => [
-                'label' => 'Use a entrada de amostra para novos fluxos',
-                'description' => 'Esta página permanece disponível para operações legadas ou correcções manuais. Para novos processos programados, comece pela recepção da amostra para manter o produto, a matriz, o local, a equipa, o código laboratorial e as análises ligados.',
-                'create_sample_url' => route('vap_samples.index', ['collection_type' => 'programmed']),
-            ],
-        ]);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(ProgrammedCollectionRequest $request, DuplicateSubmissionGuard $duplicateSubmissionGuard)
-    {
-        abort_if(! auth()->user()->can('add_programmed_collections'), 403, '');
-
-        $validated = $request->validated();
-
-        if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'programmed-collection-store', $validated, 60)) {
-            return back()->with([
-                'toast' => [
-                    'title' => trans('gestlab.toasts.notification'),
-                    'message' => 'Já existe uma submissão idêntica de colheita programada em processamento.',
-                ],
-            ]);
-        }
-
-        DB::transaction(function () use ($validated): void {
-
-            dispatch(new ProcessProgrammedCollectionProducts(
-                $validated['customer_id'],
-                $validated['warehouse_id'],
-                $validated['products'],
-                $validated['collection_date'] ?? null,
-                $validated['collection_location'] ?? null,
-                $validated['collaborations'] ?? [],
-                $validated['collectionreasons'] ?? [],
-                User::find(auth()->user()->id),
-                Customer::find($validated['customer_id']),
-                $validated['vehicle_reference'] ?? null,
-            ));
-
-        });
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ],
-        ]);
-
     }
 
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(int $id): InertiaResponse
     {
+        abort_unless(auth()->user()->can('view_programmed_collections'), 403);
+
         return Inertia::render('DirectCollections/Show', [
             'record' => CollectionProductResource::make(
-                CollectionProduct::query()
-                    ->with('product', 'code.results', 'code.samples', 'code.completed_analysis', 'code.pending_analysis', 'code.in_progress_analysis', 'code.latest_inserted_result', 'code.latest_verified_result', 'code.latest_approved_result', 'end_result', 'customer', 'warehouse', 'temperature', 'packaging', 'vehicle', 'collection', 'quality_certificate', 'sampleEntry', 'samples.analysis.department')
-                    ->whereRelation('collection', 'collectionable_type', 'programmed')
+                $this->ownedCollectionProducts()
+                    ->with('product', 'code.results', 'code.samples', 'code.completed_analysis', 'code.pending_analysis', 'code.in_progress_analysis', 'code.latest_inserted_result', 'code.latest_verified_result', 'code.latest_approved_result', 'end_result', 'customer', 'warehouse', 'temperature', 'packaging', 'vehicle', 'owner', 'collection.collectionable', 'quality_certificate', 'sampleEntry', 'samples.analysis.department')
                     ->findOrFail($id)
             ),
             'collectionPresentation' => [
@@ -208,92 +156,20 @@ class ProgrammedCollectionController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(int $id): InertiaResponse
     {
-        abort_if(! auth()->user()->can('edit_programmed_collections'), 403, '');
+        abort_unless(auth()->user()->can('edit_programmed_collections'), 403);
 
-        // Find the record
-        $record = CollectionProduct::with('product', 'code', 'end_result', 'customer', 'warehouse', 'temperature', 'vehicle', 'packaging', 'invoice', 'collection.collectionable', 'collection.collaborations', 'collection.reasons')->findOrFail($id);
+        $record = $this->ownedCollectionProducts()
+            ->with('product', 'code', 'end_result', 'customer', 'warehouse', 'temperature', 'vehicle', 'packaging', 'owner', 'sampleEntry', 'collection.collectionable', 'collection.collaborations', 'collection.reasons')
+            ->findOrFail($id);
 
-        // Return Inertia View with record data
         return Inertia::render('ProgrammedCollections/Edit', [
-
-            'record' => [
-                'id' => $record->id,
-                'code' => $record->code?->code,
-                'collection_id' => $record->collection_id,
-                'product_id' => [
-                    'value' => $record?->product_id,
-                    'label' => $record?->product?->name,
-                ],
-                'temperature_id' => [
-                    'value' => $record?->temperature_id,
-                    'label' => $record?->temperature?->name,
-                ],
-                'vehicle_id' => [
-                    'value' => $record?->vehicle_id,
-                    'label' => $record?->vehicle?->number_plate,
-                ],
-                'customer_id' => [
-                    'value' => $record?->customer_id,
-                    'label' => $record?->customer?->name,
-                ],
-                'warehouse_id' => [
-                    'value' => $record?->warehouse_id,
-                    'label' => $record?->warehouse?->address,
-                ],
-                'owner_id' => [
-                    'value' => $record?->owner_id,
-                    'label' => $record?->owner?->name,
-                ],
-                'result_id' => [
-                    'value' => $record?->result_id,
-                    'label' => $record?->end_result?->name,
-                ],
-                'pack_id' => [
-                    'value' => $record?->pack_id,
-                    'label' => $record?->packaging?->name,
-                ],
-                'invoice_id' => [
-                    'value' => $record?->invoice_id,
-                    'label' => $record?->invoice?->inv_no,
-                ],
-                'comercial_brand' => $record->comercial_brand,
-                'du_no' => $record->du_no,
-                'term_no' => $record->term_no,
-                'lot' => $record->lot,
-                'bl' => $record->bl,
-                'temperature_value' => $record->temperature_value,
-                'container_no' => $record->container_no,
-                'qty' => $record->qty,
-                'collected_qty' => $record->collected_qty,
-                'origin' => $record->origin,
-                'location' => $record->location,
-                'collection_location' => $record->collection?->collectionable?->collection_location,
-                'invoiced' => $record->invoiced,
-                'recollection' => $record->recollection,
-                'processed' => $record->processed,
-                'status' => $record->status,
-                'obs' => $record->obs,
-                'sample_status' => $record->sample_status,
-                'sampling_plan_ref' => $record->sampling_plan_ref,
-                'customer_submitted_info' => $record->customer_submitted_info,
-                'expiry_date' => $record->expiry_date,
-                'collection_date' => $record->collection_date,
-                'production_date' => $record->production_date,
-                'collaborations' => collect($record->collection?->collaborations)->map(function ($item) {
-                    return [
-                        'value' => $item['id'],
-                        'label' => $item['name'],
-                    ];
-                })->toArray(),
-                'collectionreasons' => collect($record->collection?->reasons)->map(function ($item) {
-                    return [
-                        'value' => $item['id'],
-                        'label' => $item['name'],
-                    ];
-                })->toArray(),
-            ],
+            'record' => CollectionAccessionResource::make($record),
+            'ownerOptions' => $this->ownership->eligibleUsers($this->laboratory->activeLabId())
+                ->orderBy('name')->get(['id', 'name'])->map(fn ($user): array => [
+                    'value' => $user->id, 'label' => $user->name,
+                ]),
         ]);
     }
 
@@ -305,10 +181,14 @@ class ProgrammedCollectionController extends Controller
     public function placeProductsInAnalysis(
         Request $request,
         CollectionProduct $collectionProduct,
-        DuplicateSubmissionGuard $duplicateSubmissionGuard
+        DuplicateSubmissionGuard $duplicateSubmissionGuard,
+        SampleLaboratoryAccess $laboratoryAccess,
+        LaboratoryWorkflowOwnership $ownership,
     ) {
         abort_if(! auth()->user()->can('add_analysis'), 403, '');
 
+        $labId = $laboratoryAccess->activeLabId();
+        $collectionProduct = $ownership->collectionAccessionsForLaboratory($labId, 'programmed')->findOrFail($collectionProduct->id);
         $collectionProduct->load('code.samples', 'collection');
         abort_unless($collectionProduct->collection?->collectionable_type === 'programmed', 404);
 
@@ -334,13 +214,13 @@ class ProgrammedCollectionController extends Controller
                 ]);
             }
 
-            DB::transaction(function () use ($collectionProduct): void {
+            DB::transaction(function () use ($collectionProduct, $request, $labId): void {
 
                 dispatch(new PlaceProductsInAnalysis(
                     $collectionProduct->collection->collectionable_id,
                     $collectionProduct->id,
-                    User::find(auth()->user()->id),
-                    Customer::find($collectionProduct->collection->customer_id)
+                    (int) $request->user()->id,
+                    $labId,
                 ));
 
             });
@@ -358,40 +238,9 @@ class ProgrammedCollectionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ProgrammedCollectionRequest $request, $id)
+    public function update(ProgrammedCollectionRequest $request, int $id, UpdateCollectionAccession $updateAccession): RedirectResponse
     {
-        abort_if(! auth()->user()->can('edit_programmed_collections'), 403, '');
-
-        DB::transaction(function () use ($request, $id): void {
-
-            tap(CollectionProduct::with('code.analysis', 'collection.collectionable', 'collection.collaborations', 'collection.reasons')->findOrFail($id), function ($record) use ($request) {
-
-                $record->update($request->validated());
-
-                $record->collection?->collectionable?->update([
-                    'col_date' => $request->collection_date,
-                    'collection_location' => $request->collection_location,
-                ]);
-
-                $analysisIds = $record->code?->analysis?->pluck('id')->toArray() ?? [];
-
-                if ($analysisIds !== []) {
-                    Analysis::whereIn('id', $analysisIds)->update([
-                        'col_date' => $request->collection_date,
-                    ]);
-                }
-
-                $record->collection?->collaborations()->sync(collect($request->collaborations)->map(function ($item) {
-                    return data_get($item, 'collaboration_id', data_get($item, 'value'));
-                })->toArray());
-
-                $record->collection?->reasons()->sync(collect($request->collectionreasons)->map(function ($item) {
-                    return data_get($item, 'reason_id', data_get($item, 'value'));
-                })->toArray());
-
-            });
-
-        });
+        $updateAccession->execute($this->laboratory->activeLabId(), $id, (int) $request->user()->id, 'programmed', $request->validated());
 
         return redirect()->back()->with([
             'toast' => [
@@ -404,22 +253,18 @@ class ProgrammedCollectionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy()
+    public function destroy(Request $request, SetCollectionAccessionArchived $archive): RedirectResponse
     {
-        abort_if(! auth()->user()->can('delete_programmed_collections'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
+        $validated = $request->validate([
+            'recordIds' => ['required', 'array', 'min:1'],
+            'recordIds.*' => ['required', 'integer', 'min:1', 'distinct'],
         ]);
-        // Find and delete the record
-        foreach (CollectionProduct::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $archive->execute($this->laboratory->activeLabId(), (int) $request->user()->id, 'programmed', array_map('intval', $validated['recordIds']), archived: true);
 
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_deleted'),
+                'message' => 'A colheita e a entrada de amostra foram arquivadas. Os dados analíticos foram preservados.',
             ],
         ]);
     }
@@ -427,105 +272,27 @@ class ProgrammedCollectionController extends Controller
     /**
      * restore the specified resource from storage.
      */
-    public function restore()
+    public function restore(Request $request, SetCollectionAccessionArchived $archive): RedirectResponse
     {
-        abort_if(! auth()->user()->can('restore_programmed_collections'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
+        $validated = $request->validate([
+            'recordIds' => ['required', 'array', 'min:1'],
+            'recordIds.*' => ['required', 'integer', 'min:1', 'distinct'],
         ]);
-        // Find and restore the record
-        foreach (CollectionProduct::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $archive->execute($this->laboratory->activeLabId(), (int) $request->user()->id, 'programmed', array_map('intval', $validated['recordIds']), archived: false);
 
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_restored'),
+                'message' => 'A colheita e a entrada de amostra foram restauradas.',
             ],
         ]);
     }
 
-    public function getProfile()
-    {
-        $data = [];
-
-        if (request()->has('q')) {
-            $search = request()->q;
-
-            $data = DB::table('profiles')
-                ->select('profiles.*')
-                ->where('name', 'LIKE', "%$search%")
-                ->orWhere('code', 'LIKE', "%$search%")
-                ->get();
-        }
-
-        return response()->json($data);
-    }
-
-    public function getPDF()
-    {
-        abort_if(! auth()->user()->can('view_programmed_collections'), 403, '');
-
-        $ntw = new NumberToWords;
-        $nTrans = $ntw->getNumberTransformer('pt_BR');
-        $cTrans = $ntw->getCurrencyTransformer('pt_BR');
-
-        $app_name = app(GeneralSettings::class)->app_name;
-        $app_validation_number = app(GeneralSettings::class)->app_agt_validation_number;
-        $model = ProgrammedCollection::with('items', 'user', 'customer', 'warehouse')->findOrFail(request()->integer('id'));
-        $receiptNumber = $model->rec_no ?: 'programmed-collection-'.$model->id;
-        // dd($model);
-
-        $pdf = PDF::loadView('PDFs.receipt', [
-            'model' => $model,
-            'app_name' => $app_name,
-            'app_validation_number' => $app_validation_number,
-            'nTrans' => $nTrans,
-        ], [], [
-            'margin_left' => 15,
-            'margin_right' => 15,
-            'margin_top' => 15,
-            'margin_bottom' => 15,
-            'margin_header' => 25,
-            'margin_footer' => 25,
-            'title' => 'Recibo Nº '.$receiptNumber,
-            'author' => $model->user?->name ?? auth()->user()?->name,
-            'watermark' => 'PAGO',
-            'show_watermark' => false,
-            'display_mode' => 'fullpage',
-            'watermark_text_alpha' => 0.1,
-            'showBarcodeNumbers' => false,
-        ]);
-
-        if (request()->q) {
-            activity()->log('baixou o Recibo Nº '.$receiptNumber);
-
-            return $pdf->download($receiptNumber.'.pdf');
-        }
-
-        if (! request()->q) {
-            activity()
-                ->causedBy(auth()->user()->id)
-                ->log('visualizou o Recibo Nº '.$receiptNumber);
-
-            return $pdf->stream($receiptNumber.'.pdf');
-        }
-
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return Response
-     */
     public function getCollectionTermPDF()
     {
         abort_if(! auth()->user()->can('view_programmed_collections'), 403, '');
 
-        $model = $this->documentCollectionProduct(request()->integer('id'), 'programmed');
+        $model = $this->documentCollectionProduct(request()->integer('id'));
         $this->abortIfCollectionDocumentDataIsIncomplete($model);
 
         $paramIDs = collect();
@@ -592,40 +359,45 @@ class ProgrammedCollectionController extends Controller
             ->unique()
             ->values();
 
-        $models = Sample::query()->with('collection.collection', 'analysis.profile.parameters', 'analysis.department')->whereHas('analysis', function ($q) use ($recordIds) {
-            $q->whereHas('profile', function ($q) use ($recordIds) {
-                $q->whereHas('parameters', function ($q) use ($recordIds) {
-                    $q->whereIn('parameter_id', $recordIds);
+        $models = $this->ownership->samplesForLaboratory($this->laboratory->activeLabId())
+            ->whereHas('collection', fn (Builder $code): Builder => $code->whereIn('collection_id', $this->ownedCollectionProducts()->select('collection_product.id')))
+            ->with('collection.collection', 'analysis.profile.parameters', 'analysis.department')->whereHas('analysis', function ($q) use ($recordIds) {
+                $q->whereHas('profile', function ($q) use ($recordIds) {
+                    $q->whereHas('parameters', function ($q) use ($recordIds) {
+                        $q->whereIn('parameter_id', $recordIds);
+                    });
                 });
-            });
-        })->get()->map(function (Sample $item) use ($recordIds) {
-            $parameters = $item->analysis?->profile?->parameters
-                ->filter(fn ($parameter): bool => $recordIds->contains((int) $parameter->id))
-                ->map(function ($param) {
-                    $extraData = json_decode($param->pivot->extra_data ?? '[]', true);
-                    $param->extra_data = is_array($extraData) ? $extraData : [];
+            })->get()->map(function (Sample $item) use ($recordIds) {
+                $parameters = $item->analysis?->profile?->parameters
+                    ->filter(fn ($parameter): bool => $recordIds->contains((int) $parameter->id))
+                    ->map(function ($param) {
+                        $extraData = json_decode($param->pivot->extra_data ?? '[]', true);
+                        $param->extra_data = is_array($extraData) ? $extraData : [];
 
-                    return $param;
-                })
-                ->values() ?? collect();
+                        return $param;
+                    })
+                    ->values() ?? collect();
 
-            if ($parameters->isEmpty()) {
-                return null;
-            }
+                if ($parameters->isEmpty()) {
+                    return null;
+                }
 
-            return [
-                'code' => $item->collection?->code ?? $item->code ?? 'N/A',
-                'department' => $item->analysis?->department?->name ?? 'N/A',
-                'parameters' => $parameters,
-            ];
-        })->filter()->values();
+                return [
+                    'code' => $item->collection?->code ?? $item->code ?? 'N/A',
+                    'department' => $item->analysis?->department?->name ?? 'N/A',
+                    'parameters' => $parameters,
+                ];
+            })->filter()->values();
 
         return view('PDFs.multiple_sample_analysis', compact('models'));
 
     }
 
-    public function exportParametersToAnalyzeSheet(Request $request)
-    {
+    public function exportParametersToAnalyzeSheet(
+        Request $request,
+        LaboratoryWorkflowOwnership $ownership,
+        SampleLaboratoryAccess $laboratory
+    ) {
         abort_if(! auth()->user()->can('view_programmed_collections'), 403, '');
 
         $validated = $request->validate([
@@ -633,7 +405,8 @@ class ProgrammedCollectionController extends Controller
             'recordIds.*' => ['integer'],
         ]);
 
-        $records = CollectionProduct::query()
+        $recordIds = array_values(array_unique($validated['recordIds']));
+        $records = $ownership->collectionAccessionsForLaboratory($laboratory->activeLabId(), 'programmed')
             ->with([
                 'collection.collectionable',
                 'customer',
@@ -642,11 +415,10 @@ class ProgrammedCollectionController extends Controller
                 'code',
                 'quality_certificate',
             ])
-            ->whereRelation('collection', 'collectionable_type', 'programmed')
-            ->whereIn('id', $validated['recordIds'])
+            ->whereIn('collection_product.id', $recordIds)
             ->get();
 
-        abort_if($records->isEmpty(), 404, '');
+        abort_if($records->count() !== count($recordIds), 404, '');
 
         return SpreadsheetDownloadResponder::download(
             new CollectionParametersSheetExport($records),
@@ -664,7 +436,7 @@ class ProgrammedCollectionController extends Controller
     {
         abort_if(! auth()->user()->can('view_programmed_collections'), 403, '');
 
-        $model = $this->documentCollectionProduct(request()->integer('id'), 'programmed');
+        $model = $this->documentCollectionProduct(request()->integer('id'));
         $this->abortIfCollectionDocumentDataIsIncomplete($model);
 
         $paramIDs = collect();
@@ -723,252 +495,22 @@ class ProgrammedCollectionController extends Controller
      * @param  Request  $request
      * @return Response
      */
-    public function IssueContractGuide($id)
-    {
-        abort_if(! auth()->user()->can('add_contract_guides'), 403, '');
-
-        if (ContractGuide::whereNull('deleted_at')->whereCollectionId(CollectionProduct::find($id)->collection_id)->count() > 0) {
-
-            $guide_id = ContractGuide::whereCollectionId(CollectionProduct::find($id)->collection_id)->first()->id;
-
-            return redirect('/cguides/pdf/'.$guide_id);
-
-        } else {
-            $countries = Countries::all()->pluck('translations.por.common');
-            $product_ids = CollectionProduct::find($id)->collection->products->pluck('id')->toArray();
-            $products = new Collect;
-
-            $data = CollectionProduct::with('collection.customer', 'collection.warehouse', 'product.matrix', 'code')
-                ->whereIn('id', $product_ids)
-                ->get();
-
-            foreach ($data as $prod) {
-                $products->push([
-                    'product_id' => $prod->product_id,
-                    'description' => $prod->product->description,
-                    'lot' => $prod->lot,
-                    'bl' => $prod->bl,
-                    'collection_id' => $prod->id,
-                    'country_origin' => '',
-                    'manufacturer' => '',
-                ]);
-            }
-
-            $pdata = [
-                'customer_id' => $data->first()->collection->customer_id,
-                'customer' => $data->first()->collection->customer->company,
-                'warehouse_id' => $data->first()->collection->warehouse_id,
-                'warehouse' => $data->first()->collection->warehouse->suburb,
-                'col_location' => $data->first()->collection->collectionable->col_location,
-                'collection_id' => $data->first()->collection_id,
-                'products' => $products,
-            ];
-
-            return view('cguide.create', compact('countries', 'pdata'));
-        }
-    }
-
-    /**
-     * Issue Quote.
-     *
-     * @param  Request  $request
-     * @return Response
-     */
-    public function IssueQuote($id)
-    {
-        abort_if(! auth()->user()->can('add_quotes'), 403, '');
-
-        if (InvoiceItem::where('colpro_id', $id)->count() > 0) {
-            noty('Impossível emitir proforma. A colheita em questão já foi facturada.', 'info');
-
-            return back();
-        }
-
-        if (CollectionProduct::whereNull('deleted_at')->find($id)->collection->collectionable->quoted) {
-            $quote_id = CollectionProduct::find($id)->collection->collectionable->quote_id;
-
-            return redirect('/quotes/pdf/'.$quote_id);
-
-        } else {
-            $product_ids = CollectionProduct::find($id)->collection->products->pluck('id')->toArray();
-            $products = new Collect;
-            $types = InvoiceType::all();
-            $tax = config('gestlab.agt.iva');
-            $apply_discount = auth()->user()->can('apply_discounts');
-
-            $data = CollectionProduct::with('collection.customer', 'collection.warehouse', 'product.matrix', 'code')
-                ->whereIn('id', $product_ids)
-                ->where('invoiced', false)
-                ->get();
-
-            foreach ($data as $prod) {
-                $products->push([
-                    'product_id' => $prod->product_id,
-                    'description' => $prod->product->description.' - '.$prod->code->description,
-                    'qty' => 1,
-                    'charge_tax' => ($prod->product->charge_tax ? true : false),
-                    'tax' => ($prod->product->charge_tax ? config('gestlab.agt.iva') : 0),
-                    'tax_amount' => 0,
-                    'price' => $prod->product->matrix->price,
-                    'fixed_price' => $prod->product->matrix->fixed_price,
-                    'colpro_id' => $prod->id,
-                    'discountAmount' => 0.00,
-                    'discount_percentage' => 0.00,
-                    'reason_for_not_charging_tax' => '',
-                    'tax_name' => '',
-                    'collection_id' => $prod->id,
-                ]);
-            }
-
-            $pdata = [
-                'customer_id' => $data->first()->collection->customer_id,
-                'customer' => $data->first()->collection->customer->company,
-                'warehouse_id' => $data->first()->collection->warehouse_id,
-                'warehouse' => $data->first()->collection->warehouse->suburb,
-                'collection_id' => $data->first()->collection_id,
-                'products' => $products,
-                'lot' => $data->first()->lot,
-                'bl' => $data->first()->bl,
-                'add_product_button' => false,
-            ];
-
-            return view('quote.create', compact('pdata', 'types', 'tax', 'apply_discount'));
-        }
-
-    }
-
-    public function getUncollectedProducts(Request $request)
-    {
-        // Get Customer Collections
-
-        if (Customer::whereNull('deleted_at')->find($request->id)) {
-            $products = new Collect;
-
-            $collectionIDs = Collection::with('products')
-                ->whereNull('deleted_at')
-                ->where('collectionable_type', 'Programmed')
-                ->whereCustomerId($request->id)
-                ->pluck('id')
-                ->toArray();
-
-            $colpro = CollectionProduct::query()
-                ->whereIn('collection_id', $collectionIDs)
-                ->where('processed', 0)
-                ->get();
-
-            foreach ($colpro as $prod) {
-                $products->push([
-                    'id' => $prod->id,
-                    'product' => $prod->product->description.' - '.$prod->code->description,
-                    'lot' => $prod->lot,
-                    'bl' => $prod->bl,
-                    'comercial_brand' => $prod->comercial_brand,
-                    'qty' => $prod->qty,
-                    'col_date' => $prod->col_date,
-
-                ]);
-            }
-
-            return response()->json($products);
-        }
-
-    }
-
-    public function consult(QCollectionConsultRequest $request)
-    {
-        abort_if(! auth()->user()->can('view_programmed_collections'), 403, '');
-
-        if (Customer::whereNull('deleted_at')->find($request->customer_id)) {
-            $collectionIDs = explode(',', $request->products);
-
-            if (count($collectionIDs) > 0) {
-
-                $colpro = CollectionProduct::query()
-                    ->with('collection.customer', 'collection.warehouse', 'product.matrix', 'code', 'packaging')
-                    ->whereIn('id', $collectionIDs)
-                    ->where('processed', 0)
-                    ->get();
-
-            } else {
-
-                $collectionIDs = Collection::with('products')
-                    ->whereNull('deleted_at')
-                    ->where('collectionable_type', 'Programmed')
-                    ->whereCustomerId($request->customer_id)
-                    ->pluck('id')
-                    ->toArray();
-
-                $colpro = CollectionProduct::query()
-                    ->with('collection.customer', 'collection.warehouse', 'product.matrix', 'code', 'packaging')
-                    ->whereIn('collection_id', $collectionIDs)
-                    ->where('processed', 0)
-                    ->get();
-            }
-
-            $pdf = PDF2::loadView('qcollection.pdf', [
-                'model' => $colpro,
-                'trans_type' => $request->trans_type,
-            ], [], [
-                'margin_left' => 15,
-                'margin_right' => 15,
-                'margin_top' => 10,
-                'margin_bottom' => 25,
-                'margin_header' => 10,
-                'margin_footer' => 10,
-                'title' => 'Consulta de Colheita',
-                'author' => \Auth::user()->full_name,
-                'watermark' => '',
-                'show_watermark' => false,
-                'display_mode' => 'fullpage',
-                'watermark_text_alpha' => 0.1,
-                'format' => 'A4-L',
-                'showBarcodeNumbers' => false,
-            ]);
-
-            return $pdf->stream('consulta_colheita.pdf');
-        } else {
-
-            $colpro = CollectionProduct::query()
-                ->with('collection.customer', 'collection.warehouse', 'product.matrix', 'code', 'packaging')
-                ->whereHas('collection', function ($q) {
-                    $q->whereNull('deleted_at');
-                    $q->where('collectionable_type', 'Programmed');
-                })
-                ->where('processed', 0)
-                ->get();
-
-            $pdf = PDF2::loadView('qcollection.pdf', [
-                'model' => $colpro,
-                'trans_type' => $request->trans_type,
-            ], [], [
-                'margin_left' => 15,
-                'margin_right' => 15,
-                'margin_top' => 10,
-                'margin_bottom' => 25,
-                'margin_header' => 10,
-                'margin_footer' => 10,
-                'title' => 'Consulta de Colheita',
-                'author' => \Auth::user()->full_name,
-                'watermark' => '',
-                'show_watermark' => false,
-                'display_mode' => 'fullpage',
-                'watermark_text_alpha' => 0.1,
-                'format' => 'A4-L',
-                'showBarcodeNumbers' => false,
-            ]);
-
-            return $pdf->stream('consulta_colheita.pdf');
-        }
-
-    }
-
     public function getCollectionLabels()
     {
         abort_if(! auth()->user()->can('view_programmed_collections'), 403, '');
 
-        $model = LabCode::with('collection.product', 'samples.analysis.department')->where('collection_id', request()->integer('id'))->firstOrFail();
+        $collectionProduct = $this->ownedCollectionProducts()->findOrFail(request()->integer('id'));
+        $model = $this->ownership->labCodesForLaboratory($this->laboratory->activeLabId())
+            ->with('collection.product', 'samples.analysis.department')
+            ->where('codeable_type', 'analysis')->where('collection_id', $collectionProduct->id)->firstOrFail();
 
         return view('PDFs.sample_labels', compact('model'));
+    }
+
+    /** @return Builder<CollectionProduct> */
+    private function ownedCollectionProducts(bool $includeArchivedEntries = false): Builder
+    {
+        return $this->ownership->collectionAccessionsForLaboratory($this->laboratory->activeLabId(), 'programmed', $includeArchivedEntries);
     }
 
     private function normalizeCollectionCategory(mixed $category): string
@@ -976,9 +518,9 @@ class ProgrammedCollectionController extends Controller
         return in_array($category, ['pending', 'archived'], true) ? $category : 'pending';
     }
 
-    private function documentCollectionProduct(int $id, string $collectionType): CollectionProduct
+    private function documentCollectionProduct(int $id): CollectionProduct
     {
-        return CollectionProduct::query()
+        return $this->ownedCollectionProducts()
             ->with([
                 'collection.reasons',
                 'collection.customer',
@@ -987,7 +529,6 @@ class ProgrammedCollectionController extends Controller
                 'packaging',
                 'code.samples.analysis.department',
             ])
-            ->whereRelation('collection', 'collectionable_type', $collectionType)
             ->findOrFail($id);
     }
 

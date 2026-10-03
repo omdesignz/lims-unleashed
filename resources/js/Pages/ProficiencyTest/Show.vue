@@ -74,6 +74,8 @@
     </section>
 
     <form class="space-y-6" @submit.prevent="submit">
+      <p v-if="!canEdit" class="ds-badge ds-badge-neutral">Consulta apenas: os resultados deste laboratório não podem ser alterados pela sua conta.</p>
+      <fieldset :disabled="!canEdit" class="min-w-0 space-y-6">
       <section class="ds-panel overflow-hidden p-5">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -86,14 +88,14 @@
               <DocumentArrowDownIcon class="h-4 w-4" />
               Modelo Excel
             </a>
-            <button type="button" class="ds-button ds-button-secondary" @click="triggerImport">
+            <button v-if="canEdit" type="button" class="ds-button ds-button-secondary" @click="triggerImport">
               <ArrowUpTrayIcon class="h-4 w-4" />
               Importar resultados
             </button>
             <FileInput ref="importInput" type="file" accept=".xlsx,.xls,.csv,.txt" class="hidden" @change="importResults" />
-            <button type="button" class="ds-button ds-button-secondary" @click="addParticipant">Adicionar participante</button>
-            <button type="button" class="ds-button ds-button-secondary" @click="addParameter">Adicionar parâmetro</button>
-            <button type="button" class="ds-button ds-button-primary" @click="ensureResultRows">Sincronizar matriz</button>
+            <button v-if="canEdit" type="button" class="ds-button ds-button-secondary" @click="addParticipant">Adicionar participante</button>
+            <button v-if="canEdit" type="button" class="ds-button ds-button-secondary" @click="addParameter">Adicionar parâmetro</button>
+            <button v-if="canEdit" type="button" class="ds-button ds-button-primary" @click="ensureResultRows">Sincronizar matriz</button>
           </div>
         </div>
 
@@ -107,7 +109,7 @@
                 <option v-for="option in participantStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
               </BaseSelect>
               <BaseInput v-model="participant.contact" class="ds-field" placeholder="Contacto" />
-              <button type="button" class="ds-table-action ds-table-action-danger" @click="removeParticipant(index)">Remover</button>
+              <button v-if="canEdit" type="button" class="ds-table-action ds-table-action-danger" @click="removeParticipant(index)">Remover</button>
             </div>
           </div>
 
@@ -118,7 +120,7 @@
               <BaseInput v-model="parameter.name" class="ds-field" placeholder="Parâmetro" @blur="ensureResultRows" />
               <BaseInput v-model="parameter.unit" class="ds-field" placeholder="Unidade" />
               <BaseInput v-model="parameter.assigned_value" type="number" step="0.0001" class="ds-field" placeholder="Valor alvo" />
-              <button type="button" class="ds-table-action ds-table-action-danger" @click="removeParameter(index)">Remover</button>
+              <button v-if="canEdit" type="button" class="ds-table-action ds-table-action-danger" @click="removeParameter(index)">Remover</button>
             </div>
           </div>
         </div>
@@ -207,11 +209,12 @@
         <BaseTextarea v-model="form.notes" label="Notas e evidências" :rows="4" :error="form.errors.notes" />
       </section>
 
-      <div class="ds-command-surface sticky bottom-4 z-10 flex justify-end p-3">
+      <div v-if="canEdit" class="ds-command-surface sticky bottom-4 z-10 flex justify-end p-3">
         <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing">
           {{ form.processing ? 'A guardar resultados...' : 'Guardar resultados e evidência' }}
         </button>
       </div>
+      </fieldset>
     </form>
   </div>
 </template>
@@ -241,6 +244,7 @@ defineOptions({
 const props = defineProps({
   test: { type: Object, required: true },
   charts: { type: Object, default: () => ({}) },
+  canEdit: { type: Boolean, default: false },
 })
 
 const cloneRows = (rows) => JSON.parse(JSON.stringify(rows || []))

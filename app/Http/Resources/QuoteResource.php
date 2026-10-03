@@ -16,9 +16,10 @@ class QuoteResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'lab_id' => $this->lab_id,
             'quote_no' => $this->quote_no,
-            'user_id' => UserResource::make($this->whenLoaded('user')),
-            'user' => UserResource::make($this->whenLoaded('user'))?->name ?? null,
+            'user_id' => $this->whenLoaded('user', fn () => $this->user ? UserIdentityResource::make($this->user)->resolve() : null),
+            'user' => $this->whenLoaded('user', fn () => $this->user?->name),
             'customer_id' => CustomerResource::make($this->whenLoaded('customer')),
             'customer' => CustomerResource::make($this->whenLoaded('customer'))?->name ?? null,
             'warehouse_id' => WarehouseResource::make($this->whenLoaded('warehouse')),
@@ -33,6 +34,7 @@ class QuoteResource extends JsonResource
             'date' => $this->date,
             'due_date' => $this->due_date,
             'discount' => $this->discount,
+            'tax' => $this->tax,
             'total' => $this->total,
             'sub_total' => $this->sub_total,
             'obs' => $this->obs,
@@ -53,13 +55,9 @@ class QuoteResource extends JsonResource
             'links' => [
                 'edit_path' => route('quotes.edit', $this->id),
                 'pdf_path' => route('quotes.getPDF', ['id' => $this->id]),
-                'delete_path' => route('quotes.destroy', [
-                    'recordIds' => [$this->id]
-                ]),
-                'restore_path' => route('quotes.restore', [
-                    'recordIds' => [$this->id]
-                ]),
-            ]
+                'delete_path' => route('quotes.destroy'),
+                'restore_path' => route('quotes.restore'),
+            ],
         ];
     }
 }

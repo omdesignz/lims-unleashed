@@ -53,13 +53,13 @@
               <div>
                 <h2 class="ds-heading text-base">Ritmo de recepção</h2>
                 <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-                  Quantidade encomendada versus entrada efectiva e saldo pendente.
+                  Linhas pedidas versus linhas com e sem entrada. Quantidades ficam por item.
                 </p>
               </div>
             </div>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-instrument" />
-              {{ receptionProgressTotal }} unidades
+              {{ orderItems.length }} linhas
             </span>
           </div>
         </div>
@@ -90,7 +90,9 @@
         <article class="ds-panel overflow-hidden">
           <div class="ds-table-summary px-5 py-4">
             <h2 class="ds-heading text-base">Pulso de governação</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Fornecedor, não conformidades e envelhecimento operacional.</p>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
+              {{ nonConformitiesAvailable ? 'Fornecedor, não conformidades e envelhecimento operacional.' : 'Fornecedor e envelhecimento operacional. Registo de não conformidades indisponível.' }}
+            </p>
           </div>
           <div class="p-5">
             <apexchart type="bar" height="245" :options="governanceSummaryChartOptions" :series="governanceSummaryChartSeries" />
@@ -208,8 +210,8 @@
                     </div>
                   </td>
                   <td class="ds-table-cell align-top text-sm text-[color:var(--ds-text)]">
-                    <div><span class="font-bold">{{ formatQuantity(item.qty) }}</span> pedidas</div>
-                    <div class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ formatQuantity(item.received_qty || 0) }} recebidas</div>
+                    <div><span class="font-bold">{{ formatQuantity(item.qty) }} {{ item.item?.unit?.code }}</span> pedidas</div>
+                    <div class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ formatQuantity(item.received_qty || 0) }} {{ item.item?.unit?.code }} recebidas</div>
                     <div class="mt-1 text-xs font-semibold text-[color:var(--ds-text)]">{{ formatCurrency(item.total_price || ((item.unit_price || 0) * (item.qty || 0))) }}</div>
                   </td>
                   <td class="ds-table-cell align-top text-sm text-[color:var(--ds-text)]">{{ item.warehouse?.name || 'N/A' }}</td>
@@ -252,7 +254,7 @@
                 <div class="min-w-0">
                   <p class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ item.item?.name || 'Item sem nome' }}</p>
                   <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
-                    Pedido: {{ formatQuantity(item.qty) }} · Recebido: {{ formatQuantity(item.received_qty || 0) }} · Pendente: {{ formatQuantity(item.qty - (item.received_qty || 0)) }}
+                    Pedido: {{ formatQuantity(item.qty) }} · Recebido: {{ formatQuantity(item.received_qty || 0) }} · Pendente: {{ formatQuantity(remainingQuantity(item)) }} {{ item.item?.unit?.code }}
                   </p>
                 </div>
                 <button type="button" class="ds-button ds-button-primary shrink-0" @click="receiveItem(item)">
@@ -319,7 +321,7 @@
           <div class="space-y-4 p-5">
             <div>
               <div class="flex items-center justify-between text-sm">
-                <span class="font-semibold text-[color:var(--ds-text-soft)]">{{ formatQuantity(receivedQuantity) }}/{{ formatQuantity(totalQuantity) }}</span>
+                <span class="font-semibold text-[color:var(--ds-text-soft)]">Progressão média por linha</span>
                 <span class="font-bold text-[color:var(--ds-text)]">{{ completionRate }}%</span>
               </div>
               <div class="mt-2 h-2 overflow-hidden rounded-full bg-[color:var(--ds-panel-subtle)]">
@@ -384,7 +386,7 @@
                         </div>
                         <div class="ds-card p-3">
                           <dt class="font-bold uppercase text-[color:var(--ds-text-soft)]">Pendente</dt>
-                          <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ formatQuantity(receivingItem.qty - (receivingItem.received_qty || 0)) }}</dd>
+                          <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ formatQuantity(remainingQuantity(receivingItem)) }} {{ receivingItem.item?.unit?.code }}</dd>
                         </div>
                       </dl>
                     </div>
@@ -394,13 +396,14 @@
                       <div v-for="item in pendingItems" :key="item.id" class="ds-card grid gap-3 p-4 sm:grid-cols-[1fr_8rem] sm:items-center">
                         <div class="min-w-0">
                           <p class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ item.item?.name || 'Item sem nome' }}</p>
-                          <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Pendente: {{ formatQuantity(item.qty - (item.received_qty || 0)) }} de {{ formatQuantity(item.qty) }}</p>
+                          <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Pendente: {{ formatQuantity(remainingQuantity(item)) }} de {{ formatQuantity(item.qty) }} {{ item.item?.unit?.code }}</p>
                         </div>
                         <BaseInput
-                          v-model.number="receivingQuantities[item.id]"
+                          v-model="receivingQuantities[item.id]"
                           type="number"
-                          :min="1"
-                          :max="item.qty - (item.received_qty || 0)"
+                          min="0.0001"
+                          step="0.0001"
+                          :max="remainingQuantity(item)"
                           class="ds-field"
                           placeholder="Qtd"
                         />
@@ -412,15 +415,16 @@
                         <label for="quantity" class="ds-field-label">Quantidade a receber</label>
                         <BaseInput
                           id="quantity"
-                          v-model.number="receivingQuantity"
+                          v-model="receivingQuantity"
                           type="number"
-                          :min="1"
-                          :max="receivingItem.qty - (receivingItem.received_qty || 0)"
+                          min="0.0001"
+                          step="0.0001"
+                          :max="remainingQuantity(receivingItem)"
                           required
                           class="ds-field"
                         />
                         <p v-if="isReceivingSingleItem && receivingItem" class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
-                          Máximo: {{ formatQuantity(receivingItem.qty - (receivingItem.received_qty || 0)) }} unidades
+                          Máximo: {{ formatQuantity(remainingQuantity(receivingItem)) }} {{ receivingItem.item?.unit?.code }}
                         </p>
                       </div>
 
@@ -448,16 +452,16 @@
 
                     <div class="ds-card border-l-4 border-l-[color:var(--lims-hold)] p-4">
                       <div class="flex items-start gap-3">
-                        <CheckboxInput id="registerNonConformity" v-model="registerNonConformity" type="checkbox" class="ds-checkbox mt-1" />
+                        <CheckboxInput id="registerNonConformity" v-model="registerNonConformity" type="checkbox" class="ds-checkbox mt-1" :disabled="!nonConformitiesAvailable" aria-describedby="ncAvailabilityNote" />
                         <div class="flex-1">
                           <label for="registerNonConformity" class="text-sm font-bold text-[color:var(--ds-text)]">Registar não conformidade de recepção</label>
-                          <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
-                            Use esta opção para divergências de qualidade, documentação, dano, preço, lote ou qualquer desvio que exija rastreabilidade.
+                          <p id="ncAvailabilityNote" class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
+                            {{ nonConformitiesAvailable ? 'Use esta opção para divergências de qualidade, documentação, dano, preço, lote ou qualquer desvio que exija rastreabilidade.' : 'Registo indisponível nesta instalação. Esta recepção não criará uma não conformidade.' }}
                           </p>
                         </div>
                       </div>
 
-                      <div v-if="registerNonConformity" class="mt-4 grid gap-4">
+                      <div v-if="registerNonConformity && nonConformitiesAvailable" class="mt-4 grid gap-4">
                         <div>
                           <label for="ncTitle" class="ds-field-label">Título da não conformidade</label>
                           <BaseInput id="ncTitle" v-model="nonConformityTitle" type="text" class="ds-field" placeholder="Ex: Divergência na recepção do fornecedor" />
@@ -562,6 +566,10 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  nonConformitiesAvailable: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const isDarkMode = ref(false)
@@ -592,8 +600,6 @@ const order = computed(() => props.order)
 const orderItems = computed(() => props.order.items || [])
 const receptionNonConformitySummary = computed(() => props.order.reception_non_conformity_summary || {})
 
-const pendingQuantity = computed(() => Math.max(totalQuantity.value - receivedQuantity.value, 0))
-
 const summaryCards = computed(() => [
   {
     label: 'Valor',
@@ -610,30 +616,30 @@ const summaryCards = computed(() => [
     valueClass: 'text-[color:var(--ds-text)]',
   },
   {
-    label: 'Pedida',
-    value: formatQuantity(totalQuantity.value),
-    caption: 'Quantidade total',
+    label: 'Pedidas',
+    value: formatQuantity(orderItems.value.length),
+    caption: 'Linhas do pedido',
     dotClass: 'lims-status-dot-hold',
     valueClass: 'text-[color:var(--ds-text)]',
   },
   {
-    label: 'Recebida',
-    value: formatQuantity(receivedQuantity.value),
-    caption: 'Entrada em existências',
+    label: 'Com entrada',
+    value: formatQuantity(orderItems.value.length - pendingItemsCount.value),
+    caption: 'Linhas com recepção',
     dotClass: 'lims-status-dot-release',
     valueClass: 'text-emerald-700 dark:text-emerald-300',
   },
   {
-    label: 'Pendente',
-    value: formatQuantity(pendingQuantity.value),
-    caption: 'Saldo a receber',
-    dotClass: pendingQuantity.value ? 'lims-status-dot-critical' : 'lims-status-dot-release',
-    valueClass: pendingQuantity.value ? 'text-rose-700 dark:text-rose-300' : 'text-[color:var(--ds-text)]',
+    label: 'Pendentes',
+    value: formatQuantity(pendingItems.value.length),
+    caption: 'Linhas por completar',
+    dotClass: pendingItems.value.length ? 'lims-status-dot-critical' : 'lims-status-dot-release',
+    valueClass: pendingItems.value.length ? 'text-rose-700 dark:text-rose-300' : 'text-[color:var(--ds-text)]',
   },
   {
     label: 'Conclusão',
     value: `${completionRate.value}%`,
-    caption: 'Taxa de recepção',
+    caption: 'Média por linha',
     dotClass: completionRate.value >= 100 ? 'lims-status-dot-release' : 'lims-status-dot-hold',
     valueClass: 'text-[color:var(--ds-text)]',
   },
@@ -703,14 +709,10 @@ const timelineItems = computed(() => [
 
 const receptionProgressChartSeries = computed(() => [
   {
-    name: 'Quantidade',
+    name: 'Linhas',
     data: props.charts?.reception_progress?.series || [],
   },
 ])
-
-const receptionProgressTotal = computed(() => (
-  (props.charts?.reception_progress?.series || []).reduce((sum, value) => sum + Number(value || 0), 0)
-))
 
 const itemStatusMixChartSeries = computed(() => props.charts?.item_status_mix?.series || [])
 const itemStatusMixTotal = computed(() => itemStatusMixChartSeries.value.reduce((sum, value) => sum + Number(value || 0), 0))
@@ -828,15 +830,17 @@ const totalAmount = computed(() => {
   return orderItems.value.reduce((sum, item) => sum + Number(item.total_price || ((item.unit_price || 0) * (item.qty || 0))), 0)
 })
 
-const totalQuantity = computed(() => orderItems.value.reduce((sum, item) => sum + Number.parseInt(item.qty || 0, 10), 0))
-const receivedQuantity = computed(() => orderItems.value.reduce((sum, item) => sum + Number.parseInt(item.received_qty || 0, 10), 0))
-
 const completionRate = computed(() => {
-  if (totalQuantity.value === 0) {
+  if (orderItems.value.length === 0) {
     return 0
   }
 
-  return Math.min(100, Math.round((receivedQuantity.value / totalQuantity.value) * 100))
+  const lineProgress = orderItems.value.reduce((sum, item) => {
+    const ordered = Number(item.qty || 0)
+    return sum + (ordered > 0 ? Math.min(1, Number(item.received_qty || 0) / ordered) : 0)
+  }, 0)
+
+  return Math.round((lineProgress / orderItems.value.length) * 100)
 })
 
 const pendingItems = computed(() => orderItems.value.filter((item) => {
@@ -998,7 +1002,31 @@ function formatQuantity(value) {
     return '0'
   }
 
-  return new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 2 }).format(numericValue)
+  return new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 4 }).format(numericValue)
+}
+
+function scaledQuantity(value) {
+  const match = String(value ?? '0').match(/^(\d+)(?:\.(\d{1,4}))?$/)
+
+  if (!match) {
+    return null
+  }
+
+  return (BigInt(match[1]) * 10000n) + BigInt((match[2] || '').padEnd(4, '0'))
+}
+
+function remainingQuantity(item) {
+  const ordered = scaledQuantity(item.qty) ?? 0n
+  const received = scaledQuantity(item.received_qty) ?? 0n
+  const balance = ordered > received ? ordered - received : 0n
+  return `${balance / 10000n}.${String(balance % 10000n).padStart(4, '0')}`
+}
+
+function isValidReceiptQuantity(value, item) {
+  const quantity = scaledQuantity(value)
+  const remaining = scaledQuantity(remainingQuantity(item))
+
+  return quantity !== null && remaining !== null && quantity > 0n && quantity <= remaining
 }
 
 function formatDate(dateString) {
@@ -1097,11 +1125,11 @@ function openReceivingModal(item = null) {
   receivingItem.value = item
 
   if (item) {
-    receivingQuantity.value = Math.max(1, Number(item.qty || 0) - Number(item.received_qty || 0))
+    receivingQuantity.value = remainingQuantity(item)
     receivingUnitPrice.value = item.unit_price || 0
   } else {
     pendingItems.value.forEach((pendingItem) => {
-      receivingQuantities[pendingItem.id] = Number(pendingItem.qty || 0) - Number(pendingItem.received_qty || 0)
+      receivingQuantities[pendingItem.id] = remainingQuantity(pendingItem)
     })
   }
 
@@ -1155,9 +1183,7 @@ async function submitReceipt() {
     let itemsData = []
 
     if (isReceivingSingleItem.value && receivingItem.value) {
-      const maximumQuantity = Number(receivingItem.value.qty || 0) - Number(receivingItem.value.received_qty || 0)
-
-      if (receivingQuantity.value <= 0 || receivingQuantity.value > maximumQuantity) {
+      if (!isValidReceiptQuantity(receivingQuantity.value, receivingItem.value)) {
         receiptError.value = 'Quantidade inválida para a recepção seleccionada.'
         isSubmitting.value = false
 
@@ -1170,6 +1196,13 @@ async function submitReceipt() {
         unit_price: receivingUnitPrice.value || receivingItem.value.unit_price || 0,
       })
     } else {
+      if (pendingItems.value.some((item) => Number(receivingQuantities[item.id] || 0) > 0 && !isValidReceiptQuantity(receivingQuantities[item.id], item))) {
+        receiptError.value = 'Uma das quantidades excede o saldo pendente ou tem mais de quatro casas decimais.'
+        isSubmitting.value = false
+
+        return
+      }
+
       itemsData = pendingItems.value
         .filter((item) => receivingQuantities[item.id] > 0)
         .map((item) => ({
@@ -1212,7 +1245,7 @@ async function submitReceipt() {
         router.reload({ only: ['order'] })
       },
       onError: (errors) => {
-        receiptError.value = errors.message || 'Erro ao processar a recepção.'
+        receiptError.value = errors.register_non_conformity || errors.message || 'Erro ao processar a recepção.'
       },
     })
   } catch (error) {

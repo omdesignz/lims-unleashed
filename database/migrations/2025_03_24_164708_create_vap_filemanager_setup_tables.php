@@ -21,8 +21,11 @@ return new class extends Migration
             $table->boolean('archived')->default(false);
             $table->timestamp('archived_at')->nullable();
             $table->timestamps();
-            
-            $table->foreign('parent_id')->references('id')->on('v_files')->onDelete('cascade');
+
+        });
+
+        Schema::table('v_files', function (Blueprint $table): void {
+            $table->foreign('parent_id')->references('id')->on('v_files')->cascadeOnDelete();
         });
 
         Schema::create('v_file_versions', function (Blueprint $table) {
@@ -32,7 +35,7 @@ return new class extends Migration
             $table->foreignId('created_by')->constrained('users');
             $table->string('comment')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('file_id')->references('id')->on('v_files')->onDelete('cascade');
         });
 
@@ -42,7 +45,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained();
             $table->enum('access_level', ['read', 'write', 'admin']);
             $table->timestamps();
-            
+
             $table->foreign('file_id')->references('id')->on('v_files')->onDelete('cascade');
         });
 
@@ -51,7 +54,7 @@ return new class extends Migration
             $table->uuid('file_id');
             $table->foreignId('shared_with')->constrained('users');
             $table->timestamps();
-            
+
             $table->foreign('file_id')->references('id')->on('v_files')->onDelete('cascade');
         });
     }

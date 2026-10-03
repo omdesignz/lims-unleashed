@@ -9,7 +9,7 @@ import {
   DocumentTextIcon,
   EyeIcon,
 } from '@heroicons/vue/24/outline'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const props = defineProps({
   template: {
@@ -28,10 +28,13 @@ const props = defineProps({
 
 const isEditing = computed(() => Boolean(props.template?.id))
 const activeSection = ref('identity')
-const selectedLab = ref('')
 const selectedLabel = ref('')
 const selectedLabelData = ref(null)
+const isLoadingLabelData = ref(false)
+const labelDataError = ref('')
 const availableLabels = ref([])
+const isLoadingLabels = ref(false)
+const labelsLoadError = ref('')
 
 const sections = [
   { value: 'identity', label: 'Identificação' },
@@ -91,29 +94,63 @@ const previewStyle = computed(() => {
 async function loadLabels() {
   selectedLabel.value = ''
   selectedLabelData.value = null
+  labelDataError.value = ''
   availableLabels.value = []
+  labelsLoadError.value = ''
 
-  if (!selectedLab.value) {
+  const labId = props.labs[0]?.id
+
+  if (!labId) {
     return
   }
 
-  const response = await fetch(route('vap_labels.templates.list', { lab_id: selectedLab.value }))
-  availableLabels.value = response.ok ? await response.json() : []
+  isLoadingLabels.value = true
+
+  try {
+    const response = await fetch(route('vap_labels.templates.list', { lab_id: labId }))
+
+    if (!response.ok) {
+      throw new Error('Label list unavailable')
+    }
+
+    availableLabels.value = await response.json()
+  } catch {
+    labelsLoadError.value = 'Não foi possível carregar as etiquetas deste laboratório.'
+  } finally {
+    isLoadingLabels.value = false
+  }
 }
+
+onMounted(() => {
+  if (!isEditing.value) {
+    loadLabels()
+  }
+})
 
 async function loadLabelData() {
   selectedLabelData.value = null
+  labelDataError.value = ''
 
   if (!selectedLabel.value) {
     return
   }
 
-  const response = await fetch(route('vap_labels.labels.show', selectedLabel.value), {
-    headers: { Accept: 'application/json' },
-  })
+  isLoadingLabelData.value = true
 
-  if (response.ok) {
+  try {
+    const response = await fetch(route('vap_labels.labels.show', selectedLabel.value), {
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error('Label unavailable')
+    }
+
     selectedLabelData.value = (await response.json()).label
+  } catch {
+    labelDataError.value = 'Não foi possível carregar esta etiqueta.'
+  } finally {
+    isLoadingLabelData.value = false
   }
 }
 
@@ -221,14 +258,25 @@ function submit() {
             <p class="text-sm font-bold text-[var(--ds-text)]">Partir de uma etiqueta existente</p>
             <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Importe dimensões, conteúdo e recursos de rastreabilidade e depois ajuste o modelo.</p>
             <div class="mt-4 grid gap-3 md:grid-cols-2">
-              <BaseSelect v-model="selectedLab" :label="$t('gestlab.general.labels.vap_labels.lab')" @change="loadLabels">
-                <option value="">{{ $t('gestlab.general.labels.vap_labels.templates.select_lab') }}</option>
-                <option v-for="lab in labs" :key="lab.id" :value="lab.id">{{ lab.name }}</option>
-              </BaseSelect>
-              <BaseSelect v-model="selectedLabel" :label="$t('gestlab.general.labels.vap_labels.templates.select_label')" :disabled="!availableLabels.length" @change="loadLabelData">
+              <div>
+                <p class="ds-field-label">{{ $t('gestlab.general.labels.vap_labels.lab') }}</p>
+                <p class="mt-2 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3 text-sm font-semibold text-[var(--ds-text)]">{{ labs[0]?.name }}</p>
+              </div>
+              <BaseSelect v-model="selectedLabel" :label="$t('gestlab.general.labels.vap_labels.templates.select_label')" :disabled="isLoadingLabels || !availableLabels.length" @change="loadLabelData">
                 <option value="">{{ $t('gestlab.general.labels.vap_labels.templates.select_label') }}</option>
                 <option v-for="label in availableLabels" :key="label.id" :value="label.id">{{ label.name }}</option>
               </BaseSelect>
+            </div>
+            <p v-if="isLoadingLabels" role="status" class="mt-3 text-xs font-semibold text-[var(--ds-text-muted)]">A carregar etiquetas…</p>
+            <div v-else-if="labelsLoadError" role="alert" class="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
+              <span>{{ labelsLoadError }}</span>
+              <button type="button" class="ds-button ds-button-secondary" @click="loadLabels">Tentar novamente</button>
+            </div>
+            <p v-else-if="!availableLabels.length" class="mt-3 text-xs font-semibold text-[var(--ds-text-muted)]">Ainda não há etiquetas neste laboratório para usar como ponto de partida.</p>
+            <p v-if="isLoadingLabelData" role="status" class="mt-3 text-xs font-semibold text-[var(--ds-text-muted)]">A carregar dados da etiqueta…</p>
+            <div v-else-if="labelDataError" role="alert" class="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
+              <span>{{ labelDataError }}</span>
+              <button type="button" class="ds-button ds-button-secondary" @click="loadLabelData">Tentar novamente</button>
             </div>
             <div v-if="selectedLabelData" class="mt-4 flex flex-col gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -305,7 +353,7 @@ function submit() {
             <div class="grid gap-4 p-5 md:grid-cols-[12rem_minmax(0,1fr)]">
               <span class="text-sm font-bold text-[var(--ds-text)]">Logótipo</span>
               <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
-                <BaseInput v-model="form.template_data.logo_path" label="Caminho do ficheiro" placeholder="/storage/media/logo.svg" />
+                <BaseInput v-model="form.template_data.logo_path" label="Caminho do ficheiro PNG ou JPEG público (até 2 MB)" placeholder="/storage/media/logo.png" />
                 <BaseInput v-model="form.template_data.logo_size" type="number" min="1" max="80" label="Tamanho (mm)" />
               </div>
             </div>

@@ -3,64 +3,48 @@
 namespace App\Exports;
 
 use App\Models\InventoryItem;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Illuminate\Support\Collection;
 
 class InventoryItemsExport implements FromCollection, WithHeadings, WithMapping
 {
-    protected $startDate;
-    protected $endDate;
-    protected $categories;
-     protected $category_id;
-
-    /**
-     * Constructor to receive the date range.
-     *
-     * @param string|null $startDate
-     * @param string|null $endDate
-     */
-    public function __construct($startDate = null, $endDate = null, $categories = [], $category_id = null)
-    {
-        $this->startDate = $startDate;
-        $this->endDate = $endDate;
-        $this->categories = $categories;
-        $this->category_id = $category_id;
-    }
+    /** @param list<string> $inventoryTypes */
+    public function __construct(
+        private readonly int $labId,
+        private readonly array $inventoryTypes,
+        private readonly ?string $startDate = null,
+        private readonly ?string $endDate = null,
+        private readonly ?int $categoryId = null,
+    ) {}
 
     /**
      * Define the collection of data to be exported.
-     *
-     * @return \Illuminate\Support\Collection
      */
-    public function collection()
+    public function collection(): Collection
     {
-        $query = InventoryItem::query();
+        $query = InventoryItem::forLaboratory($this->labId)
+            ->whereHas('category', fn ($category) => $category->withTrashed()->whereIn('inventory_type', $this->inventoryTypes));
 
         // Apply a date filter if a start and end date are provided.
         if ($this->startDate && $this->endDate) {
             $query->whereBetween('created_at', [$this->startDate, $this->endDate]);
         }
 
-         // Apply a category filter if a start and end date are provided.
-        // if ($this->categories) {
-        //     $query->whereIn('category_id', $this->categories);
-        // }
-
-        if (!is_null($this->category_id) && $this->category_id !== '' && isset($this->category_id)) {
-            $query->where('category_id', $this->category_id);
+        if ($this->categoryId !== null) {
+            $query->where('category_id', $this->categoryId);
         }
-        
+
         // Eager load relationships to avoid N+1 query issues.
         $query->with([
             'status',
             'packagingType',
-            'category',
+            'category' => fn ($category) => $category->withTrashed(),
             'unit',
             'type',
             'supplier',
-            'user'
+            'user',
         ]);
 
         return $query->get();
@@ -68,8 +52,6 @@ class InventoryItemsExport implements FromCollection, WithHeadings, WithMapping
 
     /**
      * Define the headings for the Excel columns.
-     *
-     * @return array
      */
     public function headings(): array
     {
@@ -160,8 +142,7 @@ class InventoryItemsExport implements FromCollection, WithHeadings, WithMapping
     /**
      * Map the data from the collection to the Excel row format.
      *
-     * @param mixed $row
-     * @return array
+     * @param  mixed  $row
      */
     public function map($row): array
     {

@@ -1,11 +1,11 @@
 <template>
-  <div class="lims-app-shell min-h-dvh bg-[var(--ds-canvas)]" :style="brandingCssVariables" :data-theme-preset="themePreset">
+  <div id="lab-workbench" class="lims-app-shell" :data-collapsed="!desktopSidebarOpen" :style="brandingCssVariables" :data-theme-preset="themePreset">
     <backend-modal />
     <ToastList />
 
     <div v-if="impersonation" class="ds-impersonation-banner relative z-[60] flex flex-wrap items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium">
       <span><strong>{{ trans('gestlab.general.labels.impersonation.title') }}</strong> {{ trans('gestlab.general.labels.impersonation.description') }} {{ auth?.user?.name }}.</span>
-      <button type="button" class="rounded-md bg-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/25" @click="router.get(route('users.stopimpersonating'), {}, { preserveState: false, replace: true })">
+      <button type="button" class="rounded-md bg-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/25" @click="router.post(route('users.stopimpersonating'), {}, { preserveState: false, replace: true })">
         {{ trans('gestlab.general.buttons.leave_impersonation') }}
       </button>
     </div>
@@ -17,7 +17,7 @@
         </TransitionChild>
         <div class="fixed inset-0 flex">
           <TransitionChild as="template" enter="transition ease-out duration-200 transform" enter-from="-translate-x-full" enter-to="translate-x-0" leave="transition ease-in duration-150 transform" leave-from="translate-x-0" leave-to="-translate-x-full">
-            <DialogPanel class="flex w-full max-w-72 flex-col border-r border-[var(--ds-border)] bg-[var(--ds-panel)] shadow-xl">
+            <DialogPanel class="lab-mobile-navigation flex w-full max-w-72 flex-col border-r border-[var(--ds-border)] bg-[var(--ds-panel)] shadow-xl" :style="brandingCssVariables">
               <div class="flex h-16 shrink-0 items-center gap-3 border-b border-[var(--ds-border)] px-4">
                 <Link :href="route('dashboard')" class="flex min-w-0 flex-1 items-center gap-3" @click="sidebarOpen = false">
                   <span v-if="!settings?.logo_url" class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--brand-secondary)] text-xs font-bold text-white">{{ brandInitials }}</span>
@@ -45,59 +45,41 @@
       </Dialog>
     </TransitionRoot>
 
-    <aside :class="desktopSidebarOpen ? 'lg:w-64' : 'lg:w-[4.5rem]'" class="fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-[var(--ds-border)] bg-[var(--ds-panel)] transition-[width] duration-200 lg:flex">
-      <div class="flex h-16 shrink-0 items-center border-b border-[var(--ds-border)]" :class="desktopSidebarOpen ? 'px-4' : 'justify-center px-2'">
-        <Link :href="route('dashboard')" class="flex min-w-0 items-center gap-3" :title="!desktopSidebarOpen ? settings?.app_name : undefined">
-          <span v-if="!settings?.logo_url" class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--brand-secondary)] text-xs font-bold text-white">{{ brandInitials }}</span>
-          <span v-else class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--ds-border)] bg-white p-1.5"><img class="max-h-full max-w-full object-contain" :src="settings.logo_url" :alt="settings?.app_name || ''" /></span>
-          <span v-if="desktopSidebarOpen" class="min-w-0">
-            <span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ settings?.app_name }}</span>
-            <span class="block truncate text-xs text-[var(--ds-text-soft)]">{{ settings?.lab_name }}</span>
-          </span>
-        </Link>
-      </div>
-      <side-nav :collapsed="!desktopSidebarOpen" class="py-5" @open-command-palette="openCommandPalette" />
-      <div class="mt-auto border-t border-[var(--ds-border)] p-2">
-        <div :class="desktopSidebarOpen ? 'gap-3 px-2' : 'justify-center px-1'" class="flex min-h-12 items-center rounded-lg">
-          <img v-if="auth?.user?.profile_photo_url" :src="auth.user.profile_photo_url" alt="" class="h-9 w-9 shrink-0 rounded-lg object-cover" />
-          <span v-else class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[rgb(var(--primary-100-rgb))] text-sm font-semibold text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.14)] dark:text-white">{{ auth?.user?.name?.charAt(0) }}</span>
-          <span v-if="desktopSidebarOpen" class="min-w-0"><span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ auth?.user?.name }}</span><span class="block truncate text-xs text-[var(--ds-text-soft)]">{{ auth?.user?.email }}</span></span>
+    <div class="lab-shell">
+    <aside id="desktop-navigation" class="lab-sidebar">
+      <Link :href="route('dashboard')" class="lab-brand lab-flex" aria-label="LIMS Unleashed — Visão geral">
+        <span class="lab-mark"><BeakerIcon aria-hidden="true" /></span>
+        <span v-if="desktopSidebarOpen"><span class="lab-brand-name">lims<span style="font-weight:400">.</span></span><span class="lab-brand-sub">unleashed</span></span>
+      </Link>
+      <div v-if="activeLab && desktopSidebarOpen" class="lab-location lab-flex">
+        <BuildingOffice2Icon aria-hidden="true" />
+        <div class="lab-location-text"><label for="laboratory-context" class="sr-only">Laboratório activo</label>
+          <select id="laboratory-context" :value="activeLab.id" @change="router.post(route('lab-context.switch', $event.target.value))">
+            <option v-for="lab in laboratory.labs" :key="lab.id" :value="lab.id">{{ lab.name }}</option>
+          </select><small class="lab-muted">Espaço laboratorial</small>
         </div>
+      </div>
+      <side-nav :collapsed="!desktopSidebarOpen" @open-command-palette="openCommandPalette" />
+      <div class="lab-profile lab-flex">
+        <span class="lab-avatar">{{ auth?.user?.name?.charAt(0) }}</span>
+        <div v-if="desktopSidebarOpen" class="lab-profile-text"><strong>{{ auth?.user?.name }}</strong><div class="lab-muted lab-small">{{ activeLab?.name || 'Laboratório' }}</div></div>
       </div>
     </aside>
 
-    <div :class="desktopSidebarOpen ? 'lg:pl-64' : 'lg:pl-[4.5rem]'" class="min-h-dvh transition-[padding] duration-200">
-      <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-[var(--ds-border)] bg-[var(--ds-panel)] px-4 sm:px-6 lg:px-5">
-        <button type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)] lg:hidden" @click="sidebarOpen = true">
-          <span class="sr-only">Abrir navegação</span><Bars3Icon class="h-5 w-5" aria-hidden="true" />
-        </button>
-        <button type="button" class="hidden h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)] lg:grid" :title="desktopSidebarOpen ? 'Recolher navegação' : 'Expandir navegação'" @click="toggleDesktopSidebar">
-          <Bars3Icon class="h-5 w-5" aria-hidden="true" />
-        </button>
-
-        <div class="min-w-0">
-          <p class="truncate text-sm font-semibold text-[var(--ds-text)]">{{ moduleFamilyLabel }}</p>
-          <p class="hidden truncate text-xs text-[var(--ds-text-soft)] sm:block">{{ settings?.lab_name }}</p>
-        </div>
-
-        <button type="button" class="ml-auto hidden h-9 min-w-64 max-w-xl flex-1 items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 text-left text-sm text-[var(--ds-text-muted)] transition hover:border-[var(--ds-border-strong)] md:flex" @click="openCommandPalette">
-          <MagnifyingGlassIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
-          <span class="truncate">Pesquisar amostras, documentos e modulos</span>
-          <kbd class="ml-auto rounded border border-[var(--ds-border)] bg-[var(--ds-panel)] px-1.5 py-0.5 font-mono text-[0.62rem] text-[var(--ds-text-soft)]">⌘K</kbd>
-        </button>
-        <button type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)] md:hidden" @click="openCommandPalette"><span class="sr-only">Pesquisar</span><MagnifyingGlassIcon class="h-5 w-5" aria-hidden="true" /></button>
-
-        <Link prefetch :href="route('notifications.index')" class="relative grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]">
-          <span class="sr-only">Ver notificações</span><BellIcon class="h-5 w-5" aria-hidden="true" />
-          <span v-if="unreadNotificationCount" class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-[var(--ds-panel)]" />
-        </Link>
+    <div class="lab-main">
+      <header class="lab-topbar">
+        <button type="button" class="lab-btn lab-ghost lab-icon-btn lab-mobile-toggle" aria-label="Abrir navegação" @click="sidebarOpen = true"><Bars3Icon /></button>
+        <button type="button" class="lab-btn lab-ghost lab-icon-btn lab-collapse-toggle" :aria-label="desktopSidebarOpen ? 'Recolher navegação' : 'Expandir navegação'" :aria-expanded="desktopSidebarOpen" aria-controls="desktop-navigation" @click="toggleDesktopSidebar"><Bars3Icon aria-hidden="true" /></button>
+        <div class="lab-crumb"><span>Laboratório</span><span>/</span><strong>{{ page.component === 'LaboratoryWorkbench' ? 'Visão geral' : page.component === 'LabNetwork/Index' ? 'Rede de laboratórios' : moduleFamilyLabel }}</strong></div>
+        <div class="lab-spacer"></div>
+        <button type="button" class="lab-search-launch" aria-label="Pesquisar módulos e registos" @click="openCommandPalette"><MagnifyingGlassIcon /><span>Pesquisar</span><kbd>⌘ K</kbd></button>
+        <button v-if="activeLab?.can_manage_branding" type="button" class="lab-btn lab-ghost lab-icon-btn" aria-label="Personalizar cores do laboratório" @click="openBranding"><SwatchIcon /></button>
+        <Link :href="route('notifications.index')" class="lab-btn lab-ghost lab-icon-btn" aria-label="Ver notificações"><BellIcon /><span v-if="unreadNotificationCount" class="lab-dot" /></Link>
 
         <Menu as="div" class="relative">
-          <MenuButton class="flex h-9 items-center gap-2 rounded-lg p-1 text-[var(--ds-text)] hover:bg-[var(--ds-panel-subtle)] sm:pr-2">
+          <MenuButton class="lab-user-menu" aria-label="Perfil e preferências">
             <img v-if="auth?.user?.profile_photo_url" :src="auth.user.profile_photo_url" alt="" class="h-7 w-7 rounded-md object-cover" />
             <span v-else class="grid h-7 w-7 place-items-center rounded-md bg-[var(--brand-secondary)] text-xs font-semibold text-white">{{ auth?.user?.name?.charAt(0) }}</span>
-            <span class="hidden max-w-28 truncate text-sm font-semibold xl:block">{{ auth?.user?.name }}</span>
-            <ChevronDownIcon class="hidden h-4 w-4 text-[var(--ds-text-soft)] sm:block" aria-hidden="true" />
           </MenuButton>
           <transition enter-active-class="transition ease-out duration-100" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
             <MenuItems class="ds-floating-panel absolute right-0 z-20 mt-2 w-64 origin-top-right p-2 focus:outline-none">
@@ -117,6 +99,20 @@
           </transition>
         </Menu>
       </header>
+
+      <Dialog :open="brandingOpen" class="relative z-[80]" @close="brandingOpen = false">
+        <div class="fixed inset-0 bg-black/40" aria-hidden="true" />
+        <div class="fixed inset-0 flex items-center justify-center p-4"><DialogPanel class="ds-panel w-full max-w-md p-6">
+          <DialogTitle class="text-lg font-semibold">Identidade do laboratório</DialogTitle>
+          <p class="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">{{ activeLab?.name }}. As cores de alerta mantêm o seu significado.</p>
+          <form class="mt-5 space-y-5" @submit.prevent="saveBranding">
+            <label class="flex items-center justify-between gap-4 text-sm font-medium">Cor principal<input v-model="brandingForm.primary_color" type="color" class="h-11 w-16 cursor-pointer rounded border border-[var(--ds-border)] p-1" /></label>
+            <p v-if="brandingForm.errors.primary_color" class="text-sm text-red-600" role="alert">{{ brandingForm.errors.primary_color }}</p>
+            <p class="text-xs text-[var(--ds-text-soft)]">{{ activeLab?.inherited_color ? 'Actualmente herdada da rede.' : 'Cor personalizada para este laboratório.' }}</p>
+            <div class="flex flex-wrap justify-end gap-2"><button type="button" class="ds-button ds-button-secondary" :disabled="brandingForm.processing" @click="saveBranding(true)">Herdar da rede</button><button type="button" class="ds-button ds-button-secondary" @click="brandingOpen = false">Cancelar</button><button type="submit" class="ds-button ds-button-primary" :disabled="brandingForm.processing">{{ brandingForm.processing ? 'A guardar…' : 'Guardar' }}</button></div>
+          </form>
+        </DialogPanel></div>
+      </Dialog>
 
       <TransitionRoot as="template" :show="commandPaletteOpen">
         <Dialog as="div" class="relative z-[70]" @close="commandPaletteOpen = false">
@@ -140,9 +136,8 @@
         </Dialog>
       </TransitionRoot>
 
-      <main class="min-h-[calc(100vh-4rem)] py-5 lg:py-6">
-        <div class="lims-backoffice-content px-4 sm:px-6 lg:px-8" :data-module-family="moduleFamily">
-          <breadcrumbs v-if="$page.props.breadcrumbs?.length" :pages="$page.props.breadcrumbs" class="mb-4" />
+      <main class="lab-content">
+        <div :class="{ 'lims-backoffice-content': !['LaboratoryWorkbench', 'LabNetwork/Index', 'VAPSamples/Queue', 'VAPSamples/Show'].includes(page.component) }" :data-module-family="moduleFamily">
           <confirm-dialog v-if="showSessionModal" :open="showSessionModal" :title="$t('Session Expiring Soon')" :description="$t('You will be logged out due to inactivity')" variant="warning" :hide-buttons="true" size="sm:max-w-xl" @canceled="showSessionModal = false">
             <p class="mt-4 text-sm font-semibold text-[var(--ds-text-muted)]">{{ $t('For your security, this session will end in :seconds seconds.', { seconds: remainingTime }) }} {{ $t('Move your mouse or press any key to continue working.') }}</p>
           </confirm-dialog>
@@ -150,6 +145,8 @@
         </div>
       </main>
     </div>
+    </div>
+    <footer class="lab-foot"><span class="lab-flex"><span class="lab-dot"></span>{{ activeLab?.name || 'LIMS Unleashed' }}</span><span>Laboratório em foco</span></footer>
   </div>
 </template>
 
@@ -159,10 +156,10 @@ import { useIdle, useCounter } from '@vueuse/core'
 import sideNav from '../Navigation/side-nav.vue'
 import ToastList from '@/Components/toast-list.vue'
 import confirmDialog from '@/Components/confirm-dialog.vue'
-import breadcrumbs from '@/Components/breadcrumbs.vue'
 import {
   Dialog,
   DialogPanel,
+  DialogTitle,
   Menu,
   MenuButton,
   MenuItem,
@@ -172,6 +169,7 @@ import {
 } from '@headlessui/vue'
 import {
   Bars3Icon,
+  BuildingOffice2Icon,
   BellIcon,
   HomeIcon,
   ShieldCheckIcon,
@@ -201,7 +199,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { ChevronDownIcon } from '@heroicons/vue/20/solid'
 import { SunIcon, MoonIcon } from '@heroicons/vue/24/outline'
-import { router, usePage } from '@inertiajs/vue3'
+import { router, usePage, useForm } from '@inertiajs/vue3'
 import { usePermission } from '@/Composables/usePermissions'
 import { useTheme } from '@/Composables/useTheme'
 import { trans, loadLanguageAsync } from 'laravel-vue-i18n'
@@ -222,7 +220,20 @@ const page = usePage()
 const unreadNotificationCount = ref(props.auth?.user?.unread_notifications?.length ?? 0)
 let realtimeNotificationChannel = null
 const settings = computed(() => page.props?.settings ?? {})
-const brandingCssVariables = computed(() => buildBrandingCssVariables(settings.value))
+const laboratory = computed(() => page.props.laboratory ?? { labs: [], active_lab: null })
+const activeLab = computed(() => laboratory.value.active_lab)
+const brandingCssVariables = computed(() => buildBrandingCssVariables({ ...settings.value, ...(activeLab.value ? { primary_color: activeLab.value.primary_color } : {}) }))
+const brandingOpen = ref(false)
+const brandingForm = useForm({ primary_color: '#24664f' })
+function openBranding() {
+  brandingForm.primary_color = activeLab.value.primary_color
+  brandingForm.clearErrors()
+  brandingOpen.value = true
+}
+function saveBranding(inherit = false) {
+  brandingForm.transform((data) => ({ primary_color: inherit === true ? null : data.primary_color }))
+    .put(route('lab-branding.update', activeLab.value.id), { preserveScroll: true, onSuccess: () => { brandingOpen.value = false } })
+}
 const themePreset = computed(() => settings.value.theme_preset || 'corporate')
 const brandInitials = computed(() => String(settings.value.app_name || settings.value.lab_name || 'Espaço laboratorial')
   .split(/\s+/)
@@ -465,7 +476,7 @@ const navigation = [
       { title: 'gestlab.menu.analysis', name: '/analysis', href: route('analysis.index'), show: hasPermission('view_analysis') },
       { title: 'Dados laboratoriais', name: '/analysis/data-exports', href: route('analysis.data-exports.index'), show: hasPermission('view_analysis') || hasPermission('view_results') },
       { title: 'gestlab.menu.analysis_categories', name: '/analysiscategories', href: route('analysiscategories.index'), show: hasPermission('view_analysis_categories') },
-      { title: 'gestlab.menu.pending_samples', name: '/vap-samples', href: route('vap_samples.index'), show: hasPermission('view_samples') },
+      { title: 'gestlab.menu.pending_samples', name: '/vap-samples', href: route('vap_samples.queue'), show: hasPermission('view_samples') },
       { title: 'gestlab.menu.sample_reports', name: '/vap-samples/reports', href: route('vap_samples.reports'), show: hasPermission('view_samples') },
       { title: 'gestlab.menu.internal_quality_control', name: '/vap-samples/reports', href: route('vap_samples.reports', { sample_scope: 'internal_qc' }), show: hasPermission('view_samples') },
       { title: 'gestlab.menu.counter_analysis', name: '/counter-analysis', href: route('counteranalysis.index'), show: hasPermission('view_counter_analysis') },
@@ -495,7 +506,7 @@ const navigation = [
       { title: 'gestlab.menu.occurrence_origins', name: '/occcurrenceorigins', href: route('occurrenceorigins.index'), show: hasPermission('view_occurrence_origins') },
       { title: 'gestlab.menu.occurrence_statuses', name: '/occurrencestatuses', href: route('occurrencestatuses.index'), show: hasPermission('view_occurrence_statuses') },
       { title: 'gestlab.menu.occurrences', name: '/occurrences', href: route('occurrences.index'), show: hasPermission('view_occurrences') },
-      { title: 'Não conformidades laboratoriais', name: '/vap-non-conformities', href: route('vap_non_conformities.index'), show: hasPermission('view_occurrences') || hasPermission('view_activity_log') },
+      { title: 'Não conformidades laboratoriais', name: '/vap-non-conformities', href: route('vap_non_conformities.index'), show: hasPermission('view_occurrences') },
     ],
   },
   {
@@ -534,7 +545,7 @@ const navigation = [
       { title: 'gestlab.menu.qms', name: '/qms', href: route('qms.index'), show: hasPermission('view_activity_log') },
       { title: 'gestlab.menu.staff_competence', name: '/users', href: route('users.index'), show: hasPermission('view_users') },
       { title: 'gestlab.menu.supplier_assessments', name: '/supplier-assessments', href: route('supplier-assessments.index'), show: hasPermission('view_isuppliers') },
-      { title: 'gestlab.menu.lab_non_conformities', name: '/vap-non-conformities', href: route('vap_non_conformities.index'), show: hasPermission('view_occurrences') || hasPermission('view_activity_log') },
+      { title: 'gestlab.menu.lab_non_conformities', name: '/vap-non-conformities', href: route('vap_non_conformities.index'), show: hasPermission('view_occurrences') },
       { title: 'gestlab.menu.responsibility_matrix', name: '/responsibility-matrix', href: route('responsibility-matrix.index'), show: hasPermission('view_users') },
       { title: 'gestlab.menu.uncertainty_sources', name: '/uncertainty-sources', href: route('uncertainty-sources.index'), show: hasPermission('view_parameters') },
       { title: 'gestlab.menu.proficiency_tests', name: '/proficiency-tests', href: route('proficiency_tests.index'), show: hasPermission('view_analysis') },
@@ -667,11 +678,12 @@ const handleCommandPaletteShortcut = (event) => {
 
 const toggleDesktopSidebar = () => {
   desktopSidebarOpen.value = !desktopSidebarOpen.value
-  window.localStorage.setItem('desktop-sidebar-open', desktopSidebarOpen.value ? '1' : '0')
+  try { window.localStorage.setItem('desktop-sidebar-open', desktopSidebarOpen.value ? '1' : '0') } catch { /* Storage may be unavailable in private browsing. */ }
 }
 
 onMounted(() => {
-  const savedSidebarState = window.localStorage.getItem('desktop-sidebar-open')
+  let savedSidebarState = null
+  try { savedSidebarState = window.localStorage.getItem('desktop-sidebar-open') } catch { /* Use the expanded default when storage is unavailable. */ }
   if (savedSidebarState !== null) {
     desktopSidebarOpen.value = savedSidebarState === '1'
   }

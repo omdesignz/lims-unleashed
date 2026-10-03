@@ -16,7 +16,7 @@
         
         <div class="details">
             <strong>LOT:</strong> {{ $batch->batch_number }}<br>
-            <strong>EXP:</strong> {{ $batch->expiry_date->format('d/m/Y') }}<br>
+            <strong>EXP:</strong> {{ $batch->expiry_date?->format('d/m/Y') ?? '—' }}<br>
             <strong>BATCH ID:</strong> #{{ $batch->id }}
         </div>
 

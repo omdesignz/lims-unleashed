@@ -240,8 +240,8 @@
                                 <div class="item-code">{{ $item->inventoryItem?->code ?: 'Sem código' }}</div>
                             </td>
                             <td>{{ $item->warehouse?->name ?: 'A definir' }}</td>
-                            <td>{{ $item->quantity_requested }}</td>
-                            <td>{{ $item->quantity_approved ?: '—' }}</td>
+                            <td>{{ $item->quantity_requested }} {{ $item->inventoryItem?->unit?->code }}</td>
+                            <td>{{ $item->quantity_approved ?: '—' }} {{ $item->quantity_approved ? $item->inventoryItem?->unit?->code : '' }}</td>
                             <td>{{ $item->estimated_unit_price ? number_format((float) $item->estimated_unit_price, 2, ',', '.') : '—' }}</td>
                             <td class="muted">{{ $item->notes ?: 'Sem notas adicionais' }}</td>
                         </tr>
@@ -259,12 +259,12 @@
                         <span class="summary-number">{{ $need->items->count() }}</span>
                     </td>
                     <td>
-                        <span class="summary-label">Qtd. Solicitada</span>
-                        <span class="summary-number">{{ $totalRequestedQuantity }}</span>
+                        <span class="summary-label">Linhas solicitadas</span>
+                        <span class="summary-number">{{ $requestedLineCount }}</span>
                     </td>
                     <td>
-                        <span class="summary-label">Qtd. Aprovada</span>
-                        <span class="summary-number">{{ $totalApprovedQuantity ?: '—' }}</span>
+                        <span class="summary-label">Linhas aprovadas</span>
+                        <span class="summary-number">{{ $approvedLineCount ?: '—' }}</span>
                     </td>
                     <td>
                         <span class="summary-label">Montante Estimado</span>

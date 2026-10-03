@@ -11,10 +11,13 @@ use App\Models\InventoryNeedItem;
 use App\Models\InventoryOrder;
 use App\Models\InventoryOrderDetail;
 use App\Models\InventorySupplierAssessment;
+use App\Models\InventoryUnit;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Models\VAPNonConformity;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SupplierAssessmentModuleTest extends TestCase
@@ -23,12 +26,45 @@ class SupplierAssessmentModuleTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $user = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $user->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $user->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
+
+        return $user;
+    }
+
+    private function createDepartment(): Department
+    {
+        return Department::query()->create([
+            'name' => 'Supplier assessment department',
+            'code' => fake()->unique()->bothify('SA-######'),
+        ]);
+    }
+
+    /**
+     * @return array{0: InventoryItem, 1: InventoryItemWarehouse}
+     */
+    private function createInventoryContext(User $user): array
+    {
+        $labId = DB::table('lab_user')->where('user_id', $user->id)->value('lab_id');
+        $unit = InventoryUnit::query()->create([
+            'code' => fake()->unique()->bothify('UN-######'),
+            'description' => 'Unit',
+        ]);
+        $item = InventoryItem::query()->create([
+            'lab_id' => $labId,
+            'unit_id' => $unit->id,
+            'name' => 'Supplier assessment material',
+            'code' => fake()->unique()->bothify('SI-######'),
+        ]);
+        $warehouse = InventoryItemWarehouse::query()->create([
+            'lab_id' => $labId,
+            'name' => 'Supplier assessment warehouse',
+        ]);
+
+        return [$item, $warehouse];
     }
 
     public function test_admin_can_open_supplier_assessment_module(): void
@@ -43,7 +79,7 @@ class SupplierAssessmentModuleTest extends TestCase
     public function test_admin_can_create_supplier_assessment(): void
     {
         $user = $this->verifiedAdmin();
-        $department = Department::query()->firstOrFail();
+        $department = $this->createDepartment();
         $supplier = InventoryItemSupplier::query()->create([
             'name' => 'Fornecedor QA',
             'address' => 'Luanda',
@@ -87,6 +123,7 @@ class SupplierAssessmentModuleTest extends TestCase
         ]);
 
         InventorySupplierAssessment::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'inventory_item_supplier_id' => $supplier->id,
             'assessed_by_user_id' => $user->id,
             'assessment_date' => now()->subDays(10)->toDateString(),
@@ -118,8 +155,7 @@ class SupplierAssessmentModuleTest extends TestCase
     public function test_purchase_order_creation_is_blocked_for_suspended_supplier(): void
     {
         $user = $this->verifiedAdmin();
-        $inventoryItem = InventoryItem::query()->firstOrFail();
-        $warehouse = InventoryItemWarehouse::query()->firstOrFail();
+        [$inventoryItem, $warehouse] = $this->createInventoryContext($user);
         $supplier = InventoryItemSupplier::query()->create([
             'name' => 'Fornecedor Suspenso',
             'address' => 'Huíla',
@@ -127,6 +163,7 @@ class SupplierAssessmentModuleTest extends TestCase
         ]);
 
         InventorySupplierAssessment::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'inventory_item_supplier_id' => $supplier->id,
             'assessed_by_user_id' => $user->id,
             'assessment_date' => now()->subDays(3)->toDateString(),
@@ -174,9 +211,8 @@ class SupplierAssessmentModuleTest extends TestCase
     public function test_need_conversion_to_order_is_blocked_for_suspended_supplier(): void
     {
         $user = $this->verifiedAdmin();
-        $department = Department::query()->firstOrFail();
-        $inventoryItem = InventoryItem::query()->firstOrFail();
-        $warehouse = InventoryItemWarehouse::query()->firstOrFail();
+        $department = $this->createDepartment();
+        [$inventoryItem, $warehouse] = $this->createInventoryContext($user);
         $supplier = InventoryItemSupplier::query()->create([
             'name' => 'Fornecedor Suspenso da Necessidade',
             'address' => 'Namibe',
@@ -184,6 +220,7 @@ class SupplierAssessmentModuleTest extends TestCase
         ]);
 
         InventorySupplierAssessment::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'inventory_item_supplier_id' => $supplier->id,
             'assessed_by_user_id' => $user->id,
             'assessment_date' => now()->subDays(1)->toDateString(),
@@ -200,6 +237,7 @@ class SupplierAssessmentModuleTest extends TestCase
         ]);
 
         $need = InventoryNeed::query()->create([
+            'lab_id' => $inventoryItem->lab_id,
             'reference' => 'NEED-BLOCK-001',
             'department_id' => $department->id,
             'requested_by_id' => $user->id,
@@ -246,8 +284,7 @@ class SupplierAssessmentModuleTest extends TestCase
     public function test_order_pages_expose_supplier_assessment_context(): void
     {
         $user = $this->verifiedAdmin();
-        $inventoryItem = InventoryItem::query()->firstOrFail();
-        $warehouse = InventoryItemWarehouse::query()->firstOrFail();
+        [$inventoryItem, $warehouse] = $this->createInventoryContext($user);
         $supplier = InventoryItemSupplier::query()->create([
             'name' => 'Fornecedor com contexto',
             'address' => 'Luanda Sul',
@@ -255,6 +292,7 @@ class SupplierAssessmentModuleTest extends TestCase
         ]);
 
         InventorySupplierAssessment::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'inventory_item_supplier_id' => $supplier->id,
             'assessed_by_user_id' => $user->id,
             'assessment_date' => now()->subDays(2)->toDateString(),
@@ -271,6 +309,7 @@ class SupplierAssessmentModuleTest extends TestCase
         ]);
 
         $order = InventoryOrder::query()->create([
+            'lab_id' => $inventoryItem->lab_id,
             'date' => now()->toDateString(),
             'user_id' => $user->id,
             'supplier_id' => $supplier->id,
@@ -312,8 +351,7 @@ class SupplierAssessmentModuleTest extends TestCase
     public function test_receiving_order_can_register_non_conformity_evidence(): void
     {
         $user = $this->verifiedAdmin();
-        $inventoryItem = InventoryItem::query()->firstOrFail();
-        $warehouse = InventoryItemWarehouse::query()->firstOrFail();
+        [$inventoryItem, $warehouse] = $this->createInventoryContext($user);
         $supplier = InventoryItemSupplier::query()->create([
             'name' => 'Fornecedor com desvio',
             'address' => 'Cacuaco',
@@ -321,6 +359,7 @@ class SupplierAssessmentModuleTest extends TestCase
         ]);
 
         $order = InventoryOrder::query()->create([
+            'lab_id' => $inventoryItem->lab_id,
             'date' => now()->toDateString(),
             'user_id' => $user->id,
             'supplier_id' => $supplier->id,

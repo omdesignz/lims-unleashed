@@ -2,15 +2,30 @@
 
 namespace Tests\Feature;
 
+use App\Actions\PrepareSampleEntryPayload;
 use App\Models\Analysis;
+use App\Models\AnalysisCategory;
+use App\Models\CollectionProduct;
+use App\Models\Customer;
+use App\Models\Department;
+use App\Models\LabCode;
+use App\Models\LabNetwork;
+use App\Models\Matrix;
 use App\Models\Parameter;
 use App\Models\Permission;
+use App\Models\Product;
+use App\Models\Profile;
 use App\Models\Result;
 use App\Models\Role;
+use App\Models\Sample;
 use App\Models\User;
+use App\Models\VAPLab;
+use App\Models\VAPSampleEntry;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -21,6 +36,10 @@ use Tests\TestCase;
 class LaboratoryDataExportTest extends TestCase
 {
     use DatabaseTransactions;
+
+    private ?User $admin = null;
+
+    private ?VAPLab $lab = null;
 
     public function test_pending_worksheet_includes_only_parameters_without_an_inserted_result(): void
     {
@@ -67,6 +86,28 @@ class LaboratoryDataExportTest extends TestCase
         $this->assertSame($rows->count(), $rows->pluck('parameter_id')->unique()->count());
     }
 
+    public function test_pending_worksheet_uses_issued_scope_after_catalogue_changes(): void
+    {
+        [$analysis, $parameters] = $this->analysisWithMultipleParameters();
+        $first = $parameters->first();
+        $issuedName = $first->name;
+        $analysis->profile->parameters()->detach($first->id);
+        $first->update(['name' => 'Renamed after issuance']);
+        $extra = Parameter::query()->create(['name' => 'Added after issuance', 'code' => 'LATE-'.Str::upper(Str::random(8))]);
+        $analysis->profile->parameters()->attach($extra);
+
+        $response = $this->actingAs($this->verifiedAdmin())
+            ->get(route('analysis.data-exports.index', [
+                'view' => 'pending',
+                'search' => $analysis->sample->code,
+                'per_page' => 100,
+            ]))->assertOk();
+
+        $rows = collect(data_get($response->viewData('page'), 'props.records.data', []));
+        $this->assertEqualsCanonicalizing($parameters->pluck('id')->all(), $rows->pluck('parameter_id')->all());
+        $this->assertSame($issuedName, $rows->firstWhere('parameter_id', $first->id)['parameter']);
+    }
+
     public function test_audit_register_classifies_inserted_verified_and_approved_results(): void
     {
         [$analysis, $parameters] = $this->analysisWithMultipleParameters();
@@ -104,7 +145,8 @@ class LaboratoryDataExportTest extends TestCase
     public function test_views_and_downloads_enforce_dataset_permissions(): void
     {
         $analysisUser = User::factory()->create(['is_active' => true]);
-        $analysisUser->givePermissionTo(Permission::findByName('view_analysis'));
+        $analysisUser->givePermissionTo(Permission::findOrCreate('view_analysis', 'web'));
+        DB::table('lab_user')->insert(['lab_id' => $this->lab()->id, 'user_id' => $analysisUser->id]);
 
         $this->actingAs($analysisUser)
             ->get(route('analysis.data-exports.index', ['view' => 'pending']))
@@ -117,7 +159,8 @@ class LaboratoryDataExportTest extends TestCase
             ->assertForbidden();
 
         $resultsUser = User::factory()->create(['is_active' => true]);
-        $resultsUser->givePermissionTo(Permission::findByName('view_results'));
+        $resultsUser->givePermissionTo(Permission::findOrCreate('view_results', 'web'));
+        DB::table('lab_user')->insert(['lab_id' => $this->lab()->id, 'user_id' => $resultsUser->id]);
 
         $this->actingAs($resultsUser)
             ->get(route('analysis.data-exports.index', ['view' => 'audit']))
@@ -194,17 +237,184 @@ class LaboratoryDataExportTest extends TestCase
         $this->assertContains('results_export_approval_index', $resultIndexes);
     }
 
+    public function test_main_lab_network_visibility_does_not_expose_another_labs_analysis_exports(): void
+    {
+        $admin = $this->verifiedAdmin();
+        $network = LabNetwork::query()->create(['name' => 'Export isolation network']);
+        $this->lab()->update(['network_id' => $network->id]);
+        $network->update(['main_lab_id' => $this->lab()->id]);
+        DB::table('lab_user')->where('lab_id', $this->lab()->id)
+            ->where('user_id', $admin->id)
+            ->update(['can_view_network' => true]);
+        $otherLab = VAPLab::factory()->create(['network_id' => $network->id]);
+
+        [$localAnalysis, $localParameters] = $this->analysisWithMultipleParameters();
+        [$otherAnalysis, $otherParameters] = $this->analysisWithMultipleParameters($otherLab);
+        $localResult = $this->createResultAtStage($localAnalysis, $localParameters->first(), 'approved');
+        $otherResult = $this->createResultAtStage($otherAnalysis, $otherParameters->first(), 'approved');
+
+        $pendingResponse = $this->actingAs($admin)
+            ->get(route('analysis.data-exports.index', ['view' => 'pending']))
+            ->assertOk();
+        $pendingIds = collect(data_get($pendingResponse->viewData('page'), 'props.records.data', []))->pluck('analysis_id');
+        $this->assertContains($localAnalysis->id, $pendingIds);
+        $this->assertNotContains($otherAnalysis->id, $pendingIds);
+
+        $auditResponse = $this->actingAs($admin)
+            ->get(route('analysis.data-exports.index', ['view' => 'audit']))
+            ->assertOk();
+        $auditIds = collect(data_get($auditResponse->viewData('page'), 'props.records.data', []))->pluck('result_id');
+        $this->assertContains($localResult->id, $auditIds);
+        $this->assertNotContains($otherResult->id, $auditIds);
+        $this->assertSame(1, data_get($auditResponse->viewData('page'), 'props.summary.total'));
+
+        $this->actingAs($admin)
+            ->get(route('analysis.data-exports.index', [
+                'view' => 'pending',
+                'search' => $otherAnalysis->sample->code,
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->has('records.data', 0));
+        $this->actingAs($admin)
+            ->get(route('analysis.data-exports.index', [
+                'view' => 'audit',
+                'search' => 'AUDIT-'.$otherAnalysis->id,
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->has('records.data', 0));
+        $this->actingAs($admin)
+            ->get(route('analysis.data-exports.index', [
+                'view' => 'pending',
+                'department_id' => $localAnalysis->department_id,
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('summary.tasks', 1));
+        $this->actingAs($admin)
+            ->get(route('analysis.data-exports.index', [
+                'view' => 'audit',
+                'department_id' => $localAnalysis->department_id,
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('summary.total', 1));
+
+        $pendingWorkbook = $this->worksheetFromResponse($this->actingAs($admin)
+            ->get(route('analysis.data-exports.download', ['view' => 'pending']))
+            ->assertOk()->baseResponse)->toArray();
+        $this->assertTrue(collect($pendingWorkbook)->contains(fn (array $row): bool => in_array($localAnalysis->sample->code, $row, true)));
+        $this->assertFalse(collect($pendingWorkbook)->contains(fn (array $row): bool => in_array($otherAnalysis->sample->code, $row, true)));
+
+        $auditWorkbook = $this->worksheetFromResponse($this->actingAs($admin)
+            ->get(route('analysis.data-exports.download', ['view' => 'audit']))
+            ->assertOk()->baseResponse)->toArray();
+        $this->assertTrue(collect($auditWorkbook)->contains(fn (array $row): bool => (int) $row[0] === $localResult->id));
+        $this->assertFalse(collect($auditWorkbook)->contains(fn (array $row): bool => (int) $row[0] === $otherResult->id));
+
+        $this->actingAs($admin)
+            ->withSession(['active_lab_id' => $otherLab->id])
+            ->get(route('analysis.data-exports.index', ['view' => 'audit']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('summary.total', 1)
+                ->where('records.data.0.result_id', $localResult->id));
+
+        VAPSampleEntry::query()
+            ->where('collection_product_id', $localAnalysis->code->collection_id)
+            ->firstOrFail()
+            ->delete();
+
+        $this->actingAs($admin)
+            ->get(route('analysis.data-exports.index', ['view' => 'pending']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('summary.tasks', 0));
+        $this->actingAs($admin)
+            ->get(route('analysis.data-exports.index', ['view' => 'audit']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('summary.total', 0));
+    }
+
+    public function test_ambiguous_collection_ownership_is_excluded_even_when_foreign_link_is_archived(): void
+    {
+        [$analysis, $parameters] = $this->analysisWithMultipleParameters();
+        $this->createResultAtStage($analysis, $parameters->first(), 'approved');
+        DB::statement('SET CONSTRAINTS sample_entries_collection_product_unique DEFERRED');
+        $foreignLink = VAPSampleEntry::factory()->create([
+            'collection_product_id' => $analysis->code->collection_id,
+        ]);
+        $foreignLink->delete();
+
+        foreach (['pending', 'audit'] as $view) {
+            $this->actingAs($this->verifiedAdmin())
+                ->get(route('analysis.data-exports.index', ['view' => $view]))
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page->has('records.data', 0));
+            $sheet = $this->worksheetFromResponse($this->get(route('analysis.data-exports.download', ['view' => $view]))
+                ->assertOk()->baseResponse);
+            $this->assertSame(1, $sheet->getHighestDataRow());
+        }
+    }
+
     /**
      * @return array{Analysis, Collection<int, Parameter>}
      */
-    private function analysisWithMultipleParameters(): array
+    private function analysisWithMultipleParameters(?VAPLab $lab = null): array
     {
-        $analysis = Analysis::query()
-            ->whereHas('profile.parameters', null, '>=', 2)
-            ->with(['code', 'sample', 'profile.parameters'])
-            ->firstOrFail();
+        $lab ??= $this->lab();
+        $customer = Customer::query()->create(['name' => 'Export customer '.Str::random(8)]);
+        $department = Department::factory()->create();
+        $category = AnalysisCategory::query()->create([
+            'name' => 'Export category '.Str::random(8),
+            'department_id' => $department->id,
+        ]);
+        $profile = Profile::query()->create([
+            'name' => 'Export profile '.Str::random(8),
+            'code' => 'EXPORT-PROFILE-'.Str::upper(Str::random(8)),
+            'category_id' => $category->id,
+        ]);
+        $matrix = Matrix::query()->create(['code' => 'EXPORT-MATRIX-'.Str::upper(Str::random(8))]);
+        $matrix->profiles()->attach($profile);
+        $product = Product::query()->create(['name' => 'Export product '.Str::random(8), 'matrix_id' => $matrix->id]);
+        $parameters = collect([1, 2])->map(function (int $index) use ($profile): Parameter {
+            $parameter = Parameter::query()->create([
+                'name' => 'Export parameter '.$index.' '.Str::random(8),
+                'code' => 'EXPORT-PARAMETER-'.Str::upper(Str::random(8)),
+                'active' => true,
+            ]);
+            $profile->parameters()->attach($parameter->id);
 
-        return [$analysis, $analysis->profile->parameters->values()];
+            return $parameter;
+        });
+        $collectionProduct = CollectionProduct::query()->create(['customer_id' => $customer->id, 'product_id' => $product->id]);
+        $intakePayload = app(PrepareSampleEntryPayload::class)->execute([
+            'lab_id' => $lab->id,
+            'customer_id' => $customer->id,
+            'department_id' => $department->id,
+            'client_submitted_info' => ['request_origin' => 'internal', 'product_id' => $product->id, 'requested_profile_ids' => [$profile->id]],
+        ], null);
+        VAPSampleEntry::factory()->create([
+            ...$intakePayload,
+            'lab_id' => $lab->id,
+            'customer_id' => $customer->id,
+            'department_id' => $department->id,
+            'collection_product_id' => $collectionProduct->id,
+        ]);
+        $code = LabCode::query()->create([
+            'collection_id' => $collectionProduct->id,
+            'cl_month' => now()->format('y/m'),
+        ]);
+        $sample = Sample::query()->create([
+            'cl_id' => $code->id,
+            'sample_month' => now()->format('y/m'),
+        ]);
+        $analysis = Analysis::query()->create([
+            'department_id' => $department->id,
+            'sample_id' => $sample->id,
+            'profile_id' => $profile->id,
+            'type_id' => $category->id,
+            'cl_id' => $code->id,
+            'entry_date' => now()->toDateString(),
+        ])->load(['code', 'sample', 'profile.parameters']);
+
+        return [$analysis, $parameters];
     }
 
     private function createResultAtStage(Analysis $analysis, object $parameter, string $stage, ?string $approvedValue = null): Result
@@ -240,13 +450,24 @@ class LaboratoryDataExportTest extends TestCase
 
     private function verifiedAdmin(): User
     {
+        if ($this->admin instanceof User) {
+            return $this->admin;
+        }
+
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $this->admin = User::factory()->create(['is_active' => true]);
+        $this->admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $this->lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $this->lab->id, 'user_id' => $this->admin->id]);
+
+        return $this->admin;
+    }
+
+    private function lab(): VAPLab
+    {
+        $this->verifiedAdmin();
+
+        return $this->lab;
     }
 }

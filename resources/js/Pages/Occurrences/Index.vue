@@ -31,6 +31,7 @@ const props = defineProps({
 const { hasPermission } = usePermission();
 const selectedAction = ref(null);
 const showActionConfirmation = ref(false);
+const isSubmitting = ref(false);
 
 const pageRecords = computed(() => props.record?.data || []);
 const totalRecords = computed(() => props.record?.meta?.total ?? pageRecords.value.length);
@@ -38,25 +39,25 @@ const metrics = computed(() => [
   {
     label: "Ocorrências",
     value: totalRecords.value,
-    detail: "registos no sistema",
+    detail: "registos neste laboratório",
     icon: DocumentMagnifyingGlassIcon,
   },
   {
     label: "Em tratamento",
     value: pageRecords.value.filter((occurrence) => !occurrence.date_resolved && !occurrence.date_closed).length,
-    detail: "sem data de conclusão",
+    detail: "sem conclusão nesta página",
     icon: ClockIcon,
   },
   {
     label: "Prazo excedido",
     value: pageRecords.value.filter((occurrence) => occurrence.implementation_date_overdue && !occurrence.date_closed).length,
-    detail: "acção requer atenção",
+    detail: "nesta página",
     icon: ExclamationTriangleIcon,
   },
   {
     label: "Encerradas",
     value: pageRecords.value.filter((occurrence) => occurrence.date_closed).length,
-    detail: "com fecho registado",
+    detail: "com fecho nesta página",
     icon: CheckCircleIcon,
   },
 ]);
@@ -75,6 +76,7 @@ const confirmationDialogDescription = computed(() =>
 );
 
 function requestBulkAction(action) {
+  if (isSubmitting.value) return;
   selectedAction.value = action;
   showActionConfirmation.value = true;
 }
@@ -85,6 +87,7 @@ function closeActionConfirmation() {
 }
 
 function executeBulkAction() {
+  if (isSubmitting.value) return;
   const recordIds = pageRecords.value
     .filter((occurrence) => occurrence.selected)
     .map((occurrence) => occurrence.id);
@@ -94,9 +97,13 @@ function executeBulkAction() {
     return;
   }
 
-  router.get(route(`occurrences.${selectedAction.value}`), { recordIds }, {
+  isSubmitting.value = true;
+  router.post(route(`occurrences.${selectedAction.value === 'delete' ? 'destroy' : 'restore'}`), { recordIds }, {
     preserveScroll: true,
-    onFinish: closeActionConfirmation,
+    onFinish: () => {
+      isSubmitting.value = false;
+      closeActionConfirmation();
+    },
   });
 }
 </script>
@@ -163,10 +170,14 @@ function executeBulkAction() {
       :query="query"
       :actions="actions"
       :create-action="false"
+      :filter-options="[{ id: null, label: 'gestlab.filter.filter' }, { id: 'trashed', label: 'gestlab.filter.excluded' }]"
+      :action-methods="{ delete: 'post', restore: 'post' }"
+      :action-processing="isSubmitting"
       @execute-action="requestBulkAction"
     >
       <template #actions="{ id, data }">
         <Link
+          v-if="!data?.deleted"
           :href="route('occurrences.show', { occurrence: id })"
           class="grid h-8 w-8 place-items-center rounded-md text-[var(--ds-text-soft)] transition-colors hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]"
           :class="data?.implementation_date_overdue && !data?.date_closed ? 'text-amber-700 dark:text-amber-300' : ''"
@@ -177,6 +188,8 @@ function executeBulkAction() {
         </Link>
       </template>
     </RecordsTable>
+
+    <p v-if="isSubmitting" role="status" class="ds-copy text-sm">A actualizar ocorrências…</p>
 
     <ConfirmDialog
       v-if="showActionConfirmation"

@@ -1,14 +1,18 @@
 <script setup>
+import ArchiveMutationFeedback from '@/Components/archive-mutation-feedback.vue';
+import { useRecordArchive } from '@/Composables/useRecordArchive';
 import Layout from "@/Shared/Layouts/Layout.vue";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { ref, computed } from "vue";
 import { router } from "@inertiajs/vue3";
+import { usePermission } from '@/Composables/usePermissions';
 import { trans } from 'laravel-vue-i18n';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import ModuleHero from '@/Components/base/ModuleHero.vue'
 
 
+const { hasPermission } = usePermission();
 const props = defineProps({
     record: Object,
     fields: Array,
@@ -38,20 +42,11 @@ const confirmationDialogDescription = computed(() => {
 })
 
 
-let actions = [
-  {
-    id: null,
-    label: 'gestlab.actions.bulk_actions_text'
-  },
-  {
-    id: 'delete',
-    label: 'gestlab.actions.delete'
-  },
-  {
-    id: 'restore',
-    label: 'gestlab.actions.restore'
-  },
-];
+const actions = computed(() => [
+  { id: null, label: 'gestlab.actions.bulk_actions_text' },
+  ...(hasPermission('delete_credit_notes') ? [{ id: 'delete', label: 'gestlab.actions.delete' }] : []),
+  ...(hasPermission('restore_credit_notes') ? [{ id: 'restore', label: 'gestlab.actions.restore' }] : []),
+]);
 
 const handleEdit = () => {
   router.get(route('creditnotes.create'));
@@ -60,44 +55,37 @@ const handleEdit = () => {
 const showDeleteConfirmation = ref(false);
 
 
-  const confirmAction = () => {
-    executeAction(actionId.value);
-  }
+const pendingIDs = ref([]);
+const archive = useRecordArchive({
+  destroyUrl: () => route('creditnotes.destroy'),
+  restoreUrl: () => route('creditnotes.restore'),
+  onSuccess: () => {
+    pendingIDs.value = [];
+    actionId.value = null;
+    props.record.data.forEach(record => { record.selected = false; });
+  },
+});
 
-  const executeAction = (actionId) => {
-  const recordIds = props.record.data.filter(record => record.selected).map(record => record.id);
+function requestArchive(operation) {
+  if (archive.processing.value || !['delete', 'restore'].includes(operation)
+    || !hasPermission((operation === 'delete' ? 'delete_' : 'restore_') + 'credit_notes')) return;
+  const ids = props.record.data.filter(record => record.selected).map(record => record.id);
+  if (!ids.length) return;
+  pendingIDs.value = [...ids];
+  actionId.value = operation;
+  showDeleteConfirmation.value = true;
+}
 
-  if(!recordIds.length) return;
+function archiveRecord(operation, ids) {
+  if (!hasPermission((operation === 'delete' ? 'delete_' : 'restore_') + 'credit_notes')) return;
+  archive.submit(operation, ids);
+}
 
-  switch (actionId) {
-    case 'delete':
-      router.get(`/creditnotes/destroy`, {
-          recordIds: recordIds
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId.value = null;
-        }
-      });
-      showDeleteConfirmation.value = false;
-    break;  
-
-    case 'restore':
-        router.get(`/creditnotes/restore`, {
-          recordIds: recordIds
-        }, {
-            preserveState:false,
-            preserveScroll: true,
-            onSuccess: () => {
-                showDeleteConfirmation.value = false;
-                actionId.value = null;
-            }
-        });
-        showDeleteConfirmation.value = false;
-  }
-}  
+function confirmAction() {
+  if (archive.processing.value) return;
+  showDeleteConfirmation.value = false;
+  archiveRecord(actionId.value, pendingIDs.value);
+}
 </script>
 <template>
 <div class="space-y-6" :class="commercialDocumentThemeClasses">
@@ -126,7 +114,8 @@ const showDeleteConfirmation = ref(false);
   </div>
 </ModuleHero>
 
-<records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="handleEdit"/>
+<ArchiveMutationFeedback :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="router.reload()" />
+<records-table :action-processing="archive.processing.value" :archive-handler="archiveRecord" :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="requestArchive" @create-record="handleEdit"/>
 
 <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" :confirm="trans('gestlab.general.buttons.yes')" :cancel="trans('gestlab.general.buttons.no')" />
 </div>

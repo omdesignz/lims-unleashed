@@ -178,10 +178,10 @@
                     <Link v-if="canRevise(proposal)" :href="route('vap-proposals.edit', proposal.id)" class="ds-table-action px-2" :title="$t('gestlab.general.labels.vap_proposals.row.revise')">
                       <PencilSquareIcon class="h-4 w-4" />
                     </Link>
-                    <a v-if="proposal.file_path" :href="route('vap-proposals.download.pdf', proposal.id)" class="ds-table-action px-2" :title="$t('gestlab.general.labels.vap_proposals.row.download_pdf')">
+                    <a v-if="proposal.has_document" :href="route('vap-proposals.download.pdf', proposal.id)" class="ds-table-action px-2" :title="$t('gestlab.general.labels.vap_proposals.row.download_pdf')">
                       <ArrowDownTrayIcon class="h-4 w-4" />
                     </a>
-                    <button v-if="canDelete(proposal)" type="button" class="ds-table-action ds-table-action-danger px-2" :title="$t('gestlab.general.labels.vap_proposals.row.delete')" @click="confirmDelete(proposal)">
+                    <button v-if="canDelete(proposal)" type="button" class="ds-table-action ds-table-action-danger px-2" :disabled="archive.processing.value" :aria-label="$t('gestlab.general.labels.vap_proposals.row.delete')" :title="$t('gestlab.general.labels.vap_proposals.row.delete')" @click="confirmDelete(proposal)">
                       <TrashIcon class="h-4 w-4" />
                     </button>
                   </div>
@@ -220,13 +220,20 @@
       </aside>
     </div>
 
-    <ConfirmationModal :show="showDeleteModal" @close="showDeleteModal = false" @confirm="deleteProposal">
+    <ArchiveMutationFeedback :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="router.reload()" />
+    <ConfirmationModal :show="showDeleteModal" :closeable="!archive.processing.value" @close="showDeleteModal = false">
       <template #title>{{ $t('gestlab.general.labels.vap_proposals.delete.title') }}</template>
       <template #content>
         <div class="space-y-3 text-sm font-medium text-[var(--ds-text-muted)]">
           <p>{{ $t('gestlab.general.labels.vap_proposals.delete.message', { number: selectedProposal?.proposal_number }) }}</p>
           <p class="font-bold text-red-600 dark:text-red-300">{{ $t('gestlab.general.labels.vap_proposals.delete.warning') }}</p>
         </div>
+      </template>
+      <template #footer>
+        <button type="button" class="ds-button ds-button-secondary" :disabled="archive.processing.value" @click="showDeleteModal = false">Cancelar</button>
+        <button type="button" class="ds-button ds-button-danger" :disabled="archive.processing.value || !selectedProposal" @click="deleteProposal">
+          {{ archive.processing.value ? 'A arquivar…' : 'Arquivar proposta' }}
+        </button>
       </template>
     </ConfirmationModal>
   </div>
@@ -257,6 +264,8 @@ import debounce from 'lodash/debounce'
 import { trans } from 'laravel-vue-i18n'
 import Pagination from '@/Components/Pagination.vue'
 import ConfirmationModal from '@/Components/dialog-modal.vue'
+import ArchiveMutationFeedback from '@/Components/archive-mutation-feedback.vue'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
 
 const props = defineProps({
   proposals: {
@@ -286,6 +295,13 @@ const statusFilter = ref(props.filters.status || 'all')
 const period = ref(String(props.filters.period || 30))
 const showDeleteModal = ref(false)
 const selectedProposal = ref(null)
+const archive = useRecordArchive({
+  destroyUrl: ids => route('vap-proposals.destroy', ids[0]),
+  onSuccess: () => {
+    showDeleteModal.value = false
+    selectedProposal.value = null
+  },
+})
 const isDark = ref(false)
 
 let darkModeObserver = null
@@ -446,21 +462,19 @@ const statusBadgeClass = (status) => {
   return classes[status] || classes.PENDING
 }
 
-const canRevise = (proposal) => ['PENDING', 'SENT', 'VIEWED', 'REJECTED'].includes(proposal.status)
+const canRevise = (proposal) => proposal.can_revise === true
 
-const canDelete = (proposal) => ['PENDING', 'REJECTED'].includes(proposal.status)
+const canDelete = (proposal) => proposal.can_archive === true
 
 const confirmDelete = (proposal) => {
+  if (archive.processing.value) return
   selectedProposal.value = proposal
   showDeleteModal.value = true
 }
 
 const deleteProposal = () => {
-  router.delete(route('vap-proposals.destroy', selectedProposal.value.id), {
-    onSuccess: () => {
-      showDeleteModal.value = false
-      selectedProposal.value = null
-    },
-  })
+  if (!selectedProposal.value || archive.processing.value) return
+  showDeleteModal.value = false
+  archive.submit('delete', [selectedProposal.value.id])
 }
 </script>

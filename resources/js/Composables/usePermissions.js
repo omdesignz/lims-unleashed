@@ -19,7 +19,7 @@ export function usePermission()
     };
 
     const hasRole = (name) => normalizeNames(usePage().props?.auth?.user?.roles).includes(name);
-    const hasPermission = (name) => normalizeNames(usePage().props?.auth?.user?.permissions).includes(name);
+    const hasPermission = (name) => hasRole('admin') || normalizeNames(usePage().props?.auth?.user?.permissions).includes(name);
 
     return {hasRole, hasPermission};
 }

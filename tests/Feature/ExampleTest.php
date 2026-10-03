@@ -14,10 +14,10 @@ class ExampleTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_the_public_components_page_loads_successfully(): void
+    public function test_obsolete_public_components_page_is_not_exposed(): void
     {
         $response = $this->get('/components');
 
-        $response->assertOk();
+        $response->assertNotFound();
     }
 }

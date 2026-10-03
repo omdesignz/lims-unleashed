@@ -7,7 +7,7 @@
             <span class="ds-kicker">Controlo de reagentes</span>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-release" />
-              Registado
+              {{ consumption.reversal ? 'Revertido' : 'Registado' }}
             </span>
             <span class="ds-chip">#{{ consumption.id }}</span>
           </div>
@@ -22,12 +22,18 @@
             <ArrowLeftIcon class="h-4 w-4" />
             Voltar
           </button>
-          <button type="button" class="ds-button ds-button-danger" @click="showDeleteConfirmation = true">
-            <TrashIcon class="h-4 w-4" />
-            Eliminar
+          <button v-if="hasPermission('delete_reagent_consumption') && !consumption.reversal" type="button" class="ds-button ds-button-danger" :disabled="reversal.processing.value" @click="reversal.open(consumption)">
+            <ArrowUturnLeftIcon class="h-4 w-4" />
+            Reverter consumo
           </button>
         </div>
       </div>
+
+      <p v-if="consumption.reversal" class="ds-copy px-5 py-4 text-sm">
+        Existências repostas em {{ formatDateTime(consumption.reversal.reversed_at) }}
+        por {{ consumption.reversal.user?.name || 'operador registado' }}.
+        Consumo e movimentos originais preservados.
+      </p>
 
       <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] md:grid-cols-4 md:divide-y-0">
         <div v-for="metric in summaryCards" :key="metric.label" class="px-5 py-4">
@@ -114,10 +120,11 @@
         <section class="ds-command-surface p-5">
           <h2 class="ds-heading text-base">Acções</h2>
           <div class="mt-4 grid gap-2">
-            <Link :href="route('vap-inventory.items.show', consumption.reagent_id)" class="ds-button ds-button-secondary w-full">
+            <Link v-if="consumption.item && !consumption.item.is_archived" :href="route('vap-inventory.items.show', consumption.reagent_id)" class="ds-button ds-button-secondary w-full">
               <PencilIcon class="h-4 w-4" />
               Ver reagente
             </Link>
+            <p v-else class="text-sm text-[color:var(--ds-text-soft)]">Reagente arquivado. Identificação preservada neste registo.</p>
             <button type="button" class="ds-button ds-button-secondary w-full" @click="printConsumption">
               <PrinterIcon class="h-4 w-4" />
               Imprimir registo
@@ -171,15 +178,18 @@
     </section>
 
     <confirm-dialog
-      v-if="showDeleteConfirmation"
-      title="Eliminar registo de consumo"
-  description="Esta acção restaura as existências associadas ao consumo e remove o registo do histórico operacional visível."
-      confirm="Eliminar registo"
+      v-if="reversal.pending.value"
+      title="Reverter consumo"
+      description="Esta acção repõe as existências uma única vez. O consumo original e o movimento de reposição ficam preservados."
+      :confirm="reversal.processing.value ? 'A reverter…' : 'Reverter consumo'"
       cancel="Manter registo"
       variant="danger"
-      @confirmed="confirmDeleteConsumption"
-      @canceled="showDeleteConfirmation = false"
+      keep-open-on-confirm
+      :disabled="reversal.processing.value"
+      @confirmed="reversal.confirm"
+      @canceled="reversal.close"
     >
+      <p v-if="reversal.error.value" role="alert" class="mt-3 text-sm text-red-700 dark:text-red-300">{{ reversal.error.value }}</p>
       <div class="mt-4 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] p-4 text-left">
         <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ consumption.reagent_name }}</p>
         <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
@@ -192,6 +202,8 @@
 
 <script setup>
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import { useConsumptionReversal } from '@/Composables/useConsumptionReversal'
+import { usePermission } from '@/Composables/usePermissions'
 import { Link, router } from '@inertiajs/vue3'
 import {
   ArrowLeftIcon,
@@ -205,10 +217,10 @@ import {
   InformationCircleIcon,
   PencilIcon,
   PrinterIcon,
-  TrashIcon,
+  ArrowUturnLeftIcon,
   UserIcon,
 } from '@heroicons/vue/24/outline'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps({
   consumption: {
@@ -218,9 +230,13 @@ const props = defineProps({
 })
 
 const quantityFormatter = new Intl.NumberFormat('pt-PT', {
-  maximumFractionDigits: 2,
+  maximumFractionDigits: 4,
 })
-const showDeleteConfirmation = ref(false)
+const { hasPermission } = usePermission()
+const reversal = useConsumptionReversal({
+  canReverse: () => hasPermission('delete_reagent_consumption'),
+  reverseUrl: id => route('vap-inventory.reagents.consumption.reverse', id),
+})
 
 const isReagentExpired = computed(() => {
   if (!props.consumption.item?.reagent_expiry_date) {
@@ -407,17 +423,6 @@ function getCurrentStockInWarehouse() {
   const inventory = props.consumption.item.inventory.find((stockItem) => stockItem.warehouse_id === props.consumption.warehouse_id)
 
   return inventory?.qty_available ?? null
-}
-
-function confirmDeleteConsumption() {
-  showDeleteConfirmation.value = false
-
-  router.delete(route('vap-inventory.reagents.consumption.destroy', props.consumption.id), {
-    preserveScroll: true,
-    onSuccess: () => {
-      router.visit(route('vap-inventory.reagents.consumption.index'))
-    },
-  })
 }
 
 function printConsumption() {

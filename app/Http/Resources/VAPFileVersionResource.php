@@ -18,7 +18,6 @@ class VAPFileVersionResource extends JsonResource
             'id' => $this->id,
             'file_id' => $this->file_id,
             'revision_code' => $this->revision_code,
-            'content' => $this->content,
             'mime_type' => $this->mime_type,
             'size' => $this->size,
             'checksum' => $this->checksum,

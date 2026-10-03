@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
@@ -14,6 +15,12 @@ class WarehousePasswordRequest extends FormRequest
      */
     public function authorize(): bool
     {
+        if (! $this->user()?->can('edit_warehouses')) {
+            return false;
+        }
+
+        app(SampleLaboratoryAccess::class)->activeLabId();
+
         return true;
     }
 

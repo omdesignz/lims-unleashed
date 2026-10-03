@@ -239,7 +239,7 @@
                       </label>
                       <label class="ds-field-group">
                         <span class="ds-field-label">Quantidade recebida <span class="ds-field-required">*</span></span>
-                        <BaseInput v-model="receiveForm.actual_qty" type="number" min="1" :max="transfer.qty" class="ds-field" required />
+                        <BaseInput v-model="receiveForm.actual_qty" type="number" min="0.0001" step="0.0001" :max="transfer.qty" class="ds-field" required />
                         <span class="ds-field-hint">Máximo previsto: {{ transfer.qty }}</span>
                         <span v-if="receiveForm.errors.actual_qty" class="ds-field-error">{{ receiveForm.errors.actual_qty }}</span>
                       </label>
@@ -522,7 +522,7 @@ const quantityFlowChartOptions = computed(() => ({
     axisTicks: { color: chartGridColor.value },
     labels: { style: { colors: chartTextColor.value, fontSize: '12px' } },
   },
-  yaxis: { labels: { formatter: (value) => Number(value || 0).toFixed(0), style: { colors: chartTextColor.value } } },
+  yaxis: { labels: { formatter: (value) => Number(value || 0).toLocaleString('pt-AO', { maximumFractionDigits: 4 }), style: { colors: chartTextColor.value } } },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
   tooltip: { theme: chartTooltipTheme.value },
   legend: { show: false },
@@ -604,7 +604,7 @@ function submitReceive() {
 
   receiveForm.transform((data) => ({
     ...data,
-    actual_qty: Number(data.actual_qty),
+    actual_qty: data.actual_qty,
   })).post(route('vap-inventory.transfers.receive', props.transfer.id), {
     preserveScroll: true,
     onSuccess: closeReceiveModal,

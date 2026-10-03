@@ -7,14 +7,23 @@ use App\Http\Requests\ProficiencyTestRequest;
 use App\Http\Resources\ProficiencyTestResource;
 use App\Imports\ProficiencyTestResultsImport;
 use App\Models\ProficiencyTest;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\ProficiencyTestNotifier;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Inertia\Response;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ProficiencyTestController extends Controller
 {
-    public function __construct(private ProficiencyTestNotifier $notifier) {}
+    public function __construct(
+        private readonly ProficiencyTestNotifier $notifier,
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+    ) {}
 
     private function can(string $permission): bool
     {
@@ -24,13 +33,13 @@ class ProficiencyTestController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): Response
     {
         abort_if(! $this->can('view_proficiency_tests'), 403, '');
 
         return Inertia::render('ProficiencyTest/Index', [
             'record' => ProficiencyTestResource::collection(
-                ProficiencyTest::query()
+                $this->labTests()
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where(function ($searchQuery) use ($search) {
                             $searchQuery
@@ -41,7 +50,7 @@ class ProficiencyTestController extends Controller
                     })
                     ->when(request()->input('filter'), function ($query, $filter) {
                         if ($filter === 'trashed') {
-                            $query->withTrashed();
+                            $query->onlyTrashed();
                         }
                     })
                     ->when(request()->input('status'), function ($query, $status) {
@@ -80,15 +89,22 @@ class ProficiencyTestController extends Controller
             'schemeOptions' => ['proficiency', 'interlaboratory'],
             'roleOptions' => ['participant', 'organizer'],
             'charts' => $this->charts(),
+            'permissions' => [
+                'add' => $this->can('add_proficiency_tests'),
+                'edit' => $this->can('edit_proficiency_tests'),
+                'delete' => $this->can('delete_proficiency_tests'),
+                'restore' => $this->can('restore_proficiency_tests'),
+            ],
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): RedirectResponse
     {
         abort_if(! $this->can('add_proficiency_tests'), 403, '');
+        $this->laboratoryAccess->activeLabId();
 
         return redirect()->route('proficiency_tests.index');
     }
@@ -96,11 +112,14 @@ class ProficiencyTestController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ProficiencyTestRequest $request)
+    public function store(ProficiencyTestRequest $request): RedirectResponse
     {
         abort_if(! $this->can('add_proficiency_tests'), 403, '');
 
-        $test = new ProficiencyTest($request->validated());
+        $test = new ProficiencyTest([
+            ...$request->validated(),
+            'lab_id' => $this->laboratoryAccess->activeLabId(),
+        ]);
         $test->performance_summary = $test->calculatePerformanceSummary();
         $test->save();
 
@@ -117,9 +136,10 @@ class ProficiencyTestController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(ProficiencyTest $test)
+    public function show(ProficiencyTest $test): Response
     {
         abort_if(! $this->can('view_proficiency_tests'), 403, '');
+        $this->assertOwnsTest($test);
 
         return Inertia::render('ProficiencyTest/Show', [
             'test' => ProficiencyTestResource::make($test)->resolve(),
@@ -127,15 +147,17 @@ class ProficiencyTestController extends Controller
             'statusOptions' => ['planned', 'in_progress', 'completed', 'reviewed', 'closed'],
             'schemeOptions' => ['proficiency', 'interlaboratory'],
             'roleOptions' => ['participant', 'organizer'],
+            'canEdit' => $this->can('edit_proficiency_tests'),
         ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(ProficiencyTest $test): RedirectResponse
     {
         abort_if(! $this->can('edit_proficiency_tests'), 403, '');
+        $this->assertOwnsTest($test);
 
         return redirect()->route('proficiency_tests.index');
     }
@@ -143,19 +165,19 @@ class ProficiencyTestController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ProficiencyTestRequest $request, $id)
+    public function update(ProficiencyTestRequest $request, ProficiencyTest $test): RedirectResponse
     {
         abort_if(! $this->can('edit_proficiency_tests'), 403, '');
+        $this->assertOwnsTest($test);
 
-        $record = ProficiencyTest::findOrFail($id);
-        $before = $record->only(['status', 'outcome']);
+        $before = $test->only(['status', 'outcome']);
         $validated = $request->validated();
 
-        $record->fill($validated);
-        $record->performance_summary = $record->calculatePerformanceSummary();
-        $record->save();
+        $test->fill($validated);
+        $test->performance_summary = $test->calculatePerformanceSummary();
+        $test->save();
 
-        $this->notifier->notifyUpdated($record->refresh(), $before);
+        $this->notifier->notifyUpdated($test->refresh(), $before);
 
         return redirect()->back()->with([
             'toast' => [
@@ -165,9 +187,10 @@ class ProficiencyTestController extends Controller
         ]);
     }
 
-    public function updateResults(Request $request, ProficiencyTest $test)
+    public function updateResults(Request $request, ProficiencyTest $test): RedirectResponse
     {
         abort_if(! $this->can('edit_proficiency_tests'), 403, '');
+        $this->assertOwnsTest($test);
 
         $validated = $request->validate([
             'participants' => ['nullable', 'array'],
@@ -213,9 +236,10 @@ class ProficiencyTestController extends Controller
         ]);
     }
 
-    public function downloadResultsTemplate(ProficiencyTest $test)
+    public function downloadResultsTemplate(ProficiencyTest $test): BinaryFileResponse
     {
         abort_if(! $this->can('view_proficiency_tests'), 403, '');
+        $this->assertOwnsTest($test);
 
         $fileName = str($test->round_reference ?: $test->name)
             ->slug()
@@ -225,9 +249,10 @@ class ProficiencyTestController extends Controller
         return Excel::download(new ProficiencyTestResultsTemplateExport($test), $fileName);
     }
 
-    public function importResults(Request $request, ProficiencyTest $test)
+    public function importResults(Request $request, ProficiencyTest $test): RedirectResponse
     {
         abort_if(! $this->can('edit_proficiency_tests'), 403, '');
+        $this->assertOwnsTest($test);
 
         $validated = $request->validate([
             'file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:10240'],
@@ -248,17 +273,10 @@ class ProficiencyTestController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy()
+    public function destroy(Request $request): RedirectResponse
     {
         abort_if(! $this->can('delete_proficiency_tests'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (ProficiencyTest::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $this->mutateRecords($request, restore: false);
 
         return redirect()->back()->with([
             'toast' => [
@@ -271,17 +289,10 @@ class ProficiencyTestController extends Controller
     /**
      * restore the specified resource from storage.
      */
-    public function restore()
+    public function restore(Request $request): RedirectResponse
     {
         abort_if(! $this->can('restore_proficiency_tests'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (ProficiencyTest::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $this->mutateRecords($request, restore: true);
 
         return redirect()->back()->with([
             'toast' => [
@@ -293,17 +304,17 @@ class ProficiencyTestController extends Controller
 
     private function charts(): array
     {
-        $status = ProficiencyTest::query()
+        $status = $this->labTests()
             ->selectRaw('status, count(*) as aggregate')
             ->groupBy('status')
             ->pluck('aggregate', 'status');
 
-        $outcome = ProficiencyTest::query()
+        $outcome = $this->labTests()
             ->selectRaw('outcome, count(*) as aggregate')
             ->groupBy('outcome')
             ->pluck('aggregate', 'outcome');
 
-        $roles = ProficiencyTest::query()
+        $roles = $this->labTests()
             ->selectRaw('role, count(*) as aggregate')
             ->groupBy('role')
             ->pluck('aggregate', 'role');
@@ -322,6 +333,43 @@ class ProficiencyTestController extends Controller
                 'series' => collect(['participant', 'organizer'])->map(fn ($key) => (int) ($roles[$key] ?? 0))->values()->all(),
             ],
         ];
+    }
+
+    /** @return Builder<ProficiencyTest> */
+    private function labTests(): Builder
+    {
+        return ProficiencyTest::query()->where('lab_id', $this->laboratoryAccess->activeLabId());
+    }
+
+    private function assertOwnsTest(ProficiencyTest $test): void
+    {
+        abort_unless((int) $test->lab_id === $this->laboratoryAccess->activeLabId(), 404);
+    }
+
+    private function mutateRecords(Request $request, bool $restore): void
+    {
+        $validated = $request->validate([
+            'recordIds' => ['required', 'array', 'min:1', 'max:100'],
+            'recordIds.*' => ['required', 'integer', 'distinct'],
+        ]);
+
+        DB::transaction(function () use ($validated, $restore): void {
+            $records = $this->labTests()
+                ->withTrashed()
+                ->whereKey($validated['recordIds'])
+                ->lockForUpdate()
+                ->get();
+
+            abort_unless($records->count() === count($validated['recordIds']), 404);
+
+            foreach ($records as $record) {
+                if ($restore) {
+                    $record->restore();
+                } else {
+                    $record->delete();
+                }
+            }
+        });
     }
 
     private function testCharts(ProficiencyTest $test): array

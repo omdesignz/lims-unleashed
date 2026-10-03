@@ -4,20 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\Complaint;
 use App\Models\EnvironmentalCondition;
+use App\Models\InventorySupplierAssessment;
 use App\Models\ManagementReview;
 use App\Models\PersonnelQualification;
 use App\Models\ResponsibilityMatrixEntry;
 use App\Models\UncertaintySource;
 use App\Models\VAPFile;
 use App\Models\VAPNonConformity;
-use App\Models\InventorySupplierAssessment;
+use App\Services\SampleLaboratoryAccess;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class QMSController extends Controller
 {
-    public function index()
+    public function __construct(private readonly SampleLaboratoryAccess $access) {}
+
+    public function index(): Response
     {
+        $labId = $this->access->activeLabId();
         $qualifications = PersonnelQualification::query()
+            ->where('lab_id', $labId)
             ->with(['user:id,name', 'department:id,name', 'qualifiedBy:id,name'])
             ->where('is_active', true)
             ->orderBy('authorized_until')
@@ -66,6 +72,7 @@ class QMSController extends Controller
             ->values();
 
         $dueDocumentReviews = VAPFile::query()
+            ->where('lab_id', $labId)
             ->with(['owner:id,name'])
             ->whereNotNull('review_due_at')
             ->whereDate('review_due_at', '<=', now()->addDays(45))
@@ -74,6 +81,7 @@ class QMSController extends Controller
             ->get(['id', 'name', 'owner_id', 'review_due_at', 'status']);
 
         $dueSupplierAssessments = InventorySupplierAssessment::query()
+            ->where('lab_id', $labId)
             ->with(['supplier:id,name', 'department:id,name'])
             ->whereNotNull('next_review_at')
             ->whereDate('next_review_at', '<=', now()->addDays(45))
@@ -82,6 +90,7 @@ class QMSController extends Controller
             ->get();
 
         $receivingNonConformities = VAPNonConformity::query()
+            ->where('lab_id', $labId)
             ->with(['department:id,name', 'reportedByUser:id,name'])
             ->where('occurrence_area', 'procurement_receipt')
             ->whereNotIn('status', ['closed', 'resolved'])
@@ -91,21 +100,21 @@ class QMSController extends Controller
 
         return Inertia::render('QMS/Index', [
             'summary' => [
-                'open_complaints' => Complaint::query()->whereNotIn('status', ['resolved', 'closed'])->count(),
-                'open_non_conformities' => VAPNonConformity::query()->whereNotIn('status', ['closed', 'resolved'])->count(),
-                'scheduled_management_reviews' => ManagementReview::query()->whereDate('review_date', '>=', now()->toDateString())->count(),
+                'open_complaints' => Complaint::query()->where('lab_id', $labId)->whereNotIn('status', ['resolved', 'closed'])->count(),
+                'open_non_conformities' => VAPNonConformity::query()->where('lab_id', $labId)->whereNotIn('status', ['closed', 'resolved'])->count(),
+                'scheduled_management_reviews' => ManagementReview::query()->where('lab_id', $labId)->whereDate('review_date', '>=', now()->toDateString())->count(),
                 'expiring_qualifications' => $expiringQualifications->count(),
                 'expired_qualifications' => $qualificationMonitoring->where('monitoring_status', 'expired')->count(),
                 'renewal_ready_qualifications' => $qualificationMonitoring->where('renewal_readiness', 'ready_for_review')->count(),
                 'qualifications_missing_evidence' => $qualificationMonitoring->where('renewal_readiness', 'missing_evidence')->count(),
                 'qualification_followups_due' => $qualificationMonitoring->whereIn('follow_up_state', ['overdue', 'due_soon'])->count(),
-                'responsibility_assignments' => ResponsibilityMatrixEntry::query()->where('is_active', true)->count(),
-                'uncertainty_sources' => UncertaintySource::query()->where('is_active', true)->count(),
+                'responsibility_assignments' => ResponsibilityMatrixEntry::query()->where('lab_id', $labId)->where('is_active', true)->count(),
+                'uncertainty_sources' => UncertaintySource::query()->where('lab_id', $labId)->where('is_active', true)->count(),
                 'supplier_assessments_due' => $dueSupplierAssessments->count(),
-                'suppliers_high_risk' => InventorySupplierAssessment::query()->whereIn('risk_level', ['high', 'critical'])->count(),
+                'suppliers_high_risk' => InventorySupplierAssessment::query()->where('lab_id', $labId)->whereIn('risk_level', ['high', 'critical'])->count(),
                 'receiving_non_conformities_open' => $receivingNonConformities->count(),
                 'documents_due_review' => $dueDocumentReviews->count(),
-                'environmental_entries_today' => EnvironmentalCondition::query()->whereDate('recorded_at', today())->count(),
+                'environmental_entries_today' => EnvironmentalCondition::query()->where('lab_id', $labId)->whereDate('recorded_at', today())->count(),
             ],
             'expiringQualifications' => $expiringQualifications,
             'qualificationFollowUps' => $followUpQueue,

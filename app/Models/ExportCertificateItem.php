@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToFinancialLaboratory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ExportCertificateItem extends Model
 {
+    use BelongsToFinancialLaboratory;
     use HasFactory, SoftDeletes;
 
     public const MENU_NAME = 'export_certificate_items';
@@ -24,15 +26,16 @@ class ExportCertificateItem extends Model
     ];
 
     protected $table = 'export_certificate_items';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
-     /**
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
      */
     protected $casts = [
-        
+
     ];
 
     /**
@@ -40,12 +43,11 @@ class ExportCertificateItem extends Model
      *
      * @return Relationship
      */
-
     public function certificate()
     {
         return $this->belongsTo(ExportCertificate::class, 'certificate_id');
-    } 
-    
+    }
+
     public function product()
     {
         return $this->belongsTo(PhytosanitaryProduct::class, 'product_id');

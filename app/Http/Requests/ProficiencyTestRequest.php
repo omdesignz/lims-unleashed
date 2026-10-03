@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ProficiencyTest;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -14,7 +16,16 @@ class ProficiencyTestRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $test = $this->route('test');
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
+
+        if ($test instanceof ProficiencyTest && (int) $test->lab_id !== $labId) {
+            abort(404);
+        }
+
+        $permission = $this->isMethod('post') ? 'add_proficiency_tests' : 'edit_proficiency_tests';
+
+        return $this->user()->hasRole('admin') || $this->user()->can($permission);
     }
 
     /**
@@ -24,10 +35,13 @@ class ProficiencyTestRequest extends FormRequest
      */
     public function rules(): array
     {
-        $testId = $this->route('proficiency_test') ?? $this->route('test');
+        $test = $this->route('test');
+        $testId = $test instanceof ProficiencyTest ? $test->getKey() : null;
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
 
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('proficiency_tests', 'name')->ignore($testId)],
+            'lab_id' => ['prohibited'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('proficiency_tests', 'name')->where('lab_id', $labId)->ignore($testId)],
             'scheme_type' => ['required', Rule::in(['proficiency', 'interlaboratory'])],
             'role' => ['required', Rule::in(['participant', 'organizer'])],
             'provider_name' => ['required', 'string', 'max:255'],

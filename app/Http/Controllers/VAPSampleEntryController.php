@@ -4,9 +4,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\PrepareSampleEntryPayload;
+use App\Actions\UpdateSampleEntry;
 use App\Exports\VAPSampleEntriesTemplateExport;
 use App\Http\Requests\VAP\StoreSampleEntryRequest;
 use App\Http\Requests\VAP\UpdateInternalQualityControlDecisionRequest;
+use App\Http\Resources\SampleIntakeResource;
 use App\Imports\VAPSampleEntriesImport;
 use App\Models\Analysis;
 use App\Models\Customer;
@@ -23,37 +26,46 @@ use App\Models\VAPLab;
 use App\Models\VAPSampleDiscard;
 use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
+use App\Services\LaboratoryWorkflowMutationAccess;
+use App\Services\SampleLaboratoryAccess;
 use App\Settings\GeneralSettings;
 use App\Support\LaboratoryWorkflowNotifier;
 use App\Support\NotificationTemplateService;
 use App\Support\PdfResponse;
 use App\Support\PersonnelQualificationGate;
 use App\Support\SampleEntryCollectionFlowService;
+use App\Support\SampleEntryValidation;
 use Carbon\Carbon;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use PDF;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class VAPSampleEntryController extends Controller
 {
-    public function __construct(private readonly NotificationTemplateService $notificationTemplates) {}
+    public function __construct(
+        private readonly NotificationTemplateService $notificationTemplates,
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+        private readonly PrepareSampleEntryPayload $preparePayload,
+        private readonly SampleEntryValidation $sampleEntryValidation,
+    ) {}
 
     private function buildSampleIntakeTrendChart(): array
     {
         $window = collect(range(6, 0))
             ->map(fn (int $daysAgo) => now()->copy()->startOfDay()->subDays($daysAgo));
 
-        $dailyCounts = VAPSampleEntry::query()
+        $dailyCounts = $this->laboratoryAccess->samples()
             ->selectRaw('DATE(created_at) as day_key, COUNT(*) as aggregate')
             ->whereDate('created_at', '>=', $window->first()->toDateString())
             ->groupBy('day_key')
@@ -74,7 +86,7 @@ class VAPSampleEntryController extends Controller
 
     private function buildSampleLifecycleChart(): array
     {
-        $statusCounts = VAPSampleEntry::query()
+        $statusCounts = $this->laboratoryAccess->samples()
             ->selectRaw('status, COUNT(*) as aggregate')
             ->groupBy('status')
             ->pluck('aggregate', 'status');
@@ -99,7 +111,7 @@ class VAPSampleEntryController extends Controller
 
     private function buildSampleRetentionChart(): array
     {
-        $retentionCounts = VAPSampleEntry::query()
+        $retentionCounts = $this->laboratoryAccess->samples()
             ->selectRaw('retention_status, COUNT(*) as aggregate')
             ->groupBy('retention_status')
             ->pluck('aggregate', 'retention_status');
@@ -115,7 +127,7 @@ class VAPSampleEntryController extends Controller
                 (int) ($retentionCounts['active'] ?? 0),
                 (int) ($retentionCounts['due_soon'] ?? 0),
                 (int) ($retentionCounts['overdue'] ?? 0),
-                (int) VAPSampleDiscard::count(),
+                (int) $this->laboratoryAccess->discards()->count(),
             ],
         ];
     }
@@ -181,17 +193,9 @@ class VAPSampleEntryController extends Controller
                 ->find($request->integer('proposal_id'))
             : null;
 
-        // $stats = [
-        //     'total_samples' => VAPSampleEntry::count(),
-        //     'pending_analysis' => VAPSampleEntry::pending()->count(),
-        //     'completed_analysis' => VAPSampleEntry::completed()->count(),
-        //     'total_discarded' => VAPSampleEntry::onlyTrashed()->count(),
-        //     'discarded_this_month' => VAPSampleEntry::onlyTrashed()
-        //         ->whereMonth('deleted_at', now()->month)
-        //         ->count(),
-        // ];
-
-        $discardableSamples = VAPSampleEntry::discardable()
+        $discardableSamples = $this->laboratoryAccess->samples()->discardable()
+            ->whereDoesntHave('discards')
+            ->where(fn (Builder $query) => $query->whereNull('retention_status')->orWhere('retention_status', '!=', 'discarded'))
             ->with(['customer', 'lab', 'department'])
             ->get()
             ->map(function ($sample) {
@@ -208,7 +212,7 @@ class VAPSampleEntryController extends Controller
                 ];
             });
 
-        $recentDiscards = VAPSampleDiscard::with(['sample', 'discardedBy'])
+        $recentDiscards = $this->laboratoryAccess->discards()->with(['sample' => fn (BelongsTo $query) => $query->withTrashed(), 'discardedBy'])
             ->recent(7)
             ->orderBy('created_at', 'desc')
             ->get()
@@ -225,69 +229,30 @@ class VAPSampleEntryController extends Controller
             });
 
         $stats = [
-            'total_samples' => VAPSampleEntry::count(),
-            'pending_analysis' => VAPSampleEntry::pending()->count(),
-            'in_progress' => VAPSampleEntry::inProgress()->count(),
-            'completed_analysis' => VAPSampleEntry::completed()->count(),
-            'total_discarded' => VAPSampleDiscard::count(),
-            'discarded_this_month' => VAPSampleDiscard::whereMonth('created_at', now()->month)->count(),
-            'today_samples' => VAPSampleEntry::whereDate('created_at', today())->count(),
-            'week_samples' => VAPSampleEntry::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
-            'internal_qc_samples' => VAPSampleEntry::query()->internalRawMaterialQualityControl()->count(),
-            'raw_material_samples' => VAPSampleEntry::query()
+            'total_samples' => $this->laboratoryAccess->samples()->count(),
+            'pending_analysis' => $this->laboratoryAccess->samples()->pending()->count(),
+            'in_progress' => $this->laboratoryAccess->samples()->inProgress()->count(),
+            'completed_analysis' => $this->laboratoryAccess->samples()->completed()->count(),
+            'total_discarded' => $this->laboratoryAccess->discards()->count(),
+            'discarded_this_month' => $this->laboratoryAccess->discards()->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+            'today_samples' => $this->laboratoryAccess->samples()->whereDate('created_at', today())->count(),
+            'week_samples' => $this->laboratoryAccess->samples()->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            'internal_qc_samples' => $this->laboratoryAccess->samples()->internalRawMaterialQualityControl()->count(),
+            'raw_material_samples' => $this->laboratoryAccess->samples()
                 ->whereIn('sample_type', ['MATERIA_PRIMA', 'RAW_MATERIAL'])
                 ->count(),
         ];
 
-        $samples = VAPSampleEntry::with(['customer', 'lab', 'department', 'warehouse'])
+        $samples = $this->laboratoryAccess->samples()->with(['customer', 'lab', 'department', 'warehouse'])
             ->when($request->has('search'), function ($query) use ($request) {
-                $query->where('name', 'like', '%'.$request->search.'%')
-                    ->orWhere('code', 'like', '%'.$request->search.'%');
+                $query->where(fn (Builder $search) => $search->whereLike('name', '%'.$request->search.'%')
+                    ->orWhereLike('code', '%'.$request->search.'%'));
             })
             ->when($request->has('status'), function ($query) use ($request) {
                 $query->where('status', $request->status);
             })
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($sample) {
-                return [
-                    'id' => $sample->id,
-                    'name' => $sample->name,
-                    'code' => $sample->code,
-                    'sample_type' => $sample->sample_type,
-                    'status' => $sample->status,
-                    'received_at' => $sample->received_at,
-                    'analysis_start_date' => $sample->analysis_start_date,
-                    'analysis_end_date' => $sample->analysis_end_date,
-                    'customer' => $sample->customer ? $sample->customer->only(['id', 'name']) : null,
-                    'customer_id' => $sample->customer_id,
-                    'lab_id' => $sample->lab_id,
-                    'department_id' => $sample->department_id,
-                    'packaging_id' => $sample->packaging_id,
-                    'warehouse_id' => $sample->warehouse_id,
-                    'proposal_id' => $sample->proposal_id,
-                    'customer_request_id' => $sample->customer_request_id,
-                    'requested_services' => $sample->requested_services,
-                    'client_submitted_info' => $sample->client_submitted_info,
-                    'obs' => $sample->obs,
-                    'retention_period_days' => $sample->retention_period_days,
-                    'retention_due_at' => optional($sample->retention_due_at)?->toDateString(),
-                    'discard_scheduled_at' => optional($sample->discard_scheduled_at)?->toDateString(),
-                    'retention_status' => $sample->retention_status,
-                    'created_at' => $sample->created_at,
-                ];
-            });
-
-        // return Inertia::render('Samples/Index', [
-        //     'stats' => $stats,
-        //     'discardableSamples' => $discardableSamples,
-        //     'recentDiscards' => $recentDiscards,
-        //     'customers' => Customer::select('id', 'name', 'code')->orderBy('name')->get(),
-        //     'labs' => VAPLab::select('id', 'name', 'code')->orderBy('name')->get(),
-        //     'departments' => Department::select('id', 'name', 'code')->orderBy('name')->get(),
-        //     'warehouses' => Warehouse::select('id', 'name', 'code')->orderBy('name')->get(),
-        //     'packagingCategories' => PackagingCategory::select('id', 'name', 'code')->orderBy('name')->get(),
-        // ]);
+            ->get();
 
         return Inertia::render('VAPSamples/Index', [
             'title' => 'Gestão de Amostras',
@@ -313,7 +278,7 @@ class VAPSampleEntryController extends Controller
                 'lifecycle_status' => $this->buildSampleLifecycleChart(),
                 'retention_pressure' => $this->buildSampleRetentionChart(),
             ],
-            'samples' => $samples,
+            'samples' => SampleIntakeResource::collection($samples)->resolve($request),
             'discardableSamples' => $discardableSamples,
             'recentDiscards' => $recentDiscards,
             'customers' => Customer::select('id', 'name', 'code')->orderBy('name')->get(),
@@ -384,7 +349,7 @@ class VAPSampleEntryController extends Controller
                     'department_id' => $profile->type?->department_id,
                 ]),
             'matrixes' => Matrix::query()->orderBy('description')->get(['id', 'description']),
-            'labs' => VAPLab::select('id', 'name', 'code')->orderBy('name')->get(),
+            'labs' => VAPLab::whereKey($this->laboratoryAccess->activeLabId())->get(['id', 'name', 'code']),
             'departments' => Department::select('id', 'name', 'code')->orderBy('name')->get(),
             'warehouses' => Warehouse::select('id', 'name', 'address', 'code')->orderBy('name')->get(),
             'packagingCategories' => PackagingCategory::select('id', 'name', 'description')->orderBy('name')->get(),
@@ -501,10 +466,7 @@ class VAPSampleEntryController extends Controller
      */
     private function linkedSampleIdsFor(VAPSampleEntry $sampleEntry): Collection
     {
-        return collect(data_get($sampleEntry->client_submitted_info, 'linked_sample_ids', []))
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->values();
+        return $sampleEntry->collectionProduct?->samples()->pluck('samples.id') ?? collect();
     }
 
     /**
@@ -767,6 +729,10 @@ class VAPSampleEntryController extends Controller
             DB::rollBack();
 
             throw $exception;
+        } catch (AuthorizationException|HttpExceptionInterface $exception) {
+            DB::rollBack();
+
+            throw $exception;
         } catch (\Throwable $exception) {
             DB::rollBack();
             Log::error('Failed to create sample entry.', [
@@ -792,21 +758,30 @@ class VAPSampleEntryController extends Controller
         ]);
 
         $createdSamples = collect();
+        $payloads = collect($validated['samples'])->values()->map(function (array $samplePayload, int $index): array {
+            $payload = $this->normalizeManualBatchSamplePayload($samplePayload);
+            try {
+                $payload = $this->validateImportedSampleEntryPayload($payload, $index + 1);
+            } catch (ValidationException $exception) {
+                throw ValidationException::withMessages([
+                    'samples' => Str::replaceFirst('Linha', 'Amostra', $exception->errors()['file'][0] ?? 'A fila manual contém uma amostra inválida.'),
+                ]);
+            }
 
+            $payload['client_submitted_info'] = array_replace($payload['client_submitted_info'] ?? [], [
+                'manual_batch' => true,
+                'manual_batch_registered_at' => now()->toIso8601String(),
+                'manual_batch_registered_by_id' => auth()->id(),
+            ]);
+
+            return $payload;
+        });
+
+        $this->ensureUniqueBatchCodes($payloads, 'samples');
         DB::beginTransaction();
 
         try {
-            foreach ($validated['samples'] as $index => $samplePayload) {
-                $rowNumber = $index + 1;
-                $payload = $this->normalizeManualBatchSamplePayload($samplePayload);
-                try {
-                    $this->validateImportedSampleEntryPayload($payload, $rowNumber);
-                } catch (ValidationException $exception) {
-                    throw ValidationException::withMessages([
-                        'samples' => Str::replaceFirst('Linha', 'Amostra', $exception->errors()['file'][0] ?? 'A fila manual contém uma amostra inválida.'),
-                    ]);
-                }
-
+            foreach ($payloads as $payload) {
                 $createdSamples->push($this->createSampleEntryFromPayload(
                     $payload,
                     $sampleEntryCollectionFlowService,
@@ -824,6 +799,10 @@ class VAPSampleEntryController extends Controller
                 'sample_id' => $createdSamples->first()?->id,
             ]);
         } catch (ValidationException $exception) {
+            DB::rollBack();
+
+            throw $exception;
+        } catch (AuthorizationException|HttpExceptionInterface $exception) {
             DB::rollBack();
 
             throw $exception;
@@ -847,20 +826,13 @@ class VAPSampleEntryController extends Controller
     public function update(
         StoreSampleEntryRequest $request,
         VAPSampleEntry $sampleEntry,
-        SampleEntryCollectionFlowService $sampleEntryCollectionFlowService,
+        UpdateSampleEntry $updateSampleEntry,
         LaboratoryWorkflowNotifier $workflowNotifier
     ) {
         $validated = $request->validated();
-        app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'sample_intake_validation', $validated['department_id'] ?? $sampleEntry->department_id);
-        $portalRequest = $this->resolvePortalRequest($validated);
-        $proposal = $this->resolveProposal($validated['proposal_id'] ?? $sampleEntry->proposal_id);
-        $this->ensureExecutionIsAuthorized($validated, $proposal);
-        $validated = $this->enrichSamplePayload($validated, $portalRequest, $sampleEntry);
-        $previousStatus = $sampleEntry->status;
-        $sampleEntry->update($validated);
-        $sampleEntryCollectionFlowService->sync($sampleEntry->fresh());
-        $this->markPortalRequestAsValidated($portalRequest, $sampleEntry);
-        $sampleEntry = $sampleEntry->fresh(['collectionProduct.code', 'warehouse', 'receivedBy']);
+        $result = $updateSampleEntry->execute($this->laboratoryAccess->activeLabId(), $sampleEntry->id, $request->user()->id, $validated);
+        $sampleEntry = $result['sample'];
+        $previousStatus = $result['previous_status'];
         $this->sendSampleTrackingNotifications(
             $sampleEntry,
             $previousStatus !== $sampleEntry->status ? 'status_updated' : 'updated',
@@ -877,7 +849,7 @@ class VAPSampleEntryController extends Controller
     public function downloadImportTemplate()
     {
         return Excel::download(
-            new VAPSampleEntriesTemplateExport,
+            new VAPSampleEntriesTemplateExport($this->laboratoryAccess->activeLabId()),
             'sample-entry-import-template-'.now()->format('Ymd-His').'.xlsx'
         );
     }
@@ -902,36 +874,43 @@ class VAPSampleEntryController extends Controller
 
         $createdSamples = collect();
         $linkedSamples = 0;
+        $payloads = $import->rows()->map(function (array $row, int $index): array {
+            $payload = $this->sampleEntryPayloadFromImportRow($row, $index + 2);
+            $payload = $this->validateImportedSampleEntryPayload($payload, $index + 2);
 
+            $payload['client_submitted_info'] = array_replace($payload['client_submitted_info'] ?? [], [
+                'imported_from_spreadsheet' => true,
+                'imported_at' => now()->toIso8601String(),
+                'imported_by_id' => auth()->id(),
+            ]);
+
+            return $payload;
+        });
+
+        $this->ensureUniqueBatchCodes($payloads, 'file');
         DB::beginTransaction();
 
         try {
-            foreach ($import->rows() as $index => $row) {
-                $rowNumber = $index + 2;
-                $payload = $this->sampleEntryPayloadFromImportRow($row, $rowNumber);
-                $this->validateImportedSampleEntryPayload($payload, $rowNumber);
-
+            foreach ($payloads as $payload) {
+                $operator = app(LaboratoryWorkflowMutationAccess::class)->operator(
+                    (int) auth()->id(), $this->laboratoryAccess->activeLabId(), 'add_samples'
+                );
                 app(PersonnelQualificationGate::class)->ensure(
-                    auth()->user(),
+                    $operator,
                     'sample_intake_validation',
-                    $payload['department_id'] ?? null
+                    $payload['department_id'] ?? null,
+                    $this->laboratoryAccess->activeLabId()
                 );
 
                 $portalRequest = $this->resolvePortalRequest($payload);
                 $proposal = $this->resolveProposal($payload['proposal_id'] ?? null);
-                $this->ensureExecutionIsAuthorized($payload, $proposal);
-                $payload = $this->enrichSamplePayload($payload, $portalRequest);
+                $payload = $this->preparePayload->execute($payload, $portalRequest, proposal: $proposal);
 
                 $sample = VAPSampleEntry::query()->create(array_merge($payload, [
-                    'received_by_id' => auth()->id(),
-                    'received_by_label' => auth()->user()?->name,
+                    'received_by_id' => $operator->id,
+                    'received_by_label' => $operator->name,
                     'sample_year' => date('Y'),
                 ]));
-
-                if (! $sample->code) {
-                    $sample->generateCode();
-                    $sample->save();
-                }
 
                 $collectionProduct = $sampleEntryCollectionFlowService->sync($sample->fresh());
                 $this->markPortalRequestAsValidated($portalRequest, $sample);
@@ -945,6 +924,10 @@ class VAPSampleEntryController extends Controller
 
             DB::commit();
         } catch (ValidationException $exception) {
+            DB::rollBack();
+
+            throw $exception;
+        } catch (AuthorizationException|HttpExceptionInterface $exception) {
             DB::rollBack();
 
             throw $exception;
@@ -979,23 +962,20 @@ class VAPSampleEntryController extends Controller
         SampleEntryCollectionFlowService $sampleEntryCollectionFlowService,
         LaboratoryWorkflowNotifier $workflowNotifier
     ): VAPSampleEntry {
-        app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'sample_intake_validation', $payload['department_id'] ?? null);
+        $operator = app(LaboratoryWorkflowMutationAccess::class)->operator(
+            (int) auth()->id(), $this->laboratoryAccess->activeLabId(), 'add_samples'
+        );
+        app(PersonnelQualificationGate::class)->ensure($operator, 'sample_intake_validation', $payload['department_id'] ?? null, $this->laboratoryAccess->activeLabId());
 
         $portalRequest = $this->resolvePortalRequest($payload);
         $proposal = $this->resolveProposal($payload['proposal_id'] ?? null);
-        $this->ensureExecutionIsAuthorized($payload, $proposal);
-        $payload = $this->enrichSamplePayload($payload, $portalRequest);
+        $payload = $this->preparePayload->execute($payload, $portalRequest, proposal: $proposal);
 
         $sample = VAPSampleEntry::query()->create(array_merge($payload, [
-            'received_by_id' => auth()->id(),
-            'received_by_label' => auth()->user()?->name,
+            'received_by_id' => $operator->id,
+            'received_by_label' => $operator->name,
             'sample_year' => date('Y'),
         ]));
-
-        if (! $sample->code) {
-            $sample->generateCode();
-            $sample->save();
-        }
 
         $sampleEntryCollectionFlowService->sync($sample->fresh());
         $this->markPortalRequestAsValidated($portalRequest, $sample);
@@ -1012,15 +992,6 @@ class VAPSampleEntryController extends Controller
      */
     private function normalizeManualBatchSamplePayload(array $payload): array
     {
-        $payload['client_submitted_info'] = array_merge(
-            $payload['client_submitted_info'] ?? [],
-            [
-                'manual_batch' => true,
-                'manual_batch_registered_at' => now()->toIso8601String(),
-                'manual_batch_registered_by_id' => auth()->id(),
-            ]
-        );
-
         $payload['code'] = filled($payload['code'] ?? null) ? $payload['code'] : null;
         $payload['collection_product_id'] = $payload['collection_product_id'] ?? null;
         $payload['status'] = $payload['status'] ?? 'POR_INICIAR';
@@ -1161,17 +1132,17 @@ class VAPSampleEntryController extends Controller
     public function stats()
     {
         $stats = [
-            'total_samples' => VAPSampleEntry::count(),
-            'pending_analysis' => VAPSampleEntry::pending()->count(),
-            'completed_analysis' => VAPSampleEntry::completed()->count(),
-            'total_discarded' => VAPSampleEntry::onlyTrashed()->count(),
-            'discarded_this_month' => VAPSampleEntry::onlyTrashed()
-                ->whereMonth('deleted_at', now()->month)
+            'total_samples' => $this->laboratoryAccess->samples()->count(),
+            'pending_analysis' => $this->laboratoryAccess->samples()->pending()->count(),
+            'completed_analysis' => $this->laboratoryAccess->samples()->completed()->count(),
+            'total_discarded' => $this->laboratoryAccess->discards()->count(),
+            'discarded_this_month' => $this->laboratoryAccess->discards()
+                ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
                 ->count(),
-            'by_sample_type' => VAPSampleEntry::select('sample_type', DB::raw('count(*) as total'))
+            'by_sample_type' => $this->laboratoryAccess->samples()->select('sample_type', DB::raw('count(*) as total'))
                 ->groupBy('sample_type')
                 ->get(),
-            'by_status' => VAPSampleEntry::select('status', DB::raw('count(*) as total'))
+            'by_status' => $this->laboratoryAccess->samples()->select('status', DB::raw('count(*) as total'))
                 ->groupBy('status')
                 ->get(),
         ];
@@ -1413,7 +1384,7 @@ class VAPSampleEntryController extends Controller
     {
         $filters = $this->sampleReportFilters($request);
         $samples = $this->applySampleReportFilters(
-            VAPSampleEntry::with(['customer', 'lab', 'department', 'warehouse', 'packaging']),
+            $this->laboratoryAccess->samples()->with(['customer', 'lab', 'department', 'warehouse', 'packaging']),
             $filters
         )
             ->latest('received_at')
@@ -1503,15 +1474,15 @@ class VAPSampleEntryController extends Controller
         $filters = $this->sampleReportFilters($request);
 
         $sampleQuery = $this->applySampleReportFilters(
-            VAPSampleEntry::query()
+            $this->laboratoryAccess->samples()
                 ->with(['customer:id,name', 'lab:id,name', 'department:id,name', 'warehouse:id,name']),
             $filters
         );
 
         $discardQuery = $this->applyDiscardReportFilters(
-            VAPSampleDiscard::query()
+            $this->laboratoryAccess->discards()
                 ->with([
-                    'sample:id,name,code,status,sample_type,customer_id,lab_id,department_id,client_submitted_info',
+                    'sample' => fn (BelongsTo $query) => $query->withTrashed()->select('id', 'name', 'code', 'status', 'sample_type', 'customer_id', 'lab_id', 'department_id', 'client_submitted_info'),
                     'sample.customer:id,name',
                     'sample.lab:id,name',
                     'sample.department:id,name',
@@ -1532,7 +1503,7 @@ class VAPSampleEntryController extends Controller
             (float) ((clone $sampleQuery)
                 ->whereNotNull('received_at')
                 ->whereNotNull('analysis_end_date')
-                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, received_at, analysis_end_date)) as avg_hours')
+                ->selectRaw('AVG(EXTRACT(EPOCH FROM (analysis_end_date - received_at)) / 3600.0) as avg_hours')
                 ->value('avg_hours') ?? 0),
             1
         );
@@ -1647,16 +1618,16 @@ class VAPSampleEntryController extends Controller
             'discardMethodBreakdown' => $discardMethodBreakdown,
             'sampleTimeline' => $sampleTimeline,
             'customers' => Customer::query()->orderBy('name')->get(['id', 'name']),
-            'labs' => VAPLab::query()->orderBy('name')->get(['id', 'name']),
+            'labs' => VAPLab::whereKey($this->laboratoryAccess->activeLabId())->get(['id', 'name']),
             'departments' => Department::query()->orderBy('name')->get(['id', 'name']),
-            'discardMethods' => VAPSampleDiscard::query()
+            'discardMethods' => $this->laboratoryAccess->discards()
                 ->select('discard_method')
                 ->distinct()
                 ->orderBy('discard_method')
                 ->pluck('discard_method')
                 ->filter()
                 ->values(),
-            'sampleTypes' => VAPSampleEntry::query()
+            'sampleTypes' => $this->laboratoryAccess->samples()
                 ->select('sample_type')
                 ->distinct()
                 ->orderBy('sample_type')
@@ -1879,51 +1850,32 @@ class VAPSampleEntryController extends Controller
                 'temperature_condition' => $this->importString($row, ['temperature_condition', 'condicao_termica']),
                 'integrity_observations' => $this->importString($row, ['integrity_observations', 'observacoes_de_integridade']),
                 'chain_of_custody_notes' => $this->importString($row, ['chain_of_custody_notes', 'notas_de_custodia']),
-                'imported_from_spreadsheet' => true,
-                'imported_at' => now()->toIso8601String(),
-                'imported_by_id' => auth()->id(),
             ],
         ];
     }
 
     /**
      * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
      */
-    private function validateImportedSampleEntryPayload(array $payload, int $rowNumber): void
+    private function validateImportedSampleEntryPayload(array $payload, int $rowNumber): array
     {
-        $validator = Validator::make($payload, [
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['nullable', 'string', 'max:255', Rule::unique('sample_entries', 'code')],
-            'sample_type' => ['required', 'string', 'max:255'],
-            'proposal_id' => ['nullable', 'exists:proposals,id'],
-            'portal_request_id' => ['nullable', 'exists:customer_requests,id'],
-            'customer_request_id' => ['nullable', 'exists:customer_requests,id'],
-            'customer_id' => ['required', 'exists:customers,id'],
-            'lab_id' => ['required', 'exists:labs,id'],
-            'department_id' => ['required', 'exists:departments,id'],
-            'warehouse_id' => ['required', 'exists:warehouses,id'],
-            'packaging_id' => ['nullable', 'exists:packaging_categories,id'],
-            'received_at' => ['nullable', 'date'],
-            'status' => ['nullable', Rule::in(['POR_INICIAR', 'EN_PROGRESO', 'COMPLETADO', 'CANCELADO', 'EN_PAUSA'])],
-            'analysis_start_date' => ['nullable', 'date'],
-            'analysis_end_date' => ['nullable', 'date', 'after_or_equal:analysis_start_date'],
-            'collected_by_lab' => ['sometimes', 'boolean'],
-            'collected_at' => ['nullable', 'date'],
-            'client_submitted_info.request_origin' => ['nullable', Rule::in(['client', 'internal'])],
-            'client_submitted_info.collection_type' => ['nullable', Rule::in(['direct', 'programmed'])],
-            'client_submitted_info.product_id' => ['nullable', 'exists:products,id'],
-            'client_submitted_info.matrix_id' => ['nullable', 'exists:matrixes,id'],
-            'client_submitted_info.requested_profile_ids' => ['nullable', 'array'],
-            'client_submitted_info.requested_profile_ids.*' => ['integer', 'exists:profiles,id'],
-            'client_submitted_info.conditioning_status' => ['nullable', Rule::in(['accepted', 'restricted', 'rejected'])],
-            'client_submitted_info.production_date' => ['nullable', 'date'],
-            'client_submitted_info.expiry_date' => ['nullable', 'date', 'after_or_equal:client_submitted_info.production_date'],
-        ]);
-
-        if ($validator->fails()) {
+        try {
+            return $this->sampleEntryValidation->validate($payload, $this->laboratoryAccess->activeLabId());
+        } catch (ValidationException $exception) {
             throw ValidationException::withMessages([
-                'file' => "Linha {$rowNumber}: ".$validator->errors()->first(),
+                'file' => "Linha {$rowNumber}: ".collect($exception->errors())->flatten()->first(),
             ]);
+        }
+    }
+
+    /** @param Collection<int, array<string, mixed>> $payloads */
+    private function ensureUniqueBatchCodes(Collection $payloads, string $errorField): void
+    {
+        $duplicate = $payloads->pluck('code')->filter(fn (mixed $code): bool => filled($code))->duplicatesStrict()->first();
+
+        if ($duplicate !== null) {
+            throw ValidationException::withMessages([$errorField => 'O código '.$duplicate.' está repetido na mesma fila de entrada.']);
         }
     }
 
@@ -2100,7 +2052,29 @@ class VAPSampleEntryController extends Controller
             return null;
         }
 
-        return CustomerRequest::query()->findOrFail($portalRequestId);
+        $field = array_key_exists('portal_request_id', $validated) ? 'portal_request_id' : 'customer_request_id';
+        $portalRequest = CustomerRequest::query()
+            ->where('customer_id', $validated['customer_id'] ?? 0)
+            ->where('warehouse_id', $validated['warehouse_id'] ?? 0)
+            ->lockForUpdate()
+            ->find($portalRequestId);
+
+        if (! $portalRequest || ! in_array($portalRequest->portal_status, ['pending', 'in_progress'], true)) {
+            throw ValidationException::withMessages([$field => 'Seleccione um pedido activo do cliente e local indicados.']);
+        }
+
+        $batchIndex = data_get($validated, 'client_submitted_info.batch_sample_index');
+        $usedIndexes = collect(data_get($portalRequest->extra_data, 'validated_batch_indexes', []))
+            ->filter(fn (mixed $index): bool => filter_var($index, FILTER_VALIDATE_INT) !== false)
+            ->map(fn (mixed $index): int => (int) $index);
+
+        if ($batchIndex !== null && $usedIndexes->contains((int) $batchIndex)) {
+            throw ValidationException::withMessages([
+                'client_submitted_info.batch_sample_index' => 'Esta linha do pedido do cliente já foi registada como amostra.',
+            ]);
+        }
+
+        return $portalRequest;
     }
 
     private function resolveProposal(?int $proposalId): ?Proposal
@@ -2110,274 +2084,6 @@ class VAPSampleEntryController extends Controller
         }
 
         return Proposal::query()->findOrFail($proposalId);
-    }
-
-    private function ensureExecutionIsAuthorized(array $validated, ?Proposal $proposal): void
-    {
-        if ($proposal) {
-            $lineageErrors = collect([
-                'proposal_id' => ! $proposal->isAccepted()
-                    ? 'A proposta seleccionada ainda não foi aceite pelo cliente.'
-                    : null,
-                'customer_id' => (int) $proposal->customer_id !== (int) ($validated['customer_id'] ?? 0)
-                    ? 'O cliente da amostra deve ser o mesmo da proposta aceite.'
-                    : null,
-                'warehouse_id' => (int) $proposal->warehouse_id !== (int) ($validated['warehouse_id'] ?? 0)
-                    ? 'O local da amostra deve ser o mesmo da proposta aceite.'
-                    : null,
-                'department_id' => (int) $proposal->department_id !== (int) ($validated['department_id'] ?? 0)
-                    ? 'O departamento da amostra deve corresponder ao âmbito da proposta aceite.'
-                    : null,
-            ])->filter()->all();
-
-            if ($lineageErrors !== []) {
-                throw ValidationException::withMessages($lineageErrors);
-            }
-        }
-
-        $workIsStarting = ($validated['status'] ?? 'POR_INICIAR') !== 'POR_INICIAR'
-            || ! empty($validated['analysis_start_date'])
-            || ! empty($validated['analysis_end_date']);
-
-        if (! $workIsStarting) {
-            return;
-        }
-
-        $operationMode = app(GeneralSettings::class)->app_operation_mode ?? 'client_only';
-        $requestOrigin = data_get($validated, 'client_submitted_info.request_origin', 'client');
-
-        if ($requestOrigin === 'internal' && in_array($operationMode, ['internal_only', 'hybrid'], true)) {
-            return;
-        }
-
-        if (! $proposal || ! $proposal->isAccepted()) {
-            throw ValidationException::withMessages([
-                'proposal_id' => 'É necessário associar uma proposta aceite antes de colocar a amostra em análise.',
-            ]);
-        }
-    }
-
-    private function enrichSamplePayload(
-        array $validated,
-        ?CustomerRequest $portalRequest,
-        ?VAPSampleEntry $sampleEntry = null
-    ): array {
-        unset($validated['portal_request_id']);
-
-        if ($portalRequest) {
-            $validated['customer_request_id'] = $portalRequest->id;
-            $validated['client_submitted_info'] = collect($validated['client_submitted_info'] ?? [])
-                ->merge([
-                    'request_origin' => data_get($portalRequest->extra_data, 'request_origin', 'client'),
-                    'request_reference' => $portalRequest->reference,
-                    'request_title' => $portalRequest->title,
-                    'request_description' => $portalRequest->description,
-                    'preferred_date' => optional($portalRequest->preferred_date)?->format('Y-m-d'),
-                    'details' => $portalRequest->extra_data,
-                ])
-                ->all();
-            if (blank($validated['requested_services'] ?? null)) {
-                $validated['requested_services'] = collect($portalRequest->extra_data['requested_profiles'] ?? [])
-                    ->filter()
-                    ->values()
-                    ->all();
-            }
-
-            $portalDetails = collect($portalRequest->extra_data ?? []);
-            $validated['client_submitted_info'] = collect($validated['client_submitted_info'] ?? [])
-                ->merge([
-                    'product_id' => $portalDetails->get('product_id'),
-                    'matrix_id' => $portalDetails->get('matrix_id'),
-                    'packaging_id' => $portalDetails->get('packaging_id'),
-                    'requested_profile_ids' => collect($portalDetails->get('requested_profiles', []))->filter()->values()->all(),
-                    'quantity' => $portalDetails->get('quantity'),
-                    'lot' => $portalDetails->get('lot'),
-                    'product_name' => $portalDetails->get('product_name'),
-                    'matrix' => $portalDetails->get('matrix'),
-                    'packaging' => $portalDetails->get('packaging'),
-                ])
-                ->all();
-        } elseif ($sampleEntry && ! array_key_exists('customer_request_id', $validated)) {
-            $validated['customer_request_id'] = $sampleEntry->customer_request_id;
-        }
-
-        $validated['client_submitted_info'] = collect($validated['client_submitted_info'] ?? [])
-            ->merge([
-                'request_origin' => data_get($validated, 'client_submitted_info.request_origin', 'client'),
-                'collection_type' => data_get($validated, 'client_submitted_info.collection_type', 'direct'),
-            ])
-            ->all();
-
-        $validated['client_submitted_info'] = $this->normalizeInternalQualityControlPayload(
-            $validated['client_submitted_info'],
-            $validated['sample_type'] ?? $sampleEntry?->sample_type
-        );
-
-        $validated['client_submitted_info'] = $this->attachAnalyticalScopeSnapshot(
-            $validated['client_submitted_info'],
-            $validated['department_id'] ?? $sampleEntry?->department_id
-        );
-
-        $receivedAt = isset($validated['received_at'])
-            ? Carbon::parse($validated['received_at'])
-            : ($sampleEntry?->received_at ?? now());
-        $retentionDays = (int) ($validated['retention_period_days']
-            ?? $sampleEntry?->retention_period_days
-            ?? VAPSampleEntry::defaultRetentionPeriodFor($validated['sample_type'] ?? $sampleEntry?->sample_type));
-
-        $validated['retention_period_days'] = $retentionDays;
-        $validated['retention_due_at'] = $validated['retention_due_at'] ?? $receivedAt->copy()->addDays($retentionDays)->toDateString();
-        $validated['discard_scheduled_at'] = $validated['discard_scheduled_at'] ?? $validated['retention_due_at'];
-        $validated['retention_status'] = $this->resolveRetentionStatus($validated['retention_due_at']);
-
-        return $validated;
-    }
-
-    private function normalizeInternalQualityControlPayload(array $clientSubmittedInfo, ?string $sampleType): array
-    {
-        $requestOrigin = data_get($clientSubmittedInfo, 'request_origin', 'client');
-        $normalizedSampleType = strtoupper((string) $sampleType);
-
-        if ($requestOrigin !== 'internal' || ! in_array($normalizedSampleType, ['MATERIA_PRIMA', 'RAW_MATERIAL'], true)) {
-            return $clientSubmittedInfo;
-        }
-
-        $discipline = data_get($clientSubmittedInfo, 'analysis_discipline', 'chemistry');
-        $purpose = data_get($clientSubmittedInfo, 'quality_control_purpose', 'raw_material_release');
-        $decision = data_get($clientSubmittedInfo, 'qc_decision', 'hold_until_release');
-
-        return collect($clientSubmittedInfo)
-            ->merge([
-                'request_origin' => 'internal',
-                'material_category' => data_get($clientSubmittedInfo, 'material_category', 'raw_material'),
-                'quality_control_purpose' => $purpose,
-                'analysis_discipline' => $discipline,
-                'qc_decision' => $decision,
-                'quality_control_path' => [
-                    'name' => 'Controlo interno de matéria-prima',
-                    'procedure_type' => 'internal_quality_control',
-                    'sample_family' => 'raw_material',
-                    'discipline' => $discipline,
-                    'purpose' => $purpose,
-                    'decision_gate' => $decision,
-                    'requires_proposal' => false,
-                    'follows_normal_analysis_flow' => true,
-                    'retention_period_days' => VAPSampleEntry::defaultRetentionPeriodFor($normalizedSampleType),
-                    'steps' => [
-                        'sample_entry',
-                        'collection_product',
-                        'lab_code',
-                        'analysis',
-                        'result_insertion',
-                        'verification',
-                        'approval',
-                        'report_or_certificate',
-                    ],
-                ],
-            ])
-            ->all();
-    }
-
-    private function attachAnalyticalScopeSnapshot(array $clientSubmittedInfo, ?int $departmentId): array
-    {
-        $productId = data_get($clientSubmittedInfo, 'product_id');
-
-        if (! $productId) {
-            return $clientSubmittedInfo;
-        }
-
-        $product = Product::query()
-            ->with([
-                'matrix:id,description',
-                'matrix.profiles' => function ($query) use ($departmentId) {
-                    $query->with([
-                        'type:id,name,department_id',
-                        'parameters:id,name,code',
-                    ]);
-
-                    if ($departmentId) {
-                        $query->whereHas('type', function ($typeQuery) use ($departmentId) {
-                            $typeQuery->where('department_id', $departmentId);
-                        });
-                    }
-                },
-            ])
-            ->find($productId);
-
-        if (! $product) {
-            return $clientSubmittedInfo;
-        }
-
-        $availableProfiles = $product->matrix?->profiles ?? collect();
-        $requestedProfileIds = collect(data_get($clientSubmittedInfo, 'requested_profile_ids', []))
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->values();
-
-        $resolvedProfiles = $requestedProfileIds->isNotEmpty()
-            ? $availableProfiles->whereIn('id', $requestedProfileIds)->values()
-            : $availableProfiles->values();
-
-        $resolvedParameters = $resolvedProfiles
-            ->flatMap(fn (Profile $profile) => $profile->parameters->map(function ($parameter) use ($profile) {
-                return [
-                    'id' => $parameter->id,
-                    'name' => $parameter->name,
-                    'code' => $parameter->code,
-                    'profile_id' => $profile->id,
-                    'profile' => $profile->name,
-                ];
-            }))
-            ->groupBy('id')
-            ->map(function ($items) {
-                $first = $items->first();
-
-                return [
-                    'id' => $first['id'],
-                    'name' => $first['name'],
-                    'code' => $first['code'],
-                    'profiles' => $items->pluck('profile')->unique()->values()->all(),
-                    'profile_ids' => $items->pluck('profile_id')->unique()->values()->all(),
-                ];
-            })
-            ->sortBy('name')
-            ->values();
-
-        return collect($clientSubmittedInfo)
-            ->merge([
-                'matrix_id' => $product->matrix_id,
-                'matrix_description' => $product->matrix?->description,
-                'resolved_profile_ids' => $resolvedProfiles->pluck('id')->values()->all(),
-                'resolved_profiles' => $resolvedProfiles->map(fn (Profile $profile) => [
-                    'id' => $profile->id,
-                    'name' => $profile->name,
-                    'analysis_type' => $profile->type?->name,
-                    'department_id' => $profile->type?->department_id,
-                    'parameter_count' => $profile->parameters->unique('id')->count(),
-                ])->values()->all(),
-                'required_parameter_count' => $resolvedParameters->count(),
-                'required_parameters' => $resolvedParameters->all(),
-            ])
-            ->all();
-    }
-
-    private function resolveRetentionStatus(?string $retentionDueAt): string
-    {
-        if (! $retentionDueAt) {
-            return 'active';
-        }
-
-        $dueDate = Carbon::parse($retentionDueAt);
-
-        if ($dueDate->isPast()) {
-            return 'overdue';
-        }
-
-        if ($dueDate->lte(now()->addDays(7))) {
-            return 'due_soon';
-        }
-
-        return 'active';
     }
 
     private function markPortalRequestAsValidated(?CustomerRequest $portalRequest, VAPSampleEntry $sample): void
@@ -2445,8 +2151,17 @@ class VAPSampleEntryController extends Controller
             $sender,
         ])->filter()->unique(fn ($recipient) => get_class($recipient).':'.$recipient->getKey());
 
+        $analysisId = $sample->collectionProduct?->code?->analysis()?->value('analysis.id');
+
         $this->notificationTemplates->notify($recipients, $templateKey, [
+            'sample_entry_id' => $sample->id,
+            'sample_id' => $sample->id,
             'sample_code' => $sample->code ?: $sample->name,
+            'conditioning_status' => data_get($sample->client_submitted_info, 'conditioning_status'),
+            'required_parameter_count' => (int) data_get($sample->client_submitted_info, 'required_parameter_count', 0),
+            'collection_product_id' => $sample->collection_product_id,
+            'collection_url' => $this->collectionProductWorkflowUrl($sample),
+            'analysis_url' => $analysisId ? route('analysis.edit', $analysisId) : null,
             'previous_status' => $context['previous_status'] ?? 'estado anterior',
             'status' => $sample->status,
             'decision_label' => $context['decision_label'] ?? 'decisão registada',

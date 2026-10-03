@@ -1,5 +1,6 @@
 import "./bootstrap";
 import "../css/app.css";
+import "../css/laboratory-workbench.css";
 import { createApp, defineAsyncComponent, h } from "vue";
 import { createPinia } from 'pinia'
 import shortkey from 'vue-shortkey'

@@ -12,11 +12,12 @@ class VAPFile extends Model
 {
     use HasUuids;
 
-    public CONST MENU_NAME = 'v_files';
+    public const MENU_NAME = 'v_files';
 
     protected $table = 'v_files';
 
     protected $fillable = [
+        'lab_id',
         'name',
         'type',
         'size',
@@ -61,6 +62,11 @@ class VAPFile extends Model
         'obsolete_at' => 'datetime',
         'meta' => 'array',
     ];
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
+    }
 
     public function parent(): BelongsTo
     {
@@ -107,7 +113,7 @@ class VAPFile extends Model
         return $this->belongsTo(VAPFile::class, 'superseded_by');
     }
 
-    public function tags (): BelongsToMany
+    public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'file_tags', 'file_id', 'tag_id');
     }

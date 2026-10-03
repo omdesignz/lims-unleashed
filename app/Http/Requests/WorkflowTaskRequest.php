@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class WorkflowTaskRequest extends FormRequest
 {
@@ -17,52 +20,27 @@ class WorkflowTaskRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $rules = [];
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
 
-        if ($this->isMethod('post')) {
-            $rules = [
-                'file_id' => 'required|exists:v_files,id',
-                'type' => 'required|in:review,approve,publish',
-                'assigned_to' => 'required|exists:users,id',
-                'due_date' => 'nullable|date',
-            ];
-        } else {
-            $rules = [
-                'file_id' => 'required|exists:v_files,id',
-                'type' => 'required|in:review,approve,publish',
-                'assigned_to' => 'required|exists:users,id',
-                'due_date' => 'nullable|date',
-            ];
-        }
-
-        return $rules;
-    }
-
-    /**
-     * Get custom attributes for validator errors.
-     *
-     * @return array
-     */
-    public function attributes()
-    {
         return [
-            
+            'file_id' => ['required', Rule::exists('v_files', 'id')->where('lab_id', $labId)],
+            'type' => ['required', Rule::in(['review', 'approve', 'publish'])],
+            'assigned_to' => [
+                'required',
+                Rule::exists('users', 'id'),
+                Rule::exists('lab_user', 'user_id')->where('lab_id', $labId),
+            ],
+            'due_date' => ['nullable', 'date'],
         ];
     }
 
-    /**
-     * Configure the validator instance.
-     *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
-     */
-    public function prepareForValidation()
+    protected function prepareForValidation(): void
     {
-        $assignedTo = request()->assigned_to;
+        $assignedTo = $this->input('assigned_to');
 
         if (is_array($assignedTo)) {
             $assignedTo = $assignedTo['value'] ?? null;

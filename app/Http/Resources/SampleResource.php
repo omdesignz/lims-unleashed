@@ -18,17 +18,13 @@ class SampleResource extends JsonResource
             'id' => $this->id,
             'cl_id' => $this->cl_id,
             'code' => $this->code,
-            'collection' => $this->collection?->code ?? $this->code,
+            'collection' => $this->whenLoaded('collection', fn (): ?string => $this->collection?->code),
             'created_at' => $this->created_at?->toDateTimeString(),
             'deleted' => $this->deleted_at ? true : false,
             'links' => [
-                'edit_path' => route('samples.edit', $this->id),
-                'delete_path' => route('samples.destroy', [
-                    'recordIds' => [$this->id],
-                ]),
-                'restore_path' => route('samples.restore', [
-                    'recordIds' => [$this->id],
-                ]),
+                'sample_entry_show_path' => $this->whenLoaded('collection', fn (): ?string => $this->collection?->collection?->sampleEntry
+                    ? route('vap_samples.show', $this->collection->collection->sampleEntry->id)
+                    : null),
             ],
         ];
     }

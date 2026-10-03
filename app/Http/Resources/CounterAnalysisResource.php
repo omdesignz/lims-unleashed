@@ -66,7 +66,7 @@ class CounterAnalysisResource extends JsonResource
                 'id' => $sourceResult->id,
                 'parameter' => $sourceResult?->parameter?->code ?? $sourceResult?->parameter?->name,
                 'value' => $sourceResultValue,
-                'lab_code' => $sourceResult?->code?->code,
+                'lab_code' => $sourceResult?->sample?->collection?->code,
                 'sample_id' => $sourceResult->sample_id,
             ] : null,
             'entry_origin' => [

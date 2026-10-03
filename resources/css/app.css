@@ -1,4 +1,4 @@
-@import url('https://fonts.bunny.net/css?family=ibm-plex-sans:400,500,600,700&family=ibm-plex-mono:400,500,600,700&display=swap');
+@import url('https://fonts.bunny.net/css?family=dm-sans:400,500,600,700&family=manrope:500,600,700&family=ibm-plex-mono:400,500,600&display=swap');
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
@@ -87,20 +87,20 @@
 
   /* --- Surfaces --- */
   --color-surface: #ffffff;
-  --color-surface-dim: #f1f5f9;
-  --color-surface-raised: #f8fafc;
+  --color-surface-dim: #f5f6f3;
+  --color-surface-raised: #ffffff;
   --color-surface-overlay: rgba(0, 0, 0, 0.5);
-  --color-border: #cbd5e1;
-  --color-border-light: #e2e8f0;
+  --color-border: #dfe4df;
+  --color-border-light: #ebeeea;
 
   /* --- Text --- */
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #334155;
-  --color-text-tertiary: #64748b;
+  --color-text-primary: #202c27;
+  --color-text-secondary: #54645b;
+  --color-text-tertiary: #66756c;
   --color-text-inverse: #ffffff;
 
   /* --- Typography --- */
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* --- Spacing Scale --- */
@@ -147,12 +147,12 @@
    2. Dark Mode Tokens
    ============================================================ */
 .dark {
-  --color-surface: #0f172a;
-  --color-surface-dim: #020617;
-  --color-surface-raised: #111827;
+  --color-surface: #1b2520;
+  --color-surface-dim: #141c18;
+  --color-surface-raised: #202c25;
   --color-surface-overlay: rgba(0, 0, 0, 0.7);
-  --color-border: #334155;
-  --color-border-light: #1e293b;
+  --color-border: #344139;
+  --color-border-light: #2b3830;
 
   --color-text-primary: #f8fafc;
   --color-text-secondary: #cbd5e1;
@@ -1304,8 +1304,8 @@ select {
   --ds-canvas: var(--color-surface-dim);
   --ds-panel: var(--color-surface);
   --ds-panel-raised: var(--color-surface-raised);
-  --ds-panel-subtle: #f8fafc;
-  --ds-panel-muted: #e2e8f0;
+  --ds-panel-subtle: #f7f8f5;
+  --ds-panel-muted: #ebeeea;
   --ds-border: var(--color-border);
   --ds-border-strong: #94a3b8;
   --ds-text: var(--color-text-primary);
@@ -1313,8 +1313,8 @@ select {
   --ds-text-soft: var(--color-text-tertiary);
   --ds-focus: rgb(var(--primary-500-rgb) / 0.2);
   --ds-radius-control: 0.5rem;
-  --ds-radius-card: 0.5rem;
-  --ds-radius-panel: 0.75rem;
+  --ds-radius-card: 0.875rem;
+  --ds-radius-panel: 1rem;
   --ds-shadow-control: 0 1px 2px rgb(15 23 42 / 0.06);
   --ds-shadow-card: 0 10px 30px -24px rgb(15 23 42 / 0.38);
   --ds-shadow-panel: 0 18px 55px -38px rgb(15 23 42 / 0.44);
@@ -1325,8 +1325,8 @@ select {
 }
 
 .dark {
-  --ds-panel-subtle: #0b1220;
-  --ds-panel-muted: #1e293b;
+  --ds-panel-subtle: #202c25;
+  --ds-panel-muted: #2b3830;
   --ds-border-strong: #475569;
   --ds-focus: rgb(var(--primary-300-rgb) / 0.24);
   --ds-shadow-control: 0 1px 2px rgb(0 0 0 / 0.25);
@@ -1684,22 +1684,23 @@ select.ds-field {
 }
 
 .ds-button-primary {
-  background: linear-gradient(180deg, rgb(var(--primary-700-rgb) / 1), rgb(var(--primary-900-rgb) / 1));
-  color: white;
-  box-shadow: 0 14px 30px -18px rgb(var(--primary-900-rgb) / 0.75);
+  background: var(--brand-primary);
+  color: var(--brand-on-primary, white);
+  box-shadow: var(--ds-shadow-control);
 }
 
 .ds-button-primary:hover:not(:disabled) {
-  background: linear-gradient(180deg, rgb(var(--primary-600-rgb) / 1), rgb(var(--primary-800-rgb) / 1));
+  background: var(--brand-primary);
+  filter: brightness(0.96);
 }
 
 .dark .ds-button-primary {
-  background: rgb(var(--primary-400-rgb) / 1);
-  color: rgb(var(--primary-950-rgb) / 1);
+  background: var(--brand-primary);
+  color: var(--brand-on-primary, white);
 }
 
 .dark .ds-button-primary:hover:not(:disabled) {
-  background: rgb(var(--primary-300-rgb) / 1);
+  background: var(--brand-primary);
 }
 
 .ds-button-secondary {

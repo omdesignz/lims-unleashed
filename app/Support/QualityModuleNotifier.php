@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\VAPNonConformity;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class QualityModuleNotifier
 {
@@ -16,9 +17,11 @@ class QualityModuleNotifier
     public function notifyRatingSubmitted(Rating $rating): void
     {
         $this->send(
-            $this->qualityStakeholders(),
+            $this->ratingStakeholders((int) $rating->lab_id),
             'quality.rating.received',
             [
+                'lab_id' => $rating->lab_id,
+                'lab_name' => $rating->lab?->name,
                 'channel' => $rating->channel === 'portal' ? 'do portal' : 'interna',
                 'rateable_type' => $rating->rateable_type,
                 'rateable_id' => $rating->rateable_id,
@@ -60,20 +63,34 @@ class QualityModuleNotifier
 
     private function nonConformityStakeholders(VAPNonConformity $nonConformity): Collection
     {
+        $memberIds = DB::table('lab_user')
+            ->where('lab_id', $nonConformity->lab_id)
+            ->pluck('user_id')
+            ->all();
+
         return $this->qualityStakeholders()
             ->concat(collect([
                 $nonConformity->assignedToUser,
                 $nonConformity->reportedByUser,
             ]))
             ->filter()
+            ->filter(fn (User $recipient): bool => in_array($recipient->id, $memberIds, true))
             ->unique(fn ($recipient) => get_class($recipient).':'.$recipient->getKey())
             ->values();
+    }
+
+    private function ratingStakeholders(int $labId): Collection
+    {
+        return User::query()->where('is_active', true)->whereNotNull('email_verified_at')
+            ->whereIn('id', DB::table('lab_user')->where('lab_id', $labId)->select('user_id'))
+            ->with(['roles.permissions', 'permissions'])->get()
+            ->filter(fn (User $recipient): bool => $recipient->can('view_ratings'))->values();
     }
 
     private function qualityStakeholders(): Collection
     {
         $admins = User::query()
-            ->role('admin')
+            ->whereHas('roles', fn ($query) => $query->where('name', 'admin')->where('guard_name', 'web'))
             ->whereNotNull('email_verified_at')
             ->get();
 
@@ -120,6 +137,7 @@ class QualityModuleNotifier
     private function nonConformityContext(VAPNonConformity $nonConformity): array
     {
         return [
+            'lab_id' => $nonConformity->lab_id,
             'document_number' => $nonConformity->nc_number,
             'severity' => $nonConformity->severity,
             'status' => $nonConformity->status,

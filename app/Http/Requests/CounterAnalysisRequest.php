@@ -2,70 +2,62 @@
 
 namespace App\Http\Requests;
 
+use App\Services\LaboratoryWorkflowOwnership;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Validator;
 
 class CounterAnalysisRequest extends FormRequest
 {
-     /**
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('edit_counter_analysis') ?? false;
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
-        $analysisId = $this->route('analysis');
+        $record = app(LaboratoryWorkflowOwnership::class)
+            ->counterAnalysesForLaboratory(app(SampleLaboratoryAccess::class)->activeLabId())
+            ->findOrFail($this->route('analysis'));
 
-        if ($this->isMethod('post')) {
-            $rules = [
-                'col_date' => 'nullable|date_format:Y-m-d',
-                'init_date' => 'nullable|date_format:Y-m-d',
-                'entry_date' => 'nullable|date_format:Y-m-d',
-                'sample_id' => ['required', 'exists:samples,id', 'unique:counter_analysis,sample_id'],
-                'result_id' => ['required', 'exists:results,id', 'unique:counter_analysis,result_id'],
-                'profile_id' => 'required|exists:profiles,id',
-                'parameter_id' => 'required|exists:parameters,id',
-                'department_id' => 'required|exists:departments,id',
-                'type_id' => 'required|exists:analysis_categories,id',
-            ];
-        } else {
-            $rules = [
-                'col_date' => 'nullable|date_format:Y-m-d',
-                'init_date' => 'nullable|date_format:Y-m-d',
-                'entry_date' => 'nullable|date_format:Y-m-d',
-                'sample_id' => ['required', 'exists:samples,id', Rule::unique('counter_analysis', 'sample_id')->ignore($analysisId)],
-                'result_id' => ['required', 'exists:results,id', Rule::unique('counter_analysis', 'result_id')->ignore($analysisId)],
-                'profile_id' => 'required|exists:profiles,id',
-                'parameter_id' => 'required|exists:parameters,id',
-                'cl_id' => 'required|exists:lab_codes,id',
-                'department_id' => 'required|exists:departments,id',
-                'type_id' => 'required|exists:analysis_categories,id',
-
-            ];
+        if ($record->end_date !== null || $record->status) {
+            throw ValidationException::withMessages(['analysis' => 'Esta contra-análise está concluída e não pode ser modificada.']);
         }
 
-        return $rules;
+        return [
+            'col_date' => ['nullable', 'date_format:Y-m-d'],
+            'init_date' => ['nullable', 'date_format:Y-m-d'],
+            'entry_date' => ['nullable', 'date_format:Y-m-d'],
+            'sample_id' => ['required', 'integer', Rule::in([$record->sample_id])],
+            'result_id' => ['required', 'integer', Rule::in([$record->result_id])],
+            'cl_id' => ['required', 'integer', Rule::in([$record->cl_id])],
+            'profile_id' => ['required', 'integer', Rule::in([$record->profile_id])],
+            'parameter_id' => ['required', 'integer', Rule::in([$record->parameter_id])],
+            'department_id' => ['required', 'integer', Rule::in([$record->department_id])],
+            'type_id' => ['required', 'integer', Rule::in([$record->type_id])],
+        ];
     }
 
     /**
      * Get custom attributes for validator errors.
-     *
-     * @return array
      */
-    public function attributes()
+    public function attributes(): array
     {
         return [
-            'col_date' => 'nome',
-            'init_date' => 'código',
-            'entry_date' => 'descrição',
+            'col_date' => 'data de colheita',
+            'init_date' => 'data de início',
+            'entry_date' => 'data de entrada',
             'department_id' => 'departamento',
             'sample_id' => 'amostra',
             'profile_id' => 'perfil',
@@ -78,19 +70,13 @@ class CounterAnalysisRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
+     * @param  Validator  $validator
      */
-    public function prepareForValidation()
+    protected function prepareForValidation(): void
     {
-        $this->merge([
-            'department_id' => !is_null(request()->department_id) ? request()->department_id['value'] : null,
-            'sample_id' => !is_null(request()->sample_id) ? request()->sample_id['value'] : null,
-            'profile_id' => !is_null(request()->profile_id) ? request()->profile_id['value'] : null,
-            'parameter_id' => !is_null(request()->parameter_id) ? request()->parameter_id['value'] : null,
-            'result_id' => !is_null(request()->result_id) ? request()->result_id['value'] : null,
-            'type_id' => !is_null(request()->type_id) ? request()->type_id['value'] : null,
-            'cl_id' => !is_null(request()->cl_id) ? request()->cl_id['value'] : null,
-        ]);
+        foreach (['department_id', 'sample_id', 'profile_id', 'parameter_id', 'result_id', 'type_id', 'cl_id'] as $field) {
+            $value = $this->input($field);
+            $this->merge([$field => is_array($value) ? data_get($value, 'value') : $value]);
+        }
     }
 }

@@ -7,7 +7,9 @@ use App\Models\InventoryItem;
 use App\Models\ItemCategory;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class EnvironmentalConditionsTest extends TestCase
@@ -16,14 +18,11 @@ class EnvironmentalConditionsTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for environmental condition testing.');
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
 
         return $admin;
     }
@@ -67,10 +66,12 @@ class EnvironmentalConditionsTest extends TestCase
 
     public function test_inventory_item_reports_metrology_hold_when_controls_are_overdue(): void
     {
-        $category = ItemCategory::query()->firstOrFail();
+        $user = $this->verifiedAdmin();
+        $category = ItemCategory::query()->create(['name' => 'Metrology equipment']);
 
         $item = InventoryItem::query()->create([
-            'name' => 'Equipamento metrológico ' . uniqid(),
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
+            'name' => 'Equipamento metrológico '.uniqid(),
             'category_id' => $category->id,
             'next_calibration_date' => now()->subDay()->toDateString(),
             'metrology_review_due_at' => now()->subDay()->toDateString(),

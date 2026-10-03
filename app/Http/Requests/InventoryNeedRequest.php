@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\VAPLab;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class InventoryNeedRequest extends FormRequest
@@ -23,15 +26,17 @@ class InventoryNeedRequest extends FormRequest
      */
     public function rules(): array
     {
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
+
         return [
             'department_id' => ['required', 'exists:departments,id'],
-            'lab_id' => ['nullable', 'exists:labs,id'],
+            'lab_id' => ['nullable', 'integer', Rule::in([$labId])],
             'needed_by_date' => ['nullable', 'date'],
             'justification' => ['nullable', 'string', 'max:5000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.inventory_item_id' => ['required', 'exists:i_items,id'],
-            'items.*.warehouse_id' => ['nullable', 'exists:i_warehouses,id'],
-            'items.*.quantity_requested' => ['required', 'integer', 'min:1'],
+            'items.*.inventory_item_id' => ['required', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNotNull('unit_id')->whereNull('deleted_at')],
+            'items.*.warehouse_id' => ['nullable', 'integer', Rule::exists('i_warehouses', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
+            'items.*.quantity_requested' => ['required', 'numeric', 'decimal:0,4', 'min:0.0001'],
             'items.*.estimated_unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.notes' => ['nullable', 'string', 'max:1000'],
         ];
@@ -45,7 +50,7 @@ class InventoryNeedRequest extends FormRequest
                     return;
                 }
 
-                $selectedLabBelongsToDepartment = \App\Models\VAPLab::query()
+                $selectedLabBelongsToDepartment = VAPLab::query()
                     ->whereKey($this->integer('lab_id'))
                     ->where('department_id', $this->integer('department_id'))
                     ->exists();

@@ -2,270 +2,125 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Analysis;
-use App\Models\Parameter;
-use App\Models\Result;
-use App\Models\Worksheet;
+use App\Actions\CreateAnalysisWorksheet;
+use App\Actions\SaveWorksheet;
+use App\Actions\SetWorksheetArchived;
+use App\Http\Requests\ArchiveWorksheetsRequest;
+use App\Http\Requests\SaveWorksheetRequest;
+use App\Http\Resources\WorksheetResource;
+use App\Services\LaboratoryWorksheetAccess;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class WorksheetController extends Controller
 {
-    public function index()
-    {
-        $worksheets = Worksheet::query()
-            ->latest('updated_at')
-            ->get(['id', 'name', 'worksheets', 'updated_at']);
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratory,
+        private readonly LaboratoryWorksheetAccess $worksheets,
+    ) {}
 
-        return inertia('Worksheets/Index', [
-            'worksheets' => $worksheets,
+    public function index(Request $request): Response
+    {
+        $labId = $this->laboratory->activeLabId();
+        $operator = $this->worksheets->operator($labId, (int) $request->user()->id, 'view_worksheets');
+        $validated = $request->validate(['trashed' => ['nullable', 'in:only,with']]);
+        $records = $this->worksheets->records($labId)
+            ->when(($validated['trashed'] ?? null) === 'only', fn ($query) => $query->onlyTrashed())
+            ->when(($validated['trashed'] ?? null) === 'with', fn ($query) => $query->withTrashed())
+            ->latest('updated_at')->latest('id')->get();
+
+        return Inertia::render('Worksheets/Index', [
+            'worksheets' => WorksheetResource::collection($records)->resolve($request),
+            'trashed' => $validated['trashed'] ?? '',
+            'can_restore' => $operator->can('restore_worksheets'),
         ]);
     }
 
-    public function getWorksheet(): JsonResponse
+    public function getWorksheet(Request $request): JsonResponse
     {
-        $search = request()->string('q')->trim()->toString();
-
-        $data = Worksheet::query()
-            ->select(['id', 'name', 'updated_at'])
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where('name', 'LIKE', "%{$search}%");
-            })
-            ->latest('updated_at')
-            ->limit(25)
-            ->get()
-            ->map(fn (Worksheet $worksheet): array => [
-                'id' => $worksheet->id,
-                'value' => $worksheet->id,
-                'label' => $worksheet->name,
-                'name' => $worksheet->name,
+        $labId = $this->laboratory->activeLabId();
+        $this->worksheets->operator($labId, (int) $request->user()->id, 'view_worksheets');
+        $validated = $request->validate(['q' => ['nullable', 'string', 'max:255']]);
+        $search = trim($validated['q'] ?? '');
+        $data = $this->worksheets->records($labId)->select(['id', 'name', 'updated_at'])
+            ->when($search !== '', fn ($query) => $query->whereLike('name', "%{$search}%"))
+            ->latest('updated_at')->latest('id')->limit(25)->get()
+            ->map(fn ($worksheet): array => [
+                'id' => $worksheet->id, 'value' => $worksheet->id,
+                'label' => $worksheet->name, 'name' => $worksheet->name,
                 'updated_at' => $worksheet->updated_at?->toIso8601String(),
             ]);
 
         return response()->json($data);
     }
 
-    // Store a new worksheet file
-    public function store(Request $request)
+    public function store(SaveWorksheetRequest $request, SaveWorksheet $save): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'worksheets' => 'required|array|min:1',
-        ]);
+        $worksheet = $save->execute($this->laboratory->activeLabId(), (int) $request->user()->id, $request->validated());
 
-        $worksheet = Worksheet::create([
-            'name' => $validated['name'],
-            'worksheets' => $validated['worksheets'],
-            'user_id' => auth()->id(),
-        ]);
+        return to_route('worksheets.show', $worksheet)->with('toast', $this->toast('record_successfully_created'));
+    }
 
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ],
+    public function show(Request $request, string $worksheet): Response
+    {
+        $labId = $this->laboratory->activeLabId();
+        $operator = $this->worksheets->operator($labId, (int) $request->user()->id, 'view_worksheets');
+        $record = $this->worksheets->records($labId)->findOrFail($this->recordId($worksheet));
+
+        return Inertia::render('Worksheets/Edit', [
+            'worksheet' => WorksheetResource::make($record)->resolve($request),
+            'can_edit' => $operator->can('edit_worksheets'),
         ]);
     }
 
-    // Retrieve a worksheet file
-    public function show($id)
+    public function update(SaveWorksheetRequest $request, string $worksheet, SaveWorksheet $save): RedirectResponse
     {
-        $worksheet = Worksheet::findOrFail($id);
+        $save->execute($this->laboratory->activeLabId(), (int) $request->user()->id, $request->validated(), $this->recordId($worksheet));
 
-        return Inertia::render('Worksheets/Edit', ['worksheet' => $worksheet]);
+        return to_route('worksheets.show', $worksheet)->with('toast', $this->toast('record_successfully_updated'));
     }
 
-    // Update an existing worksheet file
-    public function update(Request $request, $id)
+    public function destroy(ArchiveWorksheetsRequest $request, SetWorksheetArchived $archive): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'worksheets' => 'sometimes|array|min:1',
-        ]);
+        $archive->execute($this->laboratory->activeLabId(), (int) $request->user()->id,
+            array_map('intval', $request->validated('recordIds')), archived: true);
 
-        $worksheet = Worksheet::findOrFail($id);
-        $worksheet->update($validated);
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ],
-        ]);
+        return back()->with('toast', $this->toast('record_successfully_deleted'));
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function restore(ArchiveWorksheetsRequest $request, SetWorksheetArchived $archive): RedirectResponse
     {
-        $validated = $request->validate([
-            'recordIds' => ['required', 'array', 'min:1'],
-            'recordIds.*' => ['integer', 'exists:worksheets,id'],
-        ]);
+        $archive->execute($this->laboratory->activeLabId(), (int) $request->user()->id,
+            array_map('intval', $request->validated('recordIds')), archived: false);
 
-        Worksheet::query()
-            ->whereIn('id', $validated['recordIds'])
-            ->delete();
+        return back()->with('toast', $this->toast('record_successfully_restored'));
+    }
 
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ],
+    public function storeAnalysisDraft(Request $request, string $analysis, CreateAnalysisWorksheet $create): RedirectResponse
+    {
+        $worksheet = $create->execute($this->laboratory->activeLabId(), (int) $request->user()->id, $this->recordId($analysis));
+
+        return to_route('worksheets.show', $worksheet)->with('toast', [
+            'title' => trans('gestlab.toasts.notification'),
+            'message' => 'Folha de trabalho analítica disponível com base no âmbito controlado da análise.',
         ]);
     }
 
-    public function restore(): RedirectResponse
+    private function recordId(string $value): int
     {
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ],
-        ]);
+        $id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        abort_if($id === false, 404);
+
+        return $id;
     }
 
-    public function storeAnalysisDraft(Analysis $analysis)
+    /** @return array{title: string, message: string} */
+    private function toast(string $message): array
     {
-        $analysis->load([
-            'profile.parameters.pivot.unit',
-            'type',
-            'department',
-            'product',
-            'sample.results.parameter',
-            'sample.collection.collection',
-        ]);
-
-        $existingWorksheet = Worksheet::query()
-            ->where('worksheets->analysis_id', $analysis->id)
-            ->latest('updated_at')
-            ->first();
-
-        if ($existingWorksheet) {
-            return redirect()->route('worksheets.show', $existingWorksheet);
-        }
-
-        $expectedParameters = $analysis->profile?->parameters
-            ? $analysis->profile->parameters
-                ->unique('id')
-                ->sortBy('name')
-                ->values()
-            : collect();
-
-        $existingResults = $analysis->sample?->results
-            ? $analysis->sample->results
-                ->sortByDesc(fn ($result) => $result->approved_date ?? $result->verified_date ?? $result->inserted_date)
-                ->unique('parameter_id')
-                ->keyBy('parameter_id')
-            : collect();
-
-        $scopeControl = $this->buildWorksheetScopeControl($analysis, $expectedParameters, $existingResults);
-
-        $parameterRows = $expectedParameters
-            ->map(function ($parameter, int $index) use ($existingResults) {
-                $result = $existingResults->get($parameter->id);
-                $currentValue = $result?->approved_value ?? $result?->verified_value ?? $result?->inserted_value;
-                $workflowStatus = $result?->approved_date
-                    ? 'Aprovado'
-                    : ($result?->verified_date
-                        ? 'Verificado'
-                        : ($result?->inserted_date ? 'Inserido' : 'Pendente'));
-
-                return [
-                    $index + 1,
-                    $parameter->code,
-                    $parameter->name,
-                    $parameter->pivot?->unit?->code,
-                    $parameter->requires_calculation ? 'Calculado' : 'Manual',
-                    $parameter->pivot?->min_ref_value,
-                    $parameter->pivot?->max_ref_value,
-                    $currentValue ?? '',
-                    $workflowStatus,
-                    $result?->verification_notes ?? $result?->approval_notes ?? $result?->insertion_notes ?? '',
-                ];
-            })
-            ->all();
-
-        $worksheet = Worksheet::query()->create([
-            'name' => 'Folha de trabalho - '.($analysis->code?->code ?? ('Análise #'.$analysis->id)),
-            'worksheets' => [
-                'analysis_id' => $analysis->id,
-                'collection_product_id' => $analysis->code?->collection_id,
-                'sample_id' => $analysis->sample_id,
-                'profile_id' => $analysis->profile_id,
-                'generated_from' => 'analysis_scope',
-                'scope_control' => $scopeControl,
-                'sheets' => [
-                    [
-                        'id' => 'scope-control',
-                        'name' => 'Controlo do âmbito',
-                        'data' => array_merge([
-                            ['Código da amostra', $analysis->code?->code],
-                            ['Departamento', $analysis->department?->name],
-                            ['Perfil', $analysis->profile?->name],
-                            ['Produto', $analysis->product?->name],
-                            ['Condicionamento na recepção', data_get($analysis->sample?->collection?->collection?->extra_data, 'submitted_payload.conditioning_status', 'not_evaluated')],
-                            ['Estado do âmbito', $scopeControl['status_label']],
-                            ['Parâmetros previstos', $scopeControl['expected_count']],
-                            ['Resultados concluídos', $scopeControl['completed_count']],
-                            ['Parâmetros em falta', $scopeControl['missing_count']],
-                            [''],
-                            ['#', 'Código', 'Parâmetro', 'Unidade', 'Tipo', 'Referência mínima', 'Referência máxima', 'Valor actual', 'Estado do fluxo', 'Notas'],
-                        ], $parameterRows),
-                    ],
-                ],
-            ],
-            'user_id' => auth()->id(),
-        ]);
-
-        return redirect()->route('worksheets.show', $worksheet)->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => 'Folha de trabalho analítica criada com base no âmbito controlado da análise.',
-            ],
-        ]);
-    }
-
-    /**
-     * @param  Collection<int, Parameter>  $expectedParameters
-     * @param  Collection<int, Result>  $existingResults
-     * @return array<string, mixed>
-     */
-    private function buildWorksheetScopeControl(Analysis $analysis, $expectedParameters, $existingResults): array
-    {
-        $missingParameters = $expectedParameters
-            ->reject(fn ($parameter) => $existingResults->has($parameter->id))
-            ->map(fn ($parameter) => [
-                'id' => $parameter->id,
-                'code' => $parameter->code,
-                'name' => $parameter->name,
-            ])
-            ->values()
-            ->all();
-
-        $completedCount = $existingResults
-            ->filter(fn ($result) => filled($result->approved_value) || filled($result->verified_value) || filled($result->inserted_value))
-            ->count();
-
-        $expectedCount = $expectedParameters->count();
-        $missingCount = count($missingParameters);
-        $status = $missingCount === 0
-            ? 'complete'
-            : ($completedCount > 0 ? 'partial' : 'pending');
-
-        return [
-            'status' => $status,
-            'status_label' => match ($status) {
-                'complete' => 'Completo',
-                'partial' => 'Parcial',
-                default => 'Pendente',
-            },
-            'expected_count' => $expectedCount,
-            'completed_count' => $completedCount,
-            'missing_count' => $missingCount,
-            'missing_parameters' => $missingParameters,
-            'conditioning_status' => data_get($analysis->sample?->collection?->collection?->extra_data, 'submitted_payload.conditioning_status'),
-        ];
+        return ['title' => trans('gestlab.toasts.notification'), 'message' => trans('gestlab.toasts.'.$message)];
     }
 }

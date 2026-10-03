@@ -291,13 +291,13 @@ class CollectionProduct extends Model
     {
         parent::boot();
         self::deleting(function ($product) {
-            if ($product->collection->products && $product->collection->products->count() < 2) {
-                $product->collection->collectionable->delete();
+            if ($product->collection?->products && $product->collection->products->count() < 2) {
+                $product->collection->collectionable?->delete();
                 $product->collection()->delete();
             }
 
             $product->quality_certificate()->delete();
-            $product->code->samples->each->delete();
+            $product->code?->samples->each->delete();
         });
     }
 

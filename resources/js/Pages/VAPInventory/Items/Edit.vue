@@ -1,38 +1,46 @@
 <template>
+  <div>
+  <p v-if="documentMessage" :role="documentFailed ? 'alert' : 'status'" class="mb-4 text-sm">{{ documentMessage }}</p>
   <InventoryItemFormSurface
     mode="edit"
     :title="'Editar item: ' + item.name"
-    description="Actualize dados técnicos, existências por armazém, anexos e controlos metrológicos mantendo a rastreabilidade do item."
+    description="Actualize os dados técnicos, anexos e controlos metrológicos. As existências são ajustadas separadamente, com registo de movimentos."
     :back-href="route('vap-inventory.items.show', item.id)"
     back-label="Voltar ao item"
     submit-label="Guardar alterações"
     :form="form"
+    :attachment-processing="documentProcessing"
     :errors="errors"
     :categories="categories"
     :types="types"
     :status-options="statusOptions"
     :suppliers="suppliers"
     :units="units"
+    :departments="departments"
+    :equipment-categories="equipmentCategories"
+    :packaging-categories="packagingCategories"
     :warehouses="warehouses"
     :warehouse-info="warehouseInfo"
-    :warehouse-errors="warehouseErrors"
     :is-reagent="isReagent"
     :is-equipment="isEquipment"
     :total-stock="totalStock"
     :item="item"
+    :identity-locks="identityLocks"
     v-model:selected-category="selectedCategory"
     v-model:selected-type="selectedType"
     v-model:selected-status="selectedStatus"
     v-model:selected-supplier="selectedSupplier"
     v-model:selected-unit="selectedUnit"
+    v-model:selected-department="selectedDepartment"
+    v-model:selected-equipment-category="selectedEquipmentCategory"
+    v-model:selected-packaging-category="selectedPackagingCategory"
     @submit="submit"
-    @add-warehouse="addWarehouse"
-    @remove-warehouse="removeWarehouse"
-    @update-warehouse-info="updateWarehouseInfo"
     @delete-attachment="deleteAttachment"
   />
+  </div>
 </template>
 <script setup>
+import { useRecordArchive } from '@/composables/useRecordArchive'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import InventoryItemFormSurface from '@/Components/vap-inventory/InventoryItemFormSurface.vue'
@@ -45,17 +53,24 @@ const props = defineProps({
   allStatuses: Array,
   suppliers: Array,
   units: Array,
+  departments: Array,
+  equipmentCategories: Array,
+  packagingCategories: Array,
   warehouses: Array,
   errors: Object,
   documents: Array,
+  identityLocks: Object,
 })
 
 const warehouseInfo = ref({})
 const filteredStatuses = ref([])
-const warehouseErrors = ref({})
 
 const form = useForm({
   name: props.item.name,
+  location: props.item.location,
+  department_id: props.item.department_id,
+  eq_cat_id: props.item.eq_cat_id,
+  packaging_type_id: props.item.packaging_type_id,
   code: props.item.code,
   category_id: props.item.category_id,
   type_id: props.item.type_id,
@@ -102,11 +117,18 @@ const form = useForm({
   documents: props.documents || [],
 })
 
-const selectedCategory = ref(null)
-const selectedType = ref(null)
-const selectedStatus = ref(null)
-const selectedSupplier = ref(null)
-const selectedUnit = ref(null)
+const selection = (rows, id, label = row => row.name) => {
+  const row = rows?.find(row => Number(row.id) === Number(id))
+  return row ? { value: row.id, label: label(row) } : null
+}
+const selectedCategory = ref(selection(props.categories, props.item.category_id))
+const selectedType = ref(selection(props.types, props.item.type_id))
+const selectedStatus = ref(selection(props.allStatuses, props.item.status_id))
+const selectedSupplier = ref(selection(props.suppliers, props.item.supplier_id))
+const selectedUnit = ref(selection(props.units, props.item.unit_id, unit => `${unit.code} - ${unit.description || unit.name || ''}`.trim()))
+const selectedDepartment = ref(selection(props.departments, props.item.department_id))
+const selectedEquipmentCategory = ref(selection(props.equipmentCategories, props.item.eq_cat_id))
+const selectedPackagingCategory = ref(selection(props.packagingCategories, props.item.packaging_type_id))
 
 const updateFilteredStatuses = (categoryId = null, forceIncludeCurrent = false) => {
   if (!props.allStatuses || props.allStatuses.length === 0) {
@@ -172,6 +194,9 @@ watch(selectedType, (newVal) => form.type_id = newVal?.value || '')
 watch(selectedStatus, (newVal) => form.status_id = newVal?.value || '')
 watch(selectedSupplier, (newVal) => form.supplier_id = newVal?.value || '')
 watch(selectedUnit, (newVal) => form.unit_id = newVal?.value || '')
+watch(selectedDepartment, (selection) => form.department_id = selection?.value ?? null)
+watch(selectedEquipmentCategory, (selection) => form.eq_cat_id = selection?.value ?? null)
+watch(selectedPackagingCategory, (selection) => form.packaging_type_id = selection?.value ?? null)
 
 
 const isReagent = computed(() => {
@@ -183,111 +208,40 @@ const isReagent = computed(() => {
 const isEquipment = computed(() => {
   if (!selectedCategory.value) return false
   const category = props.categories.find(c => c.id === selectedCategory.value.value)
-  return category?.name?.toLowerCase().includes('equipamento') || false
+  return category?.inventory_type === 'equipment'
 })
 
 const totalStock = computed(() => {
   return form.warehouses.reduce((sum, wh) => sum + (Number(wh.qty_available) || 0), 0)
 })
 
-const addWarehouse = () => {
-  form.warehouses.push({
-    id_obj: null,
-    id: '',
-    qty_available: 0,
-    min_stock_level: 0,
-    reorder_point: 0,
-  })
-}
-
-const removeWarehouse = (index) => {
-  form.warehouses.splice(index, 1)
-  delete warehouseErrors.value[index]
-  // Re-index errors
-  const newErrors = {}
-  Object.keys(warehouseErrors.value).forEach(key => {
-    if (key > index) {
-      newErrors[key - 1] = warehouseErrors.value[key]
-    } else if (key < index) {
-      newErrors[key] = warehouseErrors.value[key]
-    }
-  })
-  warehouseErrors.value = newErrors
-}
-
-// const updateWarehouseInfo = (index) => {
-//   const warehouseId = form.warehouses[index].id
-//   if (warehouseId) {
-//     const warehouse = props.warehouses.find(w => w.id == warehouseId)
-//     warehouseInfo.value[index] = warehouse
-//   } else {
-//     delete warehouseInfo.value[index]
-//   }
-// }
-
-const updateWarehouseInfo = (index) => {
-  const selectedObj = form.warehouses[index].id_obj // Use a separate key for the UI object
-  
-  if (selectedObj) {
-    // Set the actual ID for the form submission
-    form.warehouses[index].id = selectedObj.value
-    
-    // Find metadata for the UI display
-    const info = props.warehouses.find(w => w.id === selectedObj.value)
-    warehouseInfo.value[index] = info
-  } else {
-    warehouseInfo.value[index] = null
-    form.warehouses[index].id = ''
-  }
-}
-
-const validateWarehouses = () => {
-  warehouseErrors.value = {}
-  let isValid = true
-
-  form.warehouses.forEach((warehouse, index) => {
-    const errors = {}
-    
-    if (!warehouse.id) {
-      errors.id = 'Armazém é obrigatório'
-      isValid = false
-    }
-    
-    if (warehouse.qty_available === '' || warehouse.qty_available < 0) {
-      errors.qty_available = 'Quantidade válida é obrigatória'
-      isValid = false
-    }
-
-    if (Object.keys(errors).length > 0) {
-      warehouseErrors.value[index] = errors
-    }
-  })
-
-  return isValid
-}
-
 const submit = () => {
-  if (!validateWarehouses()) {
+  if (form.processing || documentProcessing.value) return
+  form.clearErrors('request')
+  const hasNewDocuments = form.documents.some(document => document instanceof File)
+  const options = {
+    preserveScroll: true,
+    onHttpException: () => {
+      form.setError('request', 'Não foi possível guardar as alterações. Confirme os dados e as permissões antes de tentar novamente.')
+      return false
+    },
+    onNetworkError: () => {
+      form.setError('request', 'Ligação interrompida. A operação não foi confirmada; verifique o registo antes de repetir.')
+      return false
+    },
+  }
+  form.transform(({ warehouses, ...data }) => ({
+    ...data,
+    documents: data.documents.filter(document => document instanceof File),
+    ...(hasNewDocuments ? { _method: 'put' } : {}),
+  }))
+
+  if (hasNewDocuments) {
+    form.post(route('vap-inventory.items.update', props.item.id), options)
     return
   }
 
-  form.put(route('vap-inventory.items.update', props.item.id), {
-    preserveScroll: true,
-    onError: (errors) => {
-      // Handle warehouse errors separately
-      if (errors.warehouses) {
-        try {
-          const whErrors = JSON.parse(errors.warehouses)
-          warehouseErrors.value = whErrors
-        } catch {
-          warehouseErrors.value = {}
-        }
-      }
-    },
-    onSuccess: () => {
-      // Success - optionally show message
-    },
-  })
+  form.put(route('vap-inventory.items.update', props.item.id), options)
 }
 
 onMounted(() => {
@@ -310,67 +264,17 @@ onMounted(() => {
         warehouseInfo.value[form.warehouses.length - 1] = warehouse
       }
     })
-  } else {
-    addWarehouse()
   }
 
-  const category = props.categories.find(category => Number(category.id) === Number(props.item.category_id))
-  if (category) {
-    selectedCategory.value = {
-      value: category.id,
-      label: category.name,
-    }
-  }
-
-  const type = props.types.find(type => Number(type.id) === Number(props.item.type_id))
-  if (type) {
-    selectedType.value = {
-      value: type.id,
-      label: type.name,
-    }
-  }
-
-  const unit = props.units.find(unit => Number(unit.id) === Number(props.item.unit_id))
-  if (unit) {
-    selectedUnit.value = {
-      value: unit.id,
-      label: `${unit.code} - ${unit.description || unit.name || ''}`.trim(),
-    }
-  }
-
-  const status = props.allStatuses.find(status => Number(status.id) === Number(props.item.status_id))
-  if (status) {
-    selectedStatus.value = {
-      value: status.id,
-      label: status.name,
-    }
-  }
-
-  const supplier = props.suppliers.find(supplier => Number(supplier.id) === Number(props.item.supplier_id))
-  if (supplier) {
-    selectedSupplier.value = {
-      value: supplier.id,
-      label: supplier.name,
-    }
-  }
 })
 
-const deleteForm = useForm({
-    model_id: null,
-    id: null,
+const { processing: documentProcessing, message: documentMessage, failed: documentFailed, submit: submitDocumentArchive } = useRecordArchive({
+  destroyUrl: ids => route('vap-inventory.items.attachments.delete', { model_id: props.item.id, id: ids[0] }),
+  onSuccess: () => { form.documents = form.documents.filter(document => document instanceof File || props.documents.some(retained => retained.id === document.id)); },
 });
 
-
-function deleteAttachment(model_id, id, index) {
-    deleteForm.model_id = model_id;
-    deleteForm.id = id;
-
-    deleteForm.delete(route('vap-inventory.items.delete-attachment', {model_id: model_id, id: id}), {
-        preserveScroll: true,
-        preserveState: false,
-        onSuccess: () => {
-            form.documents.splice(index, 1);
-        },
-    });
+function deleteAttachment(model_id, id) {
+  if (form.processing || documentProcessing.value || model_id !== props.item.id) return;
+  submitDocumentArchive('delete', [id]);
 }
 </script>

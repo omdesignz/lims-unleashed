@@ -36,8 +36,6 @@ use App\Http\Controllers\DocumentShareController;
 use App\Http\Controllers\DownloadBackupController;
 use App\Http\Controllers\EnvironmentalConditionController;
 use App\Http\Controllers\EquipmentCategoryController;
-use App\Http\Controllers\EquipmentImportController;
-use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\ExportCertificateController;
 use App\Http\Controllers\ExportHubController;
 use App\Http\Controllers\FAQAnswerController;
@@ -69,7 +67,11 @@ use App\Http\Controllers\ISORevisionController;
 use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\ItemStatusController;
 use App\Http\Controllers\LabCodeController;
+use App\Http\Controllers\LabNetworkController;
 use App\Http\Controllers\LaboratoryDataExportController;
+use App\Http\Controllers\LaboratoryMembershipController;
+use App\Http\Controllers\LaboratorySampleQueueController;
+use App\Http\Controllers\LaboratoryWorkbenchController;
 use App\Http\Controllers\LaboratoryWorkflowController;
 use App\Http\Controllers\LanguageStoreController;
 use App\Http\Controllers\MaintenanceCategoryController;
@@ -157,6 +159,7 @@ use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorksheetController;
+use App\Http\Middleware\EnsureSampleLaboratoryAccess;
 use App\Http\Middleware\UsePortalFortifyConfiguration;
 use App\Models\CollectionProduct;
 use App\Models\CustomerRequest;
@@ -296,15 +299,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     });
 
     Route::controller(OccurrenceImportController::class)->group(function () {
-        Route::get('/occurrences/import', 'form')->name('occurrences.import.form');
+        Route::get('/occurrences/import-template', 'template')->name('occurrences.import.template');
         Route::post('/occurrences/import', 'upload')->name('occurrences.import.upload');
-        Route::get('/occurrences/import-progress/{batchId}', 'progress')->name('occurrences.import.progress');
-    });
-
-    Route::controller(EquipmentImportController::class)->group(function () {
-        Route::get('/equipments/import', 'form')->name('equipments.import.form');
-        Route::post('/equipments/import', 'upload')->name('equipments.import.upload');
-        Route::get('/equipments/import-progress/{batchId}', 'progress')->name('equipments.import.progress');
     });
 
     Route::controller(MaintenanceTaskImportController::class)->group(function () {
@@ -313,8 +309,10 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('/maintenance-tasks/import-progress/{batchId}', 'progress')->name('maintenancetasks.import.progress');
     });
 
-    Route::get('/dashboard', [ExecutiveDashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/export', [ExecutiveDashboardController::class, 'export'])->name('dashboard.export');
+    Route::get('/dashboard', LaboratoryWorkbenchController::class)->name('dashboard');
+    Route::get('/lab-networks/{network}', [LabNetworkController::class, 'index'])->name('lab-network.index');
+    Route::post('/laboratory-context/{lab}', [LabNetworkController::class, 'switchLab'])->name('lab-context.switch');
+    Route::put('/laboratory-branding/{lab}', [LabNetworkController::class, 'updateBranding'])->name('lab-branding.update');
     Route::get('/laboratory-workflow', [LaboratoryWorkflowController::class, 'index'])->name('laboratory-workflow.index');
     Route::post('/laboratory-workflow/{proposal}/reports', [LaboratoryWorkflowController::class, 'storeReports'])->name('laboratory-workflow.reports.store');
     Route::get('/report-studios', [ReportStudioController::class, 'index'])->name('report-studios.index');
@@ -323,7 +321,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::put('/report-studios/{reportStudio}', [ReportStudioController::class, 'update'])->name('report-studios.update');
     Route::delete('/report-studios/{reportStudio}', [ReportStudioController::class, 'destroy'])->name('report-studios.destroy');
     Route::get('/report-studios/{reportStudio}/preview-pdf', [ReportStudioController::class, 'previewPdf'])->name('report-studios.preview-pdf');
-    Route::get('/qms', [QMSController::class, 'index'])->name('qms.index');
+    Route::get('/qms', [QMSController::class, 'index'])->middleware('can:view_activity_log')->name('qms.index');
     Route::get('/supplier-assessments', [SupplierAssessmentController::class, 'index'])->name('supplier-assessments.index');
     Route::post('/supplier-assessments', [SupplierAssessmentController::class, 'store'])->name('supplier-assessments.store');
     Route::put('/supplier-assessments/{supplierAssessment}', [SupplierAssessmentController::class, 'update'])->name('supplier-assessments.update');
@@ -492,6 +490,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::post('/files/upload-folder', [VAPFileController::class, 'uploadFolder'])->name('files.upload-folder');
         Route::get('/files', [VAPFileController::class, 'index'])->name('files.list');
         Route::get('/files/search', [VAPFileController::class, 'search'])->name('files.search');
+        Route::get('/files/breadcrumbs/{folder?}', [VAPFileController::class, 'getBreadcrumbs'])->name('files.breadcrumbs');
         Route::get('/files/{file}', [VAPFileController::class, 'show'])->name('files.show');
         Route::put('/files/{file}/rename', [VAPFileController::class, 'rename'])->name('files.rename');
         Route::put('/files/{file}/move', [VAPFileController::class, 'move'])->name('files.move');
@@ -500,13 +499,13 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::delete('/files/{file}', [VAPFileController::class, 'destroy'])->name('files.destroy');
         Route::post('/files/{file}/share', [VAPFileController::class, 'share'])->name('files.share');
         Route::get('/files/{file}/versions', [VAPFileController::class, 'versions'])->name('files.versions');
+        Route::get('/files/{file}/versions/{older}/compare/{newer}', [VAPFileController::class, 'compareVersions'])->name('files.versions.compare');
         Route::post('/files/{file}/versions/{version}/restore', [VAPFileController::class, 'restoreVersion'])->name('files.versions.restore');
         Route::get('/files/{file}/download', [VAPFileController::class, 'download'])->name('files.download');
         Route::put('/files/{file}/metadata', [VAPFileController::class, 'updateMetadata'])->name('files.metadata.update');
         Route::post('/files/{file}/submit-review', [VAPFileController::class, 'submitReview'])->name('files.submit-review');
         Route::post('/files/{file}/approve', [VAPFileController::class, 'approve'])->name('files.approve');
         Route::post('/files/{file}/obsolete', [VAPFileController::class, 'markObsolete'])->name('files.obsolete');
-        Route::get('/files/breadcrumbs/{folder?}', [VAPFileController::class, 'getBreadcrumbs'])->name('files.breadcrumbs');
         Route::get('/files/folders/getFolder', [VAPFileController::class, 'getFolders'])->name('files.folders-list');
 
         // Tag routes
@@ -606,12 +605,11 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('occurrences', 'index')->name('occurrences.index');
         Route::get('occurrences/create', 'create')->name('occurrences.create');
         Route::post('occurrences', 'store')->name('occurrences.store');
-        Route::get('occurrences/{occurrence}/edit', 'edit')->name('occurrences.edit');
-        Route::put('occurrences/{occurrence}', 'update')->name('occurrences.update');
-        Route::get('occurrences/{occurrence}/show', 'show')->name('occurrences.show');
-        Route::get('occurrences/destroy', 'destroy')->name('occurrences.destroy');
-        Route::get('occurrences/restore', 'restore')->name('occurrences.restore');
-        // Route::get('occurrences/getOccurrence', 'getOccurrence')->name('occurrences.getOccurrence');
+        Route::get('occurrences/{occurrence}/edit', 'edit')->whereNumber('occurrence')->name('occurrences.edit');
+        Route::put('occurrences/{occurrence}', 'update')->whereNumber('occurrence')->name('occurrences.update');
+        Route::get('occurrences/{occurrence}/show', 'show')->whereNumber('occurrence')->name('occurrences.show');
+        Route::post('occurrences/destroy', 'destroy')->name('occurrences.destroy');
+        Route::post('occurrences/restore', 'restore')->name('occurrences.restore');
     });
 
     Route::controller(ComplaintController::class)->group(function () {
@@ -724,6 +722,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     // Rating
     Route::controller(RatingController::class)->group(function () {
         Route::get('ratings', 'index')->name('ratings.index');
+        Route::post('ratings/invitations', 'issueInvitation')->name('ratings.invitations.store');
+        Route::post('ratings/invitations/{invitation}/revoke', 'revokeInvitation')->whereUuid('invitation')->name('ratings.invitations.revoke');
         Route::get('rate/{rateableType}/{rateableId?}', 'create')->whereNumber('rateableId')->name('rating.create');
         Route::post('rate/{rateableType}/{rateableId?}', 'store')->whereNumber('rateableId')->name('rating.store');
     });
@@ -790,11 +790,11 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::post('import-certificates', 'store')->name('importcertificates.store');
         Route::get('import-certificates/{importcertificate}/edit', 'edit')->name('importcertificates.edit');
         Route::get('import-certificates/getIssueInvoiceModal', 'getIssueInvoiceModal')->name('importcertificates.getIssueInvoiceModal');
-        Route::post('import-certificates', 'issueInvoice')->name('importcertificates.issueInvoice');
+        Route::post('import-certificates/issue-invoice', 'issueInvoice')->name('importcertificates.issueInvoice');
         Route::put('import-certificates/{importcertificate}', 'update')->name('importcertificates.update');
         Route::get('import-certificates/{importcertificate}/show', 'show')->name('importcertificates.show');
-        Route::get('import-certificates/destroy', 'destroy')->name('importcertificates.destroy');
-        Route::get('import-certificates/restore', 'restore')->name('importcertificates.restore');
+        Route::delete('import-certificates/destroy', 'destroy')->name('importcertificates.destroy');
+        Route::patch('import-certificates/restore', 'restore')->name('importcertificates.restore');
         Route::get('import-certificates/getImportCertificate', 'getImportCertificate')->name('importcertificates.getImportCertificate');
         Route::get('import-certificates/getPDF', 'getPDF')->name('importcertificates.getPDF');
 
@@ -807,11 +807,11 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::post('export-certificates', 'store')->name('exportcertificates.store');
         Route::get('export-certificates/{exportcertificate}/edit', 'edit')->name('exportcertificates.edit');
         Route::get('export-certificates/getIssueInvoiceModal', 'getIssueInvoiceModal')->name('exportcertificates.getIssueInvoiceModal');
-        Route::post('export-certificates', 'issueInvoice')->name('exportcertificates.issueInvoice');
+        Route::post('export-certificates/issue-invoice', 'issueInvoice')->name('exportcertificates.issueInvoice');
         Route::put('export-certificates/{exportcertificate}', 'update')->name('exportcertificates.update');
         Route::get('export-certificates/{exportcertificate}/show', 'show')->name('exportcertificates.show');
-        Route::get('export-certificates/destroy', 'destroy')->name('exportcertificates.destroy');
-        Route::get('export-certificates/restore', 'restore')->name('exportcertificates.restore');
+        Route::delete('export-certificates/destroy', 'destroy')->name('exportcertificates.destroy');
+        Route::patch('export-certificates/restore', 'restore')->name('exportcertificates.restore');
         Route::get('export-certificates/getExportCertificate', 'getExportCertificate')->name('exportcertificates.getExportCertificate');
         Route::get('export-certificates/getPDF', 'getPDF')->name('exportcertificates.getPDF');
 
@@ -913,14 +913,14 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('proficiency-tests', 'index')->name('proficiency_tests.index');
         Route::get('proficiency-tests/create', 'create')->name('proficiency_tests.create');
         Route::post('proficiency-tests', 'store')->name('proficiency_tests.store');
-        Route::get('proficiency-tests/destroy', 'destroy')->name('proficiency_tests.destroy');
-        Route::get('proficiency-tests/restore', 'restore')->name('proficiency_tests.restore');
-        Route::get('proficiency-tests/{test}', 'show')->name('proficiency_tests.show');
-        Route::get('proficiency-tests/{test}/edit', 'edit')->name('proficiency_tests.edit');
-        Route::put('proficiency-tests/{test}', 'update')->name('proficiency_tests.update');
-        Route::get('proficiency-tests/{test}/results-template', 'downloadResultsTemplate')->name('proficiency_tests.results.template');
-        Route::post('proficiency-tests/{test}/results-import', 'importResults')->name('proficiency_tests.results.import');
-        Route::put('proficiency-tests/{test}/results', 'updateResults')->name('proficiency_tests.results.update');
+        Route::post('proficiency-tests/destroy', 'destroy')->name('proficiency_tests.destroy');
+        Route::post('proficiency-tests/restore', 'restore')->name('proficiency_tests.restore');
+        Route::get('proficiency-tests/{test}', 'show')->whereNumber('test')->name('proficiency_tests.show');
+        Route::get('proficiency-tests/{test}/edit', 'edit')->whereNumber('test')->name('proficiency_tests.edit');
+        Route::put('proficiency-tests/{test}', 'update')->whereNumber('test')->name('proficiency_tests.update');
+        Route::get('proficiency-tests/{test}/results-template', 'downloadResultsTemplate')->whereNumber('test')->name('proficiency_tests.results.template');
+        Route::post('proficiency-tests/{test}/results-import', 'importResults')->whereNumber('test')->name('proficiency_tests.results.import');
+        Route::put('proficiency-tests/{test}/results', 'updateResults')->whereNumber('test')->name('proficiency_tests.results.update');
     });
 
     // Variables
@@ -983,7 +983,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('/notifications', [NotificationController::class, 'adminIndex'])->name('notifications.index');
         Route::get('/notifications/create', [NotificationController::class, 'adminCreate'])->name('notifications.create');
         Route::get('/notifications/templates', [NotificationTemplateController::class, 'index'])->name('notification-templates.index');
-        Route::put('/notifications/templates/{notificationTemplate}', [NotificationTemplateController::class, 'update'])->name('notification-templates.update');
+        Route::put('/notifications/templates/{key}', [NotificationTemplateController::class, 'update'])->where('key', '[a-z0-9_.]+')->name('notification-templates.update');
+        Route::delete('/notifications/templates/{key}', [NotificationTemplateController::class, 'destroy'])->where('key', '[a-z0-9_.]+')->name('notification-templates.destroy');
         Route::get('/notifications/analytics', [NotificationController::class, 'adminAnalytics'])->name('notifications.analytics');
         Route::get('/notifications/export', [NotificationController::class, 'adminExport'])->name('notifications.export');
         Route::post('/notifications', [NotificationController::class, 'adminStore'])->name('notifications.store');
@@ -1037,11 +1038,9 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::controller(AnalysisController::class)->group(function () {
         Route::get('analysis', 'index')->name('analysis.index');
         Route::get('analysis/create', 'create')->name('analysis.create');
-        Route::post('analysis', 'store')->name('analysis.store');
         Route::get('analysis/{analysis}/edit', 'edit')->name('analysis.edit');
-        Route::put('analysis/{analysis}', 'update')->name('analysis.update');
-        Route::get('analysis/destroy', 'destroy')->name('analysis.destroy');
-        Route::get('analysis/restore', 'restore')->name('analysis.restore');
+        Route::post('analysis/destroy', 'destroy')->name('analysis.destroy');
+        Route::post('analysis/restore', 'restore')->name('analysis.restore');
         Route::get('analysis/getAnalysis', 'getAnalysis')->name('analysis.getAnalysis');
     });
 
@@ -1052,20 +1051,14 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::post('counteranalysis', 'store')->name('counteranalysis.store');
         Route::get('counteranalysis/{analysis}/edit', 'edit')->name('counteranalysis.edit');
         Route::put('counteranalysis/{analysis}', 'update')->name('counteranalysis.update');
-        Route::get('counteranalysis/destroy', 'destroy')->name('counteranalysis.destroy');
-        Route::get('counteranalysis/restore', 'restore')->name('counteranalysis.restore');
+        Route::post('counteranalysis/destroy', 'destroy')->name('counteranalysis.destroy');
+        Route::post('counteranalysis/restore', 'restore')->name('counteranalysis.restore');
         Route::get('counteranalysis/getAnalysis', 'getAnalysis')->name('counteranalysis.getAnalysis');
     });
 
     // Samples
     Route::controller(SampleController::class)->group(function () {
         Route::get('samples', 'index')->name('samples.index');
-        Route::get('samples/create', 'create')->name('samples.create');
-        Route::post('samples', 'store')->name('samples.store');
-        Route::get('samples/{sample}/edit', 'edit')->name('samples.edit');
-        Route::put('samples/{sample}', 'update')->name('samples.update');
-        Route::get('samples/destroy', 'destroy')->name('samples.destroy');
-        Route::get('samples/restore', 'restore')->name('samples.restore');
         Route::get('samples/getCode', 'getCode')->name('samples.getCode');
     });
 
@@ -1162,58 +1155,57 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     // Direct Collections
     Route::controller(DirectCollectionController::class)->group(function () {
         Route::get('directcollections', 'index')->name('directcollections.index');
-        Route::get('directcollections/create', 'create')->name('directcollections.create');
-        Route::post('directcollections', 'store')->name('directcollections.store');
-        Route::get('directcollections/{collection}/edit', 'edit')->name('directcollections.edit');
-        Route::put('directcollections/{collection}', 'update')->name('directcollections.update');
-        Route::get('directcollections/destroy', 'destroy')->name('directcollections.destroy');
-        Route::get('directcollections/restore', 'restore')->name('directcollections.restore');
+        Route::get('directcollections/{collection}/edit', 'edit')->whereNumber('collection')->name('directcollections.edit');
+        Route::put('directcollections/{collection}', 'update')->whereNumber('collection')->name('directcollections.update');
+        Route::post('directcollections/destroy', 'destroy')->name('directcollections.destroy');
+        Route::post('directcollections/restore', 'restore')->name('directcollections.restore');
         Route::get('directcollections/getParametersToAnalyzePDF', 'getParametersToAnalyzePDF')->name('directcollections.getParametersToAnalyzePDF');
         Route::get('directcollections/getMultipleParametersToAnalyzePDF', 'getMultipleParametersToAnalyzePDF')->name('directcollections.getMultipleParametersToAnalyzePDF');
         Route::get('directcollections/exportParametersToAnalyzeSheet', 'exportParametersToAnalyzeSheet')->name('directcollections.exportParametersToAnalyzeSheet');
         Route::get('directcollections/getCollectionTermPDF', 'getCollectionTermPDF')->name('directcollections.getCollectionTermPDF');
         Route::get('directcollections/getCollectionLabels', 'getCollectionLabels')->name('directcollections.getCollectionLabels');
-        Route::get('directcollections/{collection}', 'show')->name('directcollections.show');
+        Route::get('directcollections/{collection}', 'show')->whereNumber('collection')->name('directcollections.show');
     });
 
     // Programmed Collections
     Route::controller(ProgrammedCollectionController::class)->group(function () {
         Route::get('programmedcollections', 'index')->name('programmedcollections.index');
-        Route::get('programmedcollections/create', 'create')->name('programmedcollections.create');
-        Route::post('programmedcollections', 'store')->name('programmedcollections.store');
-        Route::get('programmedcollections/{collection}/edit', 'edit')->name('programmedcollections.edit');
-        Route::put('programmedcollections/{collection}', 'update')->name('programmedcollections.update');
-        Route::get('programmedcollections/destroy', 'destroy')->name('programmedcollections.destroy');
-        Route::get('programmedcollections/restore', 'restore')->name('programmedcollections.restore');
+        Route::get('programmedcollections/{collection}/edit', 'edit')->whereNumber('collection')->name('programmedcollections.edit');
+        Route::put('programmedcollections/{collection}', 'update')->whereNumber('collection')->name('programmedcollections.update');
+        Route::post('programmedcollections/destroy', 'destroy')->name('programmedcollections.destroy');
+        Route::post('programmedcollections/restore', 'restore')->name('programmedcollections.restore');
         Route::get('programmedcollections/getParametersToAnalyzePDF', 'getParametersToAnalyzePDF')->name('programmedcollections.getParametersToAnalyzePDF');
         Route::get('programmedcollections/getMultipleParametersToAnalyzePDF', 'getMultipleParametersToAnalyzePDF')->name('programmedcollections.getMultipleParametersToAnalyzePDF');
         Route::get('programmedcollections/exportParametersToAnalyzeSheet', 'exportParametersToAnalyzeSheet')->name('programmedcollections.exportParametersToAnalyzeSheet');
         Route::get('programmedcollections/getCollectionTermPDF', 'getCollectionTermPDF')->name('programmedcollections.getCollectionTermPDF');
         Route::get('programmedcollections/getCollectionLabels', 'getCollectionLabels')->name('programmedcollections.getCollectionLabels');
-        Route::post('programmedcollections/{collectionProduct}/place-in-analysis', 'placeProductsInAnalysis')->name('programmedcollections.PlaceProductsInAnalysis');
-        Route::get('programmedcollections/{collection}', 'show')->name('programmedcollections.show');
+        Route::post('programmedcollections/{collectionProduct}/place-in-analysis', 'placeProductsInAnalysis')->whereNumber('collectionProduct')->name('programmedcollections.PlaceProductsInAnalysis');
+        Route::get('programmedcollections/{collection}', 'show')->whereNumber('collection')->name('programmedcollections.show');
     });
 
     // Users
+    Route::post('users/membership', [LaboratoryMembershipController::class, 'store'])->middleware('throttle:20,1')->name('users.membership.store');
+    Route::delete('users/{user}/membership', [LaboratoryMembershipController::class, 'destroy'])->whereNumber('user')->name('users.membership.destroy');
+
     Route::controller(UserController::class)->group(function () {
         Route::get('users', 'index')->name('users.index');
         Route::get('users/create', 'create')->name('users.create');
         Route::post('users', 'store')->name('users.store');
         Route::post('users/signature', 'setSignature')->name('users.setsignature');
         Route::post('users/dashboard-header', 'setDashboardHeader')->name('users.setDashboardHeader');
-        Route::get('users/unsetsignature', 'unsetSignature')->name('users.unsetsignature');
-        Route::get('users/{user}/edit', 'edit')->name('users.edit');
-        Route::put('users/{user}', 'update')->name('users.update');
-        Route::put('users/{user}/password', 'setpass')->name('users.setpass');
-        Route::get('users/destroy', 'destroy')->name('users.destroy');
-        Route::get('users/restore', 'restore')->name('users.restore');
+        Route::delete('users/unsetsignature', 'unsetSignature')->name('users.unsetsignature');
+        Route::get('users/{user}/edit', 'edit')->whereNumber('user')->name('users.edit');
+        Route::put('users/{user}', 'update')->whereNumber('user')->name('users.update');
+        Route::put('users/{user}/password', 'setpass')->whereNumber('user')->name('users.setpass');
+        Route::post('users/destroy', 'destroy')->name('users.destroy');
+        Route::post('users/restore', 'restore')->name('users.restore');
         Route::get('users/profile', 'profile')->name('users.profile');
         Route::get('users/help', 'help')->name('users.help');
         Route::get('users/manual.pdf', 'manualPdf')->name('users.manual.pdf');
-        Route::get('users/activestatus/{id}', 'toggleActiveStatus')->name('users.toggleActiveStatus');
+        Route::post('users/activestatus/{id}', 'setActiveStatus')->whereNumber('id')->name('users.setActiveStatus');
         Route::get('users/security', 'security')->name('users.security');
-        Route::get('users/impersonate', 'impersonate')->name('users.impersonate');
-        Route::get('users/stop-impersonating', 'leave')->name('users.stopimpersonating');
+        Route::post('users/impersonate', 'impersonate')->name('users.impersonate');
+        Route::post('users/stop-impersonating', 'leave')->name('users.stopimpersonating');
         Route::get('users/getUser', 'getUser')->name('users.getUser');
     });
 
@@ -1261,14 +1253,10 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::controller(ProposalController::class)->group(function () {
         Route::get('proposals', 'index')->name('proposals.index');
         Route::get('proposals/create', 'create')->name('proposals.create');
-        Route::post('proposals', 'store')->name('proposals.store');
         Route::get('proposals/{proposal}/edit', 'edit')->name('proposals.edit');
-        Route::get('proposals/{proposal}/accept', 'accept')->name('proposals.accept');
-        Route::get('proposals/{proposal}/reject', 'reject')->name('proposals.reject');
-        Route::put('proposals/{proposal}', 'update')->name('proposals.update');
         Route::get('proposals/{proposal}/show', 'show')->name('proposals.show');
-        Route::get('proposals/destroy', 'destroy')->name('proposals.destroy');
-        Route::get('proposals/restore', 'restore')->name('proposals.restore');
+        Route::delete('proposals/destroy', 'destroy')->name('proposals.destroy');
+        Route::patch('proposals/restore', 'restore')->name('proposals.restore');
         Route::get('proposals/getProposal', 'getProposal')->name('proposals.getProposal');
         Route::get('proposals/getPDF', 'getPDF')->name('proposals.getPDF');
     });
@@ -1277,23 +1265,17 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::controller(ProposalTemplateController::class)->group(function () {
         Route::get('proposaltemplates', 'index')->name('proposaltemplates.index');
         Route::get('proposaltemplates/create', 'create')->name('proposaltemplates.create');
-        Route::post('proposaltemplates', 'store')->name('proposaltemplates.store');
         Route::get('proposaltemplates/{template}/edit', 'edit')->name('proposaltemplates.edit');
-        Route::put('proposaltemplates/{template}', 'update')->name('proposaltemplates.update');
-        Route::get('proposaltemplates/destroy', 'destroy')->name('proposaltemplates.destroy');
-        Route::get('proposaltemplates/restore', 'restore')->name('proposaltemplates.restore');
+        Route::delete('proposaltemplates/destroy', 'destroy')->name('proposaltemplates.destroy');
+        Route::patch('proposaltemplates/restore', 'restore')->name('proposaltemplates.restore');
         Route::get('proposaltemplates/getProposalTemplate', 'getProposalTemplate')->name('proposaltemplates.getProposalTemplate');
     });
 
     // Proposal Compliance Agreements
     Route::controller(ProposalComplianceAgreementController::class)->group(function () {
         Route::get('proposalcomplianceagreements', 'index')->name('proposalcomplianceagreements.index');
-        Route::get('proposalcomplianceagreements/create', 'create')->name('proposalcomplianceagreements.create');
-        Route::post('proposalcomplianceagreements', 'store')->name('proposalcomplianceagreements.store');
-        Route::get('proposalcomplianceagreements/{agreement}/edit', 'edit')->name('proposalcomplianceagreements.edit');
-        Route::put('proposalcomplianceagreements/{agreement}', 'update')->name('proposalcomplianceagreements.update');
-        Route::get('proposalcomplianceagreements/destroy', 'destroy')->name('proposalcomplianceagreements.destroy');
-        Route::get('proposalcomplianceagreements/restore', 'restore')->name('proposalcomplianceagreements.restore');
+        Route::delete('proposalcomplianceagreements/destroy', 'destroy')->name('proposalcomplianceagreements.destroy');
+        Route::patch('proposalcomplianceagreements/restore', 'restore')->name('proposalcomplianceagreements.restore');
         Route::get('proposalcomplianceagreements/getProposalComplianceAgreement', 'getProposalComplianceAgreement')->name('proposalcomplianceagreements.getProposalComplianceAgreement');
     });
 
@@ -1365,10 +1347,10 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('invoices/{invoice}/edit', 'edit')->name('invoices.edit');
         Route::put('invoices/{invoice}', 'update')->name('invoices.update');
         Route::get('invoices/{invoice}/show', 'show')->name('invoices.show');
-        Route::get('invoices/destroy', 'destroy')->name('invoices.destroy');
-        Route::get('invoices/restore', 'restore')->name('invoices.restore');
+        Route::delete('invoices/destroy', 'destroy')->name('invoices.destroy');
+        Route::patch('invoices/restore', 'restore')->name('invoices.restore');
         Route::get('invoices/getInvoice', 'getInvoice')->name('invoices.getInvoice');
-        Route::get('invoices/changeStatusToPaid', 'changeStatusToPaid')->name('invoices.changeStatusToPaid');
+        Route::post('invoices/changeStatusToPaid', 'changeStatusToPaid')->name('invoices.changeStatusToPaid');
         Route::get('invoices/getPDF', 'getPDF')->name('invoices.getPDF');
     });
 
@@ -1379,8 +1361,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::post('creditnotes', 'store')->name('creditnotes.store');
         Route::get('creditnotes/{note}/edit', 'edit')->name('creditnotes.edit');
         Route::put('creditnotes/{note}', 'update')->name('creditnotes.update');
-        Route::get('creditnotes/destroy', 'destroy')->name('creditnotes.destroy');
-        Route::get('creditnotes/restore', 'restore')->name('creditnotes.restore');
+        Route::delete('creditnotes/destroy', 'destroy')->name('creditnotes.destroy');
+        Route::patch('creditnotes/restore', 'restore')->name('creditnotes.restore');
         Route::get('creditnotes/getCreditNote', 'getCreditNote')->name('creditnotes.getCreditNote');
         Route::get('creditnotes/getInvoiceData', 'getInvoiceData')->name('creditnotes.getInvoiceData');
         Route::get('creditnotes/getPDF', 'getPDF')->name('creditnotes.getPDF');
@@ -1419,8 +1401,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('quotes/{quote}/edit', 'edit')->name('quotes.edit');
         Route::put('quotes/{quote}', 'update')->name('quotes.update');
         Route::get('quotes/{quote}/show', 'show')->name('quotes.show');
-        Route::get('quotes/destroy', 'destroy')->name('quotes.destroy');
-        Route::get('quotes/restore', 'restore')->name('quotes.restore');
+        Route::delete('quotes/destroy', 'destroy')->name('quotes.destroy');
+        Route::patch('quotes/restore', 'restore')->name('quotes.restore');
         Route::get('quotes/getQuote', 'getQuote')->name('quotes.getQuote');
         Route::get('quotes/getPDF', 'getPDF')->name('quotes.getPDF');
     });
@@ -1437,8 +1419,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::post('receipts', 'store')->name('receipts.store');
         Route::get('receipts/{receipt}/edit', 'edit')->name('receipts.edit');
         Route::put('receipts/{receipt}', 'update')->name('receipts.update');
-        Route::get('receipts/destroy', 'destroy')->name('receipts.destroy');
-        Route::get('receipts/restore', 'restore')->name('receipts.restore');
+        Route::delete('receipts/destroy', 'destroy')->name('receipts.destroy');
+        Route::patch('receipts/restore', 'restore')->name('receipts.restore');
         Route::get('receipts/getReceipt', 'getReceipt')->name('receipts.getReceipt');
         Route::get('receipts/getPDF', 'getPDF')->name('receipts.getPDF');
     });
@@ -1450,8 +1432,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::post('permissions', 'store')->name('permissions.store');
         Route::get('permissions/{permission}/edit', 'edit')->name('permissions.edit');
         Route::put('permissions/{permission}', 'update')->name('permissions.update');
-        Route::get('permissions/destroy', 'destroy')->name('permissions.destroy');
-        Route::get('permissions/restore', 'restore')->name('permissions.restore');
+        Route::post('permissions/destroy', 'destroy')->name('permissions.destroy');
+        Route::post('permissions/restore', 'restore')->name('permissions.restore');
         Route::get('permissions/getPermission', 'getPermission')->name('permissions.getPermission');
     });
 
@@ -1462,8 +1444,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::post('roles', 'store')->name('roles.store');
         Route::get('roles/{role}/edit', 'edit')->name('roles.edit');
         Route::put('roles/{role}', 'update')->name('roles.update');
-        Route::get('roles/destroy', 'destroy')->name('roles.destroy');
-        Route::get('roles/restore', 'restore')->name('roles.restore');
+        Route::post('roles/destroy', 'destroy')->name('roles.destroy');
+        Route::post('roles/restore', 'restore')->name('roles.restore');
         Route::get('roles/getRole', 'getRole')->name('roles.getRole');
     });
 
@@ -1545,10 +1527,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('/media', 'index')->name('media.index');
         Route::get('/media/create', 'create')->name('media.create');
         Route::post('/media', 'store')->name('media.store');
-        Route::get('/media/{media}/edit', 'edit')->name('media.edit');
-        Route::put('/media/{media}', 'update')->name('media.update');
-        Route::get('/media/destroy', 'destroy')->name('media.destroy');
-        Route::get('/media/restore', 'restore')->name('media.restore');
+        Route::get('/media/{id}/download', 'download')->whereNumber('id')->name('media.download');
+        Route::get('/users/private-media/{id}', 'personal')->whereNumber('id')->name('users.private-media');
     });
 
     // VAP Inventory Routes
@@ -1609,6 +1589,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
 
             // Export
             Route::get('/export', [VAPInventoryItemController::class, 'exportInventory'])->name('export.inventory');
+            Route::get('/lookup', [VAPInventoryItemController::class, 'lookup'])->name('lookup');
 
             Route::get('/', [VAPInventoryItemController::class, 'index'])->name('index');
             Route::get('/create', [VAPInventoryItemController::class, 'create'])->name('create');
@@ -1616,7 +1597,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
             Route::get('/{item}', [VAPInventoryItemController::class, 'show'])->name('show');
             Route::get('/{item}/edit', [VAPInventoryItemController::class, 'edit'])->name('edit');
             Route::put('/{item}', [VAPInventoryItemController::class, 'update'])->name('update');
-            Route::delete('/{item}', [VAPInventoryItemController::class, 'destroy'])->name('destroy');
+            Route::delete('/{item}', [VAPInventoryItemController::class, 'destroy'])->withTrashed()->name('destroy');
+            Route::patch('/{item}/restore', [VAPInventoryItemController::class, 'restore'])->withTrashed()->name('restore');
 
             // Stock Adjustment
             Route::post('/{item}/adjust-stock', [VAPInventoryItemController::class, 'adjustStock'])->name('adjust-stock');
@@ -1634,6 +1616,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
             Route::get('/attachments/download-all', [VAPInventoryItemController::class, 'downloadallattachments'])->name('attachments.download-all');
             Route::get('/attachments/download-single', [VAPInventoryItemController::class, 'downloadsingleattachment'])->name('attachments.download-single');
             Route::delete('/attachments/delete/{id}', [VAPInventoryItemController::class, 'deleteattachment'])->name('attachments.delete');
+            Route::patch('/attachments/restore/{id}', [VAPInventoryItemController::class, 'restoreAttachment'])->name('attachments.restore');
 
         });
 
@@ -1671,7 +1654,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
             Route::get('/consumption/create', [VAPInventoryItemController::class, 'createConsumption'])->name('consumption.create');
             Route::post('/consumption', [VAPInventoryItemController::class, 'storeConsumption'])->name('consumption.store');
             Route::get('/consumption/{consumption}', [VAPInventoryItemController::class, 'showConsumption'])->name('consumption.show');
-            Route::delete('/consumption/{consumption}', [VAPInventoryItemController::class, 'destroyConsumption'])->name('consumption.destroy');
+            Route::post('/consumption/{consumption}/reverse', [VAPInventoryItemController::class, 'reverseConsumption'])->name('consumption.reverse');
             Route::post('/{item}/consume', [VAPInventoryItemController::class, 'consume'])->name('consume');
         });
 
@@ -1690,8 +1673,6 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
             Route::post('/{transfer}/receive', [VAPInventoryTransferController::class, 'receive'])->name('receive');
             Route::post('/{transfer}/cancel', [VAPInventoryTransferController::class, 'cancel'])->name('cancel');
 
-            Route::post('/{transfer}/receive', [VAPInventoryTransferController::class, 'receive'])->name('receive');
-            Route::post('/{transfer}/cancel', [VAPInventoryTransferController::class, 'cancel'])->name('cancel');
             Route::post('/bulk', [VAPInventoryTransferController::class, 'bulkTransfer'])->name('bulk');
         });
 
@@ -1725,6 +1706,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
             Route::post('/warehouses', [InventoryItemWarehouseController::class, 'store'])->name('warehouses.store');
             Route::put('/warehouses/{warehouse}', [InventoryItemWarehouseController::class, 'update'])->name('warehouses.update');
             Route::delete('/warehouses/{warehouse}', [InventoryItemWarehouseController::class, 'destroy'])->name('warehouses.destroy');
+            Route::patch('/warehouses/{warehouse}/restore', [InventoryItemWarehouseController::class, 'restore'])->name('warehouses.restore');
 
             // Units
             Route::get('/units', [InventoryUnitController::class, 'index'])->name('units.index');
@@ -1830,25 +1812,32 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         // });
     });
 
-    Route::prefix('vap-non-conformities')->name('vap_non_conformities.')->group(function () {
+    Route::prefix('vap-non-conformities')->name('vap_non_conformities.')->middleware('can:view_occurrences')->group(function () {
         // Non-Conformities
         Route::get('/', [VAPNonConformityController::class, 'index'])->name('index');
 
-        Route::get('/create', [VAPNonConformityController::class, 'create'])->name('create');
+        Route::get('/create', [VAPNonConformityController::class, 'create'])->middleware('can:add_occurrences')->name('create');
 
         Route::post('/', [VAPNonConformityController::class, 'store'])
+            ->middleware('can:add_occurrences')
             ->name('store');
 
         Route::get('/{nonConformity}', [VAPNonConformityController::class, 'show'])
             ->name('show');
 
         Route::get('/{nonConformity}/edit', [VAPNonConformityController::class, 'edit'])
+            ->middleware('can:edit_occurrences')
             ->name('edit');
 
+        Route::get('/{nonConformity}/attachments/{media}', [VAPNonConformityController::class, 'showAttachment'])
+            ->name('attachments.show');
+
         Route::put('/{nonConformity}', [VAPNonConformityController::class, 'update'])
+            ->middleware('can:edit_occurrences')
             ->name('update');
 
         Route::delete('/{nonConformity}', [VAPNonConformityController::class, 'destroy'])
+            ->middleware('can:delete_occurrences')
             ->name('destroy');
 
         Route::get('/export/excel', [VAPNonConformityController::class, 'exportExcel'])->name('export.excel');
@@ -1860,7 +1849,9 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('/{nonConformity}/export/pdf', [VAPNonConformityController::class, 'exportDetailsPdf'])->name('export.details.pdf');
     });
 
-    Route::prefix('vap-samples')->name('vap_samples.')->group(function () {
+    Route::prefix('vap-samples')->name('vap_samples.')->middleware(EnsureSampleLaboratoryAccess::class)->group(function () {
+        Route::get('/queue', [LaboratorySampleQueueController::class, 'index'])->name('queue');
+        Route::get('/queue/{sampleEntry}', [LaboratorySampleQueueController::class, 'show'])->whereNumber('sampleEntry')->name('queue.show');
 
         // Main dashboard/interface route
         Route::get('/', [VAPSampleEntryController::class, 'index'])->name('index');
@@ -1998,12 +1989,10 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::controller(InventoryItemController::class)->group(function () {
         Route::get('iitems', 'index')->name('iitems.index');
         Route::get('iitems/create', 'create')->name('iitems.create');
-        Route::post('iitems', 'store')->name('iitems.store');
         Route::get('iitems/{iitem}/edit', 'edit')->name('iitems.edit');
-        Route::put('iitems/{iitem}', 'update')->name('iitems.update');
         Route::get('iitems/{iitem}/show', 'show')->name('iitems.show');
-        Route::get('iitems/destroy', 'destroy')->name('iitems.destroy');
-        Route::get('iitems/restore', 'restore')->name('iitems.restore');
+        Route::delete('iitems/destroy', 'destroy')->name('iitems.destroy');
+        Route::patch('iitems/restore', 'restore')->name('iitems.restore');
         Route::get('iitems/getInventoryItem', 'getInventoryItem')->name('iitems.getInventoryItem');
         Route::get('iitems/getReagentInventoryItem', 'getReagentInventoryItem')->name('iitems.getReagentInventoryItem');
         Route::get('iitems/{iitem}/maintenance-tasks', 'getMaintenanceTasks')->name('iitems.getMaintenanceTasks');
@@ -2019,14 +2008,11 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::controller(InventoryEquipmentController::class)->group(function () {
         Route::get('iequipments', 'index')->name('iequipments.index');
         Route::get('iequipments/create', 'create')->name('iequipments.create');
-        Route::post('iequipments', 'store')->name('iequipments.store');
         Route::get('iequipments/{iitem}/edit', 'edit')->name('iequipments.edit');
-        Route::put('iequipments/{iitem}', 'update')->name('iequipments.update');
         Route::get('iequipments/{iitem}/show', 'show')->name('iequipments.show');
-        Route::get('iequipments/destroy', 'destroy')->name('iequipments.destroy');
-        Route::get('iequipments/restore', 'restore')->name('iequipments.restore');
+        Route::delete('iequipments/destroy', 'destroy')->name('iequipments.destroy');
+        Route::patch('iequipments/restore', 'restore')->name('iequipments.restore');
         Route::get('iequipments/getInventoryItem', 'getInventoryItem')->name('iequipments.getInventoryItem');
-        Route::get('iequipments/getReagentInventoryItem', 'getReagentInventoryItem')->name('iequipments.getReagentInventoryItem');
         Route::get('iequipments/{iitem}/maintenance-tasks', 'getMaintenanceTasks')->name('iequipments.getMaintenanceTasks');
 
         Route::get('iequipments/download-all-attachments', 'downloadAllAttachments')->name('iequipments.download-all-attachments');
@@ -2055,8 +2041,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::post('iwarehouses', 'store')->name('iwarehouses.store');
         Route::get('iwarehouses/{iwarehouse}/edit', 'edit')->name('iwarehouses.edit');
         Route::put('iwarehouses/{iwarehouse}', 'update')->name('iwarehouses.update');
-        Route::get('iwarehouses/destroy', 'destroy')->name('iwarehouses.destroy');
-        Route::get('iwarehouses/restore', 'restore')->name('iwarehouses.restore');
+        Route::delete('iwarehouses/destroy', 'destroy')->name('iwarehouses.destroy');
+        Route::patch('iwarehouses/restore', 'restore')->name('iwarehouses.restore');
         Route::get('iwarehouses/getInventoryItemWarehouse', 'getInventoryItemWarehouse')->name('iwarehouses.getInventoryItemWarehouse');
     });
 
@@ -2065,11 +2051,11 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('inventory', 'index')->name('inventory.index');
         Route::get('inventory/create', 'create')->name('inventory.create');
         Route::post('inventory', 'store')->name('inventory.store');
-        Route::get('inventory/{inventory}/edit', 'edit')->name('inventory.edit');
+        Route::get('inventory/{inventory}/edit', 'edit')->where('inventory', '[1-9][0-9]*')->name('inventory.edit');
         Route::put('inventory/{inventory}', 'update')->name('inventory.update');
         Route::get('inventory/{inventory}/show', 'show')->name('inventory.show');
-        Route::get('inventory/destroy', 'destroy')->name('inventory.destroy');
-        Route::get('inventory/restore', 'restore')->name('inventory.restore');
+        Route::delete('inventory/destroy', 'destroy')->name('inventory.destroy');
+        Route::patch('inventory/restore', 'restore')->name('inventory.restore');
         Route::get('inventory/getInventory', 'getInventory')->name('inventory.getInventory');
         Route::get('inventory/getInventoryReagentItem', 'getInventoryReagentItem')->name('inventory.getInventoryReagentItem');
         Route::post('inventory/{inventory}/increment', 'increment')->name('inventory.increment');
@@ -2188,12 +2174,12 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::controller(WorksheetController::class)->group(function () {
         Route::get('worksheets', 'index')->name('worksheets.index');
         Route::post('worksheets', 'store')->name('worksheets.store');
-        Route::post('analysis/{analysis}/worksheet-draft', 'storeAnalysisDraft')->name('analysis.worksheet-draft');
-        Route::get('worksheets/destroy', 'destroy')->name('worksheets.destroy');
-        Route::get('worksheets/restore', 'restore')->name('worksheets.restore');
+        Route::post('analysis/{analysis}/worksheet-draft', 'storeAnalysisDraft')->whereNumber('analysis')->name('analysis.worksheet-draft');
+        Route::post('worksheets/destroy', 'destroy')->name('worksheets.destroy');
+        Route::post('worksheets/restore', 'restore')->name('worksheets.restore');
         Route::get('worksheets/getWorksheet', 'getWorksheet')->name('worksheets.getWorksheet');
-        Route::get('worksheets/{worksheet}', 'show')->name('worksheets.show');
-        Route::put('worksheets/{worksheet}', 'update')->name('worksheets.update');
+        Route::get('worksheets/{worksheet}', 'show')->whereNumber('worksheet')->name('worksheets.show');
+        Route::put('worksheets/{worksheet}', 'update')->whereNumber('worksheet')->name('worksheets.update');
     });
 
 });
@@ -2312,8 +2298,9 @@ Route::prefix('portal')->name('portal.')->middleware(UsePortalFortifyConfigurati
     });
 
     Route::controller(RatingController::class)->middleware('auth:portal')->group(function () {
-        Route::get('rate/{rateableType}/{rateableId?}', 'portalCreate')->whereNumber('rateableId')->name('rating.create');
-        Route::post('rate/{rateableType}/{rateableId?}', 'portalStore')->whereNumber('rateableId')->name('rating.store');
+        Route::get('ratings', 'portalIndex')->name('ratings.index');
+        Route::get('rate/{invitation}', 'portalCreate')->whereUuid('invitation')->name('rating.create');
+        Route::post('rate/{invitation}', 'portalStore')->whereUuid('invitation')->name('rating.store');
     });
 
     $limiter = config('fortify.limiters.login');

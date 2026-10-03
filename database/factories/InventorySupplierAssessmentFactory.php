@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\InventoryItemSupplier;
 use App\Models\InventorySupplierAssessment;
 use App\Models\User;
+use App\Models\VAPLab;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,6 +22,7 @@ class InventorySupplierAssessmentFactory extends Factory
     public function definition(): array
     {
         return [
+            'lab_id' => VAPLab::factory(),
             'inventory_item_supplier_id' => InventoryItemSupplier::query()->value('id') ?? InventoryItemSupplier::query()->create([
                 'name' => fake()->company(),
                 'address' => fake()->address(),
@@ -37,7 +39,7 @@ class InventorySupplierAssessmentFactory extends Factory
             'quality_score' => fake()->numberBetween(2, 5),
             'compliance_score' => fake()->numberBetween(2, 5),
             'responsiveness_score' => fake()->numberBetween(2, 5),
-            'evidence_reference' => 'SUP-' . fake()->numerify('####'),
+            'evidence_reference' => 'SUP-'.fake()->numerify('####'),
             'approved_supplier' => true,
             'is_active' => true,
             'strengths' => fake()->sentence(),

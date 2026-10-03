@@ -7,12 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class Parameter extends Model
 {
-    use HasFactory, SoftDeletes, EagerLoadPivotTrait;
+    use EagerLoadPivotTrait, HasFactory, SoftDeletes;
 
-    public CONST MENU_NAME = 'parameters';
+    public const MENU_NAME = 'parameters';
 
     /**
      * The attributes that are mass assignable.
@@ -43,6 +42,9 @@ class Parameter extends Model
     ];
 
     protected $table = 'parameters';
+
+    protected $attributes = ['requires_calculation' => false];
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
@@ -60,12 +62,10 @@ class Parameter extends Model
         'result_is_qualitative' => 'boolean',
     ];
 
-
-
     public function profiles()
     {
         return $this->belongsToMany(Profile::class, 'parameter_profile')->withPivot('category_id', 'category_label', 'unit_id', 'unit_label', 'standard_id', 'standard_label', 'formula_id', 'formula_label', 'protocol_id', 'protocol_label', 'nwp_id', 'nwp_label', 'min_ref_value', 'max_ref_value', 'dilutions', 'extra_data', 'optimal_analysis_time', 'count', 'ref_val_origin')
-                                                                   ->using(ParameterProfile::class);
+            ->using(ParameterProfile::class);
     }
 
     public function invoice_item()
@@ -88,7 +88,8 @@ class Parameter extends Model
      *
      * @return Relationship
      */
-    public function exemption() {
+    public function exemption()
+    {
         return $this->belongsTo(TaxExemption::class, 'exemption_id');
     }
 
@@ -97,7 +98,8 @@ class Parameter extends Model
      *
      * @return Relationship
      */
-    public function tax_category() {
+    public function tax_category()
+    {
         return $this->belongsTo(TaxType::class, 'tax_id');
     }
 
@@ -115,10 +117,10 @@ class Parameter extends Model
     {
         return $this->hasMany(Result::class);
     }
-    
+
     public function getCalculationRequirements(): array
     {
-        if (!$this->requires_calculation) {
+        if (! $this->requires_calculation) {
             return [];
         }
 
@@ -128,20 +130,22 @@ class Parameter extends Model
 
         // Extract variables from formula expression
         preg_match_all('/\{([^}]+)\}/', $this->formula_expression ?? '', $matches);
+
         return $matches[1] ?? [];
     }
 
     public function canCalculate(array $availableValues): bool
     {
         $required = $this->getCalculationRequirements();
+
         return empty(array_diff($required, array_keys($availableValues)));
     }
 
     // Automatically serialize calculation_parameters when saving
     public function setCalculationParametersAttribute($value)
     {
-        $this->attributes['calculation_parameters'] = is_array($value) 
-            ? json_encode($value) 
+        $this->attributes['calculation_parameters'] = is_array($value)
+            ? json_encode($value)
             : $value;
     }
 
@@ -151,8 +155,7 @@ class Parameter extends Model
         if (is_array($value)) {
             return $value;
         }
-        
+
         return $value ? json_decode($value, true) : [];
     }
-
 }

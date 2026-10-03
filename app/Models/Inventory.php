@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Enums\Orders\InventoryItemStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 
 class Inventory extends Model
 {
@@ -19,15 +21,13 @@ class Inventory extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'lab_id',
         'item_id',
-        'name',
         'warehouse_id',
         'qty_available',
         'min_stock_level',
         'reorder_point',
         'status',
-        'category_id',
     ];
 
     protected $table = 'inventory';
@@ -41,11 +41,26 @@ class Inventory extends Model
      */
     protected $casts = [
         'status' => InventoryItemStatus::class,
-        'qty_available' => 'integer',
-        'min_stock_level' => 'integer',
-        'reorder_point' => 'integer',
+        'qty_available' => 'decimal:4',
+        'min_stock_level' => 'decimal:4',
+        'reorder_point' => 'decimal:4',
         'deleted_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $inventory): void {
+            if ($inventory->lab_id === null) {
+                $inventory->lab_id = InventoryItem::query()->findOrFail($inventory->item_id)->lab_id;
+            }
+        });
+
+        static::updating(function (self $inventory): void {
+            if ($inventory->isDirty(['lab_id', 'item_id', 'warehouse_id'])) {
+                throw new LogicException('Inventory position identity cannot be reassigned.');
+            }
+        });
+    }
 
     /**
      * Inventory Item
@@ -55,16 +70,6 @@ class Inventory extends Model
     public function item()
     {
         return $this->belongsTo(InventoryItem::class, 'item_id');
-    }
-
-    /**
-     * Inventory Item Category
-     *
-     * @return Relationship
-     */
-    public function category()
-    {
-        return $this->belongsTo(ItemCategory::class, 'category_id');
     }
 
     /**
@@ -87,6 +92,11 @@ class Inventory extends Model
         return $query->whereColumn('qty_available', '<=', 'reorder_point');
     }
 
+    public function scopeForLaboratory(Builder $query, int $labId): Builder
+    {
+        return $query->where('inventory.lab_id', $labId);
+    }
+
     public function scopeOutOfStock($query)
     {
         return $query->where('qty_available', '<=', 0);
@@ -101,10 +111,10 @@ class Inventory extends Model
     {
         if ($this->qty_available <= 0) {
             return 'out_of_stock';
-        } elseif ($this->qty_available <= $this->reorder_point) {
-            return 'low_stock';
         } elseif ($this->qty_available <= $this->min_stock_level) {
             return 'critical_stock';
+        } elseif ($this->qty_available <= $this->reorder_point) {
+            return 'low_stock';
         } else {
             return 'in_stock';
         }
@@ -130,12 +140,5 @@ class Inventory extends Model
             'in_stock' => 'Disponível',
             default => 'Desconhecido',
         };
-    }
-
-    // Deduct Stock
-    public function deductStock($quantity)
-    {
-        $this->qty_available -= $quantity;
-        $this->save();
     }
 }

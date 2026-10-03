@@ -13,7 +13,7 @@ const props = defineProps({
 
 const occurrence = props.record?.data ?? props.record;
 const option = (value, label) => value ? { value, label } : null;
-const form = useForm("OccurrenceEdit", {
+const form = useForm({
   id: occurrence.id,
   date_reported: occurrence.date_reported ?? "",
   issue_description: occurrence.issue_description ?? "",
@@ -46,13 +46,13 @@ const form = useForm("OccurrenceEdit", {
 const canSubmit = computed(() => form.date_reported && form.issue_description.trim().length > 0);
 
 function submit() {
-  if (!canSubmit.value) {
+  if (form.processing || !form.isDirty || !canSubmit.value) {
     return;
   }
 
-  form.put(route("occurrences.update", { occurrence: form.id }), {
+  form.put(route("occurrences.update", { occurrence: occurrence.id }), {
     preserveScroll: true,
-    preserveState: false,
+    preserveState: "errors",
   });
 }
 </script>

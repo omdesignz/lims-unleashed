@@ -2,9 +2,9 @@
   <nav class="ds-pagination flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between" aria-label="Pagination">
     <p class="order-2 text-sm font-semibold text-[var(--ds-text-muted)] sm:order-1">
       {{ $t('gestlab.pagination.showing') }}
-      <span class="font-extrabold text-[var(--ds-text)]">{{ from }}</span>
+      <span class="font-extrabold text-[var(--ds-text)]">{{ from ?? 0 }}</span>
       {{ $t('gestlab.pagination.to') }}
-      <span class="font-extrabold text-[var(--ds-text)]">{{ to }}</span>
+      <span class="font-extrabold text-[var(--ds-text)]">{{ to ?? 0 }}</span>
       {{ $t('gestlab.pagination.of') }}
       <span class="font-extrabold text-[var(--ds-text)]">{{ total }}</span>
       {{ $t('gestlab.pagination.records') }}

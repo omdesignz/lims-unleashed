@@ -2,32 +2,47 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\AdjustInventoryItemStock;
+use App\Actions\CreateInventoryPosition;
+use App\Actions\MutateInventoryPositions;
+use App\Http\Requests\InventoryIndexRequest;
+use App\Http\Requests\InventoryPositionLifecycleRequest;
 use App\Http\Requests\InventoryRequest;
 use App\Http\Resources\InventoryResource;
 use App\Models\Inventory;
-use App\Models\ReagentConsumption;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\NotificationTemplateService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class InventoryController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(InventoryIndexRequest $request): Response
     {
-        abort_if(! auth()->user()->can('view_inventory'), 403, '');
+        $canView = $request->user()->can('view_inventory');
+        $labId = $this->laboratoryAccess->activeLabId();
 
         return Inertia::render('Inventory/Index', [
             'record' => InventoryResource::collection(
-                Inventory::query()
-                    ->with('item.category', 'warehouse')
+                $this->positionsForLaboratory($labId)
+                    ->when(! $canView, fn (Builder $query): Builder => $query->whereRaw('false'))
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where(function ($searchQuery) use ($search) {
-                            $searchQuery->where('qty_available', 'like', "%{$search}%")
-                                ->orWhereRelation('item.category', 'name', 'like', "%{$search}%")
+                            $searchQuery->whereRaw('CAST(inventory.qty_available AS TEXT) ILIKE ?', ['%'.$search.'%'])
+                                ->orWhereHas('item', function (Builder $item) use ($search): void {
+                                    $item->withTrashed()->whereHas('category', fn (Builder $category): Builder => $category
+                                        ->withTrashed()->where('name', 'like', "%{$search}%"));
+                                })
                                 ->orWhereRelation('warehouse', 'name', 'like', "%{$search}%");
                         });
                     })
@@ -41,6 +56,11 @@ class InventoryController extends Controller
                     ->withQueryString()
             ),
             'slideOverEdit' => true,
+            'canView' => $canView,
+            'openCreate' => (bool) $request->validated('create', false),
+            'initialRecord' => $request->validated('edit') !== null
+                ? InventoryResource::make($this->positionsForLaboratory($labId)->findOrFail((int) $request->validated('edit')))
+                : null,
             'fields' => [
                 [
                     'name' => trans('gestlab.general.labels.inventory.item_id'),
@@ -80,26 +100,20 @@ class InventoryController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(InventoryIndexRequest $request): RedirectResponse
     {
-        abort_if(! auth()->user()->can('add_inventory'), 403, '');
+        $this->laboratoryAccess->activeLabId();
 
-        // Get any required data
-
-        // Load form
-
-        return Inertia::render('Inventory/Create', []);
+        return to_route('inventory.index', ['create' => 1]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(InventoryRequest $request)
+    public function store(InventoryRequest $request, CreateInventoryPosition $createPosition)
     {
-        abort_if(! auth()->user()->can('add_inventory'), 403, '');
-
-        // Persiste data to DB
-        Inventory::create($request->validated());
+        $labId = $this->laboratoryAccess->activeLabId();
+        $createPosition->execute($labId, $request->user()->id, $request->validated());
 
         return redirect()->back()->with([
             'toast' => [
@@ -112,13 +126,14 @@ class InventoryController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(int $id): Response
     {
+        abort_unless(auth()->user()?->can('view_inventory'), 403);
+
         return Inertia::render('Inventory/Show', [
             'record' => InventoryResource::make(
-                Inventory::query()
-                    ->with('item.category', 'warehouse')
-                    ->find($id)
+                $this->positionsForLaboratory($this->laboratoryAccess->activeLabId())
+                    ->findOrFail($id)
             ),
         ]);
     }
@@ -126,120 +141,115 @@ class InventoryController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(InventoryIndexRequest $request, string $id): RedirectResponse
     {
-        abort_if(! auth()->user()->can('edit_inventory'), 403, '');
+        $record = $this->positionsForLaboratory($this->laboratoryAccess->activeLabId())
+            ->findOrFail((int) $request->validated('edit'));
 
-        // Find the record
-        $record = Inventory::findOrFail($id);
+        return to_route('inventory.index', ['edit' => $record->id]);
+    }
 
-        // Return Inertia View with record data
-        return Inertia::render('Inventory/Edit', [
-            'record' => InventoryResource::make($record),
-        ]);
+    /** @return Builder<Inventory> */
+    private function positionsForLaboratory(int $labId): Builder
+    {
+        return Inventory::query()->forLaboratory($labId)
+            ->whereHas('warehouse', fn (Builder $query): Builder => $query->where('lab_id', $labId))
+            ->with([
+                'item' => function (BelongsTo $item) use ($labId): void {
+                    $item->withTrashed()->where('lab_id', $labId)
+                        ->select(['id', 'lab_id', 'name', 'category_id', 'deleted_at']);
+                },
+                'item.category' => function (BelongsTo $category): void {
+                    $category->withTrashed()->select(['id', 'name', 'inventory_type', 'deleted_at']);
+                },
+                'warehouse:id,name,lab_id',
+            ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(InventoryRequest $request, $id)
+    public function update(InventoryRequest $request, string $id, MutateInventoryPositions $mutatePositions): RedirectResponse
     {
-        abort_if(! auth()->user()->can('edit_inventory'), 403, '');
+        $mutatePositions->execute($this->laboratoryAccess->activeLabId(), $request->user()->id, [(int) $id], 'update', $request->validated());
 
-        // Find the record
-        $record = Inventory::findOrFail($id);
-
-        $record->update($request->validated());
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ],
-        ]);
+        return redirect()->back()->with(['toast' => [
+            'title' => trans('gestlab.toasts.notification'),
+            'message' => trans('gestlab.toasts.record_successfully_updated'),
+        ]]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy()
+    public function destroy(InventoryPositionLifecycleRequest $request, MutateInventoryPositions $mutatePositions): RedirectResponse
     {
-        abort_if(! auth()->user()->can('delete_inventory'), 403, '');
+        $mutatePositions->execute($this->laboratoryAccess->activeLabId(), $request->user()->id, $request->validated('recordIds'), 'archive');
 
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (Inventory::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ],
-        ]);
+        return redirect()->back()->with(['toast' => [
+            'title' => trans('gestlab.toasts.notification'),
+            'message' => trans('gestlab.toasts.record_successfully_deleted'),
+        ]]);
     }
 
-    /**
-     * restore the specified resource from storage.
-     */
-    public function restore()
+    public function restore(InventoryPositionLifecycleRequest $request, MutateInventoryPositions $mutatePositions): RedirectResponse
     {
-        abort_if(! auth()->user()->can('restore_inventory'), 403, '');
+        $mutatePositions->execute($this->laboratoryAccess->activeLabId(), $request->user()->id, $request->validated('recordIds'), 'restore');
 
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (Inventory::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ],
-        ]);
+        return redirect()->back()->with(['toast' => [
+            'title' => trans('gestlab.toasts.notification'),
+            'message' => trans('gestlab.toasts.record_successfully_restored'),
+        ]]);
     }
 
     public function getInventory()
     {
+        abort_unless(auth()->user()?->can('view_inventory'), 403);
+        $labId = $this->laboratoryAccess->activeLabId();
         $search = request()->string('q')->trim()->toString();
 
         $data = Inventory::query()
-            ->with(['item:id,name', 'warehouse:id,name'])
-            ->select(['id', 'item_id', 'warehouse_id', 'qty_available', 'name', 'status'])
+            ->whereHas('warehouse', fn ($query) => $query->where('lab_id', $labId))
+            ->with(['item:id,name,category_id', 'warehouse:id,name'])
+            ->select(['id', 'item_id', 'warehouse_id', 'qty_available', 'status'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->where('qty_available', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%")
-                        ->orWhereRelation('item', 'name', 'like', "%{$search}%")
+                    $query->whereRelation('item', 'name', 'like', "%{$search}%")
                         ->orWhereRelation('warehouse', 'name', 'like', "%{$search}%");
+
+                    if (preg_match('/^\d{1,14}(?:\.\d{1,4})?$/', $search)) {
+                        $query->orWhere('qty_available', $search);
+                    }
                 });
             })
             ->latest('id')
             ->limit(25)
-            ->get();
+            ->get()
+            ->each(function (Inventory $inventory): void {
+                $inventory->setAttribute('name', $inventory->item?->name);
+                $inventory->setAttribute('category_id', $inventory->item?->category_id);
+            });
 
         return response()->json($data);
     }
 
     public function getInventoryReagentItem()
     {
-        $data = [];
+        abort_unless(auth()->user()?->can('view_inventory'), 403);
+        $labId = $this->laboratoryAccess->activeLabId();
+        $data = collect();
 
         if (request()->filled('q')) {
             $search = request('q');
 
             $data = Inventory::query()
-                ->select(['id', 'item_id', 'warehouse_id', 'qty_available', 'name', 'status', 'category_id'])
-                ->where('category_id', 2)
-                ->where('name', 'like', "%{$search}%")
+                ->whereHas('warehouse', fn ($query) => $query->where('lab_id', $labId))
+                ->with('item:id,name,category_id')
+                ->select(['id', 'item_id', 'warehouse_id', 'qty_available', 'status'])
+                ->whereHas('item', fn ($query) => $query->reagents()->where('name', 'like', "%{$search}%"))
                 ->limit(25)
-                ->get();
+                ->get()
+                ->each(function (Inventory $inventory): void {
+                    $inventory->setAttribute('name', $inventory->item?->name);
+                    $inventory->setAttribute('category_id', $inventory->item?->category_id);
+                });
         }
 
         return response()->json($data);
@@ -247,18 +257,24 @@ class InventoryController extends Controller
 
     // Increment Inventory Quantity
 
-    public function increment(Request $request, $id)
+    public function increment(Request $request, $id, AdjustInventoryItemStock $adjustStock)
     {
         abort_if(! auth()->user()->can('edit_inventory'), 403, '');
 
         $validated = $request->validate([
-            'qty' => ['required', 'integer', 'min:1'],
+            'qty' => ['required', 'numeric', 'decimal:0,4', 'min:0.0001'],
         ]);
-        $data = Inventory::findOrFail($id);
+        $data = Inventory::query()
+            ->whereHas('warehouse', fn ($query) => $query->where('lab_id', $this->laboratoryAccess->activeLabId()))
+            ->with(['item' => fn ($query) => $query->withTrashed()])->findOrFail($id);
 
-        $data->increment('qty_available', $validated['qty']);
-
-        $data->save();
+        $adjustStock->execute($this->laboratoryAccess->activeLabId(), $request->user(), $data->item, [
+            'warehouse_id' => $data->warehouse_id,
+            'adjustment_type' => 'add',
+            'quantity' => $validated['qty'],
+            'reason' => 'Ajuste rápido de entrada',
+        ], expectedInventoryId: $data->id);
+        $data->refresh();
 
         return redirect()->back()->with([
             'toast' => [
@@ -270,41 +286,37 @@ class InventoryController extends Controller
 
     // Decrement Inventory Quantity
 
-    public function decrement(Request $request, $id, NotificationTemplateService $templates)
+    public function decrement(Request $request, $id, NotificationTemplateService $templates, AdjustInventoryItemStock $adjustStock)
     {
         abort_if(! auth()->user()->can('edit_inventory'), 403, '');
 
-        $data = Inventory::with('item')->findOrFail($id);
         $validated = $request->validate([
-            'qty' => ['required', 'integer', 'min:1', 'max:'.$data->qty_available],
+            'qty' => ['required', 'numeric', 'decimal:0,4', 'min:0.0001'],
         ]);
-
-        $data->decrement('qty_available', $validated['qty']);
-
-        $data->save();
+        $data = Inventory::query()->with(['item' => fn ($query) => $query->withTrashed()])
+            ->whereHas('warehouse', fn ($query) => $query->where('lab_id', $this->laboratoryAccess->activeLabId()))
+            ->findOrFail($id);
+        try {
+            $adjustStock->execute($this->laboratoryAccess->activeLabId(), $request->user(), $data->item, [
+                'warehouse_id' => $data->warehouse_id,
+                'adjustment_type' => 'remove',
+                'quantity' => $validated['qty'],
+                'reason' => 'Ajuste rápido de saída',
+            ], expectedInventoryId: $data->id);
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages(['qty' => $exception->errors()['quantity'][0] ?? 'Não foi possível retirar estas existências.']);
+        }
+        $data->refresh();
 
         // Notify when stock is low
         if ($data->qty_available < $data->min_stock_level) {
             $templates->notifyPermission('inventory.low_stock', [
+                'lab_id' => $this->laboratoryAccess->activeLabId(),
                 'item_name' => $data->item?->name ?? 'Item',
                 'quantity' => $data->qty_available,
                 'minimum' => $data->min_stock_level,
                 'document_url' => route('inventory.index'),
             ], auth()->id());
-        }
-
-        // If Inventory Item Is Reagent, then also update the reagent consumption
-        if ($data->category_id == 2) {
-            ReagentConsumption::create([
-                'date' => now()->format('Y-m-d'),
-                'reagent_id' => $data->id,
-                'reagent_name' => $data?->item?->name,
-                'quantity_used' => $validated['qty'],
-                'used_by' => auth()->user()->name,
-                'used_at' => now()->format('Y-m-d'),
-                'user_id' => auth()->user()->id,
-                'remarks' => null,
-            ]);
         }
 
         return redirect()->back()->with([

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class InventoryDeliveryRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class InventoryDeliveryRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
@@ -27,8 +29,8 @@ class InventoryDeliveryRequest extends FormRequest
                 'customer_id' => 'required|exists:customers,id',
                 'items' => 'required|array|min:1',
                 'items.*.item_id' => 'required|exists:i_items,id',
-                'items.*.qty' => 'required',                                                                                                                                                                                                                                                   
-                'items.*.expected_date' => 'required|date',                                                                                                                                                                                                                                                   
+                'items.*.qty' => 'required|numeric|decimal:0,4|min:0.0001',
+                'items.*.expected_date' => 'required|date',
                 'items.*.actual_date' => 'required|date',
                 'items.*.warehouse_id' => 'required|exists:i_warehouses,id',
             ];
@@ -38,8 +40,8 @@ class InventoryDeliveryRequest extends FormRequest
                 'customer_id' => 'required|exists:customers,id',
                 'items' => 'required|array|min:1',
                 'items.*.item_id' => 'required|exists:i_items,id',
-                'items.*.qty' => 'required',                                                                                                                                                                                                                                                   
-                'items.*.expected_date' => 'required|date',                                                                                                                                                                                                                                                   
+                'items.*.qty' => 'required|numeric|decimal:0,4|min:0.0001',
+                'items.*.expected_date' => 'required|date',
                 'items.*.actual_date' => 'required|date',
                 'items.*.warehouse_id' => 'required|exists:i_warehouses,id',
 
@@ -69,29 +71,29 @@ class InventoryDeliveryRequest extends FormRequest
     }
 
     /**
- * Get the error messages for the defined validation rules.
- *
- * @return array<string, string>
- */
-public function messages(): array
-{
-    return [
-        'items.*.item_id.required' => 'É obrigatória a indicação de um valor para o campo item',
-    ];
-}
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'items.*.item_id.required' => 'É obrigatória a indicação de um valor para o campo item',
+        ];
+    }
 
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  Validator  $validator
      * @return void
      */
     public function prepareForValidation()
     {
         // dd(request()->all());
         $this->merge([
-            'customer_id' => !is_null(request()->customer_id) ? request()->customer_id['value'] : null,
-            'items' => is_null(request()->items) ? [] : collect(request()->items)->map(function($item) {
+            'customer_id' => ! is_null(request()->customer_id) ? request()->customer_id['value'] : null,
+            'items' => is_null(request()->items) ? [] : collect(request()->items)->map(function ($item) {
                 return [
                     'item_id' => $item['item_id']['value'],
                     'warehouse_id' => $item['warehouse_id']['value'],
@@ -99,7 +101,7 @@ public function messages(): array
                     'expected_date' => $item['expected_date'],
                     'actual_date' => $item['actual_date'],
                 ];
-            })->toArray()
+            })->toArray(),
         ]);
     }
 }

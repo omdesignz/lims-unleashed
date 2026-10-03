@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,12 +18,13 @@ class VAPMaintenanceTaskRequest extends FormRequest
         $isUpdate = $this->isMethod('put') || $this->isMethod('patch');
         $requiresSupplier = (bool) $this->boolean('executed_by_supplier');
         $marksExecuted = (bool) $this->boolean('is_executed');
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
 
         return [
             'name' => [$isUpdate ? 'sometimes' : 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'category_id' => [$isUpdate ? 'sometimes' : 'required', 'exists:maintenance_categories,id'],
-            'equipment_id' => [$isUpdate ? 'sometimes' : 'required', 'exists:i_items,id'],
+            'equipment_id' => [$isUpdate ? 'sometimes' : 'required', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
             'due_date' => [$isUpdate ? 'sometimes' : 'required', 'date'],
             'maintenance_task_no' => ['nullable', 'string', 'max:255'],
             'periodicity' => ['nullable', 'integer', 'min:1'],

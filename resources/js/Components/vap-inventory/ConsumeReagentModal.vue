@@ -98,11 +98,11 @@
             </label>
             <div class="relative">
               <BaseInput
-                v-model.number="form.quantity_used"
+                v-model="form.quantity_used"
                 type="number"
-                :min="0.01"
+                :min="0.0001"
                 :max="selectedInventory?.qty_available || 0"
-                step="0.01"
+                step="0.0001"
                 required
                 :class="[
                   'ds-field pr-12',
@@ -337,7 +337,7 @@ const form = useForm({
   reagent_id: props.item?.id,  
   warehouse_id: '',
   date: new Date().toISOString().split('T')[0],
-  quantity_used: 0.01,
+  quantity_used: '0.0001',
   used_by: '',
   used_at: new Date().toTimeString().slice(0, 5),
   project: '',
@@ -395,7 +395,7 @@ const getDaysClass = (days) => {
 
 const calculateNewStock = () => {
   if (!selectedInventory.value || !form.quantity_used) return 0
-  return Math.max(0, selectedInventory.value.qty_available - form.quantity_used)
+  return Math.max(0, Number(selectedInventory.value.qty_available) - Number(form.quantity_used)).toFixed(4)
 }
 
 const getNewStockClass = () => {
@@ -412,13 +412,10 @@ const getNewStockClass = () => {
 const submit = () => {
   if (!isFormValid.value) return
 
-  // Combine date and time
-  const usedAt = form.used_at ? `${form.date}T${form.used_at}:00` : null
-
-  form.post(route('vap-inventory.reagents.consume', props.item.id), {
-    ...form.data(), 
-    used_at: usedAt,
-  }, {
+  form.transform(data => ({
+    ...data,
+    used_at: data.used_at ? `${data.date}T${data.used_at}:00` : null,
+  })).post(route('vap-inventory.reagents.consume', props.item.id), {
     preserveScroll: true,
     onSuccess: () => {
       emit('success')

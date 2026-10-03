@@ -1,4 +1,5 @@
 <script setup>
+import { useInventoryCatalogueOptions } from '@/Composables/useInventoryCatalogueOptions'
 import Combobox from "@/Components/combobox.vue";
 import {
   ArrowLeftIcon,
@@ -26,7 +27,7 @@ const pageTitle = computed(() => isEditing.value ? "Editar entrega" : "Nova entr
 const pageDescription = computed(() => isEditing.value
   ? "Revise o destinatário e as linhas expedidas mantendo a rastreabilidade da saída."
   : "Registe uma saída de materiais com destino, quantidade, armazém e datas operacionais.");
-const totalQuantity = computed(() => props.form.items.reduce((total, item) => total + (Number(item.qty) || 0), 0));
+const validQuantityCount = computed(() => props.form.items.filter((item) => /^(?:0|[1-9]\d*)(?:\.\d{1,4})?$/.test(String(item.qty)) && Number(item.qty) >= 0.0001).length);
 
 function createLine() {
   lineSequence += 1;
@@ -61,14 +62,7 @@ async function loadWarehouses(query, setOptions) {
   setOptions(results.map((warehouse) => ({ value: warehouse.id, label: warehouse.name })));
 }
 
-async function loadItems(query, setOptions) {
-  const response = await fetch(`/iitems/getInventoryItem?q=${encodeURIComponent(query)}`);
-  const results = await response.json();
-  setOptions(results.map((item) => ({
-    value: item.id,
-    label: item.code ? `${item.code} · ${item.name}` : item.name,
-  })));
-}
+const loadItems = useInventoryCatalogueOptions()
 </script>
 
 <template>
@@ -102,8 +96,8 @@ async function loadItems(query, setOptions) {
           <dd class="mt-2 text-sm font-semibold text-[var(--ds-text)]">{{ form.items.length }} materiais</dd>
         </div>
         <div class="px-4 py-3">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><TruckIcon class="h-4 w-4" aria-hidden="true" /> Quantidade</dt>
-          <dd class="mt-2 text-sm font-semibold text-[var(--ds-text)]">{{ totalQuantity }} unidades</dd>
+          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><TruckIcon class="h-4 w-4" aria-hidden="true" /> Quantidades</dt>
+          <dd class="mt-2 text-sm font-semibold text-[var(--ds-text)]">{{ validQuantityCount }}/{{ form.items.length }} linhas válidas</dd>
         </div>
       </dl>
     </section>
@@ -176,7 +170,7 @@ async function loadItems(query, setOptions) {
 
             <div class="lg:col-span-2">
               <label :for="`delivery-quantity-${index}`" class="ds-field-label mb-2 block">Quantidade</label>
-              <BaseInput :id="`delivery-quantity-${index}`" v-model.number="item.qty" type="number" min="1" step="1" class="ds-field" />
+              <BaseInput :id="`delivery-quantity-${index}`" v-model="item.qty" type="number" min="0.0001" step="0.0001" class="ds-field" />
               <p v-if="form.errors[`items.${index}.qty`]" class="ds-field-error mt-2">{{ form.errors[`items.${index}.qty`] }}</p>
             </div>
 

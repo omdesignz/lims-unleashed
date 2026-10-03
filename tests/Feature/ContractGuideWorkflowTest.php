@@ -10,6 +10,8 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 use Tests\TestCase;
 
 class ContractGuideWorkflowTest extends TestCase
@@ -18,14 +20,8 @@ class ContractGuideWorkflowTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin);
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
 
         return $admin;
     }
@@ -35,13 +31,18 @@ class ContractGuideWorkflowTest extends TestCase
      */
     private function referenceData(): array
     {
-        $customer = Customer::query()->whereHas('warehouses')->firstOrFail();
+        $customer = Customer::query()->create(['name' => 'Contract guide customer '.fake()->uuid()]);
+        $warehouse = Warehouse::query()->create([
+            'customer_id' => $customer->id,
+            'name' => 'Contract guide site '.fake()->uuid(),
+            'address' => 'Luanda',
+        ]);
 
         return [
             'customer' => $customer,
-            'warehouse' => $customer->warehouses()->firstOrFail(),
-            'product' => Product::query()->firstOrFail(),
-            'country' => Country::query()->firstOrFail(),
+            'warehouse' => $warehouse,
+            'product' => Product::query()->create(['name' => 'Contract guide product '.fake()->uuid()]),
+            'country' => Country::query()->create(['name' => 'Angola', 'code' => 'AO', 'phone_code' => '244']),
         ];
     }
 
@@ -73,6 +74,7 @@ class ContractGuideWorkflowTest extends TestCase
         $guide = ContractGuide::query()->where('ref_no', $reference)->firstOrFail();
 
         $response->assertRedirect(route('contractguides.edit', $guide));
+        $this->assertNotEmpty($guide->guide_no);
         $this->assertSame($data['customer']->id, $guide->customer_id);
         $this->assertSame($data['warehouse']->id, $guide->warehouse_id);
         $this->assertDatabaseHas('contract_guide_items', [
@@ -81,6 +83,7 @@ class ContractGuideWorkflowTest extends TestCase
             'country_id' => $data['country']->id,
             'manufacturer' => 'Fabricante validado',
             'brand' => 'Marca controlada',
+            'du_no' => 'DU-001',
         ]);
     }
 
@@ -126,6 +129,25 @@ class ContractGuideWorkflowTest extends TestCase
         ]);
         $this->assertSoftDeleted('contract_guide_items', ['id' => $removedItem->id]);
         $this->assertSame(2, $guide->items()->count());
+    }
+
+    public function test_customs_reference_schema_is_repeatable_and_refuses_lossy_rollback(): void
+    {
+        $data = $this->referenceData();
+        $guide = ContractGuide::query()->create(['guide_month' => now()->format('Y')]);
+        $item = $guide->items()->create($this->normalizedItemData($data['product'], $data['country'], 'Retained customs evidence'));
+        $migration = require database_path('migrations/2026_09_28_163321_add_customs_reference_to_contract_guide_items_table.php');
+        $migration->up();
+        $this->assertSame('DU-OLD', $item->fresh()->du_no);
+
+        try {
+            $migration->down();
+            $this->fail('Rollback must not discard retained customs references.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('retained contract guide items', $exception->getMessage());
+            $this->assertTrue(Schema::hasColumn('contract_guide_items', 'du_no'));
+            $this->assertSame('DU-OLD', $item->fresh()->du_no);
+        }
     }
 
     /**

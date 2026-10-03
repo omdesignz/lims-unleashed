@@ -2,7 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class InventoryOrderRequest extends FormRequest
 {
@@ -17,10 +21,12 @@ class InventoryOrderRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
+
         if ($this->isMethod('post')) {
             $rules = [
                 'date' => 'required|date',
@@ -29,11 +35,11 @@ class InventoryOrderRequest extends FormRequest
                 'supplier_id' => 'required|exists:i_suppliers,id',
                 'obs' => 'nullable',
                 'items' => 'required|array|min:1',
-                'items.*.item_id' => 'required|exists:i_items,id',
-                'items.*.qty' => 'required',                                                                                                                                                                                                                                                   
-                'items.*.expected_date' => 'nullable|date',                                                                                                                                                                                                                                                   
+                'items.*.item_id' => ['required', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
+                'items.*.qty' => 'required',
+                'items.*.expected_date' => 'nullable|date',
                 'items.*.actual_date' => 'nullable|date',
-                'items.*.warehouse_id' => 'required|exists:i_warehouses,id',
+                'items.*.warehouse_id' => ['required', 'integer', Rule::exists('i_warehouses', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
             ];
         } else {
             $rules = [
@@ -41,11 +47,11 @@ class InventoryOrderRequest extends FormRequest
                 'supplier_id' => 'required|exists:i_suppliers,id',
                 'obs' => 'nullable',
                 'items' => 'required|array|min:1',
-                'items.*.item_id' => 'required|exists:i_items,id',
-                'items.*.qty' => 'required',                                                                                                                                                                                                                                                   
-                'items.*.expected_date' => 'nullable|date',                                                                                                                                                                                                                                                   
+                'items.*.item_id' => ['required', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
+                'items.*.qty' => 'required',
+                'items.*.expected_date' => 'nullable|date',
                 'items.*.actual_date' => 'nullable|date',
-                'items.*.warehouse_id' => 'required|exists:i_warehouses,id',
+                'items.*.warehouse_id' => ['required', 'integer', Rule::exists('i_warehouses', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
 
             ];
         }
@@ -74,31 +80,31 @@ class InventoryOrderRequest extends FormRequest
     }
 
     /**
- * Get the error messages for the defined validation rules.
- *
- * @return array<string, string>
- */
-public function messages(): array
-{
-    return [
-        'items.*.item_id.required' => 'É obrigatória a indicação de um valor para o campo item',
-    ];
-}
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'items.*.item_id.required' => 'É obrigatória a indicação de um valor para o campo item',
+        ];
+    }
 
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  Validator  $validator
      * @return void
      */
     public function prepareForValidation()
     {
         // dd(request()->all());
         $this->merge([
-            'supplier_id' => !is_null(request()->supplier_id) ? request()->supplier_id['value'] : null,
+            'supplier_id' => ! is_null(request()->supplier_id) ? request()->supplier_id['value'] : null,
             'user_id' => auth()->user()->id,
             'order_year' => now()->year,
-            'items' => is_null(request()->items) ? [] : collect(request()->items)->map(function($item) {
+            'items' => is_null(request()->items) ? [] : collect(request()->items)->map(function ($item) {
                 return [
                     'item_id' => $item['item_id']['value'],
                     'warehouse_id' => $item['warehouse_id']['value'],
@@ -106,7 +112,7 @@ public function messages(): array
                     'expected_date' => $item['expected_date'],
                     'actual_date' => $item['actual_date'],
                 ];
-            })->toArray()
+            })->toArray(),
         ]);
     }
 }

@@ -49,12 +49,25 @@ class ReportStudioWorkflowTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+
+        return $admin;
+    }
+
+    private function commercialQuote(): Quote
+    {
+        $quote = new Quote([
+            'quote_no' => 'PP 09/2026/0001',
+            'date' => now(),
+            'due_date' => now()->addDays(15),
+            'sub_total' => 1000,
+            'tax' => 140,
+            'total' => 1140,
+        ]);
+        $quote->setRelation('items', collect());
+
+        return $quote;
     }
 
     public function test_admin_can_view_report_studios_index(): void
@@ -636,7 +649,15 @@ CSS,
             'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
         ]);
 
-        $invoice = Invoice::query()->firstOrFail();
+        $invoice = new Invoice([
+            'inv_no' => 'FT 09/2026/0001',
+            'date' => now(),
+            'due_date' => now()->addDays(30),
+            'sub_total' => 1000,
+            'tax' => 140,
+            'total' => 1140,
+        ]);
+        $invoice->setRelation('items', collect());
         $payload = app(ReportStudioPdfBuilder::class)->buildInvoicePayload(
             $invoice,
             app(GeneralSettings::class)
@@ -652,7 +673,7 @@ CSS,
 
     public function test_commercial_canvas_blocks_resolve_banking_details_in_generated_payloads(): void
     {
-        $quote = Quote::query()->firstOrFail();
+        $quote = $this->commercialQuote();
         $settings = app(GeneralSettings::class);
         $original = [
             'app_bank_name' => $settings->app_bank_name,
@@ -840,7 +861,7 @@ CSS,
 
     public function test_commercial_fallback_payload_uses_premium_document_table_system(): void
     {
-        $quote = Quote::query()->firstOrFail();
+        $quote = $this->commercialQuote();
         $studio = new ReportStudioTemplate([
             'name' => 'Commercial Fallback Polish',
             'studio_type' => 'quote',
@@ -902,7 +923,7 @@ CSS,
             'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
         ]);
 
-        $quote = Quote::query()->firstOrFail();
+        $quote = $this->commercialQuote();
         $quote->forceFill([
             'quote_no' => 'PP 06/2026/0048',
             'date' => now(),
@@ -2444,6 +2465,7 @@ CSS,
     public function test_media_store_returns_report_studio_asset_payload(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
 
         $user = $this->verifiedAdmin();
 
@@ -2469,16 +2491,17 @@ CSS,
             ->assertJsonPath('asset.mime_type', 'image/png')
             ->assertJsonPath('asset.file_type', 'image')
             ->assertJsonPath('asset.url', $media->preview_url)
-            ->assertJsonPath('asset.pdf_url', $media->preview_url)
+            ->assertJsonPath('asset.pdf_url', 'data:'.$media->mime_type.';base64,'.base64_encode(Storage::disk('local')->get($media->path)))
             ->assertJsonPath('asset.author', $user->name);
 
-        Storage::disk('public')->assertExists($media->path);
+        Storage::disk('local')->assertExists($media->path);
+        Storage::disk('public')->assertMissing($media->path);
     }
 
     public function test_media_store_persists_report_studio_asset_role_metadata(): void
     {
         Storage::fake('public');
-
+        Storage::fake('local');
         $user = $this->verifiedAdmin();
 
         $response = $this->actingAs($user)->postJson(route('media.store'), [
@@ -2508,7 +2531,8 @@ CSS,
         $this->assertSame('uploaded_stamp', $asset['kind']);
         $this->assertSame('Carimbos carregados', $asset['source']);
 
-        Storage::disk('public')->assertExists($media->path);
+        Storage::disk('local')->assertExists($media->path);
+        Storage::disk('public')->assertMissing($media->path);
     }
 
     public function test_media_store_returns_json_validation_errors_for_studio_uploads(): void
@@ -2530,36 +2554,18 @@ CSS,
             ->assertJsonPath('errors.file.0', 'Use SVG, PNG, JPEG, WebP, GIF ou AVIF para media de estúdio.');
     }
 
-    public function test_report_studio_profile_signature_assets_are_pdf_ready(): void
+    public function test_personal_signatures_are_private_and_not_enumerated_in_the_shared_studio_library(): void
     {
         Storage::fake('public');
-
-        $user = User::factory()->create([
-            'name' => 'Direcção Técnica',
-            'email_verified_at' => now(),
-        ]);
-
-        $user
-            ->addMedia(UploadedFile::fake()->image('assinatura-tecnica.png', 320, 120))
-            ->toMediaCollection('signature');
-
-        $asset = collect(app(ReportStudioAssetLibrary::class)->assets())
-            ->firstWhere('id', 'signature-'.$user->id);
-
-        $this->assertIsArray($asset);
-        $this->assertSame('Direcção Técnica', $asset['label']);
-        $this->assertSame('profile_signature', $asset['kind']);
-        $this->assertSame('Assinaturas', $asset['source']);
-        $this->assertSame($asset['url'], $asset['pdf_url']);
-        $this->assertStringContainsString('/storage/', $asset['pdf_url']);
-
-        $method = new ReflectionMethod(ReportStudioPdfBuilder::class, 'resolvePdfImageSource');
-        $method->setAccessible(true);
-
-        $this->assertSame(
-            public_path(ltrim((string) parse_url($asset['pdf_url'], PHP_URL_PATH), '/')),
-            $method->invoke(app(ReportStudioPdfBuilder::class), $asset['pdf_url'])
-        );
+        Storage::fake('local');
+        $user = User::factory()->create(['name' => 'Direcção Técnica', 'is_active' => true, 'email_verified_at' => now(), 'last_activity_at' => now()]);
+        $media = $user->addMedia(UploadedFile::fake()->image('assinatura-tecnica.png', 320, 120))->toMediaCollection('signature');
+        $this->actingAs($user)->get($user->signature_url)->assertOk()->assertDownload('assinatura-tecnica.png');
+        $this->assertSame('local', $media->disk);
+        Storage::disk('local')->assertExists($media->getPathRelativeToRoot());
+        Storage::disk('public')->assertMissing($media->getPathRelativeToRoot());
+        $this->actingAs($this->verifiedAdmin());
+        $this->assertNull(collect(app(ReportStudioAssetLibrary::class)->assets())->firstWhere('id', 'signature-'.$user->id));
     }
 
     public function test_canvas_media_asset_metadata_is_persisted_and_rendered(): void
@@ -2948,7 +2954,7 @@ CSS,
     public function test_analysis_report_payload_includes_sample_context_and_custom_page_size(): void
     {
         $user = $this->verifiedAdmin();
-        $certificate = QualityCertificate::query()->firstOrFail();
+        $certificate = new QualityCertificate(['code' => 'QC-2026-0001']);
 
         $template = ReportStudioTemplate::query()->create([
             'name' => 'Analysis Context Custom Paper',
@@ -3240,7 +3246,7 @@ CSS,
 
         $response = $this->actingAs($user)->get(route('report-studios.preview-pdf', $template));
 
-        $this->assertSame(200, $response->getStatusCode(), (string) $response->getContent());
+        $this->assertSame(200, $response->getStatusCode(), mb_strcut((string) $response->getContent(), 0, 2000, 'UTF-8'));
         $response->assertHeader('X-Report-Studio-Renderer', 'chrome');
         $response->assertDownload('report-studio-'.$template->id.'-executive-preview.pdf');
         $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
@@ -3645,14 +3651,11 @@ CSS,
         $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
     }
 
-    public function test_admin_can_export_executive_dashboard_as_pdf(): void
+    public function test_legacy_executive_dashboard_export_is_unavailable(): void
     {
-        $response = $this->actingAs($this->verifiedAdmin())
-            ->get(route('dashboard.export', ['format' => 'pdf']));
-
-        $response->assertOk();
-        $response->assertHeader('X-Report-Studio-Renderer');
-        $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
+        $this->actingAs($this->verifiedAdmin())
+            ->get('/dashboard/export?format=pdf')
+            ->assertNotFound();
     }
 
     public function test_admin_can_create_proposal_studio_template(): void

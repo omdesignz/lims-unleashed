@@ -14,6 +14,7 @@ use App\Notifications\OperationalNotification;
 use App\Support\LaboratoryWorkflowNotifier;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -28,25 +29,21 @@ class WorkflowNotificationStalenessTest extends TestCase
         Cache::flush();
     }
 
-    private function verifiedAdmin(): User
-    {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
-    }
-
     public function test_staleness_job_creates_notifications_for_pending_samples(): void
     {
         Notification::fake();
 
-        $admin = $this->verifiedAdmin();
-        $customer = Customer::query()->firstOrFail();
-        $department = Department::query()->firstOrFail();
-        $lab = VAPLab::query()->firstOrFail();
-        $warehouse = Warehouse::query()->firstOrFail();
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $customer = Customer::query()->create(['name' => 'Staleness test customer']);
+        $department = Department::factory()->create();
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $warehouse = Warehouse::query()->create([
+            'name' => 'Staleness test site',
+            'email' => fake()->unique()->safeEmail(),
+            'customer_id' => $customer->id,
+        ]);
 
         $sample = VAPSampleEntry::query()->create([
             'name' => 'Stale Notification Sample',

@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToFinancialLaboratory;
 use App\Models\Concerns\HasDocumentRevisions;
-use HighSolutions\EloquentSequence\Sequence;
+use App\Traits\HasScopedSequence;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Artisan;
 
 class Receipt extends Model
 {
-    use HasFactory, SoftDeletes, Sequence, HasDocumentRevisions;
+    use BelongsToFinancialLaboratory, HasDocumentRevisions, HasFactory, HasScopedSequence, SoftDeletes;
 
     public const MENU_NAME = 'receipts';
 
@@ -41,6 +41,7 @@ class Receipt extends Model
     ];
 
     protected $table = 'receipts';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at', 'date'];
 
     /**
@@ -54,13 +55,11 @@ class Receipt extends Model
         'extra_data' => AsCollection::class,
     ];
 
-    public function sequence()
+    public function sequence(): array
     {
         return [
             'group' => 'rec_month',
             'fieldName' => 'seq',
-            // 'orderFrom1' => true,
-            'notUpdateOnDelete' => true
         ];
     }
 
@@ -122,18 +121,14 @@ class Receipt extends Model
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
-
     public static function boot()
     {
         parent::boot();
 
         static::creating(function ($receipt) {
 
-            $receipt->rec_no = 'RG ' . $receipt->rec_month . '/' . $receipt->seq;
+            $receipt->rec_no = 'RG '.$receipt->rec_month.'/'.$receipt->seq;
         });
 
-        static::created(function ($receipt) {
-            Artisan::call('app:sign-receipt-with-hash', ['receipt' => $receipt->id]);
-        });
     }
 }

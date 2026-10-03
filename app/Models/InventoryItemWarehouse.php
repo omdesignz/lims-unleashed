@@ -5,13 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use LogicException;
 
 class InventoryItemWarehouse extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public CONST MENU_NAME = 'iwarehouses';
+    public const MENU_NAME = 'iwarehouses';
 
     /**
      * The attributes that are mass assignable.
@@ -19,6 +19,7 @@ class InventoryItemWarehouse extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'lab_id',
         'name',
         'location_id',
         'is_refrigerated',
@@ -27,6 +28,7 @@ class InventoryItemWarehouse extends Model
     ];
 
     protected $table = 'i_warehouses';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
@@ -40,12 +42,22 @@ class InventoryItemWarehouse extends Model
         'is_refrigerated' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::updating(function (self $warehouse): void {
+            if ($warehouse->isDirty('lab_id')) {
+                throw new LogicException('Inventory warehouse ownership cannot be reassigned.');
+            }
+        });
+    }
+
     /**
      * Item Location
      *
      * @return Relationship
      */
-    public function location() {
+    public function location()
+    {
         return $this->belongsTo(InventoryItemLocation::class, 'location_id');
     }
 
@@ -53,5 +65,4 @@ class InventoryItemWarehouse extends Model
     {
         return $query->whereNull('deleted_at');
     }
-
 }

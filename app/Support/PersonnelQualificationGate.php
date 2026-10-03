@@ -7,21 +7,21 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PersonnelQualificationGate
 {
-    public function ensure(User $user, string $capability, ?int $departmentId = null): void
+    public function ensure(User $user, string $capability, ?int $departmentId, int $labId): void
     {
-        if ($this->allows($user, $capability, $departmentId)) {
+        if ($this->allows($user, $capability, $departmentId, $labId)) {
             return;
         }
 
         throw new HttpException(403, 'O utilizador não possui qualificação activa para executar esta etapa.');
     }
 
-    public function allows(User $user, string $capability, ?int $departmentId = null): bool
+    public function allows(User $user, string $capability, ?int $departmentId, int $labId): bool
     {
         if (! method_exists($user, 'hasActiveQualificationFor')) {
             return true;
         }
 
-        return $user->hasActiveQualificationFor($capability, $departmentId);
+        return $user->hasActiveQualificationFor($capability, $departmentId, $labId);
     }
 }

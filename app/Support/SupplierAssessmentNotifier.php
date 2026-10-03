@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class SupplierAssessmentNotifier
 {
@@ -23,78 +25,73 @@ class SupplierAssessmentNotifier
             $assessment,
             'Monitorização reforçada.',
             $sender,
-            $this->stakeholders(),
+            $this->stakeholders($assessment->lab_id),
             'supplier-assessment-sensitive:'.$assessment->id.':'.$assessment->updated_at?->format('YmdHi')
         );
     }
 
-    public function notifyDueSoon(InventorySupplierAssessment $assessment, User $sender): void
+    public function notifyDueSoon(InventorySupplierAssessment $assessment): void
     {
         $this->sendNotification(
             $assessment,
             'Revisão prevista para '.($assessment->next_review_at?->format('d/m/Y') ?? 'data em aberto').'.',
-            $sender,
-            $this->stakeholders(),
+            null,
+            $this->stakeholders($assessment->lab_id),
             'supplier-assessment-due-soon:'.$assessment->id.':'.now()->format('Ymd')
         );
     }
 
-    public function notifyOverdue(InventorySupplierAssessment $assessment, User $sender): void
+    public function notifyOverdue(InventorySupplierAssessment $assessment): void
     {
         $this->sendNotification(
             $assessment,
             'O prazo de revisão foi ultrapassado e requer acção imediata.',
-            $sender,
-            $this->stakeholders(),
+            null,
+            $this->stakeholders($assessment->lab_id),
             'supplier-assessment-overdue:'.$assessment->id.':'.now()->format('Ymd')
         );
     }
 
-    public function notifyCriticalRisk(InventorySupplierAssessment $assessment, User $sender): void
+    public function notifyCriticalRisk(InventorySupplierAssessment $assessment): void
     {
         $this->sendNotification(
             $assessment,
             'Rever antes de novas aquisições.',
-            $sender,
-            $this->stakeholders(),
+            null,
+            $this->stakeholders($assessment->lab_id),
             'supplier-assessment-critical:'.$assessment->id.':'.now()->format('Ymd')
         );
     }
 
-    private function stakeholders(): Collection
+    private function stakeholders(int $labId): Collection
     {
         return $this->mergeRecipients(
-            $this->usersWithPermission('view_isuppliers'),
-            $this->usersWithPermission('view_iorders')
+            $this->usersWithPermission('view_isuppliers', $labId),
+            $this->usersWithPermission('view_iorders', $labId)
         );
     }
 
-    private function usersWithPermission(string $permission): Collection
+    private function usersWithPermission(string $permission, int $labId): Collection
     {
-        $admins = User::query()
-            ->role('admin')
+        return User::query()
+            ->whereIn('id', DB::table('lab_user')->where('lab_id', $labId)->select('user_id'))
             ->whereNotNull('email_verified_at')
+            ->where('is_active', true)
+            ->where(function ($query) use ($permission): void {
+                $query->whereHas('roles', fn ($roleQuery) => $roleQuery->where('name', 'admin')->where('guard_name', 'web'))
+                    ->orWhereHas('permissions', fn ($permissionQuery) => $permissionQuery->where('name', $permission)->where('guard_name', 'web'))
+                    ->orWhereHas('roles.permissions', fn ($permissionQuery) => $permissionQuery->where('name', $permission)->where('guard_name', 'web'));
+            })
             ->get();
-
-        $permitted = User::query()
-            ->permission($permission)
-            ->whereNotNull('email_verified_at')
-            ->get();
-
-        return $admins->concat($permitted)->unique('id')->values();
     }
 
     private function sendNotification(
         InventorySupplierAssessment $assessment,
         string $detail,
-        User $sender,
+        ?User $sender,
         Collection $recipients,
         string $cacheKey
     ): void {
-        if (! Cache::add('supplier-assessment-notification:'.$cacheKey, true, now()->addHours(12))) {
-            return;
-        }
-
         $targets = $recipients
             ->filter()
             ->reject(fn ($recipient) => $recipient instanceof User && $recipient->is($sender))
@@ -105,13 +102,30 @@ class SupplierAssessmentNotifier
             return;
         }
 
-        $this->templates->notify($targets, 'inventory.supplier_assessment', [
+        $context = [
+            'lab_id' => $assessment->lab_id,
+            'actor_name' => $sender?->name ?? 'Sistema',
             'supplier_name' => $assessment->supplier?->name ?? ('Fornecedor #'.$assessment->inventory_item_supplier_id),
             'status' => $assessment->status,
             'risk_level' => $assessment->risk_level,
             'detail' => $detail,
             'document_url' => route('supplier-assessments.index'),
-        ]);
+        ];
+        $cacheKey = 'supplier-assessment-notification:lab:'.$assessment->lab_id.':'.$cacheKey;
+        DB::afterCommit(function () use ($targets, $context, $cacheKey): void {
+            if (! Cache::add($cacheKey, true, now()->addHours(12))) {
+                return;
+            }
+
+            try {
+                if ($this->templates->notify($targets, 'inventory.supplier_assessment', $context) === 0) {
+                    Cache::forget($cacheKey);
+                }
+            } catch (Throwable $exception) {
+                Cache::forget($cacheKey);
+                throw $exception;
+            }
+        });
     }
 
     private function mergeRecipients(EloquentCollection|Collection ...$recipientGroups): Collection

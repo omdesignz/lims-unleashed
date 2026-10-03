@@ -99,6 +99,7 @@ function formatDate(value) {
           <Link :href="route('portal.requests.index', { new: 1 })" class="ds-button ds-button-primary">
             <PlusIcon class="h-4 w-4" /> Nova pedido </Link>
         </div>
+        <Link :href="route('portal.ratings.index')" class="ds-button ds-button-secondary mt-4">Avaliações pendentes</Link>
       </div>
 
       <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">

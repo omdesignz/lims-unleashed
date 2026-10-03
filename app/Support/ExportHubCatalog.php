@@ -144,7 +144,7 @@ class ExportHubCatalog
             'occurrences' => [
                 $this->column('id', 'ID', 10, 'integer'), $this->column('occurrence_no', 'Ocorrência', 18), $this->column('date_reported', 'Reportada em', 16), $this->column('status', 'Estado', 18),
                 $this->column('category', 'Categoria', 22), $this->column('origin', 'Origem', 22), $this->column('department', 'Departamento', 24), $this->column('responsible_name', 'Responsável', 24),
-                $this->column('reported_by', 'Registado por', 24), $this->column('issue_description', 'Descrição', 42, wrap: true), $this->column('analysis', 'Análise', 42, wrap: true), $this->column('corrective_action', 'Acção correctiva', 42, wrap: true),
+                $this->column('responsible_user', 'Responsável interno', 24), $this->column('issue_description', 'Descrição', 42, wrap: true), $this->column('analysis', 'Análise', 42, wrap: true), $this->column('corrective_action', 'Acção correctiva', 42, wrap: true),
                 $this->column('implementation_date', 'Implementação', 16), $this->column('date_resolved', 'Resolvida em', 16), $this->column('date_closed', 'Encerrada em', 16), $this->column('was_effective', 'Eficaz', 12, 'yes_no'),
                 $this->column('client_acceptance', 'Aceite pelo cliente', 18, 'yes_no'), $this->column('update_risk_matrix', 'Actualizar matriz de risco', 22, 'yes_no'), $this->column('deleted_at', 'Estado do registo', 16, 'record_status'), $this->column('created_at', 'Criado em', 20),
             ],

@@ -21,6 +21,30 @@
       </div>
     </section>
 
+    <section v-if="canInvite" class="ds-card p-5">
+      <h2 class="text-base font-bold text-[var(--ds-text)]">Convidar cliente a avaliar o serviço</h2>
+      <p class="ds-copy mt-1 text-sm">Use o email de uma conta do portal verificada. Convite privado deste laboratório, válido por 30 dias.</p>
+      <form class="mt-4 space-y-3" :aria-busy="invitationForm.processing" @submit.prevent="issueInvitation">
+        <label for="rating-recipient" class="block text-sm font-semibold text-[var(--ds-text)]">Email do destinatário</label>
+        <input id="rating-recipient" v-model="invitationForm.recipient_email" type="email" required maxlength="255" class="ds-input w-full" :disabled="invitationForm.processing" :aria-invalid="Boolean(invitationForm.errors.recipient_email)" :aria-describedby="invitationForm.hasErrors ? 'invitation-errors' : undefined" />
+        <div v-if="invitationForm.hasErrors" id="invitation-errors" role="alert" class="text-sm text-red-600">
+          <p v-for="(message, field) in invitationForm.errors" :key="field">{{ message }}</p>
+        </div>
+        <button type="submit" class="ds-button ds-button-primary" :disabled="invitationForm.processing">{{ invitationForm.processing ? 'A registar…' : 'Registar convite' }}</button>
+      </form>
+    </section>
+
+    <section v-if="invitations.length" class="ds-card p-5">
+      <h2 class="text-base font-bold text-[var(--ds-text)]">Últimos 20 convites deste laboratório</h2>
+      <p v-if="revokeForm.hasErrors" role="alert" class="mt-2 text-sm text-red-600">{{ Object.values(revokeForm.errors).join(' ') }}</p>
+      <div class="mt-3 divide-y divide-[var(--ds-border)]">
+        <article v-for="invitation in invitations" :key="invitation.invitation" class="flex flex-wrap items-center justify-between gap-3 py-3">
+          <div><p class="text-sm font-semibold text-[var(--ds-text)]">{{ invitation.recipient }}</p><p class="ds-copy text-xs">{{ invitation.rateable_type }} · {{ invitationStatus(invitation.status) }}</p></div>
+          <button v-if="canInvite && invitation.status === 'pending'" type="button" class="ds-button ds-button-secondary" :disabled="revokeForm.processing" @click="revokeInvitation(invitation)">{{ revokeForm.processing ? 'A actualizar…' : 'Revogar convite' }}</button>
+        </article>
+      </div>
+    </section>
+
     <section class="grid grid-cols-1 gap-4 md:grid-cols-4">
       <div v-for="metric in metrics" :key="metric.label" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ metric.label }}</p>
@@ -85,7 +109,7 @@
 <script setup>
 import { computed } from 'vue'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { Link } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
 import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
 import Pagination from '@/Components/Pagination.vue'
 
@@ -102,7 +126,26 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  canInvite: { type: Boolean, default: false },
+  invitations: { type: Array, default: () => [] },
 })
+
+const invitationForm = useForm({ recipient_email: '', rateable_type: 'service', rateable_id: 0 })
+const revokeForm = useForm({})
+
+function issueInvitation() {
+  if (invitationForm.processing) return
+  invitationForm.post(route('ratings.invitations.store'), { preserveState: 'errors', onSuccess: () => invitationForm.reset() })
+}
+
+function revokeInvitation(invitation) {
+  if (revokeForm.processing || !window.confirm('Revogar este convite? O destinatário deixará de poder responder.')) return
+  revokeForm.post(route('ratings.invitations.revoke', { invitation: invitation.invitation }), { preserveState: 'errors' })
+}
+
+function invitationStatus(status) {
+  return { pending: 'Pendente', completed: 'Respondido', expired: 'Expirado', revoked: 'Revogado' }[status] || status
+}
 
 const metrics = computed(() => [
   { label: 'Total', value: props.stats.total },

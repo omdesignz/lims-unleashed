@@ -1,5 +1,8 @@
 <script setup>
 import '../CommercialDocumentSurface.css';
+import { optionRows } from '@/Composables/useCommercialDocumentOptions';
+import { prepareQuoteLine, selectQuoteCatalog, quoteLinePreview, saveQuoteForm } from '@/Composables/useQuoteAuthoring';
+import FinancialObservationForm from '@/Components/documents/FinancialObservationForm.vue';
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, onMounted, reactive, watch } from "vue";
@@ -26,7 +29,7 @@ const props = defineProps({
 let customerWarehouses = reactive([]);
 
 const updateDate = (e) => {
-  form.collection_date = e;
+  form.due_date = e;
 }
 
 const masks = ref({
@@ -50,33 +53,30 @@ const form = useForm({
     obs: props.record.obs,
     status: props.record.status,
     converted_to_invoice: props.record.converted_to_invoice,
-    items: props.record.items,
+    items: (props.record.items || []).map(prepareQuoteLine),
     total: props.record.total
 });
 
-watch(() => [form.customer_id.value], (currentValue, oldValue) => {
-        console.log(currentValue);
-
-        fetch('/warehouses/getWarehouse?q=' + '&customer_id=' + form.customer_id?.value)
-        .then(response => response.json())
-        .then(results => {
-
-            customerWarehouses = results.map(result => {
-                return {
-                value: result.id,
-                label: result.address,
-                }
-            });
-
-            form.warehouse_id = customerWarehouses[0];
-
-        });
-
-        }
-      );
+let warehouseLookupVersion = 0;
+watch(() => form.customer_id?.value, async (customerId) => {
+    const version = ++warehouseLookupVersion;
+    form.warehouse_id = null;
+    customerWarehouses = [];
+    if (!customerId) return;
+    try {
+        const response = await fetch('/warehouses/getWarehouse?customer_id=' + encodeURIComponent(customerId));
+        if (!response.ok) throw new Error('Warehouse lookup failed');
+        const results = await response.json();
+        if (version !== warehouseLookupVersion) return;
+        customerWarehouses = optionRows(results).map((result) => ({ value: result.id, label: result.address }));
+        form.warehouse_id = customerWarehouses[0] ?? null;
+    } catch {
+        if (version === warehouseLookupVersion) form.setError('warehouse_id', 'Não foi possível carregar os locais. Tente seleccionar novamente.');
+    }
+});
 
 const addItem = () => {
-    form.items.push({
+    form.items.push(prepareQuoteLine({
         id: null,
         quote_id: '',
         itemable_type: '',
@@ -97,7 +97,7 @@ const addItem = () => {
         tax_id: null,
         obs: '',
         charge_tax: true,
-    });
+    }));
 }
 
 const removeItem = (index) => {
@@ -109,7 +109,7 @@ function loadUnits(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-        results.map(result => {
+        optionRows(results).map(result => {
             return {
             value: result.id,
             label: result.code,
@@ -124,7 +124,7 @@ function loadCustomers(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-        results.map(result => {
+        optionRows(results).map(result => {
             return {
             value: result.id,
             label: result.name,
@@ -139,7 +139,7 @@ let loadWarehouses = (query, setOptions) => {
     .then(response => response.json())
     .then(results => {
         setOptions(
-        results.map(result => {
+        optionRows(results).map(result => {
             return {
             value: result.id,
             label: result.address,
@@ -154,9 +154,10 @@ function loadParameters(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-        results.map(result => {
+        optionRows(results).map(result => {
             return {
             value: result.id,
+                catalog_type: 'parameter',
             label: result.name,
             price: result.price,
             tax_id: result.tax_id,
@@ -175,9 +176,10 @@ function loadMatrixes(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-        results.map(result => {
+        optionRows(results).map(result => {
             return {
             value: result.id,
+                catalog_type: 'matrix',
             label: result.description,
             price: result.fixed_price,
             tax_id: result.tax_id,
@@ -196,8 +198,9 @@ function loadProducts(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-            results.map(result => ({
+            optionRows(results).map(result => ({
                 value: result.id,
+                catalog_type: 'product',
                 label: result.name,
                 price: result.matrix_parameters_price,
                 tax_id: result.tax_id,
@@ -215,7 +218,7 @@ function loadUninvoiceProductsByWarehouse(warehouse_id)
     fetch('/labcodes/getWarehouseUninvoicedProducts?warehouse_id=' + warehouse_id + '&use_matrix_price=' + form.use_matrix_price)
     .then(response => response.json())
     .then(results => {
-        form.items = results;
+        form.items = results.map(prepareQuoteLine);
     });
 }
 
@@ -224,8 +227,9 @@ function loadServices(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-            results.map(result => ({
+            optionRows(results).map(result => ({
                 value: result.id,
+                catalog_type: 'paid_service',
                 label: result.name,
                 price: result.fixed_price,
                 tax_id: result.tax_id,
@@ -243,115 +247,70 @@ function loadLabCodes(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-        results.map(result => {
+        optionRows(results).map(result => {
             return {
-            value: result.id,
+            value: result.collection_id,
             label: result.code,
+            lab_code_id: result.id,
             };
         })
         );
     });
 }
 
+function selectLabCode(item, selection) {
+    item.itemable_type = selection ? 'collectionproduct' : null;
+}
+
+const correctingItemId = ref(null);
+const itemCorrectionErrors = ref({});
+
 let submitItem = (item) => {
-    useForm({
-      id: item.id,
-      obs: item.obs,
-      itemable_id: item.itemable_id,
-      itemable_type: item.itemable_type,
-      unit_id: item.unit_id,
-    })
-    .put(route('quoteitems.update', {item: item.id}), {
-      preserveScroll: true,
-      preserveState: false,
-        onSuccess: () => {
-          form.reset()
+    if (correctingItemId.value !== null) {
+      return;
+    }
+    const currentItem = item.item;
+    const selectedCode = currentItem.itemable_id;
+    correctingItemId.value = currentItem.id;
+    itemCorrectionErrors.value = {};
+    try {
+      useForm({
+        obs: currentItem.obs,
+        unit_id: currentItem.unit_id,
+        ...(selectedCode?.lab_code_id ? { lab_code_id: selectedCode.lab_code_id }
+          : selectedCode === null ? { lab_code_id: null } : {}),
+      })
+      .put(route('quoteitems.update', {item: currentItem.id}), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: (page) => {
+          const record = page.props.record?.data || page.props.record;
+          const savedItem = record?.items?.find((saved) => saved.id === currentItem.id);
+          if (savedItem) {
+            currentItem.itemable_id = savedItem.itemable_id;
+            currentItem.itemable_type = savedItem.itemable_type;
+          }
         },
-    });
+        onError: (errors) => { itemCorrectionErrors.value = { id: currentItem.id, errors }; },
+        onNetworkError: () => { itemCorrectionErrors.value = { id: currentItem.id, errors: { request: "Ligação interrompida. Tente novamente." } }; },
+        onHttpException: () => { itemCorrectionErrors.value = { id: currentItem.id, errors: { request: "Não foi possível guardar a correcção." } }; },
+        onFinish: () => { correctingItemId.value = null; },
+      });
+    } catch {
+      correctingItemId.value = null;
+      itemCorrectionErrors.value = { id: currentItem.id, errors: { request: "Não foi possível iniciar a correcção. Tente novamente." } };
+    }
 }
 
 
 let submit = () => {
-
-if(!form.id) {
-  form.transform((data) => ({
-    ...data,
-    tax: taxTotal?.value,
-    total: invoiceTotal?.value,
-    sub_total: subTotal?.value,
-    discount: discountTotal?.value,
-    amount_due: data.type_id != 2 ? invoiceTotal?.value : 0,
-    formatted_items: itemsWithSubTotal.value.map(item => ({
-          quote_id: item.quote_id,
-          item_id: item.item_id,
-          itemable_id: item.itemable_id,
-          itemable_type: item.itemable_type,
-          item_description: item.description,
-          discount_id: item.item.discount_id,
-          discount_percentage: item.item.discount_id == 1 ? item.discount_amount / item.product_price * 100 : 0,
-          qty: item.qty,
-          obs: item.obs,
-          exemption_id: item.exemption_id,
-          exemption_code: item.exemption_code,
-          tax_id: item.tax_id,
-          tax_percentage: item.tax,
-          charge_tax: item.item.charge_tax,
-          unit_price: item.unit_price,
-          unit_id: item.unit_id,
-          product_price: item.product_price,
-          total: item.total,
-          discount_amount: item.discount_amount,
-          tax_amount: item.tax_amount,
-      }))
-  }))
-  .post(route('quotes.store'), {
-      preserveScroll: true,
-      onSuccess: () => {
-        form.reset()
-      },
-  });
-} else {
-
-  form.transform((data) => ({
-    ...data,
-    tax: taxTotal?.value,
-    total: invoiceTotal?.value,
-    sub_total: subTotal?.value,
-    discount: discountTotal?.value,
-    amount_due: data.type_id != 2 ? invoiceTotal?.value : 0,
-    formatted_items: itemsWithSubTotal.value.map(item => ({
-          quote_id: item.quote_id,
-          item_id: item.item_id,
-          itemable_id: item.itemable_id,
-          itemable_type: item.itemable_type,
-          item_description: item.description,
-          discount_id: item.item.discount_id,
-          discount_percentage: item.item.discount_id == 1 ? item.discount_amount / item.product_price * 100 : 0,
-          qty: item.qty,
-          obs: item.obs,
-          exemption_id: item.exemption_id,
-          exemption_code: item.exemption_code,
-          tax_id: item.tax_id,
-          tax_percentage: item.tax,
-          charge_tax: item.item.charge_tax,
-          unit_price: item.unit_price,
-          unit_id: item.unit_id,
-          product_price: item.product_price,
-          total: item.total,
-          discount_amount: item.discount_amount,
-          tax_amount: item.tax_amount,
-      }))
-  }))
-  .put(route('quotes.update',{quote: form.id}), {
-      preserveScroll: true,
-      preserveState: false,
-      onSuccess: () => {
-        form.reset()
-      },
-  });
-}
-
-}
+    if (correctingItemId.value !== null || props.record.invoice_id || props.record.converted_to_invoice) return;
+    saveQuoteForm(form, route('quotes.update', { quote: form.id }), 'put', (page) => {
+    const saved = page.props.record?.data || page.props.record;
+    if (saved?.items) form.items = saved.items.map(prepareQuoteLine);
+    form.defaults();
+    });
+};
 
 const convertToInvoice = () => {
 
@@ -365,95 +324,21 @@ const convertToInvoice = () => {
   });
 }
 
-const itemsWithSubTotal = computed(() => {
-
-return form.items.map(item => ({
-    item,
-    id: item.id,
-    tax: lineTaxPercentage(item),
-    qty: item.qty,
-    quote_id: item.quote_id,
-    itemable_type: item.itemable_type,
-    itemable_id: item.itemable_id,
-    obs: item.obs,
-    item_id: item.item_id,
-    tax_id: item?.tax_id,
-    item_description: item.item_description,
-    tax_percentage: item.tax_percentage,
-    unit_id: item.unit_id,
-    exemption_id: item?.exemption_id,
-    exemption_code: item?.exemption_code,
-    charge_tax: lineChargeTax(item),
-    unit_price: lineUnitPrice(item),
-    product_price: onSelectedItem(item),
-    total: lineSubTotalAmount(item) ? lineSubTotalAmount(item) : parseFloat(0),
-    discount_amount: lineDiscountAmount(item),
-    tax_amount: lineTaxAmount(item),
-}))
-
-});
-
-const lineUnitPrice = (item) => {
-  return parseFloat(onSelectedItem(item) - parseFloat(lineDiscountAmount(item))).toFixed(2);
-}
-
-const lineChargeTax = (item) => {
-  return item.item_id?.charge_tax ?? false;
-}
-
-const lineTaxPercentage = (item) => {
-  return item.item_id?.tax_percentage ?? 0;
-}
-
-const lineSubTotalAmount = (item) => {
-  return ( (parseFloat(lineUnitPrice(item)) * parseFloat(item.qty)) );
-}
-
-const lineDiscountAmount = (item) => {
-if(item.discount_id == 2) {
-          
-    return parseFloat((item.discount_amount <= onSelectedItem(item) ? item.discount_amount : 0));
-
-  } else if(item.discount_id == 1) {
-
-    return parseFloat((item.discount_amount <= 100 ? item.discount_amount * onSelectedItem(item) / 100 : 0));
-
-  } else {
-
-    return parseFloat(0);
-    
-  }
-}
-
-const lineTaxAmount = (item) => {
-  return ((parseFloat(lineSubTotalAmount(item)) * lineTaxPercentage(item) / 100));
-}
-
-const subTotal = computed(() => {
-    return parseFloat(itemsWithSubTotal.value.map(item => item.total).reduce((prev, curr) => prev + curr, 0)).toFixed(2);
-})
-
-const taxTotal = computed(() => {
-    return parseFloat(itemsWithSubTotal.value.map(item => (item.tax_amount ? item.tax_amount : 0)).reduce((prev, curr) => prev + curr, 0)).toFixed(2);
-})
-
-const discountTotal = computed(() => {
-    return parseFloat(itemsWithSubTotal.value.map(item => (item.discount_amount ? item.discount_amount : 0)).reduce((prev, curr) => prev + curr, 0)).toFixed(2);
-})
-
-const invoiceTotal = computed(() => {
-  return (parseFloat(subTotal.value) + parseFloat(taxTotal.value)).toFixed(2);
-})
-
-const onSelectedItem = (item) => {
-      return item?.item_id?.price;
-    }
-  
-
+const itemsWithSubTotal = computed(() => form.items.map(quoteLinePreview));
+const subTotal = computed(() => itemsWithSubTotal.value.reduce((sum, line) => sum + line.total, 0).toFixed(2));
+const taxTotal = computed(() => itemsWithSubTotal.value.reduce((sum, line) => sum + line.tax_amount, 0).toFixed(2));
+const discountTotal = computed(() => itemsWithSubTotal.value.reduce((sum, line) => sum + line.discount_total, 0).toFixed(2));
+const invoiceTotal = computed(() => (Number(subTotal.value) + Number(taxTotal.value)).toFixed(2));
+const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
 </script>
 
 <template>
+<div>
+<FinancialObservationForm v-if="record.invoice_id || record.converted_to_invoice" kind="quote" :record="record" />
+<template v-else>
 <div class="commercial-document-page border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
+        <p v-if="Object.keys(form.errors).length" role="alert" class="text-sm text-red-600">{{ Object.values(form.errors).flat().join(' ') }}</p>
+        <p v-if="form.items.some((line) => !line.catalog_type)" role="status" class="text-sm text-gray-600">Seleccione novamente os artigos sem tipo de catálogo antes de guardar.</p>
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.quotes.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500">{{ $t('gestlab.general.labels.quotes.page_update_description') }} {{ form?.quote_no }}</p>
 </div>
@@ -468,7 +353,7 @@ const onSelectedItem = (item) => {
             <div class="mt-2">
               <date-picker class="py-1.5" v-model.string="form.due_date" locale="pt" color="yellow" mode="date" :input-debounce="500" @update:model-value="updateDate" :masks="masks" />
             </div>
-            <p v-if="form.errors.type_id" class="mt-2 text-xs text-red-600" id="type_id-error">{{ form.errors.type_id }}</p>
+            <p v-if="form.errors.due_date" class="mt-2 text-xs text-red-600" id="due_date-error">{{ form.errors.due_date }}</p>
           </div>
 
           <div class="sm:col-span-2">
@@ -566,7 +451,7 @@ const onSelectedItem = (item) => {
                 </td>
                 <td class="hidden px-3 py-5 text-right text-sm text-gray-500 sm:table-cell align-top">
                   <div class="relative rounded-md shadow-sm">
-                    <BaseInput v-model="item.item.qty" type="number" step="1" :name="`qty-${index+1}`" :id="`qty-${index+1}`" class="ds-field text-center" placeholder="0.00" />
+                    <BaseInput v-model="item.item.qty" type="number" step="0.01" min="0.01" :name="`qty-${index+1}`" :id="`qty-${index+1}`" class="ds-field text-center" placeholder="0.00" />
                     <div class="mt-2 text-gray-500 z-50">
                       <comboboxEnhanced v-model="item.item.unit_id" :load-options="loadUnits"/>
                     </div>
@@ -574,24 +459,25 @@ const onSelectedItem = (item) => {
                 </td>
                 <td class="hidden px-3 py-5 text-right text-sm text-gray-500 sm:table-cell align-top">
                   <div class="relative rounded-md shadow-sm">
-                    <BaseInput v-model="item.unit_price" type="number" step=".01" :name="`unit_price-${index+1}`" :id="`unit_price-${index+1}`" class="ds-field text-right" placeholder="0.00" />
+                    <BaseInput v-model="item.item.agreed_unit_price" type="number" step=".01" :name="`unit_price-${index+1}`" :id="`unit_price-${index+1}`" class="ds-field text-right" placeholder="0.00" />
                   </div>
                     <div class="mt-2" v-if="!form.is_service">
-                      <comboboxEnhanced v-model="item.item.itemable_id" :load-options="loadLabCodes" placeholder="CL"/> 
+                      <comboboxEnhanced v-model="item.item.itemable_id" :load-options="loadLabCodes" @update:model-value="selectLabCode(item.item, $event)" placeholder="CL"/>
                     </div>
                 </td>
                 <td class="py-5 pl-3 pr-4 text-right text-sm text-gray-500 sm:pr-0 align-top">
                   <div class="relative rounded-md shadow-sm">
-                    <BaseInput v-model="item.item.discount_amount" type="number" :name="`discount_amount-${index+1}`" :id="`discount_amount-${index+1}`" class="ds-field pr-28" placeholder="0.00" />
+                    <BaseInput v-model="item.item.discount_value" type="number" :name="`discount_amount-${index+1}`" :id="`discount_amount-${index+1}`" class="ds-field pr-28" placeholder="0.00" />
                     <div class="absolute inset-y-0 right-0 flex items-center">
-                      <BaseSelect v-model="item.item.discount_id" :id="`discount_id-${index+1}`" :name="`discount_id-${index+1}`" class="h-full rounded-xl border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 text-sm text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]">
-                        <option v-for="(type, index) in props.discount_categories" :key="index" :value="type.value" :selected="item.item.discount_id">{{ type.label }}</option>
+                      <BaseSelect v-model="item.item.discount_mode" :id="`discount_id-${index+1}`" :name="`discount_id-${index+1}`" class="h-full rounded-xl border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 text-sm text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]">
+                        <option value="percentage">%</option><option value="fixed">Montante</option>
                       </BaseSelect>
                     </div>
                   </div>
                   <div class="mt-2 flex items-center justify-end">
-                    <button @click="submitItem(item)" class="ds-button ds-button-primary px-3 py-2 text-sm">{{ $t('gestlab.general.buttons.update') }}</button>
+                    <button type="button" :disabled="correctingItemId !== null" @click="submitItem(item)" class="ds-button ds-button-primary px-3 py-2 text-sm">{{ correctingItemId === item.id ? "A guardar..." : $t('gestlab.general.buttons.update') }}</button>
                   </div>
+                  <p v-if="itemCorrectionErrors.id === item.id" role="alert" class="ds-field-error mt-2">{{ Object.values(itemCorrectionErrors.errors).flat().join(' ') }}</p>
                 </td>
                 <td class="py-5 pl-3 pr-4 text-right text-sm text-gray-500 sm:pr-0 align-top">
                   <div class="relative text-gray-900">
@@ -609,7 +495,7 @@ const onSelectedItem = (item) => {
               <tr>
                 <th scope="row" colspan="4" class="hidden pl-4 pr-3 pt-6 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">{{ $t('gestlab.general.labels.quotes.subtotal') }}</th>
                 <th scope="row" class="pl-6 pr-3 pt-6 text-left text-sm font-normal text-gray-500 sm:hidden">{{ $t('gestlab.general.labels.quotes.subtotal') }}</th>
-                <td class="pl-3 pr-6 pt-6 text-right text-sm text-gray-500 sm:pr-0">{{ subTotal }}</td>
+                <td class="pl-3 pr-6 pt-6 text-right text-sm text-gray-500 sm:pr-0">{{ (Number(subTotal) + Number(discountTotal)).toFixed(2) }}</td>
               </tr>
               <tr>
                 <th scope="row" colspan="4" class="hidden pl-4 pr-3 pt-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">{{ $t('gestlab.general.labels.quotes.discount_total') }}</th>
@@ -647,8 +533,9 @@ const onSelectedItem = (item) => {
     </div>
 
     <div class="mt-6 flex items-center justify-end gap-x-6">
-      <button @click="submit" class="ds-button ds-button-primary px-4 py-2 text-sm">{{ $t('gestlab.general.buttons.update') }}</button>
+      <button type="button" :disabled="form.processing || correctingItemId !== null" @click="submit" class="ds-button ds-button-primary px-4 py-2 text-sm">{{ $t('gestlab.general.buttons.update') }}</button>
     </div>
   </form>
-
+</template>
+</div>
 </template>

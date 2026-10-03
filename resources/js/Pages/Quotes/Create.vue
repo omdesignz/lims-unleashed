@@ -1,5 +1,6 @@
 <script setup>
 import '../CommercialDocumentSurface.css';
+import { prepareQuoteLine, selectQuoteCatalog, quoteLinePreview, saveQuoteForm } from '@/Composables/useQuoteAuthoring';
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { optionRows } from "@/Composables/useCommercialDocumentOptions";
@@ -72,27 +73,26 @@ const updateDate = (e) => {
   form.due_date = e;
 }
 
-watch(() => [form.customer_id.value], (currentValue, oldValue) => {
-    if (!form.customer_id?.value) return;
-
-    loadingWarehouses.value = true;
-    fetch('/warehouses/getWarehouse?q=' + '&customer_id=' + form.customer_id?.value)
-    .then(response => response.json())
-    .then(results => {
-        customerWarehouses = optionRows(results).map(result => ({
-            value: result.id,
-            label: result.address,
-        }));
-        form.warehouse_id = customerWarehouses[0] || '';
-        loadingWarehouses.value = false;
-    })
-    .catch(() => {
-        loadingWarehouses.value = false;
-    });
+let warehouseLookupVersion = 0;
+watch(() => form.customer_id?.value, async (customerId) => {
+    const version = ++warehouseLookupVersion;
+    form.warehouse_id = null;
+    customerWarehouses = [];
+    if (!customerId) return;
+    try {
+        const response = await fetch('/warehouses/getWarehouse?customer_id=' + encodeURIComponent(customerId));
+        if (!response.ok) throw new Error('Warehouse lookup failed');
+        const results = await response.json();
+        if (version !== warehouseLookupVersion) return;
+        customerWarehouses = optionRows(results).map((result) => ({ value: result.id, label: result.address }));
+        form.warehouse_id = customerWarehouses[0] ?? null;
+    } catch {
+        if (version === warehouseLookupVersion) form.setError('warehouse_id', 'Não foi possível carregar os locais. Tente seleccionar novamente.');
+    }
 });
 
 const addItem = () => {
-    form.items.push({
+    form.items.push(prepareQuoteLine({
         quote_id: '',
         itemable_type: '',
         itemable_id: '',
@@ -112,7 +112,7 @@ const addItem = () => {
         tax_id: null,
         obs: '',
         charge_tax: true,
-    });
+    }));
 }
 
 const removeItem = (index) => {
@@ -167,6 +167,7 @@ function loadParameters(query, setOptions) {
         setOptions(
             optionRows(results).map(result => ({
                 value: result.id,
+                catalog_type: 'parameter',
                 label: result.name,
                 price: result.price,
                 tax_id: result.tax_id,
@@ -186,6 +187,7 @@ function loadMatrixes(query, setOptions) {
         setOptions(
             optionRows(results).map(result => ({
                 value: result.id,
+                catalog_type: 'matrix',
                 label: result.description,
                 price: result.fixed_price,
                 tax_id: result.tax_id,
@@ -205,6 +207,7 @@ function loadProducts(query, setOptions) {
         setOptions(
             optionRows(results).map(result => ({
                 value: result.id,
+                catalog_type: 'product',
                 label: result.name,
                 price: result.matrix_parameters_price,
                 tax_id: result.tax_id,
@@ -224,6 +227,7 @@ function loadServices(query, setOptions) {
         setOptions(
             optionRows(results).map(result => ({
                 value: result.id,
+                catalog_type: 'paid_service',
                 label: result.name,
                 price: result.fixed_price,
                 tax_id: result.tax_id,
@@ -253,7 +257,7 @@ function loadParametersBasedOnLabCode(code_id) {
     fetch('/labcodes/getCodeParameters?code_id=' + code_id + '&use_matrix_price=' + form.use_matrix_price)
     .then(response => response.json())
     .then(results => {
-        form.items = results;
+        form.items = results.map(prepareQuoteLine);
     });
 }
 
@@ -261,7 +265,7 @@ function loadProductsBasedOnLabCode(code_id) {
     fetch('/labcodes/getCodeProducts?code_id=' + code_id + '&use_matrix_price=' + form.use_matrix_price)
     .then(response => response.json())
     .then(results => {
-        form.items = results;
+        form.items = results.map(prepareQuoteLine);
     });
 }
 
@@ -270,136 +274,24 @@ function loadUninvoiceProductsByWarehouse(warehouse_id)
     fetch('/labcodes/getWarehouseUninvoicedProducts?warehouse_id=' + warehouse_id + '&use_matrix_price=' + form.use_matrix_price)
     .then(response => response.json())
     .then(results => {
-        form.items = results;
+        form.items = results.map(prepareQuoteLine);
     });
 }
 
-let submit = () => {
-    if(!form.id) {
-        form.transform((data) => ({
-            ...data,
-            tax: taxTotal?.value,
-            total: quoteTotal?.value,
-            sub_total: subTotal?.value,
-            discount: discountTotal?.value,
-            amount_due: data.type_id != 2 ? quoteTotal?.value : 0,
-            formatted_items: itemsWithSubTotal.value.map(item => ({
-                quote_id: item.quote_id,
-                item_id: item.item_id,
-                itemable_id: item.itemable_id,
-                itemable_type: item.itemable_type,
-                item_description: item.description,
-                discount_id: item.item.discount_id,
-                discount_percentage: item.item.discount_id == 1 ? item.discount_amount / item.product_price * 100 : 0,
-                qty: item.qty,
-                obs: item.obs,
-                exemption_id: item.exemption_id,
-                exemption_code: item.exemption_code,
-                tax_id: item.tax_id,
-                tax_percentage: item.tax,
-                charge_tax: item.item.charge_tax,
-                unit_price: item.unit_price,
-                unit_id: item.unit_id,
-                product_price: item.product_price,
-                total: item.total,
-                discount_amount: item.discount_amount,
-                tax_amount: item.tax_amount,
-            }))
-        }))
-        .post(route('quotes.store'), {
-            preserveScroll: true,
-            onSuccess: () => {
-                form.reset();
-            },
-        });
-    } else {
-        form.put(route('quotes.update',{quote: form.id}), {
-            preserveScroll: true,
-            onSuccess: () => {
-                form.reset();
-            },
-        });
-    }
-}
+let submit = () => saveQuoteForm(form, route('quotes.store'), 'post', () => form.reset());
 
-const itemsWithSubTotal = computed(() => {
-    return form.items.map(item => ({
-        item,
-        tax: lineTaxPercentage(item),
-        qty: item.qty,
-        quote_id: item.quote_id,
-        itemable_type: item.itemable_type,
-        itemable_id: item.itemable_id,
-        obs: item.obs,
-        item_id: item.item_id,
-        tax_id: item?.item_id?.tax_id,
-        item_description: item?.item_id?.label ?? item.item_description,
-        tax_percentage: item.tax_percentage,
-        unit_id: item.unit_id,
-        exemption_id: item?.item_id?.exemption_id,
-        exemption_code: item?.item_id?.exemption_code,
-        charge_tax: lineChargeTax(item),
-        unit_price: lineUnitPrice(item),
-        product_price: onSelectedItem(item),
-        total: lineSubTotalAmount(item) ? lineSubTotalAmount(item) : parseFloat(0),
-        discount_amount: lineDiscountAmount(item),
-        tax_amount: lineTaxAmount(item),
-    }));
-});
-
-const lineUnitPrice = (item) => {
-    return parseFloat(onSelectedItem(item) - parseFloat(lineDiscountAmount(item)));
-}
-
-const lineChargeTax = (item) => {
-    return item.item_id?.charge_tax ?? false;
-}
-
-const lineTaxPercentage = (item) => {
-    return item.item_id?.tax_percentage ?? 0;
-}
-
-const lineSubTotalAmount = (item) => {
-    return ( (parseFloat(lineUnitPrice(item)) * parseFloat(item.qty)) );
-}
-
-const lineDiscountAmount = (item) => {
-    if(item.discount_id == 2) {
-        return parseFloat((item.discount_amount <= onSelectedItem(item) ? item.discount_amount : 0));
-    } else if(item.discount_id == 1) {
-        return parseFloat((item.discount_amount <= 100 ? item.discount_amount * onSelectedItem(item) / 100 : 0));
-    } else {
-        return parseFloat(0);
-    }
-}
-
-const lineTaxAmount = (item) => {
-    return ((parseFloat(lineSubTotalAmount(item)) * lineTaxPercentage(item) / 100));
-}
-
-const subTotal = computed(() => {
-    return parseFloat(itemsWithSubTotal.value.map(item => item.total).reduce((prev, curr) => prev + curr, 0)).toFixed(2);
-})
-
-const taxTotal = computed(() => {
-    return parseFloat(itemsWithSubTotal.value.map(item => (item.tax_amount ? item.tax_amount : 0)).reduce((prev, curr) => prev + curr, 0)).toFixed(2);
-})
-
-const discountTotal = computed(() => {
-    return parseFloat(itemsWithSubTotal.value.map(item => (item.discount_amount ? item.discount_amount : 0)).reduce((prev, curr) => prev + curr, 0)).toFixed(2);
-})
-
-const quoteTotal = computed(() => {
-    return (parseFloat(subTotal.value) + parseFloat(taxTotal.value)).toFixed(2);
-})
-
-const onSelectedItem = (item) => {
-    return item?.item_id?.price;
-}
+const itemsWithSubTotal = computed(() => form.items.map(quoteLinePreview));
+const subTotal = computed(() => itemsWithSubTotal.value.reduce((sum, line) => sum + line.total, 0).toFixed(2));
+const taxTotal = computed(() => itemsWithSubTotal.value.reduce((sum, line) => sum + line.tax_amount, 0).toFixed(2));
+const discountTotal = computed(() => itemsWithSubTotal.value.reduce((sum, line) => sum + line.discount_total, 0).toFixed(2));
+const quoteTotal = computed(() => (Number(subTotal.value) + Number(taxTotal.value)).toFixed(2));
+const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
 </script>
 
 <template>
     <div class="commercial-document-page commercial-document-create min-w-0 space-y-5 overflow-x-clip pb-10" :class="commercialDocumentThemeClasses">
+        <p v-if="Object.keys(form.errors).length" role="alert" class="text-sm text-red-600">{{ Object.values(form.errors).flat().join(' ') }}</p>
+        <p v-if="form.items.some((line) => !line.catalog_type)" role="status" class="text-sm text-gray-600">Seleccione novamente os artigos sem tipo de catálogo antes de guardar.</p>
         <!-- Header -->
         <header class="commercial-document-header px-0 pb-5 pt-1">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -737,8 +629,8 @@ const onSelectedItem = (item) => {
                                     <BaseInput
                                         v-model="item.item.qty"
                                         type="number"
-                                        step="1"
-                                        min="0"
+                                        step="0.01"
+                                        min="0.01"
                                         class="ds-field w-20 text-center"
                                     />
                                     <comboboxEnhanced
@@ -757,12 +649,12 @@ const onSelectedItem = (item) => {
                                     <p class="text-gray-400 mr-2">AOA</p>
 
                                     <BaseInput
-                                        v-model="item.unit_price"
+                                        v-model="item.item.agreed_unit_price"
                                         type="number"
                                         step="0.01"
                                         min="0"
                                         class="ds-field w-32 text-right"
-                                        disabled
+                                        :disabled="form.processing"
                                     />
                                 </div>
                             </td>
@@ -771,13 +663,13 @@ const onSelectedItem = (item) => {
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     <BaseInput
-                                        v-model="item.item.discount_amount"
+                                        v-model="item.item.discount_value"
                                         type="number"
                                         min="0"
                                         class="ds-field w-24 text-right"
                                     />
                                     <BaseSelect
-                                        v-model="item.item.discount_id"
+                                        v-model="item.item.discount_mode"
                                         class="ds-field px-2 py-1.5 text-sm"
                                     >
                                         <option
@@ -826,7 +718,7 @@ const onSelectedItem = (item) => {
                                     <!-- <CurrencyEuroIcon class="h-4 w-4 text-gray-400" /> -->
                                     <p class="text-gray-400 mr-2">AOA</p>
 
-                                    {{ subTotal }}
+                                    {{ (Number(subTotal) + Number(discountTotal)).toFixed(2) }}
                                 </div>
                             </td>
                             <td></td>
@@ -980,7 +872,7 @@ const onSelectedItem = (item) => {
                                     <DisclosureButton
                                     class="flex w-full justify-between rounded-lg bg-blue-900 px-4 py-2 mb-2 text-left text-sm font-medium text-white focus:outline-none focus-visible:ring focus-visible:ring-blue-900"
                                     >
-                                    <span>{{ product.product_id?.label }}</span>
+                                    <span>{{ product.item_description }}</span>
                                     <ChevronUpIcon
                                         :class="open ? 'rotate-180 transform' : ''"
                                         class="h-5 w-5 text-white"
@@ -1003,7 +895,7 @@ const onSelectedItem = (item) => {
                                         </div>
                                         <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                                             <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.quotes.discount') }}</dt>
-                                            <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ product.item.discount_amount }} {{ product.item.discount_id?.label }}</dd>
+                                            <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ product.item.discount_value }} {{ product.item.discount_mode === 'percentage' ? '%' : 'Montante' }}</dd>
                                         </div>
                                         <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                                             <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.quotes.total') }}</dt>
@@ -1022,7 +914,7 @@ const onSelectedItem = (item) => {
                             </div>
                             <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                             <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.quotes.subtotal') }}</dt>
-                            <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ subTotal }}</dd>
+                            <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ (Number(subTotal) + Number(discountTotal)).toFixed(2) }}</dd>
                             </div>
                             <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                             <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.quotes.discount') }}</dt>

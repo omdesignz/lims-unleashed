@@ -2,38 +2,105 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\AdjustInventoryItemStock;
+use App\Actions\ConsumeInventoryReagent;
+use App\Actions\CreateInventoryItem;
+use App\Actions\ReverseInventoryReagentConsumption;
+use App\Actions\SetInventoryDocumentArchived;
+use App\Actions\SetInventoryItemsArchived;
+use App\Actions\UpdateInventoryItem;
+use App\Enums\InventoryCategoryType;
 use App\Exports\InventoryItemsExport;
+use App\Http\Requests\AdjustInventoryItemStockRequest;
+use App\Http\Requests\ConsumeInventoryReagentRequest;
+use App\Http\Requests\CreateInventoryItemRequest;
+use App\Http\Requests\InventoryCatalogueExportRequest;
+use App\Http\Requests\InventoryCatalogueLookupRequest;
+use App\Http\Requests\InventoryCatalogueReportRequest;
+use App\Http\Requests\InventoryOperationalReportRequest;
+use App\Http\Requests\SetInventoryItemsArchivedRequest;
+use App\Http\Requests\UpdateInventoryItemRequest;
+use App\Http\Resources\InventoryCatalogueItemResource;
+use App\Http\Resources\InventoryCatalogueOptionResource;
+use App\Http\Resources\InventoryLowStockResource;
+use App\Http\Resources\InventoryReagentChoiceResource;
+use App\Http\Resources\InventoryReagentConsumptionResource;
+use App\Models\Department;
+use App\Models\EquipmentCategory;
 use App\Models\Inventory;
 use App\Models\InventoryItem;
+use App\Models\InventoryItemDocumentMedia;
 use App\Models\InventoryItemSupplier;
 use App\Models\InventoryItemType;
 use App\Models\InventoryItemWarehouse;
-use App\Models\InventoryTransaction;
-use App\Models\InventoryTransactionType;
 use App\Models\InventoryUnit;
-use App\Models\ItemCategory;
 use App\Models\ItemStatus;
+use App\Models\PackagingCategory;
 use App\Models\ReagentConsumption;
 use App\Models\User;
+use App\Services\InventoryCatalogueAccess;
+use App\Services\InventoryCatalogueLookup;
+use App\Services\InventoryCatalogueRead;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\DuplicateSubmissionGuard;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 use Maatwebsite\Excel\Facades\Excel;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\Support\MediaStream;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class VAPInventoryItemController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+        private readonly InventoryCatalogueAccess $catalogueAccess,
+        private readonly InventoryCatalogueRead $catalogueRead,
+    ) {}
+
+    /** @return Builder<InventoryItem> */
+    private function readableItems(int $labId): Builder
     {
-        $query = InventoryItem::with(['category', 'unit', 'type', 'supplier', 'status'])
-            ->withSum('inventory', 'qty_available')
+        return $this->catalogueRead->items($labId, request()->user());
+    }
+
+    /** @return Builder<Inventory> */
+    private function readableStock(int $labId): Builder
+    {
+        return $this->catalogueRead->stock($labId, request()->user());
+    }
+
+    public function lookup(InventoryCatalogueLookupRequest $request, InventoryCatalogueLookup $lookup): JsonResponse
+    {
+        $data = $request->validated();
+        $type = isset($data['inventory_type']) ? InventoryCategoryType::from($data['inventory_type']) : null;
+        $items = $lookup->search($this->laboratoryAccess->activeLabId(), $request->user(), $data['q'] ?? '', $type);
+
+        return response()->json(InventoryCatalogueOptionResource::collection($items)->resolve($request));
+    }
+
+    public function index(Request $request): InertiaResponse
+    {
+        $request->validate(['inventory_type' => ['nullable', Rule::enum(InventoryCategoryType::class)],
+            'archive_state' => ['nullable', Rule::in(['active', 'archived'])]]);
+        $selectedType = $request->filled('inventory_type') ? $this->catalogueAccess->type($request->input('inventory_type')) : null;
+        $labId = $this->laboratoryAccess->activeLabId();
+        abort_unless($this->catalogueAccess->any($request->user(), 'view'), 403);
+        $query = $this->readableItems($labId)->with(['category' => fn ($category) => $category->withTrashed(), 'unit', 'type', 'supplier', 'status'])
+            ->when($request->input('archive_state') === 'archived', fn (Builder $query): Builder => $query->onlyTrashed())
+            ->when($request->input('inventory_type'), fn (Builder $query, string $type): Builder => $query
+                ->whereHas('category', fn (Builder $category): Builder => $category->withTrashed()->where('inventory_type', $type)))
+            ->withSum(['inventory' => fn ($query) => $query->whereHas('warehouse', fn ($warehouse) => $warehouse->where('lab_id', $labId))], 'qty_available')
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -60,26 +127,30 @@ class VAPInventoryItemController extends Controller
             ->orderBy($request->sort_by ?? 'created_at', $request->sort_direction ?? 'desc');
 
         return Inertia::render('VAPInventory/Items/Index', [
-            'items' => $query->paginate($request->per_page ?? 20)->withQueryString(),
-            'filters' => $request->only(['search', 'category_id', 'type_id', 'status_id', 'supplier_id', 'sort_by', 'sort_direction']),
-            'categories' => ItemCategory::active()->get(),
+            'items' => $query->paginate($request->per_page ?? 20)->withQueryString()
+                ->through(fn (InventoryItem $item): array => (new InventoryCatalogueItemResource($item))->resolve($request)),
+            'canCreate' => ! $request->session()->has('impersonate') && ($selectedType
+                ? $request->user()->can($this->catalogueAccess->permission('add', $selectedType)) : $this->catalogueAccess->any($request->user(), 'add')),
+            'canExport' => $selectedType ? $request->user()->can($this->catalogueAccess->permission('export', $selectedType)) : $this->catalogueAccess->any($request->user(), 'export'),
+            'filters' => $request->only(['search', 'inventory_type', 'archive_state', 'category_id', 'type_id', 'status_id', 'supplier_id', 'sort_by', 'sort_direction']),
+            'categories' => $this->catalogueAccess->categories($request->user(), 'view')->get(),
             'types' => InventoryItemType::active()->get(),
             'statuses' => ItemStatus::active()->get(),
             'suppliers' => InventoryItemSupplier::active()->get(),
             'units' => InventoryUnit::active()->get(),
             'stats' => [
-                'total_items' => InventoryItem::count(),
-                'equipment_count' => InventoryItem::equipment()->count(),
-                'reagents_count' => InventoryItem::reagents()->count(),
-                'consumables_count' => InventoryItem::consumables()->count(),
-                'items_needing_calibration' => InventoryItem::whereNotNull('next_calibration_date')
+                'total_items' => $this->readableItems($labId)->count(),
+                'equipment_count' => $this->readableItems($labId)->equipment()->count(),
+                'reagents_count' => $this->readableItems($labId)->reagents()->count(),
+                'consumables_count' => $this->readableItems($labId)->consumables()->count(),
+                'items_needing_calibration' => $this->readableItems($labId)->whereNotNull('next_calibration_date')
                     ->where('next_calibration_date', '<', now()->addDays(30))
                     ->count(),
-                'items_on_metrology_hold' => InventoryItem::query()
+                'items_on_metrology_hold' => $this->readableItems($labId)
                     ->get()
                     ->where('metrology_status', 'hold')
                     ->count(),
-                'expired_reagents' => InventoryItem::reagents()
+                'expired_reagents' => $this->readableItems($labId)->reagents()
                     ->whereNotNull('reagent_expiry_date')
                     ->where('reagent_expiry_date', '<', now())
                     ->count(),
@@ -87,136 +158,71 @@ class VAPInventoryItemController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): InertiaResponse
     {
+        abort_unless(! request()->session()->has('impersonate') && $this->catalogueAccess->any(request()->user(), 'add'), 403);
+        request()->validate(['inventory_type' => ['nullable', Rule::enum(InventoryCategoryType::class)]]);
+        if (request()->filled('inventory_type')) {
+            abort_unless(request()->user()->can($this->catalogueAccess->permission('add',
+                $this->catalogueAccess->type(request()->input('inventory_type')))), 403);
+        }
+        $labId = $this->laboratoryAccess->activeLabId();
+
         return Inertia::render('VAPInventory/Items/Create', [
-            'categories' => ItemCategory::active()->get(),
+            'categories' => $this->catalogueAccess->categories(request()->user(), 'add')
+                ->when(request()->input('inventory_type'), fn (Builder $query, string $type): Builder => $query->where('inventory_type', $type))->get(),
             'types' => InventoryItemType::active()->get(),
             'statuses' => ItemStatus::active()->get(),
             'allStatuses' => ItemStatus::active()->get(),
             'suppliers' => InventoryItemSupplier::active()->get(),
             'units' => InventoryUnit::active()->get(),
-            'warehouses' => InventoryItemWarehouse::with('location')->active()->get(),
+            'warehouses' => InventoryItemWarehouse::with('location')->where('lab_id', $labId)->active()->get(),
+            'departments' => Department::query()->orderBy('name')->get(),
+            'equipmentCategories' => EquipmentCategory::query()->orderBy('name')->get(),
+            'packagingCategories' => PackagingCategory::query()->orderBy('name')->get(),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(CreateInventoryItemRequest $request, CreateInventoryItem $createItem): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:item_categories,id',
-            'type_id' => 'nullable|exists:i_types,id',
-            'unit_id' => 'nullable|exists:i_units,id',
-            'supplier_id' => 'nullable|exists:i_suppliers,id',
-            'status_id' => 'nullable|exists:item_statuses,id',
-            'barcode' => 'nullable|string|max:255|unique:i_items,barcode',
-            'serial_number' => 'nullable|string|max:255',
-            'standard_cost' => 'nullable|numeric|min:0',
-            'last_purchase_price' => 'nullable|numeric|min:0',
-            'model' => 'nullable|string|max:255',
-            'brand' => 'nullable|string|max:255',
-            'internal_code' => 'nullable|string|max:255',
-            'reagent_expiry_date' => 'nullable|date',
-            'reagent_open_date' => 'nullable|date|after_or_equal:today',
-            'next_calibration_date' => 'nullable|date|after_or_equal:today',
-            'last_calibration_date' => 'nullable|date',
-            'metrological_uncertainty_value' => 'nullable|numeric|min:0',
-            'metrological_uncertainty_unit' => 'nullable|string|max:50',
-            'metrological_traceability_reference' => 'nullable|string|max:255',
-            'metrology_review_due_at' => 'nullable|date',
-            'metrology_notes' => 'nullable|string',
-            'reorder_qty' => 'nullable|numeric|min:0',
-            'packed_depth' => 'nullable|numeric|min:0',
-            'packed_width' => 'nullable|numeric|min:0',
-            'packed_height' => 'nullable|numeric|min:0',
-            'packed_weight' => 'nullable|numeric|min:0',
-            'has_safety_documentation' => 'boolean',
-            'refrigerated' => 'boolean',
-            'description' => 'nullable|string',
-            'acceptance_criteria' => 'nullable|string',
-            'obs' => 'nullable|string',
-            'warehouses' => 'nullable|array',
-            'warehouses.*.id' => 'required|exists:i_warehouses,id',
-            'warehouses.*.qty_available' => 'required|integer|min:0',
-            'warehouses.*.min_stock_level' => 'nullable|integer|min:0',
-            'warehouses.*.reorder_point' => 'nullable|integer|min:0',
-        ]);
+        $item = $createItem->execute($this->laboratoryAccess->activeLabId(), $request->user()->id, $request->validated());
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $item = InventoryItem::create($request->except('warehouses'));
-
-            // Create inventory records for each warehouse
-            if ($request->has('warehouses')) {
-                foreach ($request->warehouses as $warehouse) {
-                    Inventory::create([
-                        'item_id' => $item->id,
-                        'warehouse_id' => $warehouse['id'],
-                        'qty_available' => $warehouse['qty_available'],
-                        'min_stock_level' => $warehouse['min_stock_level'] ?? 0,
-                        'reorder_point' => $warehouse['reorder_point'] ?? 0,
-                        'category_id' => $item->category_id,
-                        'status' => 'AVAILABLE',
-                    ]);
-                }
-            }
-
-            // Add Possible Documents
-            if (request()->hasFile('documents')) {
-
-                $fileAdders = $item
-                    ->addMultipleMediaFromRequest(['documents'])
-                    ->each(function ($fileAdder) {
-                        $fileAdder->toMediaCollection('documents');
-                    });
-            }
-
-            DB::commit();
-
-            return redirect()->route('vap-inventory.items.index')
-                ->with('success', 'Item de inventário criado com sucesso.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return redirect()->back()
-                ->with('error', 'Não foi possível criar o item de inventário.')
-                ->withInput();
-        }
+        return redirect()->route($request->user()->can($this->catalogueAccess->permission('view', $this->catalogueAccess->itemType($item)))
+            ? 'vap-inventory.items.index' : 'vap-inventory.items.create')
+            ->with('success', 'Item de inventário criado com sucesso.');
     }
 
-    public function show(InventoryItem $item)
+    public function show(InventoryItem $item): InertiaResponse
     {
+        $labId = $this->laboratoryAccess->activeLabId();
+        abort_unless((int) $item->lab_id === $labId, 404);
+        $this->catalogueAccess->authorize(request()->user(), $item, 'view');
         $item->load([
-            'category',
+            'category' => fn (BelongsTo $category): BelongsTo => $category->withTrashed(),
             'unit',
             'type',
             'supplier',
             'status',
+            'inventory' => fn ($query) => $query->whereHas('warehouse', fn ($warehouse) => $warehouse->where('lab_id', $labId)),
             'inventory.warehouse.location',
-            'transactions' => function ($query) {
-                $query->latest()->limit(50);
+            'transactions' => function ($query) use ($labId) {
+                $query->whereHas('warehouse', fn ($warehouse) => $warehouse->where('lab_id', $labId))->latest()->limit(50);
             },
             'transactions.type',
             'transactions.user',
             'transactions.warehouse',
-            'orders' => function ($query) {
-                $query->latest()->limit(20);
+            'orders' => function ($query) use ($labId) {
+                $query->whereIn('i_order_details.warehouse_id', InventoryItemWarehouse::query()->where('lab_id', $labId)->select('id'))
+                    ->latest('i_orders.created_at')->limit(20);
             },
             'orders.supplier',
-            'transfers' => function ($query) {
-                $query->latest()->limit(20);
+            'transfers' => function ($query) use ($labId) {
+                $query->where('lab_id', $labId)->latest()->limit(20);
             },
             'transfers.source',
             'transfers.destination',
-            'reagentConsumptions' => function ($query) {
-                $query->latest()->limit(20);
+            'reagentConsumptions' => function ($query) use ($labId) {
+                $query->whereHas('warehouse', fn ($warehouse) => $warehouse->where('lab_id', $labId))->with('reversal')->latest()->limit(20);
             },
         ]);
 
@@ -234,12 +240,14 @@ class VAPInventoryItemController extends Controller
 
         return Inertia::render('VAPInventory/Items/Show', [
             'item' => $item,
+            'canEdit' => ! request()->session()->has('impersonate') && request()->user()->can(
+                $this->catalogueAccess->permission('edit', $this->catalogueAccess->itemType($item))),
             'inventory' => $item->inventory,
             'recentTransactions' => $item->transactions,
             'recentOrders' => $item->orders,
             'recentTransfers' => $item->transfers,
             'recentConsumptions' => $item->reagentConsumptions,
-            'totalStock' => $item->total_stock,
+            'totalStock' => $item->inventory->sum('qty_available'),
             'isReagent' => $item->is_reagent,
             'isExpired' => $item->is_expired,
             'daysToExpiry' => $item->days_to_expiry,
@@ -247,9 +255,10 @@ class VAPInventoryItemController extends Controller
             'calibrationStatus' => $item->calibration_status,
             'metrologyStatus' => $item->metrology_status,
             'isMetrologicallyReady' => $item->is_metrologically_ready,
-            'documents' => $item->getInventoryItemDocuments()->map(function ($file) {
+            'documents' => $item->getInventoryItemDocuments(true)->map(function ($file) {
                 return [
                     'id' => $file->id,
+                    'archived' => $file->trashed(),
                     'uuid' => $file->uuid,
                     'name' => $file->name,
                     'file_name' => $file->file_name,
@@ -277,7 +286,7 @@ class VAPInventoryItemController extends Controller
                 'compliance_pulse' => [
                     'labels' => ['Existências totais', 'Armazéns críticos', 'Dias até caducar', 'Prontidão metrológica'],
                     'series' => [
-                        (float) $item->total_stock,
+                        (float) $item->inventory->sum('qty_available'),
                         $lowStockWarehouses,
                         max((int) ($item->days_to_expiry ?? 0), 0),
                         $item->is_metrologically_ready ? 1 : 0,
@@ -287,19 +296,31 @@ class VAPInventoryItemController extends Controller
         ]);
     }
 
-    public function edit(InventoryItem $item)
+    public function edit(InventoryItem $item): InertiaResponse
     {
-        $item->load(['inventory.warehouse']);
+        abort_unless(! request()->session()->has('impersonate'), 403);
+        $labId = $this->laboratoryAccess->activeLabId();
+        abort_unless((int) $item->lab_id === $labId, 404);
+        $this->catalogueAccess->authorize(request()->user(), $item, 'edit');
+        $item->load([
+            'inventory' => fn ($query) => $query->whereHas('warehouse', fn ($warehouse) => $warehouse->where('lab_id', $labId)),
+            'inventory.warehouse',
+        ]);
 
         return Inertia::render('VAPInventory/Items/Edit', [
             'item' => $item,
-            'categories' => ItemCategory::active()->get(),
-            'types' => InventoryItemType::active()->get(),
-            'statuses' => ItemStatus::active()->get(),
-            'allStatuses' => ItemStatus::active()->get(),
-            'suppliers' => InventoryItemSupplier::active()->get(),
-            'units' => InventoryUnit::active()->get(),
-            'warehouses' => InventoryItemWarehouse::with('location')->active()->get(),
+            'categories' => $this->catalogueAccess->categories(request()->user(), 'edit')->withTrashed()
+                ->where(fn ($query) => $query->whereNull('deleted_at')->orWhere('id', $item->category_id))->get(),
+            'types' => InventoryItemType::withTrashed()->where(fn ($query) => $query->whereNull('deleted_at')->orWhere('id', $item->type_id))->get(),
+            'statuses' => ItemStatus::withTrashed()->where(fn ($query) => $query->whereNull('deleted_at')->orWhere('id', $item->status_id))->get(),
+            'allStatuses' => ItemStatus::withTrashed()->where(fn ($query) => $query->whereNull('deleted_at')->orWhere('id', $item->status_id))->get(),
+            'suppliers' => InventoryItemSupplier::withTrashed()->where(fn ($query) => $query->whereNull('deleted_at')->orWhere('id', $item->supplier_id))->get(),
+            'units' => InventoryUnit::withTrashed()->where(fn ($query) => $query->whereNull('deleted_at')->orWhere('id', $item->unit_id))->get(),
+            'departments' => Department::withTrashed()->where(fn ($query) => $query->whereNull('deleted_at')->orWhere('id', $item->department_id))->orderBy('name')->get(),
+            'equipmentCategories' => EquipmentCategory::withTrashed()->where(fn ($query) => $query->whereNull('deleted_at')->orWhere('id', $item->eq_cat_id))->orderBy('name')->get(),
+            'packagingCategories' => PackagingCategory::withTrashed()->where(fn ($query) => $query->whereNull('deleted_at')->orWhere('id', $item->packaging_type_id))->orderBy('name')->get(),
+            'identityLocks' => ['category' => true, 'unit' => $item->unit_id !== null && $item->inventory()->withTrashed()->exists()],
+            'warehouses' => InventoryItemWarehouse::with('location')->where('lab_id', $labId)->active()->get(),
             'documents' => $item->getInventoryItemDocuments()->map(function ($file) {
                 return [
                     'id' => $file->id,
@@ -316,143 +337,42 @@ class VAPInventoryItemController extends Controller
         ]);
     }
 
-    public function update(Request $request, InventoryItem $item)
+    public function update(UpdateInventoryItemRequest $request, InventoryItem $item, UpdateInventoryItem $updateItem): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'internal_code' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('i_items', 'internal_code')->ignore($item->id),
-            ],
-            'category_id' => 'required|exists:item_categories,id',
-            'type_id' => 'nullable|exists:i_types,id',
-            'unit_id' => 'nullable|exists:i_units,id',
-            'supplier_id' => 'nullable|exists:i_suppliers,id',
-            'status_id' => 'nullable|exists:item_statuses,id',
-            'barcode' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('i_items', 'barcode')->ignore($item->id),
-            ],
-            'serial_number' => 'nullable|string|max:255',
-            'standard_cost' => 'nullable|numeric|min:0',
-            'last_purchase_price' => 'nullable|numeric|min:0',
-            'model' => 'nullable|string|max:255',
-            'brand' => 'nullable|string|max:255',
-            'resolution' => 'nullable|string|max:255',
-            'precision' => 'nullable|string|max:255',
-            'range' => 'nullable|string|max:255',
-            'firmware' => 'nullable|string|max:255',
-            'software' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'acceptance_criteria' => 'nullable|string',
-            'obs' => 'nullable|string',
-            'reagent_expiry_date' => 'nullable|date',
-            'reagent_open_date' => 'nullable|date',
-            'next_calibration_date' => 'nullable|date|after_or_equal:today',
-            'last_calibration_date' => 'nullable|date',
-            'metrological_uncertainty_value' => 'nullable|numeric|min:0',
-            'metrological_uncertainty_unit' => 'nullable|string|max:50',
-            'metrological_traceability_reference' => 'nullable|string|max:255',
-            'metrology_review_due_at' => 'nullable|date',
-            'metrology_notes' => 'nullable|string',
-        ]);
+        $updateItem->execute($this->laboratoryAccess->activeLabId(), $request->user()->id, $item->id, $request->validated());
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $item->update($request->except('warehouses'));
-
-            // Update inventory records
-            if ($request->has('warehouses')) {
-                $existingWarehouseIds = $item->inventory->pluck('warehouse_id')->toArray();
-                $newWarehouseIds = collect($request->warehouses)->pluck('id')->toArray();
-
-                // Remove inventory records for warehouses not in new list
-                Inventory::where('item_id', $item->id)
-                    ->whereNotIn('warehouse_id', $newWarehouseIds)
-                    ->delete();
-
-                foreach ($request->warehouses as $warehouse) {
-                    Inventory::updateOrCreate(
-                        [
-                            'item_id' => $item->id,
-                            'warehouse_id' => $warehouse['id'],
-                        ],
-                        [
-                            'qty_available' => $warehouse['qty_available'],
-                            'min_stock_level' => $warehouse['min_stock_level'] ?? 0,
-                            'reorder_point' => $warehouse['reorder_point'] ?? 0,
-                            'category_id' => $item->category_id,
-                            'status' => 'AVAILABLE',
-                        ]
-                    );
-                }
-            }
-
-            // Add Possible Documents
-            if ($request->documents) {
-
-                $fileAdders = $item
-                    ->addMultipleMediaFromRequest(['documents'])
-                    ->each(function ($fileAdder) {
-                        $fileAdder->toMediaCollection('documents');
-                    });
-            }
-
-            DB::commit();
-
-            return redirect()->route('vap-inventory.items.show', $item)
-                ->with('success', 'Item de inventário actualizado com sucesso.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return redirect()->back()
-                ->with('error', 'Não foi possível actualizar o item de inventário.')
-                ->withInput();
-        }
+        return redirect()->route($request->user()->can($this->catalogueAccess->permission('view', $this->catalogueAccess->itemType($item)))
+            ? 'vap-inventory.items.show' : 'vap-inventory.items.edit', $item)
+            ->with('success', 'Item de inventário actualizado com sucesso.');
     }
 
-    public function destroy(InventoryItem $item)
+    public function destroy(SetInventoryItemsArchivedRequest $request, InventoryItem $item, SetInventoryItemsArchived $archive): RedirectResponse
     {
-        try {
-            $item->delete();
+        $archive->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $request->validated('recordIds'), true);
 
-            return redirect()->route('vap-inventory.items.index')
-                ->with('success', 'Item de inventário eliminado com sucesso.');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Não foi possível eliminar o item de inventário.');
-        }
+        return $this->catalogueReturn($request)->with('success', 'Item de inventário arquivado com sucesso.');
     }
 
-    public function adjustStock(Request $request, InventoryItem $item, DuplicateSubmissionGuard $duplicateSubmissionGuard)
+    public function restore(SetInventoryItemsArchivedRequest $request, InventoryItem $item, SetInventoryItemsArchived $archive): RedirectResponse
     {
-        // dd(request()->all());
+        $archive->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $request->validated('recordIds'), false);
 
-        $validator = Validator::make($request->all(), [
-            'warehouse_id' => 'required|exists:i_warehouses,id',
-            'adjustment_type' => 'required|in:add,remove,set',
-            'quantity' => 'required|integer|min:1',
-            'reason' => 'required|string|max:255',
-            'notes' => 'nullable|string',
-            'batch_id' => 'nullable|exists:i_inventory_batches,id',
-        ]);
+        return $this->catalogueReturn($request)->with('success', 'Item de inventário restaurado com sucesso.');
+    }
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+    private function catalogueReturn(SetInventoryItemsArchivedRequest $request): RedirectResponse
+    {
+        $index = route('vap-inventory.items.index');
+        $referer = (string) $request->headers->get('referer', '');
+        $isCatalogue = $referer === $index || str_starts_with($referer, $index.'?');
 
-        $validated = $validator->validated();
+        return redirect()->to($isCatalogue && ! preg_match('/[\x00-\x20\x7f]/', $referer) ? $referer : $index);
+    }
+
+    public function adjustStock(AdjustInventoryItemStockRequest $request, InventoryItem $item, DuplicateSubmissionGuard $duplicateSubmissionGuard, AdjustInventoryItemStock $adjustStock)
+    {
+        $labId = $this->laboratoryAccess->activeLabId();
+        $validated = $request->validated();
 
         if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'vap-inventory-adjust-stock', array_merge($validated, [
             'item_id' => $item->id,
@@ -463,89 +383,21 @@ class VAPInventoryItemController extends Controller
         }
 
         try {
-            DB::beginTransaction();
-
-            $inventory = Inventory::where('item_id', $item->id)
-                ->where('warehouse_id', $validated['warehouse_id'])
-                ->first();
-
-            if (! $inventory) {
-                return response()->json(['error' => 'Artigo não encontrado no armazém indicado.'], 404);
-            }
-
-            $oldQuantity = $inventory->qty_available;
-
-            switch ($validated['adjustment_type']) {
-                case 'add':
-                    $newQuantity = $oldQuantity + $validated['quantity'];
-                    break;
-                case 'remove':
-                    $newQuantity = $oldQuantity - $validated['quantity'];
-                    break;
-                case 'set':
-                    $newQuantity = $validated['quantity'];
-                    break;
-            }
-
-            if ($newQuantity < 0) {
-                return response()->json(['error' => 'As existências não podem ficar com quantidade negativa.'], 422);
-            }
-
-            $inventory->qty_available = $newQuantity;
-            $inventory->save();
-
-            // Record transaction
-            $transactionType = match ($validated['adjustment_type']) {
-                'add' => 'stock_adjustment_add',
-                'remove' => 'stock_adjustment_remove',
-                'set' => 'stock_adjustment_set',
-            };
-
-            Log::info($transactionType, [
-                'inventory' => $inventory,
-            ]);
-
-            $transactionTypeModel = InventoryTransactionType::firstOrCreate(
-                ['code' => $transactionType],
-                [
-                    'name' => match ($transactionType) {
-                        'stock_adjustment_add' => 'Adição às existências',
-                        'stock_adjustment_remove' => 'Remoção das existências',
-                        'stock_adjustment_set' => 'Rectificação das existências',
-                    },
-                    'description' => 'Tipo de ajuste de existências registado automaticamente.',
-                ]
-            );
-
-            InventoryTransaction::create([
-                'inventory_id' => $inventory->id,
-                'user_id' => auth()->id(),
-                'warehouse_id' => $validated['warehouse_id'],
-                'item_id' => $item->id,
-                'type_id' => $transactionTypeModel->id,
-                'batch_id' => $validated['batch_id'] ?? null,
-                'qty' => $validated['quantity'],
-                'notes' => $validated['notes'] ?? null,
-                'reason' => $validated['reason'],
-            ]);
-
-            DB::commit();
+            $result = $adjustStock->execute($labId, $request->user(), $item, $validated);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Existências ajustadas com êxito',
-                'old_quantity' => $oldQuantity,
-                'new_quantity' => $newQuantity,
+                ...$result,
             ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json(['error' => 'Não foi possível ajustar as existências: '.$e->getMessage()], 500);
+        } catch (ValidationException $exception) {
+            return response()->json(['errors' => $exception->errors()], 422);
         }
     }
 
-    public function calibrationSchedule(Request $request)
+    public function calibrationSchedule(InventoryCatalogueReportRequest $request): InertiaResponse
     {
+        $labId = $this->laboratoryAccess->activeLabId();
         $today = now()->startOfDay();
         $todayDate = $today->toDateString();
         $in30Days = now()->addDays(30)->toDateString();
@@ -560,8 +412,8 @@ class VAPInventoryItemController extends Controller
         $sortDirection = $request->input('sort_direction') === 'desc' ? 'desc' : 'asc';
         $search = trim((string) $request->input('search', ''));
 
-        $query = InventoryItem::with([
-            'category:id,name',
+        $query = $this->readableItems($labId)->with([
+            'category' => fn ($category) => $category->withTrashed()->select('id', 'name'),
             'type:id,name',
         ])
             ->whereNotNull('next_calibration_date')
@@ -590,11 +442,11 @@ class VAPInventoryItemController extends Controller
             ->orderBy('name');
 
         $items = $query
-            ->paginate($request->per_page ?? 20)
+            ->paginate($request->validated('per_page') ?? 20)
             ->withQueryString()
             ->through(fn (InventoryItem $item) => $this->formatCalibrationScheduleRow($item, $today));
 
-        $stats = InventoryItem::query()
+        $stats = $this->readableItems($labId)
             ->whereNotNull('next_calibration_date')
             ->selectRaw('count(*) as total_scheduled')
             ->selectRaw('count(case when next_calibration_date < ? then 1 end) as total_due', [$todayDate])
@@ -612,7 +464,7 @@ class VAPInventoryItemController extends Controller
                 'sort_by' => $sortBy,
                 'sort_direction' => $sortDirection,
             ],
-            'categories' => ItemCategory::active()
+            'categories' => $this->catalogueAccess->categories($request->user(), 'view')->active()
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'types' => InventoryItemType::active()
@@ -669,8 +521,9 @@ class VAPInventoryItemController extends Controller
         ];
     }
 
-    public function reagentExpiryReport(Request $request)
+    public function reagentExpiryReport(InventoryCatalogueReportRequest $request): InertiaResponse
     {
+        $labId = $this->laboratoryAccess->activeLabId();
         $today = now()->toDateString();
         $in30Days = now()->addDays(30)->toDateString();
         $in31Days = now()->addDays(31)->toDateString();
@@ -686,14 +539,16 @@ class VAPInventoryItemController extends Controller
         $sortDirection = $request->input('sort_direction') === 'desc' ? 'desc' : 'asc';
         $search = trim((string) $request->input('search', ''));
 
-        $query = InventoryItem::with([
+        $stockScope = fn (Builder|HasMany $stock): Builder|HasMany => $stock->where('inventory.lab_id', $labId)
+            ->whereHas('warehouse', fn (Builder $warehouses): Builder => $warehouses->withTrashed()->where('lab_id', $labId));
+        $query = $this->readableItems($labId)->with([
             'category:id,name',
             'supplier:id,name',
-            'inventory' => fn ($query) => $query->select('id', 'item_id', 'warehouse_id', 'qty_available'),
-            'inventory.warehouse:id,name',
+            'inventory' => fn (HasMany $query): HasMany => $stockScope($query)->select('id', 'item_id', 'warehouse_id', 'qty_available'),
+            'inventory.warehouse' => fn ($warehouses) => $warehouses->withTrashed()->select('id', 'name'),
         ])
-            ->withSum('inventory', 'qty_available')
-            ->withCount('inventory')
+            ->withSum(['inventory' => $stockScope], 'qty_available')
+            ->withCount(['inventory' => $stockScope])
             ->reagents()
             ->whereNotNull('reagent_expiry_date')
             ->when($status, function ($query, $status) use ($today, $in60Days) {
@@ -708,7 +563,7 @@ class VAPInventoryItemController extends Controller
             ->when($request->input('category_id'), fn ($query, $categoryId) => $query->where('category_id', $categoryId))
             ->when($request->input('warehouse_id'), fn ($query, $warehouseId) => $query->whereHas(
                 'inventory',
-                fn ($inventoryQuery) => $inventoryQuery->where('warehouse_id', $warehouseId)
+                fn (Builder $inventoryQuery): Builder => $stockScope($inventoryQuery)->where('warehouse_id', $warehouseId)
             ))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($searchQuery) use ($search) {
@@ -730,11 +585,11 @@ class VAPInventoryItemController extends Controller
         $query->orderBy('name');
 
         $reagents = $query
-            ->paginate($request->per_page ?? 20)
+            ->paginate($request->validated('per_page') ?? 20)
             ->withQueryString()
             ->through(fn (InventoryItem $reagent) => $this->formatReagentExpiryReportRow($reagent));
 
-        $stats = InventoryItem::query()
+        $stats = $this->readableItems($labId)
             ->reagents()
             ->whereNotNull('reagent_expiry_date')
             ->selectRaw('count(*) as total_reagents')
@@ -754,10 +609,10 @@ class VAPInventoryItemController extends Controller
                 'sort_by' => $sortBy,
                 'sort_direction' => $sortDirection,
             ],
-            'categories' => ItemCategory::active()
+            'categories' => $this->catalogueAccess->categories($request->user(), 'view')->active()
                 ->orderBy('name')
                 ->get(['id', 'name']),
-            'warehouses' => InventoryItemWarehouse::active()
+            'warehouses' => InventoryItemWarehouse::where('lab_id', $labId)->active()
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'stats' => [
@@ -808,16 +663,22 @@ class VAPInventoryItemController extends Controller
         ];
     }
 
-    public function lowStockReport(Request $request)
+    public function lowStockReport(InventoryCatalogueReportRequest $request): InertiaResponse
     {
-        $query = Inventory::with(['item.category', 'warehouse.location'])
+        $labId = $this->laboratoryAccess->activeLabId();
+        $query = $this->readableStock($labId)->with([
+            'item' => fn ($items) => $items->withTrashed(),
+            'item.category' => fn ($category) => $category->withTrashed()->select('id', 'name'),
+            'warehouse' => fn ($warehouses) => $warehouses->withTrashed()->select('id', 'name', 'location_id'),
+            'warehouse.location:id,name',
+        ])
             ->lowStock()
             ->where('qty_available', '>', 0)
             ->when($request->warehouse_id, function ($query, $warehouseId) {
                 $query->where('warehouse_id', $warehouseId);
             })
             ->when($request->category_id, function ($query, $categoryId) {
-                $query->where('category_id', $categoryId);
+                $query->whereHas('item', fn ($item) => $item->withTrashed()->where('category_id', $categoryId));
             })
             ->when($request->severity === 'critical', function ($query) {
                 $query->whereColumn('qty_available', '<=', 'min_stock_level');
@@ -851,9 +712,9 @@ class VAPInventoryItemController extends Controller
 
         $severityLabels = ['Sem existências', 'Crítico', 'Baixo'];
         $severitySeries = [
-            Inventory::query()
+            $this->readableStock($labId)
                 ->when($request->warehouse_id, fn ($query, $warehouseId) => $query->where('warehouse_id', $warehouseId))
-                ->when($request->category_id, fn ($query, $categoryId) => $query->where('category_id', $categoryId))
+                ->when($request->category_id, fn ($query, $categoryId) => $query->whereHas('item', fn ($item) => $item->withTrashed()->where('category_id', $categoryId)))
                 ->where('qty_available', '<=', 0)
                 ->count(),
             $inventory->filter(fn ($item) => $item->qty_available <= $item->min_stock_level)->count(),
@@ -872,17 +733,18 @@ class VAPInventoryItemController extends Controller
         $replenishmentGap = $inventory
             ->map(fn ($item) => [
                 'label' => $item->item?->code ?: $item->item?->name ?: "Item #{$item->item_id}",
-                'gap' => max((int) $item->reorder_point - (int) $item->qty_available, 0),
+                'gap' => max((float) $item->reorder_point - (float) $item->qty_available, 0),
             ])
             ->sortByDesc('gap')
             ->take(8)
             ->values();
 
         return Inertia::render('VAPInventory/Reports/LowStock', [
-            'inventory' => $query->paginate($request->per_page ?? 20)->withQueryString(),
+            'inventory' => $query->paginate($request->validated('per_page') ?? 20)->withQueryString()
+                ->through(fn (Inventory $stock): array => (new InventoryLowStockResource($stock))->resolve($request)),
             'filters' => $request->only(['warehouse_id', 'category_id', 'severity', 'sort_by']),
-            'warehouses' => InventoryItemWarehouse::active()->get(),
-            'categories' => ItemCategory::active()->get(),
+            'warehouses' => InventoryItemWarehouse::where('lab_id', $labId)->active()->get(['id', 'name']),
+            'categories' => $this->catalogueAccess->categories($request->user(), 'view')->active()->get(['id', 'name']),
             'charts' => [
                 'severity_mix' => [
                     'labels' => $severityLabels,
@@ -897,7 +759,7 @@ class VAPInventoryItemController extends Controller
                     'series' => [
                         [
                             'name' => 'Gap para reabastecimento',
-                            'data' => $replenishmentGap->pluck('gap')->map(fn ($value) => (int) $value)->all(),
+                            'data' => $replenishmentGap->pluck('gap')->map(fn ($value) => (float) $value)->all(),
                         ],
                     ],
                 ],
@@ -906,124 +768,46 @@ class VAPInventoryItemController extends Controller
                 'total_low_stock' => $inventory->count(),
                 'out_of_stock' => $severitySeries[0],
                 'critical_stock' => $severitySeries[1],
-                'total_items' => Inventory::query()
+                'total_items' => $this->readableStock($labId)
                     ->when($request->warehouse_id, fn ($query, $warehouseId) => $query->where('warehouse_id', $warehouseId))
-                    ->when($request->category_id, fn ($query, $categoryId) => $query->where('category_id', $categoryId))
+                    ->when($request->category_id, fn ($query, $categoryId) => $query->whereHas('item', fn ($item) => $item->withTrashed()->where('category_id', $categoryId)))
                     ->count(),
             ],
         ]);
     }
 
-    // Add these methods to your VAPInventoryItemController class
-
-    public function reagentConsumption(Request $request)
+    public function reagentConsumption(InventoryOperationalReportRequest $request): InertiaResponse
     {
-        $query = ReagentConsumption::with([
-            'item.category',
-            'warehouse',
-            'user',
-        ])
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('date', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('date', '<=', $dateTo);
-            })
-            ->when($request->item_id, function ($query, $itemId) {
-                $query->where('reagent_id', $itemId);
-            })
-            ->when($request->warehouse_id, function ($query, $warehouseId) {
-                $query->where('warehouse_id', $warehouseId);
-            })
-            ->when($request->user_id, function ($query, $userId) {
-                $query->where('user_id', $userId);
-            })
-            ->when($request->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('reagent_name', 'like', "%{$search}%")
-                        ->orWhere('used_by', 'like', "%{$search}%")
-                        ->orWhere('remarks', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy($request->sort_by ?? 'date', $request->sort_direction ?? 'desc');
-
-        // Summary by item
-        $summaryByItem = ReagentConsumption::select(
-            'reagent_id',
-            'reagent_name',
-            DB::raw('SUM(quantity_used) as total_consumption'),
-            DB::raw('COUNT(*) as usage_count'),
-            DB::raw('AVG(quantity_used) as avg_per_use')
-        )
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('date', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('date', '<=', $dateTo);
-            })
-            ->groupBy('reagent_id', 'reagent_name')
-            ->orderByDesc('total_consumption')
-            ->get();
-
-        // Summary by date
-        $summaryByDate = ReagentConsumption::select(
-            DB::raw('DATE(date) as date'),
-            DB::raw('SUM(quantity_used) as total_consumption'),
-            DB::raw('COUNT(*) as usage_count')
-        )
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('date', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('date', '<=', $dateTo);
-            })
-            ->groupBy(DB::raw('DATE(date)'))
-            ->orderByDesc('date')
-            ->get();
-
-        // Summary by user
-        $summaryByUser = ReagentConsumption::select(
-            'used_by',
-            DB::raw('SUM(quantity_used) as total_consumption'),
-            DB::raw('COUNT(*) as usage_count')
-        )
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('date', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('date', '<=', $dateTo);
-            })
-            ->whereNotNull('used_by')
-            ->groupBy('used_by')
-            ->orderByDesc('total_consumption')
-            ->get();
-
-        $dateFrom = $request->date_from ? Carbon::parse($request->date_from) : Carbon::now()->subMonth();
-        $dateTo = $request->date_to ? Carbon::parse($request->date_to) : Carbon::now();
-        $days = $dateFrom->diffInDays($dateTo) ?: 1;
-
-        $totalConsumption = ReagentConsumption::query()
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('date', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('date', '<=', $dateTo);
-            })
-            ->sum('quantity_used');
+        $labId = $this->laboratoryAccess->activeLabId();
+        $filters = $request->validated();
+        $query = $this->catalogueRead->filter($this->catalogueRead->consumptions($labId, $request->user()), $filters, 'consumption');
+        $net = (clone $query)->unreversed();
+        $summaryByItem = (clone $net)->select('reagent_id', 'reagent_name')
+            ->selectRaw('SUM(quantity_used) as total_consumption, COUNT(*) as usage_count, AVG(quantity_used) as avg_per_use')
+            ->groupBy('reagent_id', 'reagent_name')->orderByDesc('total_consumption')->get();
+        $summaryByDate = (clone $net)->selectRaw('DATE(date) as date, SUM(quantity_used) as total_consumption, COUNT(*) as usage_count')
+            ->groupBy(DB::raw('DATE(date)'))->orderByDesc('date')->get();
+        $summaryByUser = (clone $net)->select('used_by')
+            ->selectRaw('SUM(quantity_used) as total_consumption, COUNT(*) as usage_count')
+            ->whereNotNull('used_by')->groupBy('used_by')->orderByDesc('total_consumption')->get();
 
         return Inertia::render('VAPInventory/Reagents/Consumption', [
-            'consumptions' => $query->paginate($request->per_page ?? 50)->withQueryString(),
+            'consumptions' => (clone $query)->with($this->consumptionRelations())
+                ->orderBy($filters['sort_by'] ?? 'date', $filters['sort_direction'] ?? 'desc')
+                ->orderByDesc('id')->paginate($filters['per_page'] ?? 50)->withQueryString()
+                ->through(fn (ReagentConsumption $row): array => (new InventoryReagentConsumptionResource($row))->resolve($request)),
             'summaryByItem' => $summaryByItem,
             'summaryByDate' => $summaryByDate,
             'summaryByUser' => $summaryByUser,
-            'filters' => $request->only(['date_from', 'date_to', 'item_id', 'warehouse_id', 'user_id', 'search', 'sort_by', 'sort_direction']),
-            'items' => InventoryItem::reagents()->active()->get(['id', 'name', 'code']),
-            'warehouses' => InventoryItemWarehouse::active()->get(['id', 'name']),
-            'users' => User::whereHas('reagentConsumptions')->get(['id', 'name']),
+            'filters' => $filters,
+            'items' => $this->readableItems($labId)->reagents()->active()->get(['id', 'name', 'code']),
+            'warehouses' => InventoryItemWarehouse::where('lab_id', $labId)->active()->get(['id', 'name']),
+            'users' => User::withTrashed()->whereIn('id', (clone $query)->select('user_id'))->get(['id', 'name'])
+                ->map(fn (User $user): array => ['id' => $user->id, 'name' => $user->name]),
             'stats' => [
-                'total_consumption' => $totalConsumption,
+                'total_consumption' => $summaryByItem->sum('total_consumption'),
                 'total_uses' => $summaryByItem->sum('usage_count'),
-                'avg_daily_consumption' => round($totalConsumption / $days, 2),
+                'avg_daily_consumption' => $this->catalogueRead->dailyAverage($net, $filters, 'date', 'quantity_used'),
                 'most_consumed_item' => $summaryByItem->first(),
                 'most_active_user' => $summaryByUser->first(),
                 'peak_consumption_day' => $summaryByDate->sortByDesc('total_consumption')->first(),
@@ -1031,33 +815,45 @@ class VAPInventoryItemController extends Controller
         ]);
     }
 
-    public function createConsumption()
+    /** @return array<int|string,mixed> */
+    private function consumptionRelations(): array
     {
+        return [
+            'item' => fn ($items) => $items->withTrashed()->select(['id', 'name', 'code', 'internal_code', 'category_id', 'unit_id', 'supplier_id', 'reagent_expiry_date', 'brand', 'model', 'serial_number', 'deleted_at']),
+            'item.category' => fn ($categories) => $categories->withTrashed()->select('id', 'name'),
+            'item.unit' => fn ($units) => $units->withTrashed()->select('id', 'code'),
+            'warehouse' => fn ($warehouses) => $warehouses->withTrashed()->select('id', 'name', 'location_id'),
+            'user' => fn ($users) => $users->withTrashed()->select('id', 'name'),
+            'reversal.user' => fn ($users) => $users->withTrashed()->select('id', 'name'),
+        ];
+    }
+
+    public function createConsumption(Request $request): InertiaResponse
+    {
+        abort_unless($request->user()->can('add_reagent_consumption') && ! $request->session()->has('impersonate'), 403);
+        $labId = $this->laboratoryAccess->activeLabId();
+        $reagents = InventoryItem::forLaboratory($labId)->reagents()->active()
+            ->whereHas('category', fn (Builder $categories): Builder => $categories->whereIn('inventory_type', ['material', 'equipment']))
+            ->with([
+                'category:id,name', 'unit' => fn ($units) => $units->withTrashed()->select('id', 'code'),
+                'inventory' => fn ($stock) => $stock->forLaboratory($labId)
+                    ->whereHas('warehouse', fn ($warehouses) => $warehouses->where('lab_id', $labId)->active())
+                    ->select(['id', 'item_id', 'warehouse_id', 'qty_available']),
+            ])->get(['id', 'name', 'code', 'category_id', 'unit_id', 'reagent_expiry_date']);
+
         return Inertia::render('VAPInventory/Reagents/CreateConsumption', [
-            'reagents' => InventoryItem::reagents()->with('inventory.warehouse')->active()->get(),
-            'warehouses' => InventoryItemWarehouse::with('location')->active()->get(),
-            'users' => User::active()->get(['id', 'name']),
+            'reagents' => InventoryReagentChoiceResource::collection($reagents)->resolve($request),
+            'warehouses' => InventoryItemWarehouse::where('lab_id', $labId)->active()->get(['id', 'name']),
+            'users' => [['id' => $request->user()->id, 'name' => $request->user()->name]],
+            'backUrl' => route($request->user()->can('view_inventory') && $this->catalogueAccess->any($request->user(), 'view')
+                ? 'vap-inventory.reagents.consumption.index' : 'dashboard'),
         ]);
     }
 
-    public function storeConsumption(Request $request, DuplicateSubmissionGuard $duplicateSubmissionGuard)
+    public function storeConsumption(ConsumeInventoryReagentRequest $request, DuplicateSubmissionGuard $duplicateSubmissionGuard, ConsumeInventoryReagent $consumeReagent): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'reagent_id' => 'required|exists:i_items,id',
-            'warehouse_id' => 'required|exists:i_warehouses,id',
-            'quantity_used' => 'required|numeric|min:0.01',
-            'used_by' => 'required|string|max:255',
-            'date' => 'required|date',
-            'remarks' => 'nullable|string|max:1000',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        $validated = $validator->validated();
+        $labId = $this->laboratoryAccess->activeLabId();
+        $validated = $request->validated();
 
         if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'vap-inventory-store-consumption', $validated, 30)) {
             return redirect()->back()
@@ -1065,94 +861,24 @@ class VAPInventoryItemController extends Controller
                 ->withInput();
         }
 
-        // Check if reagent exists and has enough stock
-        $inventory = Inventory::where('item_id', $validated['reagent_id'])
-            ->where('warehouse_id', $validated['warehouse_id'])
-            ->first();
-
-        if (! $inventory) {
-            return redirect()->back()
-                ->with('error', 'Reagente não encontrado no armazém indicado.')
-                ->withInput();
-        }
-
-        if ($inventory->qty_available < $validated['quantity_used']) {
-            return redirect()->back()
-                ->with('error', 'Existências insuficientes. Quantidade disponível: '.$inventory->qty_available)
-                ->withInput();
-        }
-
         try {
-            DB::beginTransaction();
+            $reagent = InventoryItem::forLaboratory($labId)->findOrFail($validated['reagent_id']);
+            $consumeReagent->execute($labId, $request->user(), $reagent, $validated);
 
-            // Get reagent details
-            $reagent = InventoryItem::find($validated['reagent_id']);
-
-            // Create consumption record
-            $consumption = ReagentConsumption::create([
-                'date' => $validated['date'],
-                'user_id' => auth()->id(),
-                'reagent_id' => $validated['reagent_id'],
-                'reagent_name' => $reagent->name,
-                'quantity_used' => $validated['quantity_used'],
-                'used_by' => $validated['used_by'],
-                'used_at' => now(),
-                'remarks' => $validated['remarks'] ?? null,
-                'warehouse_id' => $validated['warehouse_id'],
-            ]);
-
-            // Update inventory
-            $inventory->decrement('qty_available', $validated['quantity_used']);
-
-            // Create transaction record
-            $transactionType = InventoryTransactionType::where('code', 'consumption')->first();
-            if ($transactionType) {
-                $transaction = InventoryTransaction::create([
-                    'inventory_id' => $inventory->id,
-                    'user_id' => auth()->id(),
-                    'warehouse_id' => $validated['warehouse_id'],
-                    'item_id' => $validated['reagent_id'],
-                    'type_id' => $transactionType->id,
-                    'qty' => '-'.$validated['quantity_used'],
-                    'reason' => 'Consumo de reagente',
-                    'notes' => $validated['remarks'] ?? null,
-                ]);
-
-                $consumption->update([
-                    'inventory_transaction_id' => $transaction->id,
-                ]);
-            }
-
-            DB::commit();
-
-            return redirect()->route('vap-inventory.reagents.consumption.index')
+            return $this->consumptionDestination($request->user())
                 ->with('success', 'Consumo de reagente registado com sucesso.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
+        } catch (ValidationException $exception) {
             return redirect()->back()
-                ->with('error', 'Não foi possível registar o consumo do reagente.')
+                ->withErrors($exception->errors())
                 ->withInput();
         }
     }
 
-    public function consume(Request $request, InventoryItem $item, DuplicateSubmissionGuard $duplicateSubmissionGuard)
+    public function consume(ConsumeInventoryReagentRequest $request, InventoryItem $item, DuplicateSubmissionGuard $duplicateSubmissionGuard, ConsumeInventoryReagent $consumeReagent)
     {
-        // Quick consume from item detail page
-        $validator = Validator::make($request->all(), [
-            'warehouse_id' => 'required|exists:i_warehouses,id',
-            'quantity_used' => 'required|numeric|min:0.01',
-            'used_by' => 'required|string|max:255',
-            'remarks' => 'nullable|string|max:1000',
-            'batch_id' => 'nullable|exists:i_inventory_batches,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $validated = $validator->validated();
+        $labId = $this->laboratoryAccess->activeLabId();
+        abort_unless((int) $item->lab_id === $labId, 404);
+        $validated = $request->validated();
 
         if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'vap-inventory-consume', array_merge($validated, [
             'item_id' => $item->id,
@@ -1162,184 +888,108 @@ class VAPInventoryItemController extends Controller
             ], 429);
         }
 
-        if (! $item->is_reagent) {
-            return response()->json(['error' => 'Item is not a reagent'], 422);
-        }
-
-        $inventory = Inventory::where('item_id', $item->id)
-            ->where('warehouse_id', $validated['warehouse_id'])
-            ->first();
-
-        if (! $inventory) {
-            return response()->json(['error' => 'Reagente não encontrado no armazém indicado.'], 404);
-        }
-
-        if ($inventory->qty_available < $validated['quantity_used']) {
-            return response()->json(['error' => 'Existências insuficientes. Quantidade disponível: '.$inventory->qty_available], 422);
-        }
-
         try {
-            DB::beginTransaction();
-
-            // Create consumption record
-            $consumption = ReagentConsumption::create([
-                'date' => now()->format('Y-m-d'),
-                'user_id' => auth()->id(),
-                'reagent_id' => $item->id,
-                'reagent_name' => $item->name,
-                'quantity_used' => $validated['quantity_used'],
-                'usage_type' => $request->usage_type ?? 'experiment',
-                'project' => $request->project,
-                'used_by' => $validated['used_by'],
-                'used_at' => now(),
-                'remarks' => $validated['remarks'] ?? null,
-                'batch_id' => $validated['batch_id'] ?? null,
-                'warehouse_id' => $validated['warehouse_id'],
-            ]);
-
-            // Update inventory
-            $inventory->decrement('qty_available', $validated['quantity_used']);
-
-            // Create transaction record
-            $transactionType = InventoryTransactionType::where('code', 'consumption')->first();
-            if ($transactionType) {
-                $transaction = InventoryTransaction::create([
-                    'inventory_id' => $inventory->id,
-                    'user_id' => auth()->id(),
-                    'warehouse_id' => $validated['warehouse_id'],
-                    'item_id' => $item->id,
-                    'type_id' => $transactionType->id,
-                    'batch_id' => $validated['batch_id'] ?? null,
-                    'qty' => '-'.$validated['quantity_used'],
-                    'reason' => 'Consumo de reagente',
-                    'notes' => $validated['remarks'] ?? null,
-                ]);
-
-                $consumption->update([
-                    'inventory_transaction_id' => $transaction->id,
-                ]);
-            }
-
-            DB::commit();
+            $result = $consumeReagent->execute($labId, $request->user(), $item, $validated);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Consumo de reagente registado com êxito',
-                'consumption' => $consumption,
-                'new_quantity' => $inventory->fresh()->qty_available,
+                'consumption' => $result['consumption'],
+                'new_quantity' => $result['new_quantity'],
             ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json(['error' => 'Não foi possível registar o consumo do reagente: '.$e->getMessage()], 500);
+        } catch (ValidationException $exception) {
+            return response()->json(['errors' => $exception->errors()], 422);
         }
     }
 
-    public function showConsumption(ReagentConsumption $consumption)
+    public function showConsumption(Request $request, ReagentConsumption $consumption): InertiaResponse
     {
-        $consumption->load(['item.category', 'warehouse.location', 'user']);
+        abort_unless($request->user()->can('view_inventory') && $this->catalogueAccess->any($request->user(), 'view'), 403);
+        $labId = $this->laboratoryAccess->activeLabId();
+        $consumption = $this->catalogueRead->consumptions($labId, $request->user())
+            ->with([
+                ...$this->consumptionRelations(),
+                'warehouse.location:id,name', 'item.supplier' => fn ($suppliers) => $suppliers->withTrashed()->select('id', 'name'),
+                'item.inventory' => fn ($stock) => $stock->forLaboratory($labId)
+                    ->whereHas('warehouse', fn ($warehouses) => $warehouses->withTrashed()->where('lab_id', $labId))
+                    ->select(['id', 'item_id', 'warehouse_id', 'qty_available']),
+            ])->findOrFail($consumption->id);
 
         return Inertia::render('VAPInventory/Reagents/ShowConsumption', [
-            'consumption' => $consumption,
+            'consumption' => (new InventoryReagentConsumptionResource($consumption))->resolve($request),
         ]);
     }
 
-    public function destroyConsumption(ReagentConsumption $consumption)
+    public function reverseConsumption(Request $request, ReagentConsumption $consumption, ReverseInventoryReagentConsumption $reverseConsumption): RedirectResponse
     {
+        $labId = $this->laboratoryAccess->activeLabId();
+        abort_unless(ReagentConsumption::forLaboratory($labId)->whereKey($consumption->id)->exists(), 404);
         try {
-            DB::beginTransaction();
+            $reverseConsumption->execute($labId, $request->user()->id, $consumption->id);
 
-            // Get the inventory record
-            $inventory = Inventory::where('item_id', $consumption->reagent_id)
-                ->where('warehouse_id', $consumption->warehouse_id)
-                ->first();
-
-            if ($inventory) {
-                // Restore the consumed quantity
-                $inventory->increment('qty_available', $consumption->quantity_used);
-
-                if ($consumption->inventory_transaction_id) {
-                    InventoryTransaction::whereKey($consumption->inventory_transaction_id)->delete();
-                } else {
-                    InventoryTransaction::where('item_id', $consumption->reagent_id)
-                        ->where('warehouse_id', $consumption->warehouse_id)
-                        ->where('qty', '-'.$consumption->quantity_used)
-                        ->whereIn('reason', ['Reagent consumption', 'Consumo de reagente'])
-                        ->whereDate('created_at', $consumption->created_at)
-                        ->delete();
-                }
-            }
-
-            // Delete the consumption record
-            $consumption->delete();
-
-            DB::commit();
-
-            return redirect()->route('vap-inventory.reagents.consumption.index')
-                ->with('success', 'Registo de consumo eliminado com sucesso. As existências foram repostas.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
+            return $this->consumptionDestination($request->user())
+                ->with('success', 'Consumo revertido. As existências foram repostas e o histórico foi preservado.');
+        } catch (ValidationException $exception) {
             return redirect()->back()
-                ->with('error', 'Não foi possível eliminar o registo de consumo.');
+                ->withErrors($exception->errors());
         }
     }
 
-    public function downloadallattachments()
+    private function consumptionDestination(User $user): RedirectResponse
     {
-        // Get all Docs
-        $documents = InventoryItem::findOrFail(request()->model_id)->getMedia('documents');
+        if ($user->can('view_inventory') && $this->catalogueAccess->any($user, 'view')) {
+            return redirect()->route('vap-inventory.reagents.consumption.index');
+        }
+
+        return redirect()->route($user->can('add_reagent_consumption') ? 'vap-inventory.reagents.consumption.create' : 'dashboard');
+    }
+
+    public function downloadallattachments(): MediaStream
+    {
+        $item = InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())
+            ->findOrFail(request()->integer('model_id'));
+        $this->catalogueAccess->authorize(request()->user(), $item, 'view');
+        $documents = $item->getMedia('documents');
 
         return MediaStream::create('documents.zip')->addMedia($documents);
     }
 
-    public function downloadsingleattachment()
+    public function downloadsingleattachment(): Media
     {
-        return Media::findOrFail(request()->model_id);
+        $media = InventoryItemDocumentMedia::withTrashed()->findOrFail(request()->integer('model_id'));
+        abort_unless($media->model_type === (new InventoryItem)->getMorphClass() && $media->collection_name === 'documents', 404);
+        $item = InventoryItem::withTrashed()->forLaboratory($this->laboratoryAccess->activeLabId())->findOrFail($media->model_id);
+        $this->catalogueAccess->authorize(request()->user(), $item, 'view');
+
+        return $media;
     }
 
-    public function deleteattachment()
+    public function deleteattachment(int $id, SetInventoryDocumentArchived $archiveDocument): RedirectResponse
     {
-        $item = InventoryItem::findOrFail(request()->integer('model_id'));
+        $archiveDocument->execute($this->laboratoryAccess->activeLabId(), request()->user()->id, request()->integer('model_id'), $id, true);
 
-        Media::query()
-            ->whereKey(request()->integer('id'))
-            ->where('model_id', $item->id)
-            ->firstOrFail()
-            ->delete();
+        return redirect()->back();
+    }
 
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ],
-        ]);
+    public function restoreAttachment(int $id, SetInventoryDocumentArchived $archiveDocument): RedirectResponse
+    {
+        $archiveDocument->execute($this->laboratoryAccess->activeLabId(), request()->user()->id, request()->integer('model_id'), $id, false);
+
+        return redirect()->back();
     }
 
     /**
      * Export all inventory items to an Excel file.
-     *
-     * @return Response
      */
-    public function exportInventory(Request $request)
+    public function exportInventory(InventoryCatalogueExportRequest $request): HttpResponse
     {
-        // dd(request()->all());
+        $data = $request->validated();
+        $types = $this->catalogueAccess->allowedTypes($request->user(), 'export');
+        if (isset($data['inventory_type'])) {
+            $types = array_values(array_intersect($types, [$data['inventory_type']]));
+        }
 
-        // Validate the date parameters
-        $request->validate([
-            'start' => 'nullable|date',
-            'end' => 'nullable|date|after_or_equal:start',
-        ]);
-
-        $startDate = $request->input('start');
-        $endDate = $request->input('end');
-        $categories = [1, 2, 3, 4];
-        $category_id = $request->input('category_id');
-
-        // dd($category_id);
-
-        // Pass the date range to the export class
-        return Excel::download(new InventoryItemsExport($startDate, $endDate, $categories, $category_id), 'inventory_items.xlsx');
+        return Excel::download(new InventoryItemsExport($this->laboratoryAccess->activeLabId(), $types,
+            $data['start'] ?? null, $data['end'] ?? null, isset($data['category_id']) ? (int) $data['category_id'] : null), 'inventory_items.xlsx');
     }
 }

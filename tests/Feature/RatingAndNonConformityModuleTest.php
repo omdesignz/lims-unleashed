@@ -16,12 +16,13 @@ use App\Models\VAPNonConformity;
 use App\Models\VAPNonConformityAction;
 use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
-use App\Notifications\NonConformityWorkflowNotification;
-use App\Notifications\RatingSubmittedNotification;
+use App\Notifications\OperationalNotification;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -29,14 +30,22 @@ class RatingAndNonConformityModuleTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Notification::fake();
+    }
+
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $user = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $user->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $user->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
+
+        return $user;
     }
 
     public function test_order_rating_form_opens_and_completes_pending_request(): void
@@ -45,6 +54,7 @@ class RatingAndNonConformityModuleTest extends TestCase
         CriteriaRating::withTrashed()->where('type', 'order')->forceDelete();
 
         $order = InventoryOrder::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'date' => now()->toDateString(),
             'order_year' => (string) now()->year,
             'user_id' => $user->id,
@@ -64,6 +74,13 @@ class RatingAndNonConformityModuleTest extends TestCase
         ]);
 
         RatingRequest::query()->create([
+            'lab_id' => $order->lab_id,
+            'issued_by_id' => $user->id,
+            'invitation' => (string) Str::uuid(),
+            'criteria_snapshot' => [],
+            'expires_at' => now()->addDays(30),
+            'rater_type' => $user->getMorphClass(),
+            'rater_id' => $user->id,
             'user_id' => $user->id,
             'rateable_type' => 'order',
             'rateable_id' => $order->id,
@@ -92,8 +109,9 @@ class RatingAndNonConformityModuleTest extends TestCase
 
         $rating = Rating::query()->where('user_id', $user->id)->where('rateable_id', $order->id)->firstOrFail();
 
-        $this->assertSame(5, $rating->criteria['Comunicação']);
-        $this->assertSame(4, $rating->criteria['Entrega']);
+        $this->assertSame(5, $rating->criteria[$communication->id]);
+        $this->assertSame(4, $rating->criteria[$delivery->id]);
+        $this->assertSame('Comunicação', $rating->metadata['criteria_snapshot'][0]['name']);
 
         $this->assertDatabaseHas('rating_requests', [
             'user_id' => $user->id,
@@ -109,6 +127,7 @@ class RatingAndNonConformityModuleTest extends TestCase
         CriteriaRating::withTrashed()->where('type', 'order')->forceDelete();
 
         $order = InventoryOrder::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'date' => now()->toDateString(),
             'order_year' => (string) now()->year,
             'user_id' => $user->id,
@@ -164,7 +183,7 @@ class RatingAndNonConformityModuleTest extends TestCase
             'channel' => 'internal',
         ]);
 
-        Notification::assertSentTo($user, RatingSubmittedNotification::class);
+        Notification::assertSentTo($user, OperationalNotification::class, fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'quality.rating.received');
     }
 
     public function test_rating_index_exposes_apex_chart_payloads(): void
@@ -172,6 +191,7 @@ class RatingAndNonConformityModuleTest extends TestCase
         $user = $this->verifiedAdmin();
 
         Rating::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'user_id' => $user->id,
             'rateable_type' => 'service',
             'rateable_id' => 0,
@@ -206,8 +226,11 @@ class RatingAndNonConformityModuleTest extends TestCase
             'name' => 'Cliente Rating ISO',
             'code' => 'CLI-RATE-ISO',
         ]);
-        $department = Department::query()->firstOrFail();
-        $lab = VAPLab::query()->firstOrFail();
+        $department = Department::query()->create([
+            'name' => 'Portal rating department',
+            'code' => fake()->unique()->bothify('RD-######'),
+        ]);
+        $lab = VAPLab::factory()->create(['department_id' => $department->id]);
 
         $warehouse = Warehouse::query()->create([
             'name' => 'Portal Rating ISO',
@@ -228,7 +251,13 @@ class RatingAndNonConformityModuleTest extends TestCase
             'sample_year' => (string) now()->year,
         ]);
 
-        RatingRequest::query()->create([
+        $invitation = RatingRequest::query()->create([
+            'lab_id' => $lab->id,
+            'issued_by_id' => User::factory()->create()->id,
+            'recipient_customer_id' => $customer->id,
+            'invitation' => (string) Str::uuid(),
+            'criteria_snapshot' => [['id' => $criterion->id, 'name' => $criterion->name, 'description' => null]],
+            'expires_at' => now()->addDays(30),
             'rateable_type' => 'sample_entry',
             'rateable_id' => $sampleEntry->id,
             'rater_type' => $warehouse->getMorphClass(),
@@ -238,7 +267,7 @@ class RatingAndNonConformityModuleTest extends TestCase
         ]);
 
         $this->actingAs($warehouse, 'portal')
-            ->get(route('portal.rating.create', ['rateableType' => 'sample_entry', 'rateableId' => $sampleEntry->id]))
+            ->get(route('portal.rating.create', ['invitation' => $invitation->invitation]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('RateForm')
@@ -247,7 +276,7 @@ class RatingAndNonConformityModuleTest extends TestCase
                 ->where('ratingRequest.status', 'pending'));
 
         $this->actingAs($warehouse, 'portal')
-            ->post(route('portal.rating.store', ['rateableType' => 'sample_entry', 'rateableId' => $sampleEntry->id]), [
+            ->post(route('portal.rating.store', ['invitation' => $invitation->invitation]), [
                 'criteria' => [
                     $criterion->id => 4,
                 ],
@@ -281,11 +310,13 @@ class RatingAndNonConformityModuleTest extends TestCase
         $second = $this->makeNonConformity($user, 'NC-SCOPE-002');
 
         VAPNonConformityAction::query()->create([
+            'lab_id' => $first->lab_id,
             'nc_id' => $first->id,
             'correction' => 'Ação original',
         ]);
 
         $otherAction = VAPNonConformityAction::query()->create([
+            'lab_id' => $second->lab_id,
             'nc_id' => $second->id,
             'correction' => 'Não deve mudar',
         ]);
@@ -310,6 +341,7 @@ class RatingAndNonConformityModuleTest extends TestCase
         $nonConformity = $this->makeNonConformity($user, 'NC-SCOPE-003');
 
         VAPNonConformityAction::query()->create([
+            'lab_id' => $nonConformity->lab_id,
             'nc_id' => $nonConformity->id,
             'correction' => 'A remover',
         ]);
@@ -381,12 +413,14 @@ class RatingAndNonConformityModuleTest extends TestCase
             ])
             ->assertRedirect(route('vap_non_conformities.index'));
 
-        Notification::assertSentTo($user, NonConformityWorkflowNotification::class);
+        $nonConformity = VAPNonConformity::query()->where('nc_number', 'NC-NOTIFY-001')->firstOrFail();
+        Notification::assertSentTo($user, OperationalNotification::class, fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'quality.nonconformity.created'
+            && $notification->payload['context']['lab_id'] === $nonConformity->lab_id);
     }
 
     public function test_non_conformity_can_store_and_show_media_attachments(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
         Notification::fake();
 
         $user = $this->verifiedAdmin();
@@ -424,6 +458,7 @@ class RatingAndNonConformityModuleTest extends TestCase
     private function makeNonConformity(User $user, string $number): VAPNonConformity
     {
         return VAPNonConformity::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'nc_number' => $number,
             'title' => 'Desvio de ensaio',
             'description' => 'Resultado fora do procedimento aprovado.',

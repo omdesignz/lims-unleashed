@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\IntegrationDelivery;
+use App\Models\Sample;
+use App\Services\LaboratoryWorkflowOwnership;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
@@ -30,14 +32,28 @@ class DeliverIntegrationWebhook implements ShouldQueue
         return [(new WithoutOverlapping('integration-delivery-'.$this->delivery->id))->expireAfter(60)];
     }
 
-    public function handle(): void
+    public function handle(LaboratoryWorkflowOwnership $ownership): void
     {
-        $delivery = $this->delivery->fresh('connector');
+        $delivery = $this->delivery->fresh(['connector', 'subject']);
+
+        if (in_array($delivery?->status, ['delivered', 'failed'], true)) {
+            return;
+        }
+
         $connector = $delivery?->connector;
         $endpoint = data_get($connector?->configuration, 'endpoint');
 
         if (! $delivery || ! $connector || ! filled($endpoint)) {
             throw new RuntimeException('A entrega da integração não tem um ponto de acesso configurado.');
+        }
+
+        if ($delivery->event_type !== 'lims.connector.test') {
+            $sample = $delivery->subject;
+            if (! $sample instanceof Sample
+                || ! $connector->publishes($delivery->event_type)
+                || ! $ownership->samplesForLaboratory((int) $connector->lab_id)->whereKey($sample->id)->exists()) {
+                throw new RuntimeException('A entrega não pertence ao laboratório deste conector.');
+            }
         }
 
         $body = json_encode($delivery->payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
@@ -96,11 +112,14 @@ class DeliverIntegrationWebhook implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        $this->delivery->fresh()?->forceFill([
-            'status' => 'failed',
-            'last_error' => Str::limit($exception?->getMessage() ?? 'A entrega esgotou as tentativas configuradas.', 2000),
-            'next_attempt_at' => null,
-        ])->save();
+        IntegrationDelivery::query()
+            ->whereKey($this->delivery->getKey())
+            ->where('status', '!=', 'delivered')
+            ->update([
+                'status' => 'failed',
+                'last_error' => Str::limit($exception?->getMessage() ?? 'A entrega esgotou as tentativas configuradas.', 2000),
+                'next_attempt_at' => null,
+            ]);
     }
 
     private function retryDelay(int $attempt): int

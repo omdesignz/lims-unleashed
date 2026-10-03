@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\StaffAccountAccess;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -29,34 +30,13 @@ class UserResource extends JsonResource
             'last_login_at' => $this->last_login_at,
             'last_activity_at' => $this->last_activity_at,
             'dob' => $this->dob?->format('Y-m-d'),
-            'competence_summary' => $this->competenceSummary(),
-            'personnel_qualifications' => $this->whenLoaded('personnelQualifications', function () {
-                return $this->personnelQualifications->map(fn ($qualification) => [
-                    'id' => $qualification->id,
-                    'capability' => $qualification->capability,
-                    'department_id' => $qualification->department_id,
-                    'authorized_from' => $qualification->authorized_from?->format('Y-m-d'),
-                    'authorized_until' => $qualification->authorized_until?->format('Y-m-d'),
-                    'training_completed_at' => $qualification->training_completed_at?->format('Y-m-d'),
-                    'training_reference' => $qualification->training_reference,
-                    'notes' => $qualification->notes,
-                    'is_active' => $qualification->is_active,
-                    'monitoring_status' => $qualification->monitoringStatus(),
-                    'renewal_readiness' => $qualification->renewalReadiness(),
-                    'follow_up_due_at' => $qualification->followUpDueAt()?->toDateString(),
-                    'days_until_expiry' => $qualification->daysUntilExpiry(),
-                ])->values();
-            }),
             'deleted' => $this->deleted_at ? true : false,
+            'action_capabilities' => app(StaffAccountAccess::class)->capabilities($request->user(), $this->resource),
             'links' => [
                 'edit_path' => route('users.edit', $this->id),
-                'delete_path' => route('users.destroy', [
-                    'recordIds' => [$this->id]
-                ]),
-                'restore_path' => route('users.restore', [
-                    'recordIds' => [$this->id]
-                ]),
-            ]
+                'delete_path' => route('users.destroy'),
+                'restore_path' => route('users.restore'),
+            ],
         ];
     }
 }

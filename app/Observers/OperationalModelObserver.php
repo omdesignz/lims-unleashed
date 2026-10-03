@@ -72,6 +72,7 @@ class OperationalModelObserver
         $model->loadMissing('customer');
 
         return [
+            'lab_id' => $model->getAttribute('lab_id'),
             'document_number' => $number ?: '#'.$model->getKey(),
             'customer_name' => $model->customer?->name ?? 'Cliente',
             'total' => $model->getAttribute('total') !== null ? Number::currency((float) $model->getAttribute('total'), 'AOA', 'pt_PT') : '',
@@ -85,6 +86,7 @@ class OperationalModelObserver
         $customer = $model instanceof ImportCertificate ? $model->importer : ($model instanceof ExportCertificate ? $model->exporter : $model->customer);
 
         return [
+            ...($model instanceof ImportCertificate || $model instanceof ExportCertificate ? ['lab_id' => $model->lab_id] : []),
             'document_number' => $number ?: '#'.$model->getKey(),
             'customer_name' => $customer?->name ?? 'Cliente',
             'document_url' => url($path),

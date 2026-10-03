@@ -10,11 +10,17 @@
   </testsuites>
   <php>
     <ini name="memory_limit" value="512M"/>
-    <env name="APP_ENV" value="testing"/>
+    <env name="APP_ENV" value="testing" force="true"/>
     <env name="BCRYPT_ROUNDS" value="4"/>
     <env name="CACHE_DRIVER" value="array"/>
-    <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-    <!-- <env name="DB_DATABASE" value=":memory:"/> -->
+    <env name="DB_CONNECTION" value="pgsql" force="true"/>
+    <env name="DB_HOST" value="127.0.0.1" force="true"/>
+    <env name="DB_PORT" value="5432" force="true"/>
+    <env name="DB_DATABASE" value="lims_unleashed_test" force="true"/>
+    <env name="DB_USERNAME" value="lims_unleashed_test" force="true"/>
+    <env name="DB_PASSWORD" value="" force="true"/>
+    <env name="DATABASE_URL" value="" force="true"/>
+    <env name="CACHE_STORE" value="array" force="true"/>
     <env name="MAIL_MAILER" value="array"/>
     <env name="QUEUE_CONNECTION" value="sync"/>
     <env name="SESSION_DRIVER" value="array"/>

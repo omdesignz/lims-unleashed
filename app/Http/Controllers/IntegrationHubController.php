@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\RetryIntegrationDelivery;
+use App\Actions\SaveIntegrationConnector;
 use App\Http\Requests\StoreIntegrationConnectorRequest;
 use App\Http\Requests\StoreIntegrationMappingRequest;
 use App\Jobs\DeliverIntegrationWebhook;
@@ -11,7 +13,8 @@ use App\Models\IntegrationTransmission;
 use App\Models\InventoryItem;
 use App\Services\Integrations\IntegrationPayloadNormalizer;
 use App\Services\Integrations\IntegrationResultImporter;
-use App\Support\PersonnelQualificationGate;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,14 +25,20 @@ use Inertia\Response;
 
 class IntegrationHubController extends Controller
 {
-    public function index(): Response
+    public function index(SampleLaboratoryAccess $laboratory): Response
     {
         $this->authorizeView();
+        $labId = $laboratory->activeLabId();
 
         $connectors = IntegrationConnector::query()
-            ->with(['equipment:id,name,code,serial_number', 'activeMapping'])
+            ->where('lab_id', $labId)
+            ->with([
+                'equipment' => fn (BelongsTo $items): BelongsTo => $items->withTrashed()->forLaboratory($labId)->equipment()
+                    ->select(['id', 'name', 'code', 'serial_number', 'deleted_at']),
+                'activeMapping',
+            ])
             ->withCount(['transmissions', 'deliveries'])
-            ->orderByRaw("FIELD(status, 'error', 'active', 'paused', 'draft')")
+            ->orderByRaw("CASE status WHEN 'error' THEN 0 WHEN 'active' THEN 1 WHEN 'paused' THEN 2 WHEN 'draft' THEN 3 ELSE 4 END")
             ->orderBy('name')
             ->get()
             ->map(fn (IntegrationConnector $connector): array => [
@@ -47,7 +56,10 @@ class IntegrationHubController extends Controller
                 'last_tested_at' => $connector->last_tested_at?->toIso8601String(),
                 'configuration' => $connector->configuration ?? [],
                 'event_types' => $connector->event_types ?? [],
-                'equipment' => $connector->equipment,
+                'equipment' => $connector->equipment ? $connector->equipment->only(['id', 'name', 'code', 'serial_number']) + [
+                    'is_archived' => $connector->equipment->trashed(),
+                ] : null,
+                'equipment_link_unavailable' => $connector->inventory_item_id !== null && $connector->equipment === null,
                 'active_mapping' => $connector->activeMapping,
                 'ingest_token_configured' => filled($connector->ingest_token_hash),
                 'credentials_configured' => filled($connector->credentials),
@@ -58,6 +70,7 @@ class IntegrationHubController extends Controller
             ]);
 
         $transmissions = IntegrationTransmission::query()
+            ->whereHas('connector', fn ($query) => $query->where('lab_id', $labId))
             ->with([
                 'connector:id,uuid,name,adapter',
                 'mapping:id,name,version',
@@ -71,6 +84,7 @@ class IntegrationHubController extends Controller
             ->get();
 
         $deliveries = IntegrationDelivery::query()
+            ->whereHas('connector', fn ($query) => $query->where('lab_id', $labId))
             ->with('connector:id,uuid,name')
             ->latest()
             ->limit(60)
@@ -78,18 +92,18 @@ class IntegrationHubController extends Controller
 
         return Inertia::render('Integrations/Index', [
             'summary' => [
-                'active_connectors' => IntegrationConnector::query()->where('status', 'active')->count(),
-                'healthy_connectors' => IntegrationConnector::query()->where('status', 'active')->where('health_status', 'healthy')->count(),
-                'review_queue' => IntegrationTransmission::query()->where('status', 'matched')->count(),
-                'quarantined' => IntegrationTransmission::query()->where('status', 'quarantined')->count(),
-                'received_24h' => IntegrationTransmission::query()->where('received_at', '>=', now()->subDay())->count(),
-                'delivery_failures' => IntegrationDelivery::query()->whereIn('status', ['retrying', 'failed'])->count(),
+                'active_connectors' => IntegrationConnector::query()->where('lab_id', $labId)->where('status', 'active')->count(),
+                'healthy_connectors' => IntegrationConnector::query()->where('lab_id', $labId)->where('status', 'active')->where('health_status', 'healthy')->count(),
+                'review_queue' => IntegrationTransmission::query()->whereHas('connector', fn ($query) => $query->where('lab_id', $labId))->where('status', 'matched')->count(),
+                'quarantined' => IntegrationTransmission::query()->whereHas('connector', fn ($query) => $query->where('lab_id', $labId))->where('status', 'quarantined')->count(),
+                'received_24h' => IntegrationTransmission::query()->whereHas('connector', fn ($query) => $query->where('lab_id', $labId))->where('received_at', '>=', now()->subDay())->count(),
+                'delivery_failures' => IntegrationDelivery::query()->whereHas('connector', fn ($query) => $query->where('lab_id', $labId))->whereIn('status', ['retrying', 'failed'])->count(),
             ],
             'connectors' => $connectors,
             'transmissions' => $transmissions,
             'deliveries' => $deliveries,
-            'equipmentOptions' => InventoryItem::query()
-                ->where('category_id', 1)
+            'equipmentOptions' => InventoryItem::forLaboratory($labId)
+                ->equipment()
                 ->orderBy('name')
                 ->get(['id', 'name', 'code', 'serial_number'])
                 ->map(fn (InventoryItem $item): array => [
@@ -105,88 +119,30 @@ class IntegrationHubController extends Controller
         ]);
     }
 
-    public function store(StoreIntegrationConnectorRequest $request): RedirectResponse
+    public function store(StoreIntegrationConnectorRequest $request, SampleLaboratoryAccess $laboratory, SaveIntegrationConnector $save): RedirectResponse
     {
         $this->authorizeManage();
-        $validated = $request->validated();
-        $validated['key'] = $this->uniqueKey($validated['key'] ?? $validated['name']);
-        $validated['created_by_id'] = auth()->id();
-        $validated['configuration'] = array_filter($validated['configuration'] ?? [], fn (mixed $value): bool => filled($value));
-        $validated['credentials'] = array_filter($validated['credentials'] ?? [], fn (mixed $value): bool => filled($value));
-        $validated['event_types'] = $validated['event_types'] ?? [];
-        $validated['signing_secret'] = Str::random(64);
-
-        $connector = DB::transaction(function () use ($validated): IntegrationConnector {
-            $connector = IntegrationConnector::query()->create($validated);
-
-            if (in_array($connector->direction, ['inbound', 'bidirectional'], true)) {
-                $connector->mappings()->create([
-                    'created_by_id' => auth()->id(),
-                    'name' => 'Mapeamento inicial',
-                    'version' => 1,
-                    'is_active' => true,
-                    'field_paths' => [
-                        'external_id' => 'message.id',
-                        'sample_code' => 'result.sample_code',
-                        'parameter_code' => 'result.parameter_code',
-                        'value' => 'result.value',
-                        'unit' => 'result.unit',
-                        'measured_at' => 'result.measured_at',
-                    ],
-                    'transformations' => [
-                        'sample_code' => ['trim', 'uppercase'],
-                        'parameter_code' => ['trim', 'uppercase'],
-                        'value' => ['trim', 'decimal_comma'],
-                    ],
-                    'constants' => [],
-                ]);
-            }
-
-            return $connector;
-        });
-
-        $token = in_array($connector->direction, ['inbound', 'bidirectional'], true)
-            ? $connector->rotateIngestToken()
-            : null;
-
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($connector)
-            ->log('Criou um conector no Integration Hub.');
+        $saved = $save->execute($laboratory->activeLabId(), (int) $request->user()->id, $request->validated());
 
         return to_route('integration-hub.index')
-            ->with('integration_token', $token)
-            ->with('integration_connector_uuid', $connector->uuid)
+            ->with('integration_token', $saved['token'])
+            ->with('integration_connector_uuid', $saved['connector']->uuid)
             ->with('toast', $this->toast('Conector criado', 'O conector foi criado e está pronto para configuração.'));
     }
 
-    public function update(StoreIntegrationConnectorRequest $request, IntegrationConnector $connector): RedirectResponse
+    public function update(StoreIntegrationConnectorRequest $request, IntegrationConnector $connector, SampleLaboratoryAccess $laboratory, SaveIntegrationConnector $save): RedirectResponse
     {
         $this->authorizeManage();
-        $validated = $request->validated();
-        $validated['key'] = $this->uniqueKey($validated['key'] ?? $validated['name'], $connector);
-        $validated['configuration'] = array_filter($validated['configuration'] ?? [], fn (mixed $value): bool => filled($value));
-        $newCredentials = array_filter($validated['credentials'] ?? [], fn (mixed $value): bool => filled($value));
-
-        if ($newCredentials === []) {
-            unset($validated['credentials']);
-        } else {
-            $validated['credentials'] = array_merge($connector->credentials ?? [], $newCredentials);
-        }
-
-        $connector->update($validated);
-
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($connector)
-            ->log('Atualizou a configuração de um conector do Integration Hub.');
+        $this->authorizeConnectorLab($connector, $laboratory);
+        $save->execute($laboratory->activeLabId(), (int) $request->user()->id, $request->validated(), (int) $connector->id);
 
         return back()->with('toast', $this->toast('Conector actualizado', 'As definições foram guardadas.'));
     }
 
-    public function storeMapping(StoreIntegrationMappingRequest $request, IntegrationConnector $connector): RedirectResponse
+    public function storeMapping(StoreIntegrationMappingRequest $request, IntegrationConnector $connector, SampleLaboratoryAccess $laboratory): RedirectResponse
     {
         $this->authorizeManage();
+        $this->authorizeConnectorLab($connector, $laboratory);
 
         DB::transaction(function () use ($request, $connector): void {
             $connector->mappings()->update(['is_active' => false]);
@@ -206,17 +162,19 @@ class IntegrationHubController extends Controller
         return back()->with('toast', $this->toast('Mapeamento publicado', 'A nova versão será usada nas próximas transmissões.'));
     }
 
-    public function testMapping(Request $request, IntegrationConnector $connector, IntegrationPayloadNormalizer $normalizer): JsonResponse
+    public function testMapping(Request $request, IntegrationConnector $connector, IntegrationPayloadNormalizer $normalizer, SampleLaboratoryAccess $laboratory): JsonResponse
     {
         $this->authorizeView();
+        $this->authorizeConnectorLab($connector, $laboratory);
         $validated = $request->validate(['payload' => ['required', 'array']]);
 
-        return response()->json($normalizer->normalize($validated['payload'], $connector->activeMapping()->first()));
+        return response()->json($normalizer->normalize($validated['payload'], $connector, $connector->activeMapping()->first()));
     }
 
-    public function rotateToken(IntegrationConnector $connector): RedirectResponse
+    public function rotateToken(IntegrationConnector $connector, SampleLaboratoryAccess $laboratory): RedirectResponse
     {
         $this->authorizeManage();
+        $this->authorizeConnectorLab($connector, $laboratory);
         abort_unless(in_array($connector->direction, ['inbound', 'bidirectional'], true), 422);
 
         $token = $connector->rotateIngestToken();
@@ -232,9 +190,10 @@ class IntegrationHubController extends Controller
             ->with('toast', $this->toast('Token renovado', 'O token anterior deixou de ser válido.'));
     }
 
-    public function test(IntegrationConnector $connector): RedirectResponse
+    public function test(IntegrationConnector $connector, SampleLaboratoryAccess $laboratory): RedirectResponse
     {
         $this->authorizeManage();
+        $this->authorizeConnectorLab($connector, $laboratory);
 
         if ($connector->direction === 'inbound') {
             $healthy = filled($connector->ingest_token_hash) && $connector->activeMapping()->exists();
@@ -261,56 +220,55 @@ class IntegrationHubController extends Controller
                 ],
             ]);
             $connector->forceFill(['last_tested_at' => now()])->save();
-            DeliverIntegrationWebhook::dispatch($delivery);
+            DeliverIntegrationWebhook::dispatch($delivery)->afterCommit();
         }
 
         return back()->with('toast', $this->toast('Teste iniciado', 'O estado será actualizado no histórico operacional.'));
     }
 
-    public function import(IntegrationTransmission $transmission, IntegrationResultImporter $importer): RedirectResponse
+    public function import(IntegrationTransmission $transmission, IntegrationResultImporter $importer, SampleLaboratoryAccess $laboratory): RedirectResponse
     {
-        abort_if(! auth()->user()->can('insert_results'), 403);
-        $transmission->load('result.sample.analysis');
-        app(PersonnelQualificationGate::class)->ensure(
-            auth()->user(),
-            'insert_results',
-            $transmission->result?->sample?->analysis?->department_id,
-        );
-        $importer->import($transmission, auth()->user());
+        $importer->import($transmission, auth()->user(), $laboratory->activeLabId());
 
         return back()->with('toast', $this->toast('Resultado importado', 'O valor entrou na etapa de inserção e mantém a proveniência do equipamento.'));
     }
 
-    public function reject(Request $request, IntegrationTransmission $transmission): RedirectResponse
+    public function reject(Request $request, IntegrationTransmission $transmission, SampleLaboratoryAccess $laboratory): RedirectResponse
     {
         abort_unless($this->canManage() || auth()->user()->can('insert_results'), 403);
         $validated = $request->validate(['reason' => ['required', 'string', 'max:2000']]);
-        abort_unless(in_array($transmission->status, ['matched', 'quarantined'], true), 422);
+        $labId = $laboratory->activeLabId();
 
-        $transmission->forceFill([
-            'status' => 'rejected',
-            'reviewed_by_id' => auth()->id(),
-            'reviewed_at' => now(),
-            'rejection_reason' => $validated['reason'],
-        ])->save();
+        DB::transaction(function () use ($transmission, $labId, $validated): void {
+            $lockedTransmission = IntegrationTransmission::query()
+                ->with('connector')->lockForUpdate()->findOrFail($transmission->id);
+            abort_unless((int) $lockedTransmission->connector?->lab_id === $labId, 404);
+            abort_unless(in_array($lockedTransmission->status, ['matched', 'quarantined'], true), 422);
 
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($transmission)
-            ->log('Rejeitou uma transmissão recebida pelo Integration Hub.');
+            $lockedTransmission->forceFill([
+                'status' => 'rejected',
+                'reviewed_by_id' => auth()->id(),
+                'reviewed_at' => now(),
+                'rejection_reason' => $validated['reason'],
+            ])->save();
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($lockedTransmission)
+                ->log('Rejeitou uma transmissão recebida pelo Integration Hub.');
+        });
 
         return back()->with('toast', $this->toast('Transmissão rejeitada', 'A decisão e a justificação ficaram registadas.'));
     }
 
-    public function retry(IntegrationDelivery $delivery): RedirectResponse
+    public function retry(IntegrationDelivery $delivery, SampleLaboratoryAccess $laboratory, RetryIntegrationDelivery $retry): RedirectResponse
     {
         $this->authorizeManage();
-        $delivery->forceFill([
-            'status' => 'pending',
-            'last_error' => null,
-            'next_attempt_at' => null,
-        ])->save();
-        DeliverIntegrationWebhook::dispatch($delivery);
+        $shouldQueue = $retry->execute($delivery->id, $laboratory->activeLabId());
+
+        if (! $shouldQueue) {
+            return back()->with('toast', $this->toast('Reenvio não necessário', 'A entrega já está em curso ou foi concluída.'));
+        }
 
         return back()->with('toast', $this->toast('Reenvio agendado', 'A entrega voltou para a fila de integração.'));
     }
@@ -325,26 +283,14 @@ class IntegrationHubController extends Controller
         abort_unless($this->canManage(), 403);
     }
 
+    private function authorizeConnectorLab(IntegrationConnector $connector, SampleLaboratoryAccess $laboratory): void
+    {
+        abort_unless((int) $connector->lab_id === $laboratory->activeLabId(), 404);
+    }
+
     private function canManage(): bool
     {
         return auth()->user()->can('edit_iequipments') || auth()->user()->can('edit_settings');
-    }
-
-    private function uniqueKey(string $value, ?IntegrationConnector $ignore = null): string
-    {
-        $base = Str::slug($value) ?: 'connector';
-        $candidate = $base;
-        $suffix = 2;
-
-        while (IntegrationConnector::withTrashed()
-            ->where('key', $candidate)
-            ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))
-            ->exists()) {
-            $candidate = $base.'-'.$suffix;
-            $suffix++;
-        }
-
-        return $candidate;
     }
 
     /** @return array<int, array<string, mixed>> */

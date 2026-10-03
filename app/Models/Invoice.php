@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToFinancialLaboratory;
 use App\Models\Concerns\HasDocumentRevisions;
-use HighSolutions\EloquentSequence\Sequence;
+use App\Traits\HasScopedSequence;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Artisan;
+use LogicException;
 
 class Invoice extends Model
 {
-    use HasDocumentRevisions, HasFactory, Sequence, SoftDeletes;
+    use BelongsToFinancialLaboratory, HasDocumentRevisions, HasFactory, HasScopedSequence, SoftDeletes;
 
     public const MENU_NAME = 'invoices';
 
@@ -78,12 +80,11 @@ class Invoice extends Model
         'extra_data' => AsCollection::class,
     ];
 
-    public function sequence()
+    public function sequence(): array
     {
         return [
             'group' => ['invoice_month', 'type_id'],
             'fieldName' => 'seq',
-            'notUpdateOnDelete' => true,
         ];
     }
 
@@ -240,15 +241,21 @@ class Invoice extends Model
             $type = InvoiceCategory::findOrFail($invoice->type_id);
 
             $invoice->inv_no = $type->code.' '.$invoice->invoice_month.'/'.$invoice->seq;
+            if ($type->code === 'FR') {
+                $invoice->status = true;
+            }
         });
 
         static::created(function ($invoice) {
-
-            // Sign Invoice With Unique Hash After Creation
-            Artisan::call('app:sign-invoice-with-hash', ['invoice' => $invoice->id]);
-
-            if ($invoice->invoice_category->code == 'FR') {
-                $invoice->update(['status' => true]);
+            if (filled($invoice->unique_hash)) {
+                throw new LogicException('New invoices cannot supply a pre-existing signature.');
+            }
+            if (Artisan::call('app:sign-invoice-with-hash', ['invoice' => $invoice->id]) !== 0) {
+                throw new LogicException('Invoice signing did not complete.');
+            }
+            $invoice->unique_hash = $invoice->fresh()->unique_hash;
+            if (blank($invoice->unique_hash)) {
+                throw new LogicException('Invoice signing did not persist a signature.');
             }
         });
     }

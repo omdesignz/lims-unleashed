@@ -30,6 +30,7 @@ use App\Models\Profile;
 use App\Models\QualityCertificate;
 use App\Models\Quote;
 use App\Models\Receipt;
+use App\Models\Role;
 use App\Models\User;
 use App\Settings\GeneralSettings;
 use App\Support\DuplicateSubmissionGuard;
@@ -46,6 +47,7 @@ use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Jenssegers\Agent\Agent;
+use NumberToWords\NumberToWords;
 use PDF;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -106,8 +108,7 @@ class PortalController extends Controller
 
     private function portalChartWindow(): SupportCollection
     {
-        return collect(range(5, 0))
-            ->push(0)
+        return collect(range(6, 0))
             ->map(fn (int $monthsAgo) => now()->startOfMonth()->subMonths($monthsAgo));
     }
 
@@ -118,10 +119,10 @@ class PortalController extends Controller
         $categories = $chartWindow->map(fn (Carbon $month) => $month->translatedFormat('M Y'))->all();
 
         $requests = CustomerRequest::query()
-            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_key, request_type, COUNT(*) as aggregate")
+            ->selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month_key, request_type, COUNT(*) as aggregate")
             ->where('warehouse_id', $warehouseId)
             ->whereDate('created_at', '>=', $chartWindow->first()->copy()->startOfMonth()->toDateString())
-            ->groupBy('month_key', 'request_type')
+            ->groupByRaw("TO_CHAR(created_at, 'YYYY-MM'), request_type")
             ->get()
             ->groupBy('request_type');
 
@@ -1009,8 +1010,10 @@ class PortalController extends Controller
                 'reference' => 'REQ-'.now()->format('Y').'-'.str_pad((string) $customerRequest->id, 6, '0', STR_PAD_LEFT),
             ]);
 
+            $administrators = Role::query()->where('name', 'admin')->where('guard_name', 'web')->first()
+                ?->users()->where('is_active', true)->whereNotNull('email_verified_at')->get() ?? collect();
             $templates->notify(
-                User::query()->role('admin')->whereNotNull('email_verified_at')->get(),
+                $administrators,
                 'commercial.portal_request.created',
                 [
                     'customer_name' => $warehouse->name ?? ('Armazém #'.$warehouse->id),

@@ -6,12 +6,14 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 class PersonnelQualification extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'lab_id',
         'user_id',
         'capability',
         'department_id',
@@ -25,11 +27,24 @@ class PersonnelQualification extends Model
     ];
 
     protected $casts = [
+        'lab_id' => 'integer',
+        'user_id' => 'integer',
+        'department_id' => 'integer',
+        'qualified_by_id' => 'integer',
         'authorized_from' => 'date',
         'authorized_until' => 'date',
         'training_completed_at' => 'date',
         'is_active' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $qualification): void {
+            if ($qualification->isDirty('lab_id')) {
+                throw new LogicException('A personnel qualification cannot change its owning laboratory.');
+            }
+        });
+    }
 
     public function monitoringStatus(): string
     {
@@ -163,6 +178,11 @@ class PersonnelQualification extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
     }
 
     public function department(): BelongsTo

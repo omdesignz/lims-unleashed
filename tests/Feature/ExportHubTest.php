@@ -3,11 +3,20 @@
 namespace Tests\Feature;
 
 use App\Models\Customer;
+use App\Models\InventoryItem;
+use App\Models\InventoryItemSupplier;
+use App\Models\ItemCategory;
+use App\Models\MaintenanceCategory;
+use App\Models\MaintenanceTask;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\VAPLab;
+use App\Models\VAPSampleEntry;
 use App\Support\ExportHubCatalog;
+use App\Support\ExportHubQuery;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -194,6 +203,7 @@ class ExportHubTest extends TestCase
     public function test_extended_catalog_is_permission_isolated(): void
     {
         $exporter = $this->userWithPermissions(['export_parameters', 'export_invoices']);
+        DB::table('lab_user')->insert(['lab_id' => VAPLab::factory()->create()->id, 'user_id' => $exporter->id]);
 
         $this->actingAs($exporter)
             ->get(route('exports.index', ['dataset' => 'parameters']))
@@ -218,6 +228,9 @@ class ExportHubTest extends TestCase
         $datasets = collect($catalog->directKeys())->reject(fn (string $dataset): bool => in_array($dataset, ['activity_log', 'customers', 'products'], true));
         $permissions = $datasets->map(fn (string $dataset): string => $catalog->get($dataset)['permission'])->all();
         $exporter = $this->userWithPermissions($permissions);
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $exporter->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
 
         foreach ($datasets as $dataset) {
             $response = $this->actingAs($exporter)
@@ -236,6 +249,9 @@ class ExportHubTest extends TestCase
     public function test_parameter_and_invoice_exports_apply_domain_filters_and_preserve_types(): void
     {
         $exporter = $this->userWithPermissions(['export_parameters', 'export_invoices']);
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $exporter->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
         $suffix = Str::lower(Str::random(8));
         $customer = Customer::query()->create([
             'code' => 'DOC-'.$suffix,
@@ -251,11 +267,12 @@ class ExportHubTest extends TestCase
             'withhold_tax' => false,
             'requires_calculation' => false,
             'result_is_qualitative' => false,
-            'result_type' => DB::table('parameters')->whereNotNull('result_type')->value('result_type') ?? 'numeric',
+            'result_type' => 'quantitative',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         $invoiceId = DB::table('invoices')->insertGetId([
+            'lab_id' => $lab->id,
             'user_id' => $exporter->id,
             'customer_id' => $customer->id,
             'inv_no' => 'FT-'.$suffix,
@@ -319,9 +336,105 @@ class ExportHubTest extends TestCase
         $this->assertContains('occurrences_export_status_date_index', collect(Schema::getIndexes('occurrences'))->pluck('name'));
     }
 
-    /**
-     * @param  array<int, string>  $permissions
-     */
+    public function test_profile_export_prices_respect_boolean_inclusion_and_deleted_links(): void
+    {
+        $profileId = DB::table('profiles')->insertGetId(['name' => 'Boolean pricing regression']);
+        foreach ([[125.25, true, null], [300, false, null], [500, true, now()]] as [$price, $count, $deletedAt]) {
+            $parameterId = DB::table('parameters')->insertGetId(['name' => 'Price '.$price, 'price' => $price]);
+            DB::table('parameter_profile')->insert([
+                'profile_id' => $profileId, 'parameter_id' => $parameterId,
+                'count' => $count, 'deleted_at' => $deletedAt,
+            ]);
+        }
+
+        $profile = app(ExportHubQuery::class)->profiles([])->where('profiles.id', $profileId)->first();
+        $this->assertSame(125.25, (float) $profile->calculated_price);
+        $this->assertSame(2, (int) $profile->parameter_count);
+    }
+
+    public function test_quote_export_resolves_its_linked_invoice(): void
+    {
+        $lab = VAPLab::factory()->create();
+        request()->attributes->set('proposal_laboratory_id', $lab->id);
+        $invoiceId = DB::table('invoices')->insertGetId([
+            'lab_id' => $lab->id,
+            'inv_no' => 'FT-LINK-REGRESSION', 'invoice_month' => now()->format('Ym'),
+        ]);
+        $quoteId = DB::table('quotes')->insertGetId([
+            'lab_id' => $lab->id,
+            'quote_no' => 'QT-LINK-REGRESSION', 'invoice_id' => $invoiceId,
+            'quote_month' => now()->format('Ym'),
+            'converted_to_invoice' => true,
+        ]);
+
+        request()->attributes->set('sample_laboratory_id', $lab->id);
+        $quote = app(ExportHubQuery::class)->quotes(['converted' => 'yes'])
+            ->where('quotes.id', $quoteId)->first();
+        $this->assertSame('FT-LINK-REGRESSION', $quote->invoice_no);
+        $this->assertNull(app(ExportHubQuery::class)->quotes(['converted' => 'no'])
+            ->where('quotes.id', $quoteId)->first());
+    }
+
+    public function test_quality_certificate_export_uses_only_live_revisions_and_current_version(): void
+    {
+        $certificateId = DB::table('quality_certificates')->insertGetId(['code' => 'REVISION-EXPORT']);
+        foreach ([[1, false, null], [2, true, null], [3, false, now()]] as [$number, $current, $deletedAt]) {
+            DB::table('quality_certificate_revisions')->insert([
+                'quality_certificate_id' => $certificateId, 'revision_number' => $number,
+                'version' => '1.'.$number, 'is_current' => $current,
+                'change_type' => 'UPDATED', 'deleted_at' => $deletedAt,
+            ]);
+        }
+
+        $certificate = app(ExportHubQuery::class)->qualityCertificates([])
+            ->where('quality_certificates.id', $certificateId)->first();
+        $this->assertSame(2, (int) $certificate->revision_count);
+        $this->assertSame('1.2', $certificate->current_version);
+    }
+
+    public function test_workspace_counts_use_only_the_active_lab_and_permitted_catalogue_kind(): void
+    {
+        $lab = VAPLab::factory()->create();
+        $peer = VAPLab::factory()->create();
+        foreach (['view_samples', 'view_inventory', 'view_maintenance_tasks', 'view_iequipments'] as $permission) {
+            Permission::findOrCreate($permission, 'web');
+        }
+        $user = $this->userWithPermissions(['export_customers', 'view_samples', 'view_inventory', 'view_maintenance_tasks', 'view_iequipments']);
+        $user->update(['email_verified_at' => now(), 'last_activity_at' => now()]);
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $user->id]);
+        foreach ([$lab, $peer] as $owner) {
+            VAPSampleEntry::factory()->create(['lab_id' => $owner->id]);
+            foreach (['material', 'equipment'] as $type) {
+                $category = ItemCategory::query()->create(['name' => fake()->uuid(), 'inventory_type' => $type]);
+                $item = InventoryItem::query()->create(['lab_id' => $owner->id, 'name' => fake()->uuid(), 'category_id' => $category->id]);
+                if ($type === 'equipment') {
+                    $taskCategory = MaintenanceCategory::query()->create(['name' => fake()->uuid()]);
+                    $supplier = InventoryItemSupplier::query()->create(['name' => fake()->uuid()]);
+                    MaintenanceTask::query()->create(['name' => fake()->uuid(), 'equipment_id' => $item->id, 'category_id' => $taskCategory->id,
+                        'supplier_id' => $supplier->id, 'maintenance_task_year' => now()->year, 'due_date' => now()->toDateString()]);
+                }
+            }
+        }
+        $this->actingAs($user)->withSession(['active_lab_id' => $lab->id])->get(route('exports.index', ['dataset' => 'customers']))
+            ->assertOk()->assertInertia(fn (Assert $page) => $page->where('datasets', function (Collection $datasets): bool {
+                $counts = $datasets->pluck('count', 'key')->all();
+                $this->assertSame(1, $counts['sample_register']);
+                $this->assertSame(1, $counts['inventory_register']);
+                $this->assertSame(1, $counts['maintenance_register']);
+
+                return true;
+            }));
+        VAPSampleEntry::factory()->create(['lab_id' => $peer->id]);
+        $this->withSession(['active_lab_id' => $peer->id])->get(route('exports.index', ['dataset' => 'customers']))
+            ->assertOk()->assertInertia(fn (Assert $page) => $page->where('datasets', fn (Collection $datasets): bool => $datasets->firstWhere('key', 'sample_register')['count'] === 1));
+        DB::table('lab_user')->insert(['lab_id' => $peer->id, 'user_id' => $user->id]);
+        $this->get(route('exports.index', ['dataset' => 'customers']))
+            ->assertOk()->assertInertia(fn (Assert $page) => $page->where('datasets', fn (Collection $datasets): bool => $datasets->firstWhere('key', 'sample_register')['count'] === 2));
+        DB::table('lab_user')->where('user_id', $user->id)->delete();
+        $this->withSession(['active_lab_id' => $lab->id])->get(route('exports.index', ['dataset' => 'customers']))->assertForbidden();
+    }
+
+    /** @param array<int, string> $permissions */
     private function userWithPermissions(array $permissions): User
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();

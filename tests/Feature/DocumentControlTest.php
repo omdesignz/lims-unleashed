@@ -5,11 +5,14 @@ namespace Tests\Feature;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VAPFile;
+use App\Models\VAPLab;
 use App\Models\WorkflowTask;
 use App\Notifications\OperationalNotification;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
@@ -18,16 +21,15 @@ class DocumentControlTest extends TestCase
 {
     use DatabaseTransactions;
 
+    private VAPLab $lab;
+
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for document control testing.');
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $this->lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $this->lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $this->lab->id]);
 
         return $admin;
     }
@@ -58,6 +60,14 @@ class DocumentControlTest extends TestCase
             'status' => 'draft',
             'revision_code' => 'R01',
         ]);
+        $this->assertSame('text', Schema::getColumnType('v_files', 'content'));
+        $this->assertSame('text', Schema::getColumnType('v_file_versions', 'content'));
+
+        $file = VAPFile::query()->findOrFail($fileId);
+        $this->assertIsString($file->content);
+        $this->assertSame($file->content, $file->versions()->firstOrFail()->content);
+        Storage::disk(config('filesystems.default', 'local'))->assertExists($file->content);
+        $this->actingAs($admin)->get(route('files.download', $file))->assertOk();
 
         $this->actingAs($admin)
             ->post(route('files.submit-review', $fileId), [
@@ -158,7 +168,8 @@ class DocumentControlTest extends TestCase
         Notification::fake();
 
         $admin = $this->verifiedAdmin();
-        $recipient = User::query()->whereKeyNot($admin->id)->firstOrFail();
+        $recipient = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        DB::table('lab_user')->insert(['lab_id' => $this->lab->id, 'user_id' => $recipient->id]);
 
         $uploadResponse = $this->actingAs($admin)->post(route('files.upload'), [
             'file' => UploadedFile::fake()->create('procedimento-partilhado.pdf', 80, 'application/pdf'),

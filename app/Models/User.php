@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Image\Enums\Fit;
@@ -123,7 +124,7 @@ class User extends Authenticatable implements HasMedia, HasPasskeysContract, Mus
 
     public function getSignatureUrlAttribute(): string
     {
-        return $this?->getMedia('signature')->count() ? $this?->getMedia('signature')?->first()->getFullUrl() : '';
+        return $this->getFirstMedia('signature') ? route('users.private-media', $this->getFirstMedia('signature')->id) : '';
     }
 
     public function receivesBroadcastNotificationsOn(): string
@@ -208,7 +209,7 @@ class User extends Authenticatable implements HasMedia, HasPasskeysContract, Mus
                     'application/vnd.ms-excel',
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 ])
-            ->useDisk('public');
+            ->useDisk('local');
 
         $this->addMediaCollection('avatar')
             ->acceptsMimeTypes([
@@ -220,6 +221,7 @@ class User extends Authenticatable implements HasMedia, HasPasskeysContract, Mus
             ->singleFile();
 
         $this->addMediaCollection('signature')
+            ->useDisk('local')
             ->acceptsMimeTypes([
                 'image/jpeg',
                 'image/png',
@@ -260,13 +262,13 @@ class User extends Authenticatable implements HasMedia, HasPasskeysContract, Mus
         return $query->whereNull('deleted_at');
     }
 
-    public function hasActiveQualificationFor(string $capability, ?int $departmentId = null): bool
+    public function hasActiveQualificationFor(string $capability, ?int $departmentId, int $labId): bool
     {
-        if (! $this->relationLoaded('personnelQualifications')) {
-            $this->load('personnelQualifications');
-        }
-
-        $qualifications = $this->personnelQualifications
+        $qualifications = $this->personnelQualifications()->where('lab_id', $labId)
+            ->orderBy('id')
+            ->when(DB::transactionLevel() > 0, fn ($query) => $query->lockForUpdate())
+            ->get();
+        $matchingQualifications = $qualifications
             ->where('is_active', true)
             ->filter(function (PersonnelQualification $qualification) use ($capability, $departmentId) {
                 if (! in_array($qualification->capability, [$capability, '*'], true)) {
@@ -288,11 +290,11 @@ class User extends Authenticatable implements HasMedia, HasPasskeysContract, Mus
                 return true;
             });
 
-        if ($qualifications->isNotEmpty()) {
+        if ($matchingQualifications->isNotEmpty()) {
             return true;
         }
 
-        return $this->personnelQualifications()->count() === 0;
+        return $qualifications->isEmpty();
     }
 
     /**
@@ -313,13 +315,13 @@ class User extends Authenticatable implements HasMedia, HasPasskeysContract, Mus
      *     }>
      * }
      */
-    public function competenceSummary(): array
+    public function competenceSummary(int $labId): array
     {
-        if (! $this->relationLoaded('personnelQualifications')) {
-            $this->load('personnelQualifications');
-        }
+        $ownedQualifications = $this->relationLoaded('personnelQualifications')
+            ? $this->personnelQualifications->where('lab_id', $labId)
+            : $this->personnelQualifications()->where('lab_id', $labId)->get();
 
-        $qualifications = $this->personnelQualifications->map(function (PersonnelQualification $qualification) {
+        $qualifications = $ownedQualifications->map(function (PersonnelQualification $qualification) {
             return [
                 'id' => $qualification->id,
                 'capability' => $qualification->capability,

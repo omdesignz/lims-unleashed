@@ -15,20 +15,27 @@ use App\Models\InventoryOrder;
 use App\Models\InventoryOrderDetail;
 use App\Models\InventorySupplierAssessment;
 use App\Models\VAPLab;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\InventoryNeedWorkflowNotifier;
+use App\Support\InventoryQuantity;
 use App\Support\PdfResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use PDF;
 
 class VAPInventoryNeedController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     public function index(Request $request)
     {
-        $query = InventoryNeed::query()
+        $labId = $this->laboratoryAccess->activeLabId();
+        $query = InventoryNeed::forLaboratory($labId)
             ->with([
                 'department:id,name',
                 'lab:id,name',
@@ -59,7 +66,7 @@ class VAPInventoryNeedController extends Controller
 
         $needs = $query->paginate(12)->withQueryString()
             ->through(fn (InventoryNeed $need) => $this->transformNeedIndexRecord($need));
-        $procurementQueue = InventoryNeed::query()
+        $procurementQueue = InventoryNeed::forLaboratory($labId)
             ->with([
                 'department:id,name',
                 'lab:id,name',
@@ -87,12 +94,12 @@ class VAPInventoryNeedController extends Controller
             'departments' => Department::query()->select('id', 'name')->orderBy('name')->get(),
             'filters' => $request->only(['search', 'status', 'department_id']),
             'stats' => [
-                'total' => InventoryNeed::query()->count(),
-                'submitted' => InventoryNeed::query()->where('status', 'submitted')->count(),
-                'approved' => InventoryNeed::query()->where('status', 'approved')->count(),
-                'ordered' => InventoryNeed::query()->whereIn('status', ['ordered', 'partially_fulfilled', 'fulfilled'])->count(),
-                'awaiting_order' => InventoryNeed::query()->where('status', 'approved')->whereNull('inventory_order_id')->count(),
-                'overdue_procurement' => InventoryNeed::query()
+                'total' => InventoryNeed::forLaboratory($labId)->count(),
+                'submitted' => InventoryNeed::forLaboratory($labId)->where('status', 'submitted')->count(),
+                'approved' => InventoryNeed::forLaboratory($labId)->where('status', 'approved')->count(),
+                'ordered' => InventoryNeed::forLaboratory($labId)->whereIn('status', ['ordered', 'partially_fulfilled', 'fulfilled'])->count(),
+                'awaiting_order' => InventoryNeed::forLaboratory($labId)->where('status', 'approved')->whereNull('inventory_order_id')->count(),
+                'overdue_procurement' => InventoryNeed::forLaboratory($labId)
                     ->where('status', 'approved')
                     ->whereNull('inventory_order_id')
                     ->whereDate('needed_by_date', '<', now()->toDateString())
@@ -103,10 +110,10 @@ class VAPInventoryNeedController extends Controller
                 'status_overview' => [
                     'labels' => ['Submetidas', 'Aprovadas', 'Em aquisição', 'Aguardam pedido'],
                     'series' => [
-                        InventoryNeed::query()->where('status', 'submitted')->count(),
-                        InventoryNeed::query()->where('status', 'approved')->count(),
-                        InventoryNeed::query()->whereIn('status', ['ordered', 'partially_fulfilled', 'fulfilled'])->count(),
-                        InventoryNeed::query()->where('status', 'approved')->whereNull('inventory_order_id')->count(),
+                        InventoryNeed::forLaboratory($labId)->where('status', 'submitted')->count(),
+                        InventoryNeed::forLaboratory($labId)->where('status', 'approved')->count(),
+                        InventoryNeed::forLaboratory($labId)->whereIn('status', ['ordered', 'partially_fulfilled', 'fulfilled'])->count(),
+                        InventoryNeed::forLaboratory($labId)->where('status', 'approved')->whereNull('inventory_order_id')->count(),
                     ],
                 ],
                 'queue_readiness' => [
@@ -140,6 +147,7 @@ class VAPInventoryNeedController extends Controller
             ->values();
 
         $assessments = InventorySupplierAssessment::query()
+            ->where('lab_id', $need->lab_id)
             ->whereIn('inventory_item_supplier_id', $supplierIds)
             ->orderByDesc('assessment_date')
             ->get()
@@ -286,11 +294,13 @@ class VAPInventoryNeedController extends Controller
 
     public function create()
     {
+        $labId = $this->laboratoryAccess->activeLabId();
+
         return Inertia::render('VAPInventory/Needs/Create', [
             'departments' => Department::query()->select('id', 'name')->orderBy('name')->get(),
-            'labs' => VAPLab::query()->select('id', 'name', 'department_id')->orderBy('name')->get(),
-            'items' => InventoryItem::query()->select('id', 'name', 'code')->orderBy('name')->get(),
-            'warehouses' => InventoryItemWarehouse::query()->select('id', 'name')->orderBy('name')->get(),
+            'labs' => VAPLab::query()->whereKey($labId)->select('id', 'name', 'department_id')->get(),
+            'items' => InventoryItem::forLaboratory($labId)->whereNotNull('unit_id')->with('unit:id,code,description')->select('id', 'name', 'code', 'unit_id')->orderBy('name')->get(),
+            'warehouses' => InventoryItemWarehouse::query()->where('lab_id', $labId)->select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
@@ -300,7 +310,7 @@ class VAPInventoryNeedController extends Controller
             $need = InventoryNeed::query()->create([
                 'reference' => 'NEED-'.now()->format('Ymd').'-'.Str::upper(Str::random(6)),
                 'department_id' => $request->integer('department_id'),
-                'lab_id' => $request->integer('lab_id') ?: null,
+                'lab_id' => $this->laboratoryAccess->activeLabId(),
                 'requested_by_id' => auth()->id(),
                 'status' => 'submitted',
                 'needed_by_date' => $request->date('needed_by_date'),
@@ -331,18 +341,20 @@ class VAPInventoryNeedController extends Controller
 
     public function show(InventoryNeed $need)
     {
+        $this->ensureOwnedNeed($need);
         $need->load([
             'department:id,name',
             'lab:id,name',
             'requestedBy:id,name',
             'approvedBy:id,name',
             'inventoryOrder:id,reference,status',
-            'items.inventoryItem:id,name,code',
+            'items.inventoryItem:id,name,code,unit_id',
+            'items.inventoryItem.unit:id,code,description',
             'items.warehouse:id,name',
         ]);
 
-        $totalRequestedQuantity = (int) $need->items->sum('quantity_requested');
-        $totalApprovedQuantity = (int) $need->items->sum(fn (InventoryNeedItem $item) => $item->quantity_approved ?: 0);
+        $requestedLineCount = $need->items->count();
+        $approvedLineCount = $need->items->filter(fn (InventoryNeedItem $item): bool => $item->quantity_approved !== null && $item->quantity_approved > 0)->count();
         $estimatedApprovedAmount = (float) $need->items->sum(
             fn (InventoryNeedItem $item) => ((float) ($item->estimated_unit_price ?? 0)) * ($item->quantity_approved ?: $item->quantity_requested)
         );
@@ -357,11 +369,11 @@ class VAPInventoryNeedController extends Controller
             'suppliers' => $this->supplierOptions(),
             'charts' => [
                 'quantity_scope' => [
-                    'labels' => ['Solicitado', 'Aprovado', 'Pendente'],
+                    'labels' => ['Solicitadas', 'Aprovadas', 'Pendentes'],
                     'series' => [
-                        $totalRequestedQuantity,
-                        $totalApprovedQuantity,
-                        max($totalRequestedQuantity - $totalApprovedQuantity, 0),
+                        $requestedLineCount,
+                        $approvedLineCount,
+                        $requestedLineCount - $approvedLineCount,
                     ],
                 ],
                 'item_value_mix' => [
@@ -385,13 +397,15 @@ class VAPInventoryNeedController extends Controller
 
     public function exportPdf(InventoryNeed $need)
     {
+        $this->ensureOwnedNeed($need);
         $need->load([
             'department:id,name',
             'lab:id,name',
             'requestedBy:id,name,email',
             'approvedBy:id,name,email',
             'inventoryOrder:id,reference,status',
-            'items.inventoryItem:id,name,code',
+            'items.inventoryItem:id,name,code,unit_id',
+            'items.inventoryItem.unit:id,code,description',
             'items.warehouse:id,name',
         ]);
 
@@ -403,8 +417,8 @@ class VAPInventoryNeedController extends Controller
             'printedDate' => now()->format('d/m/Y H:i'),
             'printedBy' => auth()->user()->name ?? 'System',
             'statusLabel' => $this->statusLabel($need->status),
-            'totalRequestedQuantity' => $need->items->sum('quantity_requested'),
-            'totalApprovedQuantity' => $need->items->sum(fn (InventoryNeedItem $item) => $item->quantity_approved ?: 0),
+            'requestedLineCount' => $need->items->count(),
+            'approvedLineCount' => $need->items->filter(fn (InventoryNeedItem $item): bool => $item->quantity_approved !== null && $item->quantity_approved > 0)->count(),
             'estimatedTotalAmount' => $need->items->sum(
                 fn (InventoryNeedItem $item) => ((float) ($item->estimated_unit_price ?? 0)) * ($item->quantity_approved ?: $item->quantity_requested)
             ),
@@ -415,21 +429,27 @@ class VAPInventoryNeedController extends Controller
 
     public function approve(Request $request, InventoryNeed $need, InventoryNeedWorkflowNotifier $notifier)
     {
+        $this->ensureOwnedNeed($need);
         abort_if(! auth()->user()->hasRole('admin') && ! auth()->user()->can('edit_iorders'), 403);
 
         $validated = $request->validate([
             'approval_notes' => ['nullable', 'string', 'max:5000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.id' => ['required', 'exists:inventory_need_items,id'],
-            'items.*.quantity_approved' => ['required', 'integer', 'min:1'],
+            'items.*.id' => ['required', 'integer', 'distinct', Rule::exists('inventory_need_items', 'id')->where('inventory_need_id', $need->id)],
+            'items.*.quantity_approved' => ['required', 'numeric', 'decimal:0,4', 'min:0.0001'],
         ]);
 
         DB::transaction(function () use ($need, $validated): void {
             foreach ($validated['items'] as $itemPayload) {
                 /** @var InventoryNeedItem $item */
                 $item = $need->items()->findOrFail($itemPayload['id']);
+                if (InventoryQuantity::compare($itemPayload['quantity_approved'], $item->quantity_requested) > 0) {
+                    throw ValidationException::withMessages([
+                        'items' => 'A quantidade aprovada não pode exceder a quantidade solicitada.',
+                    ]);
+                }
                 $item->update([
-                    'quantity_approved' => min($itemPayload['quantity_approved'], $item->quantity_requested),
+                    'quantity_approved' => InventoryQuantity::fromScaled(InventoryQuantity::toScaled($itemPayload['quantity_approved'])),
                     'status' => 'approved',
                 ]);
             }
@@ -452,6 +472,7 @@ class VAPInventoryNeedController extends Controller
 
     public function reject(Request $request, InventoryNeed $need, InventoryNeedWorkflowNotifier $notifier)
     {
+        $this->ensureOwnedNeed($need);
         abort_if(! auth()->user()->hasRole('admin') && ! auth()->user()->can('edit_iorders'), 403);
 
         $validated = $request->validate([
@@ -474,6 +495,7 @@ class VAPInventoryNeedController extends Controller
 
     public function convertToOrder(Request $request, InventoryNeed $need, InventoryNeedWorkflowNotifier $notifier)
     {
+        $this->ensureOwnedNeed($need);
         abort_if(! auth()->user()->hasRole('admin') && ! auth()->user()->can('add_iorders'), 403);
 
         $validated = $request->validate([
@@ -498,6 +520,7 @@ class VAPInventoryNeedController extends Controller
 
         $order = DB::transaction(function () use ($need, $validated, $supplier): InventoryOrder {
             $order = InventoryOrder::query()->create([
+                'lab_id' => $need->lab_id,
                 'date' => $validated['date'],
                 'user_id' => auth()->id(),
                 'supplier_id' => $supplier->id,
@@ -555,12 +578,19 @@ class VAPInventoryNeedController extends Controller
         return $response;
     }
 
+    private function ensureOwnedNeed(InventoryNeed $need): void
+    {
+        abort_unless($need->lab_id === $this->laboratoryAccess->activeLabId(), 404);
+    }
+
     private function supplierOptions()
     {
         $latestAssessments = InventorySupplierAssessment::query()
+            ->where('inventory_supplier_assessments.lab_id', $this->laboratoryAccess->activeLabId())
             ->select('inventory_supplier_assessments.*')
             ->joinSub(
                 InventorySupplierAssessment::query()
+                    ->where('lab_id', $this->laboratoryAccess->activeLabId())
                     ->selectRaw('inventory_item_supplier_id, MAX(assessment_date) as latest_assessment_date')
                     ->groupBy('inventory_item_supplier_id'),
                 'latest_assessments',
@@ -601,6 +631,7 @@ class VAPInventoryNeedController extends Controller
         }
 
         $assessment = InventorySupplierAssessment::query()
+            ->where('lab_id', $this->laboratoryAccess->activeLabId())
             ->where('inventory_item_supplier_id', $supplier->id)
             ->latest('assessment_date')
             ->first();
@@ -627,6 +658,7 @@ class VAPInventoryNeedController extends Controller
         }
 
         $assessment = InventorySupplierAssessment::query()
+            ->where('lab_id', $this->laboratoryAccess->activeLabId())
             ->where('inventory_item_supplier_id', $supplier->id)
             ->latest('assessment_date')
             ->first();

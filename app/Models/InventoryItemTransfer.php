@@ -5,13 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use LogicException;
 
 class InventoryItemTransfer extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public CONST MENU_NAME = 'itransfers';
+    public const MENU_NAME = 'itransfers';
 
     /**
      * The attributes that are mass assignable.
@@ -19,6 +19,7 @@ class InventoryItemTransfer extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'lab_id',
         'qty',
         'sent_date',
         'received_date',
@@ -26,12 +27,12 @@ class InventoryItemTransfer extends Model
         'item_id',
         'source_id',
         'destination_id',
-        'batch_id',
+        'expected_date',
     ];
 
     protected $table = 'i_transfers';
-    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
+    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
      * The attributes that should be cast.
@@ -39,18 +40,29 @@ class InventoryItemTransfer extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'qty' => 'decimal:4',
         'sent_date' => 'date',
         'received_date' => 'date',
         'expected_date' => 'date',
         'deleted_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::updating(function (self $transfer): void {
+            if ($transfer->isDirty(['lab_id', 'item_id', 'source_id', 'destination_id', 'qty', 'sent_date'])) {
+                throw new LogicException('Issued inventory transfer identity cannot be reassigned.');
+            }
+        });
+    }
+
     /**
      * Item
      *
      * @return Relationship
      */
-    public function item() {
+    public function item()
+    {
         return $this->belongsTo(InventoryItem::class, 'item_id');
     }
 
@@ -59,17 +71,18 @@ class InventoryItemTransfer extends Model
      *
      * @return Relationship
      */
-    public function from() {
+    public function from()
+    {
         return $this->belongsTo(InventoryItemWarehouse::class, 'source_id');
     }
-
 
     /**
      * Item Destination Warehouse
      *
      * @return Relationship
      */
-    public function to() {
+    public function to()
+    {
         return $this->belongsTo(InventoryItemWarehouse::class, 'destination_id');
     }
 
@@ -118,19 +131,17 @@ class InventoryItemTransfer extends Model
 
     public function getIsOverdueAttribute()
     {
-        return $this->expected_date && 
-               !$this->received_date && 
+        return $this->expected_date &&
+               ! $this->received_date &&
                $this->expected_date < now();
     }
 
     public function getDaysOverdueAttribute()
     {
-        if (!$this->is_overdue) {
+        if (! $this->is_overdue) {
             return 0;
         }
-        
+
         return now()->diffInDays($this->expected_date);
     }
-
-
 }

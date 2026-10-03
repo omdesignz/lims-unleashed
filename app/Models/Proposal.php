@@ -3,15 +3,10 @@
 namespace App\Models;
 
 use App\Enums\Proposals\ProposalTrackingStatus;
-use App\Models\Concerns\HasDocumentRevisions;
-use HighSolutions\EloquentSequence\Sequence;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Artisan;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\AllowedSort;
 use App\Filters\GlobalFilter;
+use App\Models\Concerns\BelongsToProposalLaboratory;
+use App\Models\Concerns\HasDocumentRevisions;
+use App\Traits\HasScopedSequence;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -19,18 +14,26 @@ use Endroid\QrCode\Label\Label;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\SvgWriter;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Artisan;
+use Spatie\QueryBuilder\AllowedFilter;
 
 class Proposal extends Model
 {
-    use HasFactory, SoftDeletes, Sequence, HasDocumentRevisions;
+    use BelongsToProposalLaboratory;
+    use HasDocumentRevisions, HasFactory, HasScopedSequence, SoftDeletes;
+
     //
     public const MENU_NAME = 'proposals';
 
     protected $table = 'proposals';
-    protected $dates = ['created_at', 'updated_at', 'deleted_at', 'expiry_date']; 
-    
+
+    protected $dates = ['created_at', 'updated_at', 'deleted_at', 'expiry_date'];
+
     protected $fillable = [
         'seq',
         'proposal_year',
@@ -66,11 +69,11 @@ class Proposal extends Model
         'status' => ProposalTrackingStatus::class,
         'converted_to_invoice' => 'boolean',
         'details' => 'array',
-        'use_matrix_price' => 'boolean', 
+        'use_matrix_price' => 'boolean',
         'withhold_tax' => 'boolean',
     ];
 
-    public function sequence()
+    public function sequence(): array
     {
         return [
             'group' => 'proposal_year',
@@ -84,7 +87,7 @@ class Proposal extends Model
             '{{customer_id}}' => $this->customer->name,
             '{{proposal_no}}' => $this->proposal_no,
             '{{proposal_date}}' => $this->created_at->format('Y-m-d'),
-            '{{total}}' => $this->total
+            '{{total}}' => $this->total,
         ];
 
         return strtr($this->template->content, $placeholders);
@@ -92,7 +95,7 @@ class Proposal extends Model
 
     public function getQrAttribute()
     {
-        $writer = new SvgWriter();
+        $writer = new SvgWriter;
 
         $text = <<< EOT
                     {$this->proposal_no}
@@ -178,12 +181,10 @@ class Proposal extends Model
     {
         parent::boot();
 
-        static::saving(function ($proposal) {
-
-        });
+        static::saving(function ($proposal) {});
 
         static::creating(function (Proposal $proposal) {
-            $proposal->proposal_no = 'PROP ' . Department::find($proposal->department_id)->name . '/' . $proposal->seq . '/' . $proposal->proposal_year;
+            $proposal->proposal_no = 'PROP '.Department::find($proposal->department_id)->name.'/'.$proposal->seq.'/'.$proposal->proposal_year;
 
             $proposal->details = json_encode(ProposalTemplate::find($proposal->template_id)->content);
         });
@@ -192,9 +193,7 @@ class Proposal extends Model
             Artisan::call('app:sign-proposal-with-hash', ['proposal' => $proposal->id]);
         });
 
-        self::deleting(function ($proposal) {
-
-        });
+        self::deleting(function ($proposal) {});
     }
 
     public function complianceAgreement()
@@ -230,75 +229,75 @@ class Proposal extends Model
     public static function getColumns(): array
     {
         return [
-                [
-                    'name' => trans('gestlab.general.labels.proposals.proposal_no'),
-                    'value' => 'proposal_no',
-                    'filter_field' => 'proposal_no',
-                    'filterable' => true,
-                    'type' => 'string',
-                    'format' => '',
-                    'filter' => '',
+            [
+                'name' => trans('gestlab.general.labels.proposals.proposal_no'),
+                'value' => 'proposal_no',
+                'filter_field' => 'proposal_no',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.proposals.customer_id'),
+                'value' => 'customer',
+                'filter_field' => 'customer_id',
+                'filterable' => true,
+                'type' => 'remote_select',
+                'format' => '',
+                'filter' => '',
+                'options' => [
                 ],
-                [
-                    'name' => trans('gestlab.general.labels.proposals.customer_id'),
-                    'value' => 'customer',
-                    'filter_field' => 'customer_id',
-                    'filterable' => true,
-                    'type' => 'remote_select',
-                    'format' => '',
-                    'filter' => '',
-                    'options' => [
-                    ],
-                    'config' => [
-                        'url' => route('customers.getCustomer'),
-                        'label' => 'name',
-                        'value' => 'id',
-                    ]
+                'config' => [
+                    'url' => route('customers.getCustomer'),
+                    'label' => 'name',
+                    'value' => 'id',
                 ],
-                [
-                    'name' => trans('gestlab.general.labels.proposals.service_location'),
-                    'value' => 'service_location',
-                    'filter_field' => 'service_location',
-                    'filterable' => true,
-                    'type' => 'string',
-                    'format' => '',
-                    'filter' => '',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.proposals.service_location'),
-                    'value' => 'service_location',
-                    'filter_field' => 'service_location',
-                    'filterable' => true,
-                    'type' => 'string',
-                    'format' => '',
-                    'filter' => '',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.created_at'),
-                    'value' => 'created_at',
-                    'filter_field' => 'created_at',
-                    'filterable' => true,
-                    'type' => 'date',
-                    'format' => '',
-                    'filter' => '',
-                ],
-                [
-                    'name' => trans('gestlab.actions.edit'),
-                    'value' => 'actions',
-                    'filter_field' => 'actions',
-                    'filterable' => false,
-                    'type' => 'actions',
-                    'format' => '',
-                    'filter' => '',
-                ],
-            ];
+            ],
+            [
+                'name' => trans('gestlab.general.labels.proposals.service_location'),
+                'value' => 'service_location',
+                'filter_field' => 'service_location',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.proposals.service_location'),
+                'value' => 'service_location',
+                'filter_field' => 'service_location',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.created_at'),
+                'value' => 'created_at',
+                'filter_field' => 'created_at',
+                'filterable' => true,
+                'type' => 'date',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.actions.edit'),
+                'value' => 'actions',
+                'filter_field' => 'actions',
+                'filterable' => false,
+                'type' => 'actions',
+                'format' => '',
+                'filter' => '',
+            ],
+        ];
     }
 
     public static function getTrashedOptions(): array
     {
         return [
             ['value' => 'only', 'text' => trans('gestlab.general.labels.trashed_only')],
-            ['value' => 'with', 'text' => trans('gestlab.general.labels.trashed_with')]
+            ['value' => 'with', 'text' => trans('gestlab.general.labels.trashed_with')],
         ];
     }
 }

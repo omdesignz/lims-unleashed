@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ImportMaintenanceTasksChunk;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
@@ -11,6 +12,8 @@ use League\Csv\Reader;
 
 class MaintenanceTaskImportController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     public function form()
     {
         return inertia('MaintenanceTasks/maintenance-tasks-import-form');
@@ -89,7 +92,7 @@ class MaintenanceTaskImportController extends Controller
         $jobs = [];
 
         foreach ($records->chunk($chunkSize) as $chunk) {
-            $jobs[] = new ImportMaintenanceTasksChunk($chunk->all());
+            $jobs[] = new ImportMaintenanceTasksChunk($chunk->all(), $this->laboratoryAccess->activeLabId(), $request->user()->id);
         }
 
         // Dispatch batch of jobs

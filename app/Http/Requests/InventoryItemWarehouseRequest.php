@@ -2,53 +2,47 @@
 
 namespace App\Http\Requests;
 
+use App\Models\InventoryItemWarehouse;
+use App\Services\InventoryWarehouseValidation;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class InventoryItemWarehouseRequest extends FormRequest
 {
-     /**
-     * Determine if the user is authorized to make this request.
-     */
+    private ?InventoryItemWarehouse $warehouse = null;
+
     public function authorize(): bool
     {
+        $permission = $this->isMethod('post') ? 'add_iwarehouses' : 'edit_iwarehouses';
+        abort_unless(! $this->session()->has('impersonate') && $this->user()?->can($permission), 403);
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
+
+        if (! $this->isMethod('post')) {
+            $row = InventoryItemWarehouse::query()->where('lab_id', $labId)->toBase()->find($this->warehouseId());
+            abort_unless($row, 404);
+            $this->warehouse = new InventoryItemWarehouse;
+            $this->warehouse->setRawAttributes((array) $row, true);
+            $this->warehouse->exists = true;
+        }
+
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
-     */
+    /** @return array<string, mixed> */
     public function rules(): array
     {
-        if ($this->isMethod('post')) {
-            $rules = [
-                'name' => 'required|min:1|unique:i_warehouses,name',
-                'is_refrigerated' => 'required|boolean',
-                'is_ventilated' => 'required|boolean',
-                'has_air_exhaustion' => 'required|boolean',
-                'location_id' => 'required|exists:i_locations,id',
-            ];
-        } else {
-            $rules = [
-                'name' => 'required|min:1|unique:i_warehouses,name,' . request()->iwarehouse,
-                'is_refrigerated' => 'required|boolean',
-                'is_ventilated' => 'required|boolean',
-                'has_air_exhaustion' => 'required|boolean',
-                'location_id' => 'required|exists:i_locations,id',
-            ];
-        }
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
 
-        return $rules;
+        return app(InventoryWarehouseValidation::class)->rules($labId, $this->warehouse);
     }
 
-    /**
-     * Get custom attributes for validator errors.
-     *
-     * @return array
-     */
-    public function attributes()
+    private function warehouseId(): int
+    {
+        return (int) ($this->route('iwarehouse') ?? $this->route('warehouse'));
+    }
+
+    /** @return array<string, string> */
+    public function attributes(): array
     {
         return [
             'name' => trans('gestlab.general.labels.iwarehouses.name'),
@@ -59,20 +53,11 @@ class InventoryItemWarehouseRequest extends FormRequest
         ];
     }
 
-    /**
-     * Configure the validator instance.
-     *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
-     */
-    public function prepareForValidation()
-    {        
+    protected function prepareForValidation(): void
+    {
+        $location = $this->input('location_id');
         $this->merge([
-            'is_refrigerated' => request()->boolean('is_refrigerated') ? 1 : 0,
-            'is_ventilated' => request()->boolean('is_ventilated') ? 1 : 0,
-            'has_air_exhaustion' => request()->boolean('has_air_exhaustion') ? 1 : 0,
-            'location_id' => !is_null(request()->location_id) ? request()->location_id['value'] : null,
+            'location_id' => is_array($location) ? ($location['value'] ?? null) : $location,
         ]);
-            
     }
 }

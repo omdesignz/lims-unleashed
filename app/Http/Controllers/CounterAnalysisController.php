@@ -3,18 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CounterAnalysisRequest;
+use App\Http\Requests\RequestCounterAnalysisRequest;
 use App\Http\Resources\CounterAnalysisResource;
 use App\Jobs\RegisterCounterAnalysis;
 use App\Models\CollectionProduct;
 use App\Models\CounterAnalysis;
 use App\Models\ReportStudioTemplate;
 use App\Models\Result;
+use App\Services\LaboratoryWorkflowOwnership;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\DuplicateSubmissionGuard;
-use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class CounterAnalysisController extends Controller
 {
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratory,
+        private readonly LaboratoryWorkflowOwnership $ownership,
+    ) {}
+
+    /** @return Builder<CounterAnalysis> */
+    private function records(): Builder
+    {
+        return $this->ownership->counterAnalysesForLaboratory($this->laboratory->activeLabId());
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -24,14 +39,14 @@ class CounterAnalysisController extends Controller
 
         return Inertia::render('CounterAnalysis/Index', [
             'record' => CounterAnalysisResource::collection(
-                CounterAnalysis::query()
+                $this->records()
                     ->with(
                         'department',
                         'sample.collection.collection.collection',
                         'sample.collection.collection.sampleEntry',
                         'profile',
                         'parameter',
-                        'requested_result.code',
+                        'requested_result.sample.collection',
                         'requested_result.parameter',
                         'type',
                         'code',
@@ -113,17 +128,15 @@ class CounterAnalysisController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, DuplicateSubmissionGuard $duplicateSubmissionGuard)
+    public function store(RequestCounterAnalysisRequest $request, DuplicateSubmissionGuard $duplicateSubmissionGuard)
     {
         abort_if(! auth()->user()->can('add_counter_analysis'), 403, '');
 
-        $validated = $request->validate([
-            'result_id' => ['required', 'exists:results,id'],
-        ]);
+        $validated = $request->validated();
+        $labId = $this->laboratory->activeLabId();
+        $result = $this->ownership->resultsForLaboratory($labId)->findOrFail($validated['result_id']);
 
-        $result = Result::query()->with('counter_analysis')->findOrFail($validated['result_id']);
-
-        if ($result->counter_analysis()->exists() || $result->requested_counter_analysis) {
+        if ($result->counter_analysis()->withTrashed()->exists()) {
             return to_route('analysis.index')->with([
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification'),
@@ -132,7 +145,7 @@ class CounterAnalysisController extends Controller
             ]);
         }
 
-        if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'counter-analysis-request', $validated, 60)) {
+        if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'counter-analysis-request', ['lab_id' => $labId, ...$validated], 60)) {
             return back()->with([
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification'),
@@ -143,7 +156,8 @@ class CounterAnalysisController extends Controller
 
         dispatch(new RegisterCounterAnalysis(
             $validated['result_id'],
-            auth()->id()
+            auth()->id(),
+            $labId,
         ));
 
         return to_route('analysis.index')->with([
@@ -175,7 +189,7 @@ class CounterAnalysisController extends Controller
         abort_if(! $user->can('edit_counter_analysis') || ! $canWorkResults, 403, '');
 
         // Find the record
-        $record = CounterAnalysis::with(
+        $record = $this->records()->with(
             'department',
             'sample.results',
             'sample.results.parameter',
@@ -185,7 +199,7 @@ class CounterAnalysisController extends Controller
             'profile',
             'profile.parameters',
             'parameter',
-            'requested_result.code',
+            'requested_result.sample.collection',
             'requested_result.parameter',
             'type',
             'code',
@@ -204,15 +218,10 @@ class CounterAnalysisController extends Controller
         $action = $this->resolveCounterAnalysisAction($record);
 
         if ($action === 'completed') {
-            $record->update([
-                'end_date' => now(),
-                'status' => true,
-            ]);
-
             return to_route('counteranalysis.index')->with([
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification'),
-                    'message' => 'A contra-análise está concluída e foi arquivada no fluxo validado.',
+                    'message' => 'Os resultados desta contra-análise estão concluídos.',
                 ],
             ]);
         }
@@ -297,7 +306,7 @@ class CounterAnalysisController extends Controller
                 'parameter' => $sourceResult?->parameter?->code ?? $sourceResult?->parameter?->name,
                 'value' => $sourceValue,
                 'uncertainty' => $sourceResult->uncertainty_value,
-                'lab_code' => $sourceResult?->code?->code,
+                'lab_code' => $sourceResult?->sample?->collection?->code,
             ] : null,
             'entry_origin' => [
                 'source' => $sampleEntryId ? 'sample_entry' : 'legacy_counter_analysis',
@@ -444,7 +453,7 @@ class CounterAnalysisController extends Controller
         abort_if(! auth()->user()->can('edit_counter_analysis'), 403, '');
 
         // Find the record
-        $record = CounterAnalysis::findOrFail($id);
+        $record = $this->records()->findOrFail($id);
 
         $record->update($request->validated());
 
@@ -464,12 +473,13 @@ class CounterAnalysisController extends Controller
         abort_if(! auth()->user()->can('delete_counter_analysis'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array'],
+            'recordIds' => ['required', 'array', 'min:1'],
+            'recordIds.*' => ['required', 'integer', 'distinct'],
         ]);
-        // Find and delete the record
-        foreach (CounterAnalysis::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        DB::transaction(function (): void {
+            $records = $this->records()->withTrashed()->lockForUpdate()->findOrFail(request('recordIds'));
+            $records->each->delete();
+        });
 
         return redirect()->back()->with([
             'toast' => [
@@ -487,12 +497,13 @@ class CounterAnalysisController extends Controller
         abort_if(! auth()->user()->can('restore_counter_analysis'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array'],
+            'recordIds' => ['required', 'array', 'min:1'],
+            'recordIds.*' => ['required', 'integer', 'distinct'],
         ]);
-        // Find and restore the record
-        foreach (CounterAnalysis::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        DB::transaction(function (): void {
+            $records = $this->records()->withTrashed()->lockForUpdate()->findOrFail(request('recordIds'));
+            $records->each->restore();
+        });
 
         return redirect()->back()->with([
             'toast' => [
@@ -504,17 +515,18 @@ class CounterAnalysisController extends Controller
 
     public function getAnalysis()
     {
+        abort_unless(auth()->user()->can('view_counter_analysis'), 403);
         $search = request()->string('q')->trim()->toString();
 
-        $data = CounterAnalysis::query()
+        $data = $this->records()
             ->with(['code:id,code', 'sample:id,code', 'profile:id,name', 'requested_result.parameter:id,code,name'])
-            ->when($search !== '', function ($query) use ($search): void {
-                $query
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(fn (Builder $searchQuery): Builder => $searchQuery
                     ->whereRelation('code', 'code', 'like', "%{$search}%")
                     ->orWhereRelation('sample', 'code', 'like', "%{$search}%")
                     ->orWhereRelation('profile', 'name', 'like', "%{$search}%")
                     ->orWhereRelation('requested_result.parameter', 'code', 'like', "%{$search}%")
-                    ->orWhereRelation('requested_result.parameter', 'name', 'like', "%{$search}%");
+                    ->orWhereRelation('requested_result.parameter', 'name', 'like', "%{$search}%"));
             })
             ->latest('id')
             ->limit(25)

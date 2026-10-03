@@ -1,315 +1,75 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
 import confirmDialog from '@/Components/confirm-dialog.vue'
-import slideOver from '@/Components/slide-over.vue'
-import { computed, ref } from 'vue'
-import { router, useForm } from '@inertiajs/vue3'
-import { trans } from 'laravel-vue-i18n'
-import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
-import { ArrowPathRoundedSquareIcon, PencilIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import ArchiveMutationFeedback from '@/Components/archive-mutation-feedback.vue'
 import VapTable from '@/Components/vap-table/table.vue'
+import { computed, ref } from 'vue'
+import { router } from '@inertiajs/vue3'
+import { trans } from 'laravel-vue-i18n'
+import { ArrowPathRoundedSquareIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { usePermission } from '@/Composables/usePermissions'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
-
-const { hasPermission } = usePermission();
+const { hasPermission } = usePermission()
 const props = defineProps({
-    record: Object,
-    fields: Array,
-    model: String,
-    abilities: Array,
-    query: Object,
-    trashedFilter: { type: Boolean, default: false },
-    trashedOptions: { type: Object, default: {} },
-    initialFilters: { type: Object, default: {} },
-    initialSortField: { type: String, default: '' },
-    initialSortDirection: { type: String, default: 'asc' },
-    initialIncludes: { type: Array, default: [] },
-    initialGlobalFilter: { type: String, default: '' },
-    slideOverEdit: {
-      type: Boolean,
-      default: false
-    }
-});
-
-defineOptions({
-  layout: Layout
-});
-
-let form = useForm({
-    id: null,
-    proposal_id: '',
-    confidentiality: false,
-    impartiality: false,
-    nondisclosure: false,
-});
-
-const columns = props.fields.map(field => {
-    return {
-      field: field.value,
-      filter_field: field.filter_field,
-      label: field.name,
-      visible: true,
-      filterable: field.filterable,
-      type: field.type,
-      format: field.format,
-      filter: field.filter,
-      options: field.options ? field.options : [],
-      config: field.config ? field.config : {}
-    };
-});
-
-
-const actionType = ref(null);
-const action = ref(null);
-const record = ref(null);
-const recordUrl = ref(null);
-const selectedIDs = ref([]);
-const complianceRecords = computed(() => props.record?.data || []);
-const signedCount = computed(() => complianceRecords.value.filter(item => item.acknowledged_at).length);
-const completeCount = computed(() => complianceRecords.value.filter(item => item.confidentiality && item.impartiality && item.nondisclosure).length);
-const pendingCount = computed(() => Math.max(complianceRecords.value.length - signedCount.value, 0));
-
-const slideOverDescription = computed(() => {
-  return !form.id ? trans('gestlab.slideover.creating.description') + form.name : trans('gestlab.slideover.updating.description') + form.name;
-});
-
-const slideOverTitle = computed(() => {
-  return !form.id ? trans('gestlab.slideover.creating.title') : trans('gestlab.slideover.updating.description');
-});
-
-const confirmationDialogTitle = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_title.' + action.value);
+  record: Object, fields: Array, model: String, abilities: Array, query: Object,
+  trashedFilter: Boolean,
+  trashedOptions: { type: Object, default: () => ({}) },
+  initialFilters: { type: Object, default: () => ({}) },
+  initialSortField: { type: String, default: '' },
+  initialSortDirection: { type: String, default: 'asc' },
+  initialIncludes: { type: Array, default: () => [] },
+  initialGlobalFilter: { type: String, default: '' },
 })
-
-
-const confirmationDialogDescription = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_description.' + action.value);
+defineOptions({ layout: Layout })
+const columns = computed(() => props.fields.map(field => ({
+  ...field, field: field.value, label: field.type === 'actions' ? 'Acções' : field.name, visible: true,
+  options: field.options || [], config: field.config || {},
+})))
+const selectedIDs = ref([])
+const pendingIDs = ref([])
+const action = ref(null)
+const showDeleteConfirmation = ref(false)
+const tableRevision = ref(0)
+const archive = useRecordArchive({
+  destroyUrl: () => route('proposalcomplianceagreements.destroy'),
+  restoreUrl: () => route('proposalcomplianceagreements.restore'),
+  onSuccess: () => {
+    selectedIDs.value = []
+    pendingIDs.value = []
+    action.value = null
+    tableRevision.value++
+  },
 })
-
-
-const openslideover = ref(false);
-
-let actions = [
-  {
-    id: null,
-    label: 'gestlab.actions.bulk_actions_text'
-  },
-  {
-    id: 'delete',
-    label: 'gestlab.actions.delete'
-  },
-  {
-    id: 'restore',
-    label: 'gestlab.actions.restore'
-  },
-];
-
+const complianceRecords = computed(() => props.record?.data || [])
+const signedCount = computed(() => complianceRecords.value.filter(item => item.acknowledged_at).length)
+const completeCount = computed(() => complianceRecords.value.filter(item => item.confidentiality && item.impartiality && item.nondisclosure).length)
+const pendingCount = computed(() => Math.max(complianceRecords.value.length - signedCount.value, 0))
+const actions = computed(() => [
+  { id: null, label: 'gestlab.actions.bulk_actions_text' },
+  ...(hasPermission('delete_proposals') ? [{ id: 'delete', label: 'gestlab.actions.delete' }] : []),
+  ...(hasPermission('restore_proposals') ? [{ id: 'restore', label: 'gestlab.actions.restore' }] : []),
+])
 const filters = [
-  {
-    id: null,
-    label: trans('gestlab.filter.none'),
-  },
-  {
-    id: "trashed",
-    label: trans('gestlab.filter.excluded'),
-  },
-];
+  { id: null, label: trans('gestlab.filter.none') },
+  { id: 'trashed', label: trans('gestlab.filter.excluded') },
+]
+const confirmationDialogTitle = computed(() => trans('gestlab.actions.confirmation_dialog_title.' + action.value))
+const confirmationDialogDescription = computed(() => trans('gestlab.actions.confirmation_dialog_description.' + action.value))
 
-const close = () => {
-    openslideover.value = false;
-    record.value = null;
-    action.value = null;
-    form.clearErrors();
+function requestArchive(operation, ids) {
+  if (archive.processing.value || !['delete', 'restore'].includes(operation) || !ids?.length) return
+  action.value = operation
+  pendingIDs.value = [...ids]
+  showDeleteConfirmation.value = true
 }
 
-const showDeleteConfirmation = ref(false);
-const showDeleteConfirmationSlideover = ref(false);
-
-const openSlideoverWithData = (data) => {
-    openslideover.value = true;
-    form.id = data.id;
-    form.proposal_id = {
-        value: data.proposal_id,
-        label: data.proposal?.proposal_no || data.proposal?.proposal_number || data.proposal || data.proposal_id,
-    };
-    form.confidentiality = data.confidentiality;
-    form.impartiality = data.impartiality;
-    form.nondisclosure = data.nondisclosure;
-    
+function confirmAction() {
+  if (archive.processing.value) return
+  showDeleteConfirmation.value = false
+  archive.submit(action.value, pendingIDs.value)
 }
-
-const transformPayload = (data) => ({
-    ...data,
-    proposal_id: data.proposal_id?.value || data.proposal_id,
-});
-
-let submit = () => {
-
-    if(!form.id) {
-      form.transform(transformPayload).post(route('proposalcomplianceagreements.store'), {
-          preserveScroll: true,
-          preserveState: false,
-          onSuccess: () => {
-            openslideover.value = false;
-            form.reset()
-          },
-      });
-    } else {
-      form.transform(transformPayload).put(route('proposalcomplianceagreements.update',{agreement: form.id}), {
-          preserveScroll: true,
-          preserveState: false,
-          onSuccess: () => {
-            openslideover.value = false;
-            form.reset()
-          },
-      });
-    }
-    
-  }
-
-
-  const confirmAction = () => {
-
-    if(actionType.value === 'bulk') {
-      executeBulkAction(action.value);
-    } else {
-      executeSingleAction(action.value, record.value);
-    }
-  }
-
-  const executeBulkAction = (action) => {
-    
-    if(!selectedIDs.value.length) return;
-
-    switch (action) {
-    case 'delete':
-      router.get(route('proposalcomplianceagreements.destroy'), {
-          recordIds: selectedIDs.value
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            action = null;
-        }
-      });
-      showDeleteConfirmation.value = false;
-    break;  
-
-    case 'restore':
-        router.get(route('proposalcomplianceagreements.restore'), {
-          recordIds: selectedIDs.value
-        }, {
-            preserveState:false,
-            preserveScroll: true,
-            onSuccess: () => {
-                showDeleteConfirmation.value = false;
-                action = null;
-            }
-        });
-        showDeleteConfirmation.value = false;
-    }
-  };
-  
-  const executeSingleAction = (action, record ) => {
-    
-    switch (action) {
-      case "delete":
-        router.get(
-          recordUrl.value,
-          {
-            recordIds: [record.id],
-          },
-          {
-            preserveState: false,
-            preserveScroll: true,
-            onSuccess: () => {
-              showDeleteConfirmation.value = false;
-              action = null;
-              record = null;
-              recordUrl.value = null;
-            },
-          },
-        );
-        showDeleteConfirmation.value = false;
-        break;
-
-      case "edit":
-        router.get(
-          recordUrl.value,
-          {
-            recordIds: [record.id],
-          },
-          {
-            preserveState: false,
-            preserveScroll: true,
-            onSuccess: () => {
-              showDeleteConfirmation.value = false;
-              action = null;
-              record = null;
-              recordUrl.value = null;
-            },
-          },
-        );
-        showDeleteConfirmation.value = false;
-        break;
-
-      case "edit_slide":
-        openSlideoverWithData(record)
-
-        showDeleteConfirmation.value = false;
-        break;
-
-      case "restore":
-        router.get(
-          recordUrl.value,
-          {
-            recordIds: [record.id],
-          },
-          {
-            preserveState: false,
-            preserveScroll: true,
-            onSuccess: () => {
-              showDeleteConfirmation.value = false;
-              action = null;
-              record = null;
-              recordUrl.value = null;
-            },
-          },
-        );
-        showDeleteConfirmation.value = false;
-    }
-
-  };
-
-
-const parseJsonResponse = async (response) => {
-  const contentType = response.headers.get('content-type') || ''
-
-  if (!response.ok || !contentType.includes('application/json')) {
-    throw new Error(`Resposta inválida (${response.status})`)
-  }
-
-  return response.json()
-}
-
-function loadProposals(query, setOptions) {
-  fetch(route('vap-proposals.options.proposals', { q: query || '' }))
-    .then(parseJsonResponse)
-    .then(results => {
-      setOptions(
-        results.map(result => ({
-          value: result.id,
-          label: result.proposal_no || result.proposal_number || `#${result.id}`,
-          data: result,
-        }))
-      )
-    })
-    .catch(() => setOptions([]))
-}
-
-
 </script>
 <template>
 <div class="proposal-compliance-page space-y-6" :class="commercialDocumentThemeClasses">
@@ -350,224 +110,32 @@ function loadProposals(query, setOptions) {
 </section>
 
 <section class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-4 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+  <ArchiveMutationFeedback :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="router.reload()" />
   <vap-table
-    :model="props.model" 
-    :abilities="props.abilities" 
-    :data="props.record.data" 
-    :columns="columns" 
-    :query="props.query" 
-    :filters="filters" 
-    :initialFilters="props.initialFilters"
-    :initialSortField=props.initialSortField
-    :initialSortDirection=props.initialSortDirection
-    :initialIncludes="props.initialIncludes"
-    :trashedFilter="props.trashedFilter"
-    :trashedOptions="props.trashedOptions"
-    @create-record="form.reset(), openslideover=true" @slideover-on="openSlideoverWithData" 
-    :slideOverEdit="props.slideOverEdit" 
-    :pagination="props.record.meta" 
-    @update-selected-ids="selectedIDs = $event"
-    :actions="actions" 
-    @execute-bulk-action="($event) => {
-      showDeleteConfirmation = true; 
-      action = $event.action; 
-      actionType = $event.actionType
-      }"
-    >
-        <template #column-name="{ row }">
-          <strong class="text-blue-900">{{ row.name }}</strong>
-        </template>
-
-        <template #column-actions="{ row }">
-          <!-- <strong class="text-blue-900">Actions go here!</strong>
-          <button @click="() => {
-            showDeleteConfirmation = true;
-            actionType = 'single';
-            action = 'edit_slide';
-            record = row;
-          }">Edit Slide</button> -->
-
-
-<button
-          type="button"
-          @click="
-            () => {
-              record = row;
-              actionType = 'single';
-              action = 'restore';
-              recordUrl = row.links.restore_path;
-              showDeleteConfirmation = true;
-            }
-          "
-          v-if="
-            row.deleted && hasPermission('restore_' + props.model)
-          "
-          class="text-ft-gray hover:text-blue-900 transform transition-all duration-200 hover:scale-150"
-        >
+    :key="tableRevision" :model="props.model" :abilities="props.abilities" :data="props.record.data"
+    :columns="columns" :create-action="false" :query="props.query" :filters="filters"
+    :initialFilters="props.initialFilters" :initialSortField="props.initialSortField"
+    :initialSortDirection="props.initialSortDirection" :initialIncludes="props.initialIncludes"
+    :trashedFilter="props.trashedFilter" :trashedOptions="props.trashedOptions"
+    :pagination="props.record.meta" :actions="actions" :action-processing="archive.processing.value"
+    @update-selected-ids="selectedIDs = $event" @execute-bulk-action="requestArchive($event.action, selectedIDs)"
+  >
+    <template #column-actions="{ row }">
+      <button v-if="row.deleted && hasPermission('restore_proposals')" type="button" class="ds-table-action"
+        :disabled="archive.processing.value" aria-label="Restaurar acordo" @click="requestArchive('restore', [row.id])">
         <ArrowPathRoundedSquareIcon class="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          @click="
-            () => {
-              record = row;
-              actionType = 'single';
-              action = 'edit';
-              recordUrl = row.links.edit_path;
-              showDeleteConfirmation = true;
-            }
-          "
-          v-if="
-            !row.deleted &&
-            !!!props.slideOverEdit &&
-            hasPermission('edit_' + props.model)
-          "
-          class="text-ft-gray hover:text-blue-900 transform transition-all duration-200 hover:scale-150"
-        >
-        <PencilIcon class="h-4 w-4" />
-
-        </button>
-      <button
-          @click="
-            () => {
-              record = row;
-              actionType = 'single';
-              action = 'edit_slide';
-              showDeleteConfirmation = true;
-            }
-          "
-          v-if="
-            !row.deleted &&
-            hasPermission('edit_' + props.model) &&
-            !!props.slideOverEdit
-          "
-          class="text-ft-gray hover:text-blue-900 transform transition-all duration-200 hover:scale-150"
-        >
-        <PencilIcon class="h-4 w-4" />
-
-        </button>
-        <button
-          type="button"
-          @click="
-            () => {
-              record = row;
-              actionType = 'single';
-              action = 'delete';
-              recordUrl = row.links.delete_path;
-              showDeleteConfirmation = true;
-            }
-          "
-          class="text-ft-gray hover:text-blue-900 transform transition-all duration-200 hover:scale-150"
-          v-if="
-            !row.deleted && hasPermission('delete_' + props.model)
-          "
-        >
+      </button>
+      <button v-if="!row.deleted && hasPermission('delete_proposals')" type="button" class="ds-table-action ds-table-action-danger"
+        :disabled="archive.processing.value" aria-label="Arquivar acordo" @click="requestArchive('delete', [row.id])">
         <TrashIcon class="h-4 w-4" />
-
-        </button>
-        </template>
+      </button>
+    </template>
   </vap-table>
 </section>
-
-<slide-over v-if="openslideover" @close="close" :title="slideOverTitle" :description="slideOverDescription">
-    <template #content>
-        <div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
-
-            <!-- Proposal -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="proposal_id" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.proposal_compliance_agreements.proposal_id') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <combobox-enhanced :hasError="form.errors.proposal_id" v-model="form.proposal_id" :load-options="loadProposals" placeholder="Pesquisar proposta"/>
-                  <p v-if="form.errors.proposal_id" class="mt-2 text-sm text-red-600" id="name-error">{{ form.errors.proposal_id }}</p>
-                </div>
-              </div>
-
-              <!-- Confidentiality -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="confidentiality" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.proposal_compliance_agreements.confidentiality') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <CheckboxInput v-model="form.confidentiality" type="checkbox" name="confidentiality" id="confidentiality" class="focus:ring-blue-900 h-4 w-4 text-blue-900 border-blue-900 rounded-full" />
-                  <p v-if="form.errors.confidentiality" class="mt-2 text-sm text-red-600" id="confidentiality-error">{{ form.errors.confidentiality }}</p>
-                </div>
-              </div>
-
-
-                <!-- Impartiality -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="impartiality" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.proposal_compliance_agreements.impartiality') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <CheckboxInput v-model="form.impartiality" type="checkbox" name="impartiality" id="impartiality" class="focus:ring-blue-900 h-4 w-4 text-blue-900 border-blue-900 rounded-full" />
-                  <p v-if="form.errors.impartiality" class="mt-2 text-sm text-red-600" id="impartiality-error">{{ form.errors.impartiality }}</p>
-                </div>
-              </div>
-
-            <!-- Non Disclosure -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="nondisclosure" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.proposal_compliance_agreements.nondisclosure') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <CheckboxInput v-model="form.nondisclosure" type="checkbox" name="nondisclosure" id="nondisclosure" class="focus:ring-blue-900 h-4 w-4 text-blue-900 border-blue-900 rounded-full" />
-                  <p v-if="form.errors.nondisclosure" class="mt-2 text-sm text-red-600" id="nondisclosure-error">{{ form.errors.nondisclosure }}</p>
-                </div>
-              </div>
-              
-        </div>
-    </template>
-
-    <template #action_buttons>
-        <div class="flex justify-end space-x-3">
-        <button type="button" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" @click="openslideover = false; form.reset()">{{ $t('gestlab.general.buttons.cancel') }}</button>
-        <button v-if="form.isDirty" @click="showDeleteConfirmationSlideover = true" :disabled="form.processing" type="button" class="inline-flex justify-center rounded-md bg-blue-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-900">{{ !form.id ? $t('gestlab.general.buttons.submit') : $t('gestlab.general.buttons.update') }}</button>
-        </div>
-    </template>
-</slide-over>
-
-<confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
-
-<confirm-dialog size="sm:max-w-2xl" alignment="sm:items-start" @canceled="showDeleteConfirmationSlideover=false" @close="showDeleteConfirmationSlideover=false" @confirmed="submit" v-if="showDeleteConfirmationSlideover" :title="$t('gestlab.actions.confirmation_dialog_title.default')" :description="$t('gestlab.actions.confirmation_dialog_description.default')" confirm="Sim" cancel="Não">
-    <div class="mt-4">
-      <div class="font-semibold inline-flex px-2 py-1 leading-4 text-xs rounded-full text-white bg-blue-900 sm:text-xs mb-2"><p class="text-xs">{{ $t('gestlab.general.labels.summary') }}</p></div>
-      <div>
-        <div class="px-4 sm:px-0 rounded-full text-white bg-blue-900">
-          <!-- <h3 class="text-base font-semibold leading-7 text-gray-900">Resumo</h3>
-          <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Personal details and application.</p> -->
-        </div>
-        <div class="mt-6 border-t border-gray-100">
-          <dl class="divide-y divide-gray-100">
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.proposal_compliance_agreements.proposal_id') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.proposal_id?.label }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.proposal_compliance_agreements.confidentiality') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.confidentiality ? $t('gestlab.buttons.yes') : $t('gestlab.general.buttons.no') }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.proposal_compliance_agreements.impartiality') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.impartiality ? $t('gestlab.buttons.yes') : $t('gestlab.general.buttons.no') }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.proposal_compliance_agreements.nondisclosure') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.nondisclosure ? $t('gestlab.buttons.yes') : $t('gestlab.general.buttons.no') }}</dd>
-            </div>
-            
-          </dl>
-        </div>
-      </div>
-
-    </div>
-  </confirm-dialog>
-
+<confirm-dialog v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription"
+  confirm="Sim" cancel="Não" @canceled="showDeleteConfirmation = false" @confirmed="confirmAction" />
 </div>
 </template>
-
 <style scoped>
 .proposal-compliance-page :deep(.text-blue-900),
 .proposal-compliance-page :deep(.hover\:text-blue-900:hover) {

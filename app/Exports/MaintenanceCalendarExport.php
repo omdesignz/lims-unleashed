@@ -17,7 +17,7 @@ class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMap
 
     protected $calendar;
 
-    public function __construct($filters = [])
+    public function __construct(private readonly int $labId, $filters = [])
     {
         $this->filters = $filters;
         $this->calendar = $this->buildCalendar();
@@ -33,7 +33,7 @@ class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMap
         $startDate = $this->filters['date_from'] ?? now()->startOfMonth();
         $endDate = $this->filters['date_to'] ?? now()->addMonths(3)->endOfMonth();
 
-        $tasks = MaintenanceTask::with(['category', 'equipment'])
+        $tasks = MaintenanceTask::forLaboratory($this->labId)->with(['category', 'equipment'])
             ->whereBetween('due_date', [$startDate, $endDate])
             ->when(isset($this->filters['category_id']), function ($query) {
                 $query->where('category_id', $this->filters['category_id']);

@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\HasScopedSequence;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use HighSolutions\EloquentSequence\Sequence;
 
 class MaintenanceTask extends Model
 {
-    use HasFactory, SoftDeletes, Sequence;
+    use HasFactory, HasScopedSequence, SoftDeletes;
 
     public const MENU_NAME = 'maintenance_tasks';
 
@@ -38,7 +39,7 @@ class MaintenanceTask extends Model
         'range',
         'calibration_points',
         'calibration_status',
-        'calibration_certificate_no'
+        'calibration_certificate_no',
     ];
 
     /**
@@ -57,13 +58,17 @@ class MaintenanceTask extends Model
         'deleted_at' => 'datetime',
     ];
 
-    public function sequence()
+    public function sequence(): array
     {
         return [
             'group' => ['maintenance_task_year', 'category_id'],
             'fieldName' => 'seq',
-            'notUpdateOnDelete' => true,
         ];
+    }
+
+    public function scopeForLaboratory(Builder $query, int $labId): Builder
+    {
+        return $query->whereHas('equipment', fn (Builder $equipment) => $equipment->forLaboratory($labId));
     }
 
     public function equipment(): BelongsTo
@@ -86,8 +91,7 @@ class MaintenanceTask extends Model
         parent::boot();
 
         static::creating(function ($task) {
-            $task->maintenance_task_no = MaintenanceCategory::findOrFail($task->category_id)->code . ' ' . $task->maintenance_task_year . '/' . str_pad($task->seq, 3, '0', STR_PAD_LEFT);
+            $task->maintenance_task_no = MaintenanceCategory::findOrFail($task->category_id)->code.' '.$task->maintenance_task_year.'/'.str_pad($task->seq, 3, '0', STR_PAD_LEFT);
         });
     }
-
 }

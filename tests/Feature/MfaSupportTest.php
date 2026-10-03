@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Actions\Fortify\DisableTwoFactorAuthentication;
 use App\Actions\Fortify\EnableTwoFactorAuthentication;
+use App\Models\Customer;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class MfaSupportTest extends TestCase
@@ -16,14 +19,11 @@ class MfaSupportTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for MFA testing.');
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
 
         return $admin;
     }
@@ -47,7 +47,12 @@ class MfaSupportTest extends TestCase
 
     public function test_portal_customer_model_supports_two_factor_fields(): void
     {
-        $warehouse = Warehouse::query()->whereNotNull('email')->firstOrFail();
+        $customer = Customer::query()->create(['name' => 'MFA portal customer '.fake()->uuid()]);
+        $warehouse = Warehouse::query()->create([
+            'name' => 'MFA portal site',
+            'customer_id' => $customer->id,
+            'email' => 'mfa-portal-'.fake()->uuid().'@lims-unleashed.test',
+        ]);
 
         app(EnableTwoFactorAuthentication::class)($warehouse);
         $warehouse->refresh();

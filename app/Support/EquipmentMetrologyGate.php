@@ -7,7 +7,7 @@ use Illuminate\Validation\ValidationException;
 
 class EquipmentMetrologyGate
 {
-    public function ensureResultsReady(array $results): void
+    public function ensureResultsReady(array $results, int $labId): void
     {
         $equipmentIds = collect($results)
             ->pluck('equipment_id')
@@ -19,7 +19,7 @@ class EquipmentMetrologyGate
             return;
         }
 
-        $equipment = InventoryItem::query()
+        $equipment = InventoryItem::forLaboratory($labId)
             ->whereIn('id', $equipmentIds)
             ->get()
             ->keyBy('id');

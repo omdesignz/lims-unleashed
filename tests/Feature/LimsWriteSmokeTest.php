@@ -2,9 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Actions\PrepareSampleEntryPayload;
+use App\Enums\Collections\CollectionProductTrackingStatus;
 use App\Jobs\InsertAnalysisResults;
 use App\Jobs\VerifyAnalysisResults;
+use App\Models\Analysis;
 use App\Models\AnalysisCategory;
+use App\Models\Collection;
 use App\Models\CollectionProduct;
 use App\Models\Complaint;
 use App\Models\ContactCategory;
@@ -14,11 +18,14 @@ use App\Models\CustomerCategory;
 use App\Models\CustomerRequest;
 use App\Models\CustomerRequestCategory;
 use App\Models\Department;
+use App\Models\DirectCollection;
 use App\Models\Formula;
 use App\Models\Inventory;
 use App\Models\InventoryItem;
 use App\Models\InventoryItemWarehouse;
 use App\Models\InventoryTransaction;
+use App\Models\InventoryUnit;
+use App\Models\ItemCategory;
 use App\Models\LabCode;
 use App\Models\ManagementReview;
 use App\Models\Matrix;
@@ -26,9 +33,11 @@ use App\Models\MatrixProfile;
 use App\Models\NormativeWorkProcedure;
 use App\Models\PackagingCategory;
 use App\Models\Parameter;
+use App\Models\Permission;
 use App\Models\PersonnelQualification;
 use App\Models\Product;
 use App\Models\Profile;
+use App\Models\ProgrammedCollection;
 use App\Models\Proposal;
 use App\Models\ProposalTemplate;
 use App\Models\Protocol;
@@ -49,8 +58,11 @@ use App\Models\VAPSampleDiscard;
 use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
 use App\Models\Worksheet;
+use App\Notifications\OperationalNotification;
 use App\Settings\GeneralSettings;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -64,16 +76,236 @@ class LimsWriteSmokeTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for write smoke testing.');
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $customer = Customer::query()->create(['name' => 'Write smoke customer']);
+        Warehouse::query()->create([
+            'name' => 'Write smoke site',
+            'email' => fake()->unique()->safeEmail(),
+            'customer_id' => $customer->id,
+        ]);
+        $department = Department::factory()->create();
+        PackagingCategory::query()->create(['name' => 'Sample bottle']);
+        $category = AnalysisCategory::query()->create([
+            'name' => 'Write smoke analysis category',
+            'department_id' => $department->id,
+        ]);
+        $resultCategory = ResultCategory::query()->create(['name' => 'Numeric result']);
+        $unit = Unit::query()->create(['code' => 'mg/L']);
+        $protocol = Protocol::query()->create(['code' => 'WRITE-SMOKE-PROTOCOL', 'description' => 'Controlled procedure']);
+        $nwp = NormativeWorkProcedure::query()->create(['code' => 'WRITE-SMOKE-NWP', 'description' => 'Normative work procedure']);
+        $standard = Standard::query()->create(['code' => 'WRITE-SMOKE-STANDARD', 'description' => 'Reference standard']);
+        TaxExemption::query()->create(['code' => 'WRITE-SMOKE-EXEMPTION', 'reason' => 'Test exemption']);
+        Formula::query()->create([
+            'name' => 'Write smoke formula', 'code' => 'WRITE-SMOKE-FORMULA',
+            'expression' => 'input * 2', 'formula_expression' => '({input} * 2)',
+            'variables' => [['name' => 'input', 'label' => 'Input', 'type' => 'number']],
+            'category' => 'custom', 'output_unit' => 'mg/L', 'decimal_places' => 2,
+            'is_active' => true, 'created_by' => $admin->id,
+        ]);
+        $parameter = Parameter::query()->create([
+            'name' => 'Write smoke parameter',
+            'code' => 'WRITE-SMOKE-PARAMETER',
+            'price' => 42.5,
+            'active' => true,
+        ]);
+        Parameter::query()->create([
+            'name' => 'Write smoke out-of-scope parameter',
+            'code' => 'WRITE-SMOKE-OUTSIDE-PARAMETER',
+            'active' => true,
+        ]);
+        $profile = Profile::query()->create([
+            'name' => 'Write smoke profile',
+            'code' => 'WRITE-SMOKE-PROFILE',
+            'category_id' => $category->id,
+        ]);
+        $otherDepartment = Department::factory()->create();
+        $otherCategory = AnalysisCategory::query()->create([
+            'name' => 'Write smoke alternate category',
+            'department_id' => $otherDepartment->id,
+        ]);
+        Profile::query()->create([
+            'name' => 'Write smoke alternate profile',
+            'code' => 'WRITE-SMOKE-ALTERNATE',
+            'category_id' => $otherCategory->id,
+        ]);
+        $profile->parameters()->attach($parameter->id, [
+            'category_id' => $resultCategory->id,
+            'unit_id' => $unit->id,
+            'unit_label' => $unit->code,
+            'protocol_id' => $protocol->id,
+            'protocol_label' => $protocol->code,
+            'nwp_id' => $nwp->id,
+            'nwp_label' => $nwp->code,
+            'standard_id' => $standard->id,
+            'standard_label' => $standard->code,
+            'min_ref_value' => '0',
+            'count' => true,
+        ]);
+        $matrix = Matrix::query()->create(['code' => 'WRITE-SMOKE-MATRIX', 'description' => 'Write smoke matrix']);
+        $matrix->profiles()->attach($profile->id, ['matrix' => $matrix->code, 'profile' => $profile->name]);
+        Product::query()->create(['name' => 'Write smoke product', 'matrix_id' => $matrix->id]);
+        config(['broadcasting.default' => 'null']);
 
         return $admin;
+    }
+
+    /**
+     * @return array{sample: Sample, result: Result, results: array<int, Result>}
+     */
+    private function resultWorkflowFixture(User $user, int $resultCount = 1, bool $verified = false): array
+    {
+        $lab = VAPLab::query()->whereIn('id', DB::table('lab_user')->where('user_id', $user->id)->select('lab_id'))->firstOrFail();
+        $customer = Customer::query()->firstOrFail();
+        $warehouse = Warehouse::query()->where('customer_id', $customer->id)->firstOrFail();
+        $product = Product::query()->whereHas('matrix.profiles.parameters')->with('matrix.profiles.parameters')->firstOrFail();
+        $profile = $product->matrix->profiles->firstOrFail();
+        $department = $profile->type->department;
+        $resultCategory = ResultCategory::query()->firstOrFail();
+        $unit = Unit::query()->firstOrFail();
+        $protocol = Protocol::query()->firstOrFail();
+        $nwp = NormativeWorkProcedure::query()->firstOrFail();
+        $standard = Standard::query()->firstOrFail();
+
+        if ($resultCount > 1) {
+            $outside = Parameter::query()->where('code', 'WRITE-SMOKE-OUTSIDE-PARAMETER')->firstOrFail();
+            $profile->parameters()->attach($outside->id, [
+                'category_id' => $resultCategory->id, 'unit_id' => $unit->id,
+                'protocol_id' => $protocol->id, 'nwp_id' => $nwp->id, 'standard_id' => $standard->id,
+            ]);
+            $profile->unsetRelation('parameters');
+        }
+
+        $collection = Collection::query()->create(['customer_id' => $customer->id, 'warehouse_id' => $warehouse->id]);
+        $collectionProduct = CollectionProduct::query()->create([
+            'collection_id' => $collection->id, 'customer_id' => $customer->id,
+            'warehouse_id' => $warehouse->id, 'product_id' => $product->id,
+        ]);
+        $intakePayload = app(PrepareSampleEntryPayload::class)->execute([
+            'lab_id' => $lab->id,
+            'customer_id' => $customer->id,
+            'warehouse_id' => $warehouse->id,
+            'department_id' => $department->id,
+            'client_submitted_info' => [
+                'request_origin' => 'internal',
+                'product_id' => $product->id,
+                'requested_profile_ids' => [$profile->id],
+            ],
+        ], null);
+        VAPSampleEntry::factory()->create([
+            ...$intakePayload,
+            'lab_id' => $lab->id, 'customer_id' => $customer->id,
+            'warehouse_id' => $warehouse->id, 'department_id' => $department->id,
+            'collection_product_id' => $collectionProduct->id,
+        ]);
+        $code = LabCode::query()->create(['collection_id' => $collectionProduct->id, 'cl_month' => now()->format('y/m')]);
+        $sample = Sample::query()->create(['cl_id' => $code->id, 'sample_month' => now()->format('y/m')]);
+        $analysis = Analysis::query()->create([
+            'cl_id' => $code->id, 'sample_id' => $sample->id, 'profile_id' => $profile->id,
+            'product_id' => $product->id, 'department_id' => $department->id, 'type_id' => $profile->category_id,
+        ]);
+
+        $results = [];
+        foreach ($profile->parameters()->limit($resultCount)->get() as $parameter) {
+            $results[] = Result::query()->create([
+                'sample_id' => $sample->id, 'product_id' => $product->id, 'parameter_id' => $parameter->id,
+                'code_id' => $code->id, 'profile_id' => $profile->id, 'matrix_id' => $product->matrix_id,
+                'collection_id' => $collectionProduct->id, 'type_id' => $resultCategory->id,
+                'unit_id' => $unit->id, 'protocol_id' => $protocol->id, 'nwp_id' => $nwp->id,
+                'standard_id' => $standard->id, 'parameter_label' => $parameter->name,
+                'product_label' => $product->name, 'code_label' => $code->code,
+                'unit_label' => $unit->code, 'protocol_label' => $protocol->code,
+                'nwp_label' => $nwp->code, 'standard_label' => $standard->code,
+                'category_label' => $resultCategory->name,
+                'inserted_by_id' => $user->id, 'inserted_by' => $user->name,
+                'inserted_date' => now()->subDay(), 'inserted_value' => '1.25',
+                'verified_by_id' => $verified ? $user->id : null,
+                'verified_by' => $verified ? $user->name : null,
+                'verified_date' => $verified ? now() : null,
+                'verified_value' => $verified ? '1.5' : null,
+                'resultable_id' => $analysis->id, 'resultable_type' => $analysis->getMorphClass(),
+            ]);
+        }
+
+        return ['sample' => $sample, 'result' => $results[0], 'results' => $results];
+    }
+
+    private function completedSampleFixture(User $user): VAPSampleEntry
+    {
+        return VAPSampleEntry::factory()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
+            'customer_id' => Customer::query()->firstOrFail()->id,
+            'warehouse_id' => Warehouse::query()->firstOrFail()->id,
+            'department_id' => Department::query()->firstOrFail()->id,
+            'status' => 'COMPLETADO',
+        ]);
+    }
+
+    /**
+     * @return array{item: InventoryItem, warehouse: InventoryItemWarehouse}
+     */
+    private function inventoryFixture(User $user, bool $reagent = false): array
+    {
+        $category = ItemCategory::query()->create([
+            'name' => $reagent ? 'Reagentes de ensaio' : 'Consumíveis de ensaio',
+        ]);
+        $unit = InventoryUnit::query()->create(['code' => 'SMK-'.Str::random(8), 'description' => 'Unidade de ensaio']);
+        $item = InventoryItem::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
+            'name' => $reagent ? 'Smoke reagent' : 'Smoke consumable',
+            'category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_reagent' => $reagent,
+            'user_id' => $user->id,
+        ]);
+        $warehouse = InventoryItemWarehouse::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
+            'name' => 'Smoke inventory warehouse',
+        ]);
+
+        return ['item' => $item, 'warehouse' => $warehouse];
+    }
+
+    private function collectionProductFixture(User $user, string $type): CollectionProduct
+    {
+        $collectionable = match ($type) {
+            'direct' => DirectCollection::query()->create(['col_date' => now()->toDateString()]),
+            'programmed' => ProgrammedCollection::query()->create([
+                'user_id' => $user->id,
+                'col_date' => now()->toDateString(),
+            ]),
+        };
+        $customer = Customer::query()->firstOrFail();
+        $warehouse = Warehouse::query()->where('customer_id', $customer->id)->firstOrFail();
+        $product = Product::query()->firstOrFail();
+        $collection = Collection::query()->create([
+            'collectionable_id' => $collectionable->id,
+            'collectionable_type' => $collectionable->getMorphClass(),
+            'customer_id' => $customer->id,
+            'warehouse_id' => $warehouse->id,
+        ]);
+        $collectionProduct = CollectionProduct::query()->create([
+            'collection_id' => $collection->id,
+            'customer_id' => $customer->id,
+            'warehouse_id' => $warehouse->id,
+            'product_id' => $product->id,
+            'collection_date' => now(),
+        ]);
+        VAPSampleEntry::factory()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
+            'customer_id' => $customer->id,
+            'warehouse_id' => $warehouse->id,
+            'department_id' => Department::query()->firstOrFail()->id,
+            'collection_product_id' => $collectionProduct->id,
+        ]);
+        LabCode::query()->create([
+            'collection_id' => $collectionProduct->id,
+            'cl_month' => now()->format('y/m'),
+        ]);
+
+        return $collectionProduct;
     }
 
     private function captureResponseOutput(callable $callback): array
@@ -105,6 +337,7 @@ class LimsWriteSmokeTest extends TestCase
         foreach ($capabilities as $capability) {
             PersonnelQualification::query()->updateOrCreate(
                 [
+                    'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
                     'user_id' => $user->id,
                     'capability' => $capability,
                     'department_id' => $department?->id,
@@ -146,7 +379,7 @@ class LimsWriteSmokeTest extends TestCase
             $template->refresh();
         }
 
-        return Proposal::query()->create([
+        $proposal = new Proposal([
             'proposal_year' => now()->year,
             'service_location' => 'Smoke Workflow Validation',
             'customer_id' => $customer->id,
@@ -161,6 +394,10 @@ class LimsWriteSmokeTest extends TestCase
             'tolerance_days' => 0,
             'user_id' => $user->id,
         ]);
+        $proposal->lab_id = DB::table('lab_user')->where('user_id', $user->id)->value('lab_id');
+        $proposal->save();
+
+        return $proposal;
     }
 
     public function test_verified_admin_can_create_and_update_sample_intake(): void
@@ -229,10 +466,12 @@ class LimsWriteSmokeTest extends TestCase
     public function test_verified_admin_can_open_vap_sample_show_view_with_workflow_context(): void
     {
         $user = $this->verifiedAdmin();
-        $sample = VAPSampleEntry::query()
-            ->whereNotNull('code')
-            ->latest('id')
-            ->firstOrFail();
+        $sample = VAPSampleEntry::factory()->create([
+            'lab_id' => VAPLab::query()->firstOrFail()->id,
+            'customer_id' => Customer::query()->firstOrFail()->id,
+            'department_id' => Department::query()->firstOrFail()->id,
+            'warehouse_id' => Warehouse::query()->firstOrFail()->id,
+        ]);
 
         $this->actingAs($user)
             ->get(route('vap_samples.show', $sample))
@@ -279,7 +518,7 @@ class LimsWriteSmokeTest extends TestCase
 
         $this->assertNotNull($sample, 'Expected the auto-coded smoke sample to exist.');
         $this->assertMatchesRegularExpression(
-            '/^SMP-\d{4}-ROT-\d{5}$/',
+            '/^SMP-\d{4}-L\d+-ROT-\d{5}$/',
             (string) $sample->code,
             'Expected the sample code to be auto-generated using the documented format.'
         );
@@ -290,6 +529,11 @@ class LimsWriteSmokeTest extends TestCase
     public function test_validated_sample_intake_can_attach_to_the_normal_collection_and_analysis_flow(): void
     {
         $user = $this->verifiedAdmin();
+        $otherLabAdmin = User::factory()->create(['is_active' => true]);
+        $otherLabAdmin->assignRole(Role::findOrCreate('admin', 'web'));
+        $otherLab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $otherLab->id, 'user_id' => $otherLabAdmin->id]);
+        Notification::fake();
         $customer = Customer::query()->firstOrFail();
         $lab = VAPLab::query()->firstOrFail();
         $department = Department::query()->firstOrFail();
@@ -321,6 +565,7 @@ class LimsWriteSmokeTest extends TestCase
                     'requested_profile_ids' => $profileIds->all(),
                     'quantity' => '1',
                     'lot' => 'LINK-'.now()->format('His'),
+                    'location' => 'Intake refrigerator A',
                 ],
             ])
             ->assertRedirect()
@@ -340,8 +585,13 @@ class LimsWriteSmokeTest extends TestCase
 
         $this->assertNotNull($collectionProduct);
         $this->assertSame($product->id, $collectionProduct->product_id);
+        $this->assertSame('Intake refrigerator A', $collectionProduct->location);
+        $this->assertSame(CollectionProductTrackingStatus::PENDING_ANALYSIS, $collectionProduct->progress);
         $this->assertCount($profileIds->count(), $collectionProduct->code->samples);
         $this->assertGreaterThan(0, $collectionProduct->code->analysis()->count());
+        $this->assertTrue($collectionProduct->code->analysis()->where('product_id', $product->id)->exists());
+        Notification::assertSentTo($user, OperationalNotification::class);
+        Notification::assertNotSentTo($otherLabAdmin, OperationalNotification::class);
     }
 
     public function test_sample_intake_persists_conditioning_and_parameter_scope_snapshot(): void
@@ -780,6 +1030,11 @@ class LimsWriteSmokeTest extends TestCase
 
         $this->assertNotFalse($qualitativeIndex);
 
+        foreach ($payload as $index => $result) {
+            if ($index !== $qualitativeIndex) {
+                $payload[$index]['inserted_value'] = '0';
+            }
+        }
         $payload[$qualitativeIndex]['inserted_value'] = 'Detectado';
         $payload[$qualitativeIndex]['display_format'] = 'scientific';
         $payload[$qualitativeIndex]['extra_data'] = array_merge(
@@ -834,11 +1089,7 @@ class LimsWriteSmokeTest extends TestCase
         Queue::fake();
 
         $user = $this->verifiedAdmin();
-        $sample = Sample::query()
-            ->with(['analysis.department', 'analysis.profile.parameters', 'results'])
-            ->has('results')
-            ->whereHas('analysis.profile.parameters')
-            ->firstOrFail();
+        $sample = $this->resultWorkflowFixture($user)['sample']->load(['analysis.department', 'analysis.profile.parameters', 'results']);
 
         $department = $sample->analysis?->department;
         $this->assertNotNull($department);
@@ -890,12 +1141,7 @@ class LimsWriteSmokeTest extends TestCase
     public function test_counter_analysis_results_payload_exposes_calculation_control_metadata(): void
     {
         $user = $this->verifiedAdmin();
-        $result = Result::query()
-            ->with(['sample.analysis.profile.parameters', 'parameter.formula', 'code'])
-            ->where('requested_counter_analysis', false)
-            ->whereHas('sample.analysis')
-            ->whereDoesntHave('counter_analysis')
-            ->firstOrFail();
+        $result = $this->resultWorkflowFixture($user)['result']->load(['sample.analysis.profile.parameters', 'parameter.formula', 'code']);
 
         $this->actingAs($user)
             ->post(route('counteranalysis.store'), [
@@ -1155,16 +1401,20 @@ class LimsWriteSmokeTest extends TestCase
         $warehouse->refresh();
         $this->assertGreaterThan($initialNotifications, $warehouse->notifications()->count());
 
-        $notification = $warehouse->notifications()->latest()->first();
+        $notification = $warehouse->notifications()
+            ->where('type', OperationalNotification::class)
+            ->get()
+            ->first(fn ($item) => data_get($item->data, 'key') === 'lab.sample.created');
 
-        $this->assertSame($sampleEntry->id, data_get($notification->data, 'sample_id'));
-        $this->assertSame('accepted', data_get($notification->data, 'conditioning_status'));
+        $this->assertNotNull($notification);
+        $this->assertSame($sampleEntry->id, data_get($notification->data, 'context.sample_id'));
+        $this->assertSame('accepted', data_get($notification->data, 'context.conditioning_status'));
         $this->assertSame(
             data_get($sampleEntry->client_submitted_info, 'required_parameter_count'),
-            data_get($notification->data, 'required_parameter_count')
+            data_get($notification->data, 'context.required_parameter_count')
         );
-        $this->assertNotNull(data_get($notification->data, 'collection_url'));
-        $this->assertNotNull(data_get($notification->data, 'analysis_url'));
+        $this->assertNotNull(data_get($notification->data, 'context.collection_url'));
+        $this->assertNotNull(data_get($notification->data, 'context.analysis_url'));
     }
 
     public function test_profile_catalog_accepts_cleared_optional_method_selectors(): void
@@ -1932,18 +2182,19 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertSame($sample->id, data_get($portalRequest->extra_data, 'validated_sample_entry_id'));
         $this->assertSame($portalRequest->reference, data_get($sample->client_submitted_info, 'request_reference'));
         $this->assertGreaterThan($initialNotifications, $warehouse->notifications()->count());
-        $this->assertSame(
-            $sample->id,
-            data_get($warehouse->notifications()->latest()->first(), 'data.sample_id')
-        );
+        $notification = $warehouse->notifications()
+            ->where('type', OperationalNotification::class)
+            ->get()
+            ->first(fn ($item) => data_get($item->data, 'key') === 'lab.sample.created');
+
+        $this->assertNotNull($notification);
+        $this->assertSame($sample->id, data_get($notification->data, 'context.sample_id'));
     }
 
     public function test_verified_admin_can_record_sample_discard(): void
     {
         $user = $this->verifiedAdmin();
-        $sample = VAPSampleEntry::query()
-            ->whereIn('status', ['COMPLETADO', 'CANCELADO'])
-            ->firstOrFail();
+        $sample = $this->completedSampleFixture($user);
 
         $payload = [
             'sample_id' => $sample->id,
@@ -1978,15 +2229,8 @@ class LimsWriteSmokeTest extends TestCase
     public function test_verified_admin_can_export_collection_parameter_sheets(): void
     {
         $user = $this->verifiedAdmin();
-        $directCollection = CollectionProduct::query()
-            ->whereRelation('collection', 'collectionable_type', 'direct')
-            ->first();
-        $programmedCollection = CollectionProduct::query()
-            ->whereRelation('collection', 'collectionable_type', 'programmed')
-            ->first();
-
-        $this->assertNotNull($directCollection, 'Expected at least one direct collection product for export smoke testing.');
-        $this->assertNotNull($programmedCollection, 'Expected at least one programmed collection product for export smoke testing.');
+        $directCollection = $this->collectionProductFixture($user, 'direct');
+        $programmedCollection = $this->collectionProductFixture($user, 'programmed');
 
         $directResponse = $this->actingAs($user)
             ->get(route('directcollections.exportParametersToAnalyzeSheet', [
@@ -2009,6 +2253,52 @@ class LimsWriteSmokeTest extends TestCase
             'spreadsheetml',
             (string) $programmedResponse->headers->get('content-type'),
         );
+    }
+
+    public function test_collection_parameter_exports_reject_other_laboratory_records(): void
+    {
+        $owner = $this->verifiedAdmin();
+        $directCollection = $this->collectionProductFixture($owner, 'direct');
+        $programmedCollection = $this->collectionProductFixture($owner, 'programmed');
+        $otherUser = User::factory()->create(['is_active' => true]);
+        $otherUser->assignRole(Role::findOrCreate('admin', 'web'));
+        $otherLab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $otherLab->id, 'user_id' => $otherUser->id]);
+        $otherDirectCollection = $this->collectionProductFixture($otherUser, 'direct');
+
+        $this->actingAs($otherUser)
+            ->get(route('directcollections.exportParametersToAnalyzeSheet', [
+                'recordIds' => [$directCollection->id],
+            ]))
+            ->assertNotFound();
+
+        $this->actingAs($otherUser)
+            ->get(route('programmedcollections.exportParametersToAnalyzeSheet', [
+                'recordIds' => [$programmedCollection->id],
+            ]))
+            ->assertNotFound();
+
+        $this->actingAs($owner)
+            ->get(route('directcollections.exportParametersToAnalyzeSheet', [
+                'recordIds' => [$directCollection->id, $otherDirectCollection->id],
+            ]))
+            ->assertNotFound();
+
+        DB::statement('SET CONSTRAINTS sample_entries_collection_product_unique DEFERRED');
+        $archivedConflict = VAPSampleEntry::factory()->create([
+            'lab_id' => $otherLab->id,
+            'customer_id' => $directCollection->customer_id,
+            'warehouse_id' => $directCollection->warehouse_id,
+            'department_id' => Department::query()->firstOrFail()->id,
+            'collection_product_id' => $directCollection->id,
+        ]);
+        $archivedConflict->delete();
+
+        $this->actingAs($owner)
+            ->get(route('directcollections.exportParametersToAnalyzeSheet', [
+                'recordIds' => [$directCollection->id],
+            ]))
+            ->assertNotFound();
     }
 
     public function test_verified_admin_cannot_discard_sample_that_is_not_completed_or_canceled(): void
@@ -2054,7 +2344,7 @@ class LimsWriteSmokeTest extends TestCase
                 'department_id' => $sample->department_id,
             ])
             ->assertRedirect()
-            ->assertSessionHas('type', 'error');
+            ->assertSessionHasErrors('sample_id');
 
         $this->assertSame(
             $existingDiscardCount,
@@ -2068,7 +2358,7 @@ class LimsWriteSmokeTest extends TestCase
         $user = $this->verifiedAdmin();
         $customer = Customer::query()->firstOrFail();
         $warehouse = Warehouse::query()->firstOrFail();
-        $labCode = LabCode::query()->firstOrFail();
+        $labCode = $this->resultWorkflowFixture($user)['result']->code;
 
         $storePayload = [
             'customer_id' => ['value' => $customer->id],
@@ -2127,7 +2417,7 @@ class LimsWriteSmokeTest extends TestCase
         $user = $this->verifiedAdmin();
         $customer = Customer::query()->firstOrFail();
         $warehouse = Warehouse::query()->firstOrFail();
-        $labCode = LabCode::query()->firstOrFail();
+        $labCode = $this->resultWorkflowFixture($user)['result']->code;
 
         $this->actingAs($user)
             ->post(route('qualitycertificates.store'), [
@@ -2170,8 +2460,7 @@ class LimsWriteSmokeTest extends TestCase
     public function test_verified_admin_can_create_update_and_adjust_inventory(): void
     {
         $user = $this->verifiedAdmin();
-        $item = InventoryItem::query()->firstOrFail();
-        $warehouse = InventoryItemWarehouse::query()->firstOrFail();
+        ['item' => $item, 'warehouse' => $warehouse] = $this->inventoryFixture($user);
 
         $storePayload = [
             'qty_available' => 10,
@@ -2217,33 +2506,112 @@ class LimsWriteSmokeTest extends TestCase
 
         $this->actingAs($user)
             ->put(route('inventory.update', $inventory), $updatePayload)
-            ->assertRedirect();
+            ->assertSessionHasErrors('qty_available');
+
+        $this->assertSame('10.0000', $inventory->fresh()->qty_available);
+        unset($updatePayload['qty_available']);
+        $this->put(route('inventory.update', $inventory), $updatePayload)->assertRedirect();
 
         $inventory->refresh();
-        $this->assertSame(12, $inventory->qty_available);
-        $this->assertSame(4, $inventory->min_stock_level);
-        $this->assertSame(3, $inventory->reorder_point);
+        $this->assertSame('10.0000', $inventory->qty_available);
+        $this->assertSame('4.0000', $inventory->min_stock_level);
+        $this->assertSame('3.0000', $inventory->reorder_point);
 
         $this->actingAs($user)
             ->post(route('inventory.increment', $inventory), ['qty' => 3])
             ->assertRedirect();
 
         $inventory->refresh();
-        $this->assertSame(15, $inventory->qty_available);
+        $this->assertSame('13.0000', $inventory->qty_available);
 
         $this->actingAs($user)
             ->post(route('inventory.decrement', $inventory), ['qty' => 4])
             ->assertRedirect();
 
         $inventory->refresh();
-        $this->assertSame(11, $inventory->qty_available);
+        $this->assertSame('9.0000', $inventory->qty_available);
+        $this->assertSame(3, InventoryTransaction::query()->where('inventory_id', $inventory->id)->count());
+    }
+
+    public function test_inventory_lookup_uses_item_name_and_category_without_duplicate_stock_columns(): void
+    {
+        $user = $this->verifiedAdmin();
+        ['item' => $item, 'warehouse' => $warehouse] = $this->inventoryFixture($user);
+        ['item' => $reagent, 'warehouse' => $reagentWarehouse] = $this->inventoryFixture($user, reagent: true);
+        Inventory::query()->create(['item_id' => $item->id, 'warehouse_id' => $warehouse->id, 'qty_available' => 10]);
+        Inventory::query()->create(['item_id' => $reagent->id, 'warehouse_id' => $reagentWarehouse->id, 'qty_available' => 5]);
+
+        $this->actingAs($user)
+            ->get(route('inventory.getInventory', ['q' => 'Smoke consumable']))
+            ->assertOk()
+            ->assertJsonFragment(['name' => $item->name, 'category_id' => $item->category_id]);
+
+        $this->actingAs($user)
+            ->get(route('inventory.getInventoryReagentItem', ['q' => 'Smoke reagent']))
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonFragment(['name' => $reagent->name, 'category_id' => $reagent->category_id]);
+    }
+
+    public function test_inventory_position_rejects_negative_stock_with_scalar_identifiers(): void
+    {
+        $user = $this->verifiedAdmin();
+        ['item' => $item, 'warehouse' => $warehouse] = $this->inventoryFixture($user);
+
+        $this->actingAs($user)
+            ->post(route('inventory.store'), [
+                'item_id' => $item->id,
+                'warehouse_id' => $warehouse->id,
+                'qty_available' => -1,
+                'min_stock_level' => 0,
+                'reorder_point' => 0,
+            ])
+            ->assertSessionHasErrors('qty_available');
+
+        $this->assertDatabaseMissing('inventory', [
+            'item_id' => $item->id,
+            'warehouse_id' => $warehouse->id,
+        ]);
+    }
+
+    public function test_inventory_value_and_analytics_filter_by_item_category(): void
+    {
+        $user = $this->verifiedAdmin();
+        ['item' => $item, 'warehouse' => $warehouse] = $this->inventoryFixture($user);
+        $item->update(['standard_cost' => 12.5]);
+        Inventory::query()->create(['item_id' => $item->id, 'warehouse_id' => $warehouse->id, 'qty_available' => 10]);
+
+        $this->actingAs($user)
+            ->get(route('vap-inventory.reports.inventory-value', [
+                'category_id' => $item->category_id,
+                'warehouse_id' => $warehouse->id,
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('VAPInventory/Reports/InventoryValue')
+                ->has('inventory.data', 1)
+                ->where('inventory.data.0.item_id', $item->id)
+                ->where('charts.category_value_breakdown.labels.0', $item->category->name)
+                ->where('charts.category_value_breakdown.series.0.data.0', fn ($value): bool => (float) $value === 125.0));
+
+        $analytics = $this->actingAs($user)
+            ->get(route('vap-inventory.analytics.data', [
+                'categoryId' => $item->category_id,
+                'warehouseId' => $warehouse->id,
+            ]))
+            ->assertOk()
+            ->assertJsonFragment(['category' => $item->category->name, 'quantity' => 10]);
+
+        $this->assertSame(125.0, (float) $analytics->json('metrics.inventoryValue'));
     }
 
     public function test_inventory_decrement_below_minimum_creates_low_stock_notification(): void
     {
         $user = $this->verifiedAdmin();
-        $item = InventoryItem::query()->where('category_id', '!=', 2)->first() ?? InventoryItem::query()->firstOrFail();
-        $warehouse = InventoryItemWarehouse::query()->firstOrFail();
+        $recipient = User::factory()->create(['is_active' => true]);
+        $recipient->givePermissionTo(Permission::findOrCreate('view_inventory', 'web'));
+        ['item' => $item, 'warehouse' => $warehouse] = $this->inventoryFixture($user);
+        DB::table('lab_user')->insert(['lab_id' => $item->lab_id, 'user_id' => $recipient->id]);
 
         $this->actingAs($user)
             ->post(route('inventory.store'), [
@@ -2266,35 +2634,32 @@ class LimsWriteSmokeTest extends TestCase
 
         $this->assertNotNull($inventory, 'Expected the low-stock smoke inventory record to exist.');
 
-        $initialNotifications = $user->notifications()->count();
+        $initialNotifications = $recipient->notifications()->count();
 
         $this->actingAs($user)
             ->post(route('inventory.decrement', $inventory), ['qty' => 2])
             ->assertRedirect();
 
         $inventory->refresh();
-        $user->refresh();
+        $recipient->refresh();
 
-        $this->assertSame(3, $inventory->qty_available);
+        $this->assertSame('3.0000', $inventory->qty_available);
         $this->assertGreaterThan(
             $initialNotifications,
-            $user->notifications()->count(),
+            $recipient->notifications()->count(),
             'Expected a database notification to be created when stock drops below the minimum level.'
         );
 
-        $notification = $user->notifications()->latest()->first();
+        $notification = $recipient->notifications()->latest()->first();
 
-        $this->assertStringContainsString('Alerta de Estoque Baixo', (string) data_get($notification, 'data.title'));
+        $this->assertSame('inventory.low_stock', data_get($notification, 'data.key'));
         $this->assertStringContainsString((string) $item->name, (string) data_get($notification, 'data.message'));
     }
 
     public function test_verified_admin_can_generate_vap_sample_and_discard_artifacts(): void
     {
         $user = $this->verifiedAdmin();
-        $sample = VAPSampleEntry::query()
-            ->with(['customer', 'lab', 'department', 'warehouse'])
-            ->whereNotNull('code')
-            ->firstOrFail();
+        $sample = $this->completedSampleFixture($user)->load(['customer', 'lab', 'department', 'warehouse']);
 
         [$samplePdf, $samplePdfOutput] = $this->captureResponseOutput(
             fn () => $this->actingAs($user)->get(route('vap_samples.samples.pdf', $sample))
@@ -2310,9 +2675,7 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertStringContainsString('text/csv', (string) $sampleExport->headers->get('content-type'));
         $this->assertStringContainsString('Code', $sampleExport->streamedContent());
 
-        $discardableSample = VAPSampleEntry::query()
-            ->whereIn('status', ['COMPLETADO', 'CANCELADO'])
-            ->firstOrFail();
+        $discardableSample = $sample;
 
         $this->actingAs($user)
             ->post(route('vap_samples.discards.store'), [
@@ -2353,7 +2716,7 @@ class LimsWriteSmokeTest extends TestCase
         $user = $this->verifiedAdmin();
         $customer = Customer::query()->firstOrFail();
         $warehouse = Warehouse::query()->firstOrFail();
-        $labCode = LabCode::query()->firstOrFail();
+        $labCode = $this->resultWorkflowFixture($user)['result']->code;
 
         $this->actingAs($user)
             ->post(route('qualitycertificates.store'), [
@@ -2458,12 +2821,7 @@ class LimsWriteSmokeTest extends TestCase
     public function test_counter_analysis_request_creates_a_dedicated_sample(): void
     {
         $user = $this->verifiedAdmin();
-        $result = Result::query()
-            ->with(['sample.analysis', 'code'])
-            ->where('requested_counter_analysis', false)
-            ->whereHas('sample.analysis')
-            ->whereDoesntHave('counter_analysis')
-            ->firstOrFail();
+        $result = $this->resultWorkflowFixture($user)['result']->load(['sample.analysis', 'code']);
 
         $originalSampleId = $result->sample_id;
 
@@ -2527,8 +2885,7 @@ class LimsWriteSmokeTest extends TestCase
     public function test_duplicate_inventory_adjustment_request_is_blocked(): void
     {
         $user = $this->verifiedAdmin();
-        $item = InventoryItem::query()->firstOrFail();
-        $warehouse = InventoryItemWarehouse::query()->firstOrFail();
+        ['item' => $item, 'warehouse' => $warehouse] = $this->inventoryFixture($user);
 
         $inventory = Inventory::query()->updateOrCreate(
             [
@@ -2539,7 +2896,6 @@ class LimsWriteSmokeTest extends TestCase
                 'qty_available' => 10,
                 'min_stock_level' => 1,
                 'reorder_point' => 1,
-                'category_id' => $item->category_id,
                 'status' => 'AVAILABLE',
             ]
         );
@@ -2552,10 +2908,11 @@ class LimsWriteSmokeTest extends TestCase
             'notes' => 'First request should win.',
         ];
 
-        $this->actingAs($user)
-            ->postJson(route('vap-inventory.items.adjust-stock', $item), $payload)
-            ->assertOk()
-            ->assertJsonPath('success', true);
+        $adjustmentResponse = $this->actingAs($user)
+            ->postJson(route('vap-inventory.items.adjust-stock', $item), $payload);
+
+        $this->assertSame(200, $adjustmentResponse->status(), $adjustmentResponse->getContent());
+        $adjustmentResponse->assertJsonPath('success', true);
 
         $this->actingAs($user)
             ->postJson(route('vap-inventory.items.adjust-stock', $item), $payload)
@@ -2565,11 +2922,10 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertSame(15.0, (float) $inventory->qty_available);
     }
 
-    public function test_destroying_consumption_restores_stock_and_deletes_the_exact_transaction(): void
+    public function test_reversing_consumption_restores_stock_and_preserves_the_exact_transaction(): void
     {
         $user = $this->verifiedAdmin();
-        $item = InventoryItem::query()->reagents()->firstOrFail();
-        $warehouse = InventoryItemWarehouse::query()->firstOrFail();
+        ['item' => $item, 'warehouse' => $warehouse] = $this->inventoryFixture($user, reagent: true);
 
         $inventory = Inventory::query()->updateOrCreate(
             [
@@ -2580,20 +2936,20 @@ class LimsWriteSmokeTest extends TestCase
                 'qty_available' => 10,
                 'min_stock_level' => 1,
                 'reorder_point' => 1,
-                'category_id' => $item->category_id,
                 'status' => 'AVAILABLE',
             ]
         );
 
-        $this->actingAs($user)
+        $consumptionResponse = $this->actingAs($user)
             ->postJson(route('vap-inventory.reagents.consume', $item), [
                 'warehouse_id' => $warehouse->id,
                 'quantity_used' => 2,
                 'used_by' => 'Codex Smoke',
                 'remarks' => 'Precise transaction rollback smoke test',
-            ])
-            ->assertOk()
-            ->assertJsonPath('success', true);
+            ]);
+
+        $this->assertSame(200, $consumptionResponse->status(), $consumptionResponse->getContent());
+        $consumptionResponse->assertJsonPath('success', true);
 
         $consumption = ReagentConsumption::query()
             ->where('reagent_id', $item->id)
@@ -2610,19 +2966,18 @@ class LimsWriteSmokeTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->delete(route('vap-inventory.reagents.consumption.destroy', $consumption))
+            ->post(route('vap-inventory.reagents.consumption.reverse', $consumption))
             ->assertRedirect(route('vap-inventory.reagents.consumption.index'));
 
         $inventory->refresh();
 
         $this->assertSame(10.0, (float) $inventory->qty_available);
-        $this->assertDatabaseMissing('reagent_consumption', [
+        $this->assertDatabaseHas('reagent_consumption', [
             'id' => $consumption->id,
         ]);
-        $this->assertSoftDeleted('itransactions', [
-            'id' => $consumption->inventory_transaction_id,
-        ]);
-        $this->assertNull(InventoryTransaction::query()->find($consumption->inventory_transaction_id));
+        $this->assertNull($consumption->inventoryTransaction->deleted_at);
+        $this->assertSame('2.0000', $consumption->reversal->inventoryTransaction->qty);
+        $this->assertModelExists(InventoryTransaction::query()->findOrFail($consumption->inventory_transaction_id));
     }
 
     public function test_sample_intake_assigns_retention_schedule_for_qualified_personnel(): void
@@ -2664,7 +3019,7 @@ class LimsWriteSmokeTest extends TestCase
         $this->qualifyUser($user, ['approve_results'], $department);
         $user->clearMediaCollection('signature');
 
-        $existing = Result::query()->firstOrFail();
+        $existing = $this->resultWorkflowFixture($user, verified: true)['result'];
 
         $response = $this->from(route('analysis.index', ['category' => 'approve']))
             ->actingAs($user)
@@ -2725,19 +3080,7 @@ class LimsWriteSmokeTest extends TestCase
     public function test_result_submission_rejects_sample_without_analysis_link(): void
     {
         $user = $this->verifiedAdmin();
-        $source = Result::query()
-            ->whereNotNull('collection_id')
-            ->whereNotNull('matrix_id')
-            ->whereNotNull('parameter_id')
-            ->whereNotNull('product_id')
-            ->whereNotNull('protocol_id')
-            ->whereNotNull('profile_id')
-            ->whereNotNull('unit_id')
-            ->whereNotNull('standard_id')
-            ->whereNotNull('code_id')
-            ->whereNotNull('nwp_id')
-            ->whereNotNull('type_id')
-            ->firstOrFail();
+        $source = $this->resultWorkflowFixture($user)['result'];
         $orphanSample = Sample::query()->doesntHave('analysis')->first()
             ?? Sample::query()->create([
                 'sample_month' => now()->format('m/Y'),
@@ -2806,11 +3149,7 @@ class LimsWriteSmokeTest extends TestCase
     public function test_result_verification_rejects_partial_scope_submission(): void
     {
         $user = $this->verifiedAdmin();
-        $sample = Sample::query()
-            ->with(['analysis.department', 'analysis.profile.parameters', 'results'])
-            ->has('results', '>=', 2)
-            ->whereHas('analysis.profile.parameters')
-            ->firstOrFail();
+        $sample = $this->resultWorkflowFixture($user, 2)['sample']->load(['analysis.department', 'analysis.profile.parameters', 'results']);
 
         $department = $sample->analysis?->department;
         $this->assertNotNull($department);
@@ -2843,11 +3182,7 @@ class LimsWriteSmokeTest extends TestCase
     public function test_result_approval_rejects_partial_scope_submission(): void
     {
         $user = $this->verifiedAdmin();
-        $sample = Sample::query()
-            ->with(['analysis.department', 'analysis.profile.parameters', 'results'])
-            ->has('results', '>=', 2)
-            ->whereHas('analysis.profile.parameters')
-            ->firstOrFail();
+        $sample = $this->resultWorkflowFixture($user, 2, true)['sample']->load(['analysis.department', 'analysis.profile.parameters', 'results']);
 
         $department = $sample->analysis?->department;
         $this->assertNotNull($department);

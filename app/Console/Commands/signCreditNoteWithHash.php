@@ -29,14 +29,14 @@ class signCreditNoteWithHash extends Command
     {
         $note = CreditNote::findOrFail($this->argument('credit_note'));
 
-        if (CreditNote::whereNoteMonth(now()->format('Y'))->count() !== 1) {
-            $prev_hash = CreditNote::where('id', '<', $note->id)->orderBy('id', 'desc')->first()->unique_hash;
+        if (CreditNote::withoutGlobalScope('financial_laboratory')->whereNoteMonth(now()->format('Y'))->count() !== 1) {
+            $prev_hash = CreditNote::withoutGlobalScope('financial_laboratory')->where('id', '<', $note->id)->orderBy('id', 'desc')->first()->unique_hash;
             $data = $note->date.';'.$note->created_at->toDateTimeLocalString().';'.$note->note_no.';'.$note->total.';'.$prev_hash;
 
             $note->unique_hash = $documentSignature->sign($data);
         }
 
-        if (CreditNote::whereNoteMonth(now()->format('Y'))->count() == 1) {
+        if (CreditNote::withoutGlobalScope('financial_laboratory')->whereNoteMonth(now()->format('Y'))->count() == 1) {
             $data = $note->date.';'.$note->created_at->toDateTimeLocalString().';'.$note->note_no.';'.$note->total.';';
 
             $note->unique_hash = $documentSignature->sign($data);

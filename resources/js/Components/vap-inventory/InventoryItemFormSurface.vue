@@ -70,7 +70,9 @@
 
                 <div class="ds-field-group">
                   <label class="ds-field-label">Categoria <span class="ds-field-required">*</span></label>
-                  <comboboxEnhanced v-model="selectedCategory" :has-error="Boolean(errorFor('category_id'))" :options="categoryOptions" placeholder="Seleccione a categoria" />
+                  <input v-if="identityLocks.category" id="inventory-item-category" :value="selectedCategory?.label || 'Sem categoria'" readonly class="ds-field" aria-label="Categoria" aria-describedby="inventory-category-lock" />
+                  <comboboxEnhanced v-else v-model="selectedCategory" :has-error="Boolean(errorFor('category_id'))" :options="categoryOptions" placeholder="Seleccione a categoria" />
+                  <p v-if="identityLocks.category" id="inventory-category-lock" class="ds-copy mt-1 text-xs">Categoria fixa: integra a sequência emitida.</p>
                   <p v-if="errorFor('category_id')" class="ds-field-error">{{ errorFor('category_id') }}</p>
                 </div>
 
@@ -81,8 +83,10 @@
                 </div>
 
                 <div class="ds-field-group">
-                  <label class="ds-field-label">Unidade</label>
-                  <comboboxEnhanced v-model="selectedUnit" :has-error="Boolean(errorFor('unit_id'))" :options="unitOptions" placeholder="Seleccione a unidade" />
+                  <label class="ds-field-label">Unidade <span class="ds-field-required">*</span></label>
+                  <input v-if="identityLocks.unit" id="inventory-item-unit" :value="selectedUnit?.label || 'Sem unidade'" readonly class="ds-field" aria-label="Unidade" aria-describedby="inventory-unit-lock" />
+                  <comboboxEnhanced v-else v-model="selectedUnit" :has-error="Boolean(errorFor('unit_id'))" :options="unitOptions" placeholder="Seleccione a unidade" />
+                  <p v-if="identityLocks.unit" id="inventory-unit-lock" class="ds-copy mt-1 text-xs">Unidade fixa: o item tem existências registadas, incluindo histórico arquivado.</p>
                   <p v-if="errorFor('unit_id')" class="ds-field-error">{{ errorFor('unit_id') }}</p>
                 </div>
 
@@ -90,6 +94,27 @@
                   <label class="ds-field-label">Estado</label>
                   <comboboxEnhanced v-model="selectedStatus" :has-error="Boolean(errorFor('status_id'))" :options="statusOptions" placeholder="Seleccione o estado" />
                   <p v-if="errorFor('status_id')" class="ds-field-error">{{ errorFor('status_id') }}</p>
+                </div>
+
+                <div class="ds-field-group">
+                  <label class="ds-field-label" for="inventory-item-location">Localização física</label>
+                  <BaseInput id="inventory-item-location" v-model="form.location" type="text" class="ds-field" :aria-invalid="Boolean(errorFor('location'))" placeholder="Sala, bancada ou posição" />
+                  <p v-if="errorFor('location')" class="ds-field-error">{{ errorFor('location') }}</p>
+                </div>
+
+                <div class="ds-field-group">
+                  <comboboxEnhanced v-model="selectedDepartment" title-label="Departamento" :has-error="Boolean(errorFor('department_id'))" :options="departmentOptions" placeholder="Seleccione o departamento" />
+                  <p v-if="errorFor('department_id')" class="ds-field-error">{{ errorFor('department_id') }}</p>
+                </div>
+
+                <div class="ds-field-group">
+                  <comboboxEnhanced v-model="selectedEquipmentCategory" title-label="Classe de equipamento" :has-error="Boolean(errorFor('eq_cat_id'))" :options="equipmentCategoryOptions" placeholder="Seleccione a classe, se aplicável" />
+                  <p v-if="errorFor('eq_cat_id')" class="ds-field-error">{{ errorFor('eq_cat_id') }}</p>
+                </div>
+
+                <div class="ds-field-group">
+                  <comboboxEnhanced v-model="selectedPackagingCategory" title-label="Tipo de embalagem" :has-error="Boolean(errorFor('packaging_type_id'))" :options="packagingCategoryOptions" placeholder="Seleccione a embalagem, se aplicável" />
+                  <p v-if="errorFor('packaging_type_id')" class="ds-field-error">{{ errorFor('packaging_type_id') }}</p>
                 </div>
 
                 <div class="ds-field-group md:col-span-2 xl:col-span-3">
@@ -318,13 +343,16 @@
               <BuildingLibraryIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
               <div>
                 <h2 class="ds-heading text-base">Existências por armazém</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Defina o saldo, mínimo e ponto de reposição em cada localização.</p>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
+                  {{ mode === 'edit' ? 'Saldos do laboratório activo. Ajustes e transferências ficam no registo de movimentos.' : 'Defina o saldo, mínimo e ponto de reposição em cada localização.' }}
+                </p>
               </div>
             </div>
-            <button type="button" class="ds-button ds-button-secondary" @click="emit('add-warehouse')">
+            <button v-if="mode === 'create'" type="button" class="ds-button ds-button-secondary" @click="emit('add-warehouse')">
               <PlusIcon class="h-4 w-4" />
               Adicionar armazém
             </button>
+            <Link v-else :href="backHref" class="ds-button ds-button-secondary">Ver movimentos</Link>
           </div>
 
           <div v-if="form.warehouses.length" class="divide-y divide-[color:var(--ds-border)]">
@@ -334,13 +362,13 @@
                   <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Localização {{ index + 1 }}</p>
                   <h3 class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ warehouseInfo[index]?.name || warehouse.id_obj?.label || 'Armazém por seleccionar' }}</h3>
                 </div>
-                <button type="button" class="ds-table-action ds-table-action-danger" title="Remover armazém" @click="emit('remove-warehouse', index)">
+                <button v-if="mode === 'create'" type="button" class="ds-table-action ds-table-action-danger" title="Remover armazém" @click="emit('remove-warehouse', index)">
                   <TrashIcon class="h-4 w-4" />
                   Remover
                 </button>
               </div>
 
-              <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div v-if="mode === 'create'" class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div class="ds-field-group md:col-span-2 xl:col-span-1">
                   <label class="ds-field-label">Armazém <span class="ds-field-required">*</span></label>
                   <comboboxEnhanced
@@ -354,18 +382,32 @@
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" :for="'warehouse-qty-' + index">Quantidade disponível</label>
-                  <BaseInput :id="'warehouse-qty-' + index" v-model="warehouse.qty_available" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(warehouseErrors[index]?.qty_available)" />
+                  <BaseInput :id="'warehouse-qty-' + index" v-model="warehouse.qty_available" type="number" min="0" step="0.0001" class="ds-field" :aria-invalid="Boolean(warehouseErrors[index]?.qty_available)" />
                   <p v-if="warehouseErrors[index]?.qty_available" class="ds-field-error">{{ warehouseErrors[index].qty_available }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" :for="'warehouse-min-' + index">Existências mínimo</label>
-                  <BaseInput :id="'warehouse-min-' + index" v-model="warehouse.min_stock_level" type="number" min="0" step="0.01" class="ds-field" />
+                  <BaseInput :id="'warehouse-min-' + index" v-model="warehouse.min_stock_level" type="number" min="0" step="0.0001" class="ds-field" />
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" :for="'warehouse-reorder-' + index">Ponto de reposição</label>
-                  <BaseInput :id="'warehouse-reorder-' + index" v-model="warehouse.reorder_point" type="number" min="0" step="0.01" class="ds-field" />
+                  <BaseInput :id="'warehouse-reorder-' + index" v-model="warehouse.reorder_point" type="number" min="0" step="0.0001" class="ds-field" />
                 </div>
               </div>
+              <dl v-else class="mt-4 grid gap-4 text-sm sm:grid-cols-3">
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Disponível</dt>
+                  <dd class="mt-1 font-semibold text-[color:var(--ds-text)]">{{ warehouse.qty_available }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Mínimo</dt>
+                  <dd class="mt-1 font-semibold text-[color:var(--ds-text)]">{{ warehouse.min_stock_level }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Ponto de reposição</dt>
+                  <dd class="mt-1 font-semibold text-[color:var(--ds-text)]">{{ warehouse.reorder_point }}</dd>
+                </div>
+              </dl>
 
               <div v-if="warehouseInfo[index]" class="ds-command-toolbar mt-4 grid gap-3 p-3 text-xs sm:grid-cols-3">
                 <div>
@@ -388,7 +430,7 @@
             <div class="ds-empty-state px-5 py-10 text-center">
               <BuildingLibraryIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
               <h3 class="ds-heading mt-3 text-sm">Nenhum armazém configurado</h3>
-              <p class="ds-copy mt-1 text-xs">Adicione pelo menos uma localização para controlar o existências.</p>
+              <p class="ds-copy mt-1 text-xs">{{ mode === 'edit' ? 'Este laboratório ainda não tem existências registadas para o item.' : 'Adicione pelo menos uma localização para controlar as existências.' }}</p>
             </div>
           </div>
         </section>
@@ -423,8 +465,9 @@
                   <p class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ document.name || 'Documento' }}</p>
                   <p class="mt-0.5 text-xs text-[color:var(--ds-text-soft)]">{{ readableFileSize(document.size || 0) }}</p>
                 </div>
-                <button type="button" class="ds-table-action ds-table-action-danger" @click="removeDocument(document, index)">
-                  <TrashIcon class="h-4 w-4" />
+                <button type="button" class="ds-table-action" :disabled="form.processing || attachmentProcessing" :aria-label="document.id ? 'Arquivar documento' : 'Remover ficheiro não guardado'" @click="removeDocument(document, index)">
+                  <ArchiveBoxIcon v-if="document.id" class="h-4 w-4" />
+                  <TrashIcon v-else class="h-4 w-4" />
                   Remover
                 </button>
               </article>
@@ -439,6 +482,7 @@
           <p class="ds-kicker">Validação do registo</p>
           <h2 class="ds-heading mt-2 text-base">{{ mode === 'edit' ? 'Aplicar alterações' : 'Criar item' }}</h2>
           <p class="ds-copy mt-2 text-xs">Confirme a classificação, o estado e os saldos antes de submeter.</p>
+          <p v-if="errorFor('request')" class="ds-field-error mt-3" role="alert">{{ errorFor('request') }}</p>
 
           <button type="submit" class="ds-button ds-button-primary mt-5 w-full" :disabled="form.processing">
             <CheckCircleIcon class="h-4 w-4" />
@@ -509,12 +553,14 @@ import {
   PlusIcon,
   TagIcon,
   TrashIcon,
+  ArchiveBoxIcon,
   WrenchScrewdriverIcon,
 } from '@heroicons/vue/24/outline'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import datePickerEnhanced from '@/Components/date-picker-enhanced.vue'
 
 const props = defineProps({
+  attachmentProcessing: { type: Boolean, default: false },
   mode: {
     type: String,
     default: 'create',
@@ -547,6 +593,10 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  identityLocks: {
+    type: Object,
+    default: () => ({ category: false, unit: false }),
+  },
   categories: {
     type: Array,
     default: () => [],
@@ -568,6 +618,18 @@ const props = defineProps({
     default: () => [],
   },
   warehouses: {
+    type: Array,
+    default: () => [],
+  },
+  departments: {
+    type: Array,
+    default: () => [],
+  },
+  equipmentCategories: {
+    type: Array,
+    default: () => [],
+  },
+  packagingCategories: {
     type: Array,
     default: () => [],
   },
@@ -604,6 +666,9 @@ const selectedType = defineModel('selectedType')
 const selectedStatus = defineModel('selectedStatus')
 const selectedSupplier = defineModel('selectedSupplier')
 const selectedUnit = defineModel('selectedUnit')
+const selectedDepartment = defineModel('selectedDepartment')
+const selectedEquipmentCategory = defineModel('selectedEquipmentCategory')
+const selectedPackagingCategory = defineModel('selectedPackagingCategory')
 
 const dragging = ref(false)
 
@@ -612,8 +677,11 @@ const typeOptions = computed(() => props.types.map(type => ({ value: type.id, la
 const supplierOptions = computed(() => props.suppliers.map(supplier => ({ value: supplier.id, label: supplier.name })))
 const unitOptions = computed(() => props.units.map(unit => ({ value: unit.id, label: `${unit.code} - ${unit.description || unit.name || ''}`.trim() })))
 const warehouseOptions = computed(() => props.warehouses.map(warehouse => ({ value: warehouse.id, label: warehouse.name })))
+const departmentOptions = computed(() => props.departments.map(department => ({ value: department.id, label: department.name })))
+const equipmentCategoryOptions = computed(() => props.equipmentCategories.map(category => ({ value: category.id, label: category.name })))
+const packagingCategoryOptions = computed(() => props.packagingCategories.map(category => ({ value: category.id, label: category.name })))
 const documentItems = computed(() => Array.isArray(props.form.documents) ? props.form.documents : [])
-const requiredReady = computed(() => Boolean(props.form.name && props.form.category_id && props.form.status_id && props.form.warehouses.length))
+const requiredReady = computed(() => Boolean(props.form.name && props.form.category_id && props.form.status_id && (props.mode === 'edit' || props.form.warehouses.length)))
 
 const technicalFields = [
   { key: 'resolution', label: 'Resolução', placeholder: '0.001' },
@@ -660,6 +728,7 @@ const onDroppedFiles = (event) => {
 }
 
 const removeDocument = (document, index) => {
+  if (props.form.processing || props.attachmentProcessing) return;
   if (props.mode === 'edit' && document?.id && props.item?.id) {
     emit('delete-attachment', props.item.id, document.id, index)
     return

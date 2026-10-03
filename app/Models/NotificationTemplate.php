@@ -2,16 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class NotificationTemplate extends Model
 {
+    use HasFactory;
+
+    public const EDITABLE_FIELDS = [
+        'title_template', 'in_app_template', 'email_subject_template', 'email_template',
+        'action_label_template', 'action_url_template', 'channels', 'priority', 'enabled',
+    ];
+
     protected $fillable = [
         'key',
-        'name',
-        'category',
-        'description',
-        'audience_permission',
+        'lab_id',
+        'updated_by_id',
         'title_template',
         'in_app_template',
         'email_subject_template',
@@ -19,7 +26,6 @@ class NotificationTemplate extends Model
         'action_label_template',
         'action_url_template',
         'channels',
-        'variables',
         'priority',
         'enabled',
     ];
@@ -28,8 +34,26 @@ class NotificationTemplate extends Model
     {
         return [
             'channels' => 'array',
-            'variables' => 'array',
             'enabled' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $template): void {
+            if ($template->isDirty(['lab_id', 'key'])) {
+                throw new \LogicException('Notification override identity is immutable.');
+            }
+        });
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
+    }
+
+    public function updatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by_id');
     }
 }

@@ -4,20 +4,29 @@ namespace Tests\Feature;
 
 use App\Models\AnalysisCategory;
 use App\Models\Department;
-use App\Models\ExportCertificate;
-use App\Models\ImportCertificate;
+use App\Models\EquipmentCategory;
+use App\Models\InventoryItem;
+use App\Models\ItemCategory;
+use App\Models\ItemStatus;
 use App\Models\Matrix;
+use App\Models\PaidService;
 use App\Models\Parameter;
+use App\Models\Permission;
+use App\Models\PhytosanitaryProduct;
 use App\Models\Profile;
-use App\Models\Quote;
 use App\Models\ResultCategory;
 use App\Models\Role;
 use App\Models\TaxExemption;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\VAPLab;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\DataProvider;
+use RuntimeException;
 use Tests\TestCase;
 
 class ComboboxEndpointSmokeTest extends TestCase
@@ -26,22 +35,50 @@ class ComboboxEndpointSmokeTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for combobox endpoint smoke testing.');
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
 
         return $admin;
     }
 
-    public function test_verified_admin_can_fetch_common_combobox_endpoints(): void
+    #[DataProvider('comboboxRoutes')]
+    public function test_verified_admin_can_fetch_a_combobox_endpoint(string $routeName, array $parameters): void
     {
         $user = $this->verifiedAdmin();
+        if (in_array($routeName, [
+            'invoices.getInvoice',
+            'receipts.getReceipt',
+            'creditnotes.getCreditNote',
+            'quotes.getQuote',
+            'importcertificates.getImportCertificate',
+            'exportcertificates.getExportCertificate',
+            'users.getUser',
+            'proposalcomplianceagreements.getProposalComplianceAgreement',
+            'worksheets.getWorksheet',
+            'iwarehouses.getInventoryItemWarehouse',
+            'itransfers.getInventoryItemTransfer',
+            'inventory.getInventory',
+            'inventory.getInventoryReagentItem',
+            'iitems.getInventoryItem',
+            'iitems.getReagentInventoryItem',
+            'iequipments.getInventoryItem',
+            'iorders.getInventoryOrder',
+        ], true)) {
+            $this->actingAs($user)->getJson(route($routeName, $parameters))->assertForbidden();
+            $lab = VAPLab::factory()->create();
+            DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $user->id]);
+            $this->withSession(['active_lab_id' => $lab->id]);
+        }
 
+        $response = $this->actingAs($user)->getJson(route($routeName, $parameters));
+
+        $response->assertOk();
+        $this->assertIsArray($response->json());
+        $this->assertStringContainsString('application/json', (string) $response->headers->get('content-type'));
+    }
+
+    public static function comboboxRoutes(): array
+    {
         $checks = [
             ['name' => 'units.getUnit', 'params' => ['q' => 'a']],
             ['name' => 'standards.getStandard', 'params' => ['q' => 'a']],
@@ -117,32 +154,86 @@ class ComboboxEndpointSmokeTest extends TestCase
             ['name' => 'receipts.getReceipt', 'params' => ['q' => 'a']],
         ];
 
-        $failures = [];
+        $datasets = [];
 
         foreach ($checks as $check) {
-            $url = route($check['name'], $check['params']);
-            $response = $this->actingAs($user)->getJson($url);
-
-            if (! $response->isSuccessful()) {
-                $failures[] = sprintf(
-                    'Expected [%s] to return successfully, got HTTP %d.',
-                    $url,
-                    $response->getStatusCode()
-                );
-
-                continue;
-            }
-
-            if (! is_array($response->json())) {
-                $failures[] = sprintf('Expected [%s] to return a JSON array payload.', $url);
-            }
-
-            if (! str_contains((string) $response->headers->get('content-type'), 'application/json')) {
-                $failures[] = sprintf('Expected [%s] to return application/json.', $url);
-            }
+            $datasets[$check['name']] = [$check['name'], $check['params']];
         }
 
-        $this->assertSame([], $failures, implode(PHP_EOL, $failures));
+        return $datasets;
+    }
+
+    public function test_active_catalog_lookups_use_the_aligned_schema(): void
+    {
+        $admin = $this->verifiedAdmin();
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
+        $suffix = Str::upper(Str::random(8));
+        $equipmentCategory = EquipmentCategory::query()->create([
+            'name' => 'Equipment '.$suffix,
+            'code' => 'EQ-'.$suffix,
+        ]);
+        $phytosanitaryProduct = PhytosanitaryProduct::query()->create([
+            'name' => 'Phytosanitary '.$suffix,
+        ]);
+        $paidService = PaidService::query()->create([
+            'name' => 'Paid service '.$suffix,
+        ]);
+        $itemCategory = ItemCategory::query()->create([
+            'name' => 'Item category '.$suffix,
+            'code' => 'IT-'.$suffix,
+        ]);
+        $itemStatus = ItemStatus::query()->create([
+            'name' => 'Item status '.$suffix,
+            'category_id' => $itemCategory->id,
+        ]);
+        $inventoryItemId = DB::table('i_items')->insertGetId([
+            'lab_id' => $lab->id,
+            'name' => 'Equipment item '.$suffix,
+            'eq_cat_id' => $equipmentCategory->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->assertTrue(Schema::hasColumn('i_items', 'eq_cat_id'));
+        $this->assertSame($equipmentCategory->id, InventoryItem::query()->findOrFail($inventoryItemId)->eq_cat->id);
+        $this->assertSame(0.0, (float) $paidService->fresh()->price);
+        $this->actingAs($admin)->getJson(route('equipmentcategories.getEquipmentCategory', ['q' => $suffix]))
+            ->assertOk()->assertJsonPath('0.id', $equipmentCategory->id);
+        $this->getJson(route('phytosanitary_products.getPhytosanitaryProduct', ['q' => $suffix]))
+            ->assertOk()->assertJsonPath('0.id', $phytosanitaryProduct->id);
+        $this->getJson(route('paidservices.getPaidService', ['q' => $suffix]))
+            ->assertOk()->assertJsonPath('0.id', $paidService->id);
+        $this->getJson(route('itemstatuses.getItemStatus', ['q' => $suffix, 'category_id' => $itemCategory->id]))
+            ->assertOk()->assertJsonPath('0.id', $itemStatus->id);
+
+        $migration = require database_path('migrations/2026_09_28_125658_align_active_catalog_tables_and_inventory_category_links.php');
+        try {
+            $migration->down();
+            $this->fail('Catalog rollback cannot discard retained catalog records or inventory links.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('retained records', $exception->getMessage());
+            $this->assertTrue(Schema::hasTable('equipment_categories'));
+        }
+    }
+
+    public function test_role_and_permission_labels_are_searchable(): void
+    {
+        $user = $this->verifiedAdmin();
+        $role = Role::findOrCreate('admin', 'web');
+        $role->update(['label' => 'Laboratory Administrator']);
+        $permission = Permission::findOrCreate('view_regression_lookup', 'web');
+        $permission->update(['label' => 'Certified Reviewer']);
+
+        $this->actingAs($user)
+            ->getJson(route('roles.getRole', ['q' => 'Laboratory Administrator']))
+            ->assertOk()->assertJsonPath('0.id', $role->id)
+            ->assertJsonPath('0.label', 'Laboratory Administrator');
+
+        $this->getJson(route('permissions.getPermission', ['q' => 'Certified Reviewer']))
+            ->assertOk()->assertJsonPath('0.id', $permission->id)
+            ->assertJsonPath('0.label', 'Certified Reviewer');
     }
 
     public function test_unauthenticated_combobox_fetches_return_json_instead_of_login_html(): void
@@ -154,23 +245,11 @@ class ComboboxEndpointSmokeTest extends TestCase
 
     public function test_unauthenticated_browser_modal_routes_redirect_to_login_instead_of_json(): void
     {
-        $checks = [];
-
-        if ($quote = Quote::query()->first()) {
-            $checks[] = route('quotes.getConvertToInvoiceModal', ['id' => $quote->id]);
-        }
-
-        if ($certificate = ImportCertificate::query()->first()) {
-            $checks[] = route('importcertificates.getIssueInvoiceModal', ['id' => $certificate->id]);
-        }
-
-        if ($certificate = ExportCertificate::query()->first()) {
-            $checks[] = route('exportcertificates.getIssueInvoiceModal', ['id' => $certificate->id]);
-        }
-
-        if ($checks === []) {
-            $this->markTestSkipped('No modal-backed commercial records exist for modal route smoke testing.');
-        }
+        $checks = [
+            route('quotes.getConvertToInvoiceModal', ['id' => 1]),
+            route('importcertificates.getIssueInvoiceModal', ['id' => 1]),
+            route('exportcertificates.getIssueInvoiceModal', ['id' => 1]),
+        ];
 
         foreach ($checks as $url) {
             $response = $this->get($url);
@@ -183,9 +262,9 @@ class ComboboxEndpointSmokeTest extends TestCase
     public function test_catalog_scope_endpoints_and_edit_pages_expose_control_metadata(): void
     {
         $user = $this->verifiedAdmin();
-        $department = Department::query()->firstOrFail();
-        $unit = Unit::query()->firstOrFail();
-        $resultCategory = ResultCategory::query()->firstOrFail();
+        $department = Department::factory()->create();
+        $unit = Unit::query()->create(['code' => 'mg/L']);
+        $resultCategory = ResultCategory::query()->create(['name' => 'Numeric result']);
         $suffix = Str::upper(Str::random(6));
 
         $analysisCategory = AnalysisCategory::query()->create([

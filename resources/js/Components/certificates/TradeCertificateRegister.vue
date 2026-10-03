@@ -1,5 +1,7 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import ArchiveMutationFeedback from "@/Components/archive-mutation-feedback.vue";
+import { useRecordArchive } from "@/Composables/useRecordArchive";
 import RecordsTable from "@/Components/records-table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import { Link, router } from "@inertiajs/vue3";
@@ -44,7 +46,17 @@ const config = computed(() => props.kind === "import"
     });
 
 const selectedAction = ref(null);
+const pendingIDs = ref([]);
 const showBulkConfirmation = ref(false);
+const archive = useRecordArchive({
+  destroyUrl: () => route(`${config.value.routePrefix}.destroy`),
+  restoreUrl: () => route(`${config.value.routePrefix}.restore`),
+  onSuccess: () => {
+    pendingIDs.value = [];
+    selectedAction.value = null;
+    pageRecords.value.forEach(record => { record.selected = false; });
+  },
+});
 const pageRecords = computed(() => props.record?.data || []);
 const totalRecords = computed(() => props.record?.meta?.total ?? pageRecords.value.length);
 const selectedRecordIds = computed(() => pageRecords.value.filter((record) => record.selected).map((record) => record.id));
@@ -53,17 +65,20 @@ const activeRecords = computed(() => pageRecords.value.length - archivedRecords.
 const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`));
 const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`));
 
-const actions = [
+const actions = computed(() => [
   { id: null, label: "gestlab.actions.bulk_actions_text" },
-  { id: "delete", label: "gestlab.actions.delete" },
-  { id: "restore", label: "gestlab.actions.restore" },
-];
+  ...(hasPermission(`delete_${config.value.permissionKey}`) ? [{ id: "delete", label: "gestlab.actions.delete" }] : []),
+  ...(hasPermission(`restore_${config.value.permissionKey}`) ? [{ id: "restore", label: "gestlab.actions.restore" }] : []),
+]);
 
 function createRecord() {
   router.get(route(`${config.value.routePrefix}.create`));
 }
 
 function prepareBulkAction(action) {
+  if (archive.processing.value || !['delete', 'restore'].includes(action) || !selectedRecordIds.value.length
+    || !hasPermission(`${action === 'delete' ? 'delete' : 'restore'}_${config.value.permissionKey}`)) return;
+  pendingIDs.value = [...selectedRecordIds.value];
   selectedAction.value = action;
   showBulkConfirmation.value = true;
 }
@@ -74,17 +89,14 @@ function resetBulkAction() {
 }
 
 function executeBulkAction() {
-  if (!selectedRecordIds.value.length || !["delete", "restore"].includes(selectedAction.value)) {
-    resetBulkAction();
-    return;
-  }
+  if (archive.processing.value) return;
+  showBulkConfirmation.value = false;
+  archiveRecord(selectedAction.value, pendingIDs.value);
+}
 
-  router.get(route(`${config.value.routePrefix}.${selectedAction.value}`), {
-    recordIds: selectedRecordIds.value,
-  }, {
-    preserveScroll: true,
-    onFinish: resetBulkAction,
-  });
+function archiveRecord(operation, ids) {
+  if (!hasPermission(`${operation === 'delete' ? 'delete' : 'restore'}_${config.value.permissionKey}`)) return;
+  archive.submit(operation, ids);
 }
 </script>
 
@@ -128,7 +140,10 @@ function executeBulkAction() {
       </dl>
     </section>
 
+    <ArchiveMutationFeedback :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="router.reload()" />
     <RecordsTable
+      :action-processing="archive.processing.value"
+      :archive-handler="archiveRecord"
       :record="record"
       :model="model"
       :abilities="abilities"

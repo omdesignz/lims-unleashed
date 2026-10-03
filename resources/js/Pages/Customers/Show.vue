@@ -4,19 +4,16 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link } from "@inertiajs/vue3";
 import {
   ArrowLeftIcon,
-  BanknotesIcon,
   BeakerIcon,
   BuildingOffice2Icon,
   CheckBadgeIcon,
-  ClipboardDocumentCheckIcon,
   ClockIcon,
-  DocumentTextIcon,
   EnvelopeIcon,
   ExclamationTriangleIcon,
+  InformationCircleIcon,
   MapPinIcon,
   PencilSquareIcon,
   PhoneIcon,
-  ReceiptPercentIcon,
   StarIcon,
   UserCircleIcon,
 } from "@heroicons/vue/24/outline";
@@ -27,7 +24,6 @@ defineOptions({ layout: Layout });
 const props = defineProps({
   record: { type: Object, required: true },
   customerState: { type: Object, default: () => ({}) },
-  charts: { type: Object, default: () => ({}) },
 });
 
 const { hasPermission } = usePermission();
@@ -36,31 +32,12 @@ const summary = computed(() => props.customerState?.summary ?? {});
 const sites = computed(() => customer.value.warehouses ?? []);
 const primarySite = computed(() => sites.value.find((site) => Number(site.id) === Number(customer.value.warehouse_id)) ?? customer.value.warehouse ?? null);
 const recentSamples = computed(() => props.customerState?.recent_samples ?? []);
-const recentRequests = computed(() => props.customerState?.recent_requests ?? []);
-const openFinance = computed(() => props.customerState?.open_finance ?? []);
-const hasCommercialAttention = computed(() => Number(summary.value.open_amount_due || 0) > 0 || Number(summary.value.open_requests || 0) > 0);
 
 const metrics = computed(() => [
-  { label: "Propostas aceites", value: summary.value.accepted_proposals || 0, detail: "âmbitos comerciais activos", icon: CheckBadgeIcon },
-  { label: "Amostras em curso", value: summary.value.samples_in_progress || 0, detail: `${summary.value.completed_samples || 0} concluídas`, icon: BeakerIcon },
-  { label: "Saldo em aberto", value: formatCurrency(summary.value.open_amount_due), detail: `${summary.value.open_invoices || 0} factura(s)`, icon: BanknotesIcon },
-  { label: "Pedidos abertos", value: summary.value.open_requests || 0, detail: "portal do cliente", icon: ClipboardDocumentCheckIcon },
+  { label: "Propostas aceites", value: summary.value.accepted_proposals || 0, detail: "deste laboratório", icon: CheckBadgeIcon },
+  { label: "Amostras em curso", value: summary.value.samples_in_progress || 0, detail: "deste laboratório", icon: BeakerIcon },
+  { label: "Amostras concluídas", value: summary.value.completed_samples || 0, detail: "deste laboratório", icon: CheckBadgeIcon },
 ]);
-
-const governanceFacts = computed(() => [
-  { label: "Certificados", value: summary.value.certificates || 0, icon: DocumentTextIcon },
-  { label: "Recibos", value: summary.value.receipts || 0, icon: ReceiptPercentIcon },
-  { label: "Notas de crédito", value: summary.value.credit_notes || 0, icon: BanknotesIcon },
-  { label: "Locais", value: sites.value.length, icon: MapPinIcon },
-]);
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat("pt-PT", {
-    style: "currency",
-    currency: "AOA",
-    minimumFractionDigits: 2,
-  }).format(Number(value || 0));
-}
 
 function formatDate(value) {
   if (!value) {
@@ -104,7 +81,7 @@ function statusClass(status) {
             <div class="min-w-0">
               <p class="ds-kicker">Dossier do cliente #{{ customer.id }}</p>
               <h1 class="ds-heading mt-1 break-words text-2xl">{{ customer.name }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Visao consolidada da execução laboratorial, relacionamento comercial, locais e contactos da conta.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Identidade e locais partilhados; execução visível apenas para o laboratório activo.</p>
               <div class="mt-3 flex flex-wrap gap-2">
                 <span v-if="customer.code" class="ds-chip font-mono">{{ customer.code }}</span>
                 <span class="ds-chip">{{ customer.category || "Sem categoria" }}</span>
@@ -128,7 +105,7 @@ function statusClass(status) {
         </div>
       </div>
 
-      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
+      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-3">
         <div v-for="metric in metrics" :key="metric.label" class="bg-[var(--ds-panel)] p-5">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
@@ -142,15 +119,11 @@ function statusClass(status) {
       </dl>
     </section>
 
-    <div v-if="hasCommercialAttention || !primarySite" class="ds-alert ds-alert-warning flex items-start gap-3">
+    <div v-if="!primarySite" class="ds-card flex items-start gap-3 px-5 py-4 text-amber-800 dark:text-amber-200">
       <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 shrink-0" />
       <div>
-        <p class="text-sm font-bold">A conta requer atencao</p>
-        <p class="mt-1 text-sm font-medium">
-          <span v-if="summary.open_amount_due">Existe {{ formatCurrency(summary.open_amount_due) }} por regularizar. </span>
-          <span v-if="summary.open_requests">Ha {{ summary.open_requests }} pedido(s) aberto(s) no portal. </span>
-          <span v-if="!primarySite">O local operacional principal ainda não foi definido.</span>
-        </p>
+        <p class="text-sm font-bold">Local principal por definir</p>
+        <p class="mt-1 text-sm font-medium">O local operacional principal ainda não foi definido.</p>
       </div>
     </div>
 
@@ -163,7 +136,7 @@ function statusClass(status) {
                 <BeakerIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
                 Execução laboratorial recente
               </h2>
-              <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Últimas amostras recebidas para esta conta.</p>
+              <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Últimas amostras deste cliente no laboratório activo.</p>
             </div>
             <span class="ds-chip mt-3 sm:mt-0">{{ recentSamples.length }} registo(s)</span>
           </header>
@@ -186,31 +159,6 @@ function statusClass(status) {
           <div v-else class="ds-empty-state m-5 py-10 text-center sm:m-6">
             <BeakerIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
             <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Sem amostras recentes</p>
-          </div>
-        </section>
-
-        <section class="ds-card overflow-hidden">
-          <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-            <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
-              <ClipboardDocumentCheckIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
-              Pedidos do portal
-            </h2>
-            <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Pedidos recentes submetidos pelo cliente.</p>
-          </header>
-          <div v-if="recentRequests.length" class="divide-y divide-[var(--ds-border)]">
-            <article v-for="request in recentRequests" :key="request.id" class="px-5 py-4 sm:px-6">
-              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div class="min-w-0">
-                  <h3 class="break-words text-sm font-bold text-[var(--ds-text)]">{{ request.title }}</h3>
-                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]"><span class="font-mono">{{ request.reference || "Sem referência" }}</span> / {{ request.request_type || "Sem tipo" }}</p>
-                </div>
-                <span :class="['ds-chip', statusClass(request.status)]">{{ request.status || "Sem estado" }}</span>
-              </div>
-            </article>
-          </div>
-          <div v-else class="ds-empty-state m-5 py-10 text-center sm:m-6">
-            <ClipboardDocumentCheckIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-            <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Sem pedidos recentes</p>
           </div>
         </section>
 
@@ -273,32 +221,12 @@ function statusClass(status) {
         <section class="ds-card overflow-hidden">
           <header class="border-b border-[var(--ds-border)] px-5 py-4">
             <h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]">
-              <BanknotesIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
-              Facturas em aberto
+              <InformationCircleIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" /> Âmbito deste dossier
             </h2>
           </header>
-          <div v-if="openFinance.length" class="divide-y divide-[var(--ds-border)]">
-            <article v-for="invoice in openFinance" :key="invoice.id" class="px-5 py-4">
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0"><p class="break-words font-mono text-xs font-bold text-[var(--ds-text)]">{{ invoice.reference }}</p><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ formatDate(invoice.date) }}</p></div>
-                <p class="text-right text-sm font-bold text-rose-700 dark:text-rose-200">{{ formatCurrency(invoice.amount_due) }}</p>
-              </div>
-            </article>
-          </div>
-          <p v-else class="px-5 py-6 text-sm font-semibold text-[var(--ds-text-muted)]">Sem facturas em aberto.</p>
-        </section>
-
-        <section class="ds-card overflow-hidden">
-          <header class="border-b border-[var(--ds-border)] px-5 py-4">
-            <h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]">
-              <DocumentTextIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" /> Evidência documental </h2>
-          </header>
-          <dl class="divide-y divide-[var(--ds-border)]">
-            <div v-for="fact in governanceFacts" :key="fact.label" class="flex items-center justify-between gap-3 px-5 py-3.5">
-              <dt class="inline-flex items-center gap-2 text-xs font-bold text-[var(--ds-text-muted)]"><component :is="fact.icon" class="h-4 w-4" />{{ fact.label }}</dt>
-              <dd class="font-mono text-sm font-bold text-[var(--ds-text)]">{{ fact.value }}</dd>
-            </div>
-          </dl>
+          <p class="px-5 py-4 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+            Os dados do cliente e os locais são partilhados. Propostas e amostras pertencem apenas ao laboratório activo. Facturas, pedidos do portal e outros documentos sem titularidade laboratorial definida não são apresentados aqui.
+          </p>
         </section>
       </aside>
     </div>

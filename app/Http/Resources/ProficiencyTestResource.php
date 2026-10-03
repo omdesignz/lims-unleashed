@@ -49,12 +49,8 @@ class ProficiencyTestResource extends JsonResource
             'links' => [
                 'show_path' => route('proficiency_tests.show', $this->id),
                 'edit_path' => route('proficiency_tests.edit', $this->id),
-                'delete_path' => route('proficiency_tests.destroy', [
-                    'recordIds' => [$this->id],
-                ]),
-                'restore_path' => route('proficiency_tests.restore', [
-                    'recordIds' => [$this->id],
-                ]),
+                'delete_path' => route('proficiency_tests.destroy'),
+                'restore_path' => route('proficiency_tests.restore'),
             ],
         ];
     }

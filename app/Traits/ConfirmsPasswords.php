@@ -11,29 +11,22 @@ trait ConfirmsPasswords
 {
     /**
      * Indicates if the user's password is being confirmed.
-     *
-     * @var bool
      */
     public bool $confirmingPassword = false;
 
     /**
      * The ID of the operation being confirmed.
-     *
-     * @var string|null
      */
     public ?string $confirmableId = null;
 
     /**
      * The user's password.
-     *
-     * @var string
      */
     public string $confirmablePassword = '';
 
     /**
      * Start confirming the user's password.
      *
-     * @param  string  $confirmableId
      * @return void
      */
     public function startConfirmingPassword(string $confirmableId)
@@ -55,8 +48,6 @@ trait ConfirmsPasswords
 
     /**
      * Stop confirming the user's password.
-     *
-     * @return void
      */
     public function stopConfirmingPassword(): void
     {
@@ -67,8 +58,6 @@ trait ConfirmsPasswords
 
     /**
      * Confirm the user's password.
-     *
-     * @return void
      */
     public function confirmPassword(): void
     {
@@ -89,11 +78,8 @@ trait ConfirmsPasswords
 
     /**
      * Ensure that the user's password has been recently confirmed.
-     *
-     * @param int|null $maximumSecondsSinceConfirmation
-     * @return void
      */
-    protected function ensurePasswordIsConfirmed(int $maximumSecondsSinceConfirmation = null): void
+    protected function ensurePasswordIsConfirmed(?int $maximumSecondsSinceConfirmation = null): void
     {
         $maximumSecondsSinceConfirmation = $maximumSecondsSinceConfirmation ?: config('auth.password_timeout', 900);
 
@@ -102,11 +88,8 @@ trait ConfirmsPasswords
 
     /**
      * Determine if the user's password has been recently confirmed.
-     *
-     * @param int|null $maximumSecondsSinceConfirmation
-     * @return bool
      */
-    protected function passwordIsConfirmed(int $maximumSecondsSinceConfirmation = null)
+    protected function passwordIsConfirmed(?int $maximumSecondsSinceConfirmation = null): bool
     {
         $maximumSecondsSinceConfirmation = $maximumSecondsSinceConfirmation ?: config('auth.password_timeout', 900);
 

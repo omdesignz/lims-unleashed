@@ -3,6 +3,8 @@
     <button @click="bulkAction(action.id)" type="button" class="inline-flex items-center rounded-xl bg-[rgb(var(--primary-800-rgb))] px-3 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-inset ring-[rgb(var(--primary-800-rgb))] transition hover:bg-[rgb(var(--primary-700-rgb))] disabled:cursor-not-allowed disabled:opacity-30 dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f] dark:ring-[rgb(var(--primary-500-rgb))] dark:hover:bg-[rgb(var(--primary-300-rgb))]" 
         v-for="(action, index) in props.actions" 
         :key="index"
+        :disabled="props.processing"
+        :aria-busy="props.processing"
                 v-motion
                 :initial="{ opacity: 0, x: 100 }"
                 :enter="{ opacity: 1, x: 0, scale: 1 }"
@@ -15,15 +17,18 @@
   </template>
   
   <script setup>
-  import { defineEmits, defineProps } from 'vue';
-
   const props = defineProps({
     actions: Array,
+    processing: Boolean,
   });
   
   const emit = defineEmits(['bulk-action']);
   
   const bulkAction = (action) => {
+    if (props.processing) {
+      return;
+    }
+
     emit('bulk-action', action);
   };
   </script>

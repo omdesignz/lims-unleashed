@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class AdminPagesSmokeTest extends TestCase
@@ -14,51 +18,40 @@ class AdminPagesSmokeTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for admin page smoke testing.');
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $admin->givePermissionTo(Permission::findOrCreate('view_samples', 'web'));
+        $laboratory = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $laboratory->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $laboratory->id]);
 
         return $admin;
     }
 
-    public function test_verified_admin_can_open_core_admin_pages_with_filters(): void
+    #[DataProvider('coreAdminPages')]
+    public function test_verified_admin_can_open_core_admin_page(string $routeName, array $parameters): void
     {
         $user = $this->verifiedAdmin();
 
-        $checks = [
-            route('users.index'),
-            route('users.index', ['filter' => 'trashed']),
-            route('roles.index'),
-            route('roles.index', ['filter' => 'trashed']),
-            route('permissions.index'),
-            route('permissions.index', ['filter' => 'trashed']),
-            route('archived_documents.index'),
-            route('samples.index'),
-            route('qms.index'),
-            route('supplier-assessments.index'),
-            route('vap_non_conformities.index'),
+        $this->actingAs($user)->get(route($routeName, $parameters))->assertOk();
+    }
+
+    /** @return array<string, array{string, array<string, string>}> */
+    public static function coreAdminPages(): array
+    {
+        return [
+            'users' => ['users.index', []],
+            'trashed users' => ['users.index', ['filter' => 'trashed']],
+            'roles' => ['roles.index', []],
+            'trashed roles' => ['roles.index', ['filter' => 'trashed']],
+            'permissions' => ['permissions.index', []],
+            'trashed permissions' => ['permissions.index', ['filter' => 'trashed']],
+            'archived documents' => ['archived_documents.index', []],
+            'samples' => ['samples.index', []],
+            'quality management' => ['qms.index', []],
+            'supplier assessments' => ['supplier-assessments.index', []],
+            'non-conformities' => ['vap_non_conformities.index', []],
         ];
-
-        $failures = [];
-
-        foreach ($checks as $url) {
-            $response = $this->actingAs($user)->get($url);
-
-            if (! $response->isSuccessful()) {
-                $failures[] = sprintf(
-                    'Expected [%s] to load successfully, got HTTP %d.',
-                    $url,
-                    $response->getStatusCode()
-                );
-            }
-        }
-
-        $this->assertSame([], $failures, implode(PHP_EOL, $failures));
     }
 
     public function test_registered_controller_routes_resolve_to_existing_methods(): void
@@ -89,11 +82,18 @@ class AdminPagesSmokeTest extends TestCase
     public function test_system_activity_static_endpoints_are_not_shadowed_by_the_detail_route(): void
     {
         $user = $this->verifiedAdmin();
+        DB::table('activity_log')->insert([
+            'log_name' => 'admin-smoke',
+            'description' => 'Hour aggregation regression',
+            'created_at' => now()->startOfDay()->addHours(3),
+            'updated_at' => now()->startOfDay()->addHours(3),
+        ]);
 
         $this->actingAs($user)
             ->getJson(route('systemactivity.stats'))
             ->assertOk()
-            ->assertJsonStructure(['total', 'today', 'yesterday', 'last_7_days', 'last_30_days']);
+            ->assertJsonStructure(['total', 'today', 'yesterday', 'last_7_days', 'last_30_days', 'by_hour'])
+            ->assertJsonPath('by_hour.03:00', fn (int $count): bool => $count >= 1);
 
         $this->actingAs($user)
             ->getJson(route('systemactivity.cleanup.recommendations'))

@@ -33,6 +33,9 @@
           </div>
 
           <div class="flex-1 overflow-auto bg-slate-100/80 p-4 dark:bg-slate-950/70 sm:p-6">
+            <p v-if="comparisonError" role="alert" class="mb-4 text-sm font-semibold text-rose-700 dark:text-rose-300">
+              {{ comparisonError }}
+            </p>
             <div v-if="sortedVersions.length" class="space-y-4">
               <article
                 v-for="version in sortedVersions"
@@ -75,12 +78,13 @@
 
                   <div class="flex flex-wrap items-center gap-2">
                     <button
-                      v-if="previousVersion(version)"
+                      v-if="previousVersion(version) && canCompareVersions(version, previousVersion(version)!)"
                       type="button"
                       class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                      :disabled="isComparing"
                       @click="compareVersions(version, previousVersion(version)!)"
                     >
-                      Comparar
+                      {{ isComparing ? 'A comparar…' : 'Comparar' }}
                     </button>
                     <button
                       v-if="version.id !== file?.currentVersionId"
@@ -217,11 +221,17 @@ const comparisonVersions = ref<{
 const diffResult = ref<Change[]>([])
 const oldContent = ref('')
 const newContent = ref('')
+const comparisonError = ref('')
+const isComparing = ref(false)
 
 const file = computed(() => fileStore.files.find((currentFile) => currentFile.id === props.fileId))
 
 const sortedVersions = computed(() => {
-  return [...(file.value?.versions || [])].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  return [...(file.value?.versions || [])].sort((a, b) => {
+    const revisionOrder = (b.revision_code || '').localeCompare(a.revision_code || '', undefined, { numeric: true })
+
+    return revisionOrder || b.createdAt.getTime() - a.createdAt.getTime()
+  })
 })
 
 function formatDate(date?: Date): string {
@@ -245,15 +255,50 @@ function previousVersion(version: FileVersion): FileVersion | null {
   return index < sortedVersions.value.length - 1 ? sortedVersions.value[index + 1] : null
 }
 
+function canCompareVersions(newer: FileVersion, older: FileVersion): boolean {
+  const isText = (version: FileVersion): boolean => {
+    const mimeType = version.mime_type || ''
+
+    return mimeType.startsWith('text/') || ['application/json', 'application/xml', 'application/javascript'].includes(mimeType)
+  }
+
+  return isText(newer) && isText(older)
+}
+
 async function compareVersions(newer: FileVersion, older: FileVersion): Promise<void> {
-  comparisonVersions.value = { newer, older }
+  if (isComparing.value) return
 
-  const textDecoder = new TextDecoder()
-  oldContent.value = textDecoder.decode(older.content)
-  newContent.value = textDecoder.decode(newer.content)
+  comparisonError.value = ''
+  isComparing.value = true
 
-  diffResult.value = diffLines(oldContent.value, newContent.value)
-  showComparison.value = true
+  try {
+    const response = await fetch(route('files.versions.compare', {
+      file: props.fileId,
+      older: older.id,
+      newer: newer.id,
+    }), {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      comparisonError.value = response.status === 413
+        ? 'Estas versões são demasiado grandes para comparação textual.'
+        : 'Não foi possível comparar estas versões. Tente novamente.'
+      return
+    }
+
+    const comparison = await response.json()
+    comparisonVersions.value = { newer, older }
+    oldContent.value = comparison.older.text
+    newContent.value = comparison.newer.text
+    diffResult.value = diffLines(oldContent.value, newContent.value)
+    showComparison.value = true
+  } catch {
+    comparisonError.value = 'Não foi possível comparar estas versões. Tente novamente.'
+  } finally {
+    isComparing.value = false
+  }
 }
 
 function closeComparison(): void {

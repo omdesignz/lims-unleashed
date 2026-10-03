@@ -3,24 +3,34 @@
 namespace App\Services\Integrations;
 
 use App\Jobs\DeliverIntegrationWebhook;
+use App\Models\Analysis;
 use App\Models\IntegrationConnector;
 use App\Models\IntegrationDelivery;
 use App\Models\Result;
+use App\Services\IssuedAnalyticalScope;
+use App\Services\LaboratoryWorkflowOwnership;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class IntegrationPublisher
 {
+    public function __construct(
+        private readonly LaboratoryWorkflowOwnership $ownership,
+        private readonly IssuedAnalyticalScope $issuedScope,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $data
      * @return array<int, IntegrationDelivery>
      */
-    public function publish(string $eventType, Model $subject, array $data): array
+    private function publish(string $eventType, Model $subject, array $data, int $labId): array
     {
         $deliveries = [];
 
         IntegrationConnector::query()
+            ->where('lab_id', $labId)
             ->outbound()
             ->where('status', 'active')
             ->whereJsonContains('event_types', $eventType)
@@ -43,7 +53,7 @@ class IntegrationPublisher
                     ],
                 ]);
 
-                DeliverIntegrationWebhook::dispatch($delivery);
+                DeliverIntegrationWebhook::dispatch($delivery)->afterCommit();
                 $deliveries[] = $delivery;
             });
 
@@ -56,14 +66,40 @@ class IntegrationPublisher
     public function publishValidatedAnalysis(Result $result): array
     {
         $result->loadMissing([
-            'sample.results.parameter',
-            'sample.results.unit',
-            'sample.collection',
+            'sample.analysis',
+            'sample.results',
+            'sample.collection.collection.sampleEntry',
         ]);
 
         $sample = $result->sample;
+        $analysis = $sample?->analysis;
+        $product = $sample?->collection?->collection;
 
-        if (! $sample) {
+        if (! $sample || ! $analysis || ! $product) {
+            return [];
+        }
+
+        $labId = (int) $product->sampleEntry?->lab_id;
+        if ($labId <= 0 || ! $this->ownership->samplesForLaboratory($labId)->whereKey($sample->id)->exists()) {
+            return [];
+        }
+
+        try {
+            $issuedParameters = $this->issuedScope->parametersFor($analysis, $product)->keyBy('id');
+        } catch (ValidationException) {
+            return [];
+        }
+
+        $isIssuedResult = fn (Result $item): bool => (int) $item->sample_id === (int) $sample->id
+            && (int) $item->code_id === (int) $sample->cl_id
+            && (int) $item->collection_id === (int) $product->id
+            && (int) $item->product_id === (int) $product->product_id
+            && (int) $item->profile_id === (int) $analysis->profile_id
+            && $item->resultable_type === (new Analysis)->getMorphClass()
+            && (int) $item->resultable_id === (int) $analysis->id
+            && $issuedParameters->has((int) $item->parameter_id);
+
+        if (! $isIssuedResult($result) || ! filled($result->approved_date)) {
             return [];
         }
 
@@ -74,15 +110,15 @@ class IntegrationPublisher
                 'laboratory_code' => $sample->collection?->code,
             ],
             'results' => $sample->results
-                ->filter(fn (Result $item): bool => filled($item->approved_date))
+                ->filter(fn (Result $item): bool => $isIssuedResult($item) && filled($item->approved_date))
                 ->map(fn (Result $item): array => [
                     'id' => $item->id,
-                    'parameter_code' => $item->parameter?->code,
-                    'parameter_name' => $item->parameter?->name,
+                    'parameter_code' => $issuedParameters->get((int) $item->parameter_id)?->code,
+                    'parameter_name' => $issuedParameters->get((int) $item->parameter_id)?->name,
                     'value' => $item->approved_value,
-                    'unit' => $item->unit?->name ?? $item->unit_label,
+                    'unit' => $issuedParameters->get((int) $item->parameter_id)?->pivot?->unit_label,
                     'approved_at' => Carbon::parse((string) $item->approved_date)->toIso8601String(),
                 ])->values()->all(),
-        ]);
+        ], $labId);
     }
 }

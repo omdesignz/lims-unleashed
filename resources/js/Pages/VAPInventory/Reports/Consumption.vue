@@ -24,10 +24,7 @@
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
-          <button type="button" class="ds-button ds-button-secondary" @click="exportReport">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar PDF
-          </button>
+          <InventoryReportExportButton report-type="consumption" :filters="filters" />
           <Link :href="route('vap-inventory.reagents.consumption.index')" class="ds-button ds-button-primary">
             <ClipboardDocumentListIcon class="h-4 w-4" />
             Registo operacional
@@ -367,8 +364,8 @@ import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Pagination from '@/Components/Pagination.vue'
+import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import {
-  ArrowDownTrayIcon,
   BeakerIcon,
   ChartBarSquareIcon,
   ClipboardDocumentListIcon,
@@ -562,14 +559,6 @@ function clearFilters() {
     search: '',
     sort_by: 'date',
     sort_direction: 'desc',
-  })
-}
-
-function exportReport() {
-  router.post(route('vap-inventory.reports.export'), {
-    report_type: 'consumption',
-    format: 'pdf',
-    filters: { ...filters },
   })
 }
 

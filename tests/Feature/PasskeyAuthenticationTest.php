@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Http\Middleware\VerifyCsrfToken;
+use App\Models\Customer;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -16,14 +19,11 @@ class PasskeyAuthenticationTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for passkey testing.');
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
 
         return $admin;
     }
@@ -64,10 +64,12 @@ class PasskeyAuthenticationTest extends TestCase
 
     public function test_authenticated_portal_customer_can_fetch_passkey_registration_options(): void
     {
-        $warehouse = Warehouse::query()
-            ->whereNotNull('customer_id')
-            ->whereNotNull('email')
-            ->firstOrFail();
+        $customer = Customer::query()->create(['name' => 'Passkey portal customer '.fake()->uuid()]);
+        $warehouse = Warehouse::query()->create([
+            'name' => 'Passkey portal site',
+            'customer_id' => $customer->id,
+            'email' => 'passkey-portal-'.fake()->uuid().'@lims-unleashed.test',
+        ]);
 
         $response = $this->withoutMiddleware(VerifyCsrfToken::class)
             ->actingAs($warehouse, 'portal')

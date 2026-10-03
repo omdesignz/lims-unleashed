@@ -2,91 +2,94 @@
 
 namespace Tests\Feature;
 
+use App\Actions\PrepareSampleEntryPayload;
+use App\Actions\ProcessLaboratoryResults;
 use App\Events\AnalysisResultsApproved;
 use App\Events\AnalysisResultsValidated;
-use App\Events\CollectionProcessed;
 use App\Jobs\ApproveAnalysisResults;
 use App\Jobs\PlaceProductsInAnalysis;
-use App\Jobs\ProcessDirectCollectionProducts;
-use App\Jobs\ProcessProgrammedCollectionProducts;
 use App\Listeners\GenerateAnalysisReportDocument;
 use App\Models\Analysis;
+use App\Models\AnalysisCategory;
 use App\Models\Collection;
+use App\Models\CollectionEndResult;
 use App\Models\CollectionProduct;
+use App\Models\Customer;
+use App\Models\Department;
 use App\Models\LabCode;
+use App\Models\Matrix;
+use App\Models\NormativeWorkProcedure;
+use App\Models\Parameter;
+use App\Models\Permission;
+use App\Models\Product;
+use App\Models\Profile;
 use App\Models\ProgrammedCollection;
+use App\Models\Protocol;
 use App\Models\QualityCertificate;
 use App\Models\Result;
+use App\Models\ResultCategory;
 use App\Models\Role;
 use App\Models\Sample;
+use App\Models\Standard;
+use App\Models\Unit;
 use App\Models\User;
+use App\Models\VAPLab;
+use App\Models\VAPSampleEntry;
+use App\Models\Warehouse;
+use App\Support\SampleEntryCollectionFlowService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AnalysisLifecycleIntegrityTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function test_collection_jobs_preserve_accession_metadata(): void
+    private VAPLab $laboratory;
+
+    public function test_canonical_collection_flows_preserve_accession_metadata(): void
     {
-        Event::fake([CollectionProcessed::class]);
-
         $user = $this->verifiedAdmin();
-        $source = CollectionProduct::query()
-            ->whereNotNull(['customer_id', 'warehouse_id', 'product_id', 'result_id'])
-            ->whereHas('product.matrix.profiles')
-            ->with('customer')
-            ->firstOrFail();
-        $payload = $this->collectionProductPayload($source, [
-            'sample_status' => 'Recebida para controlo',
-            'sampling_plan_ref' => 'PLANO-QA-2026',
-            'customer_submitted_info' => 'Frasco selado e cadeia de custódia confirmada.',
-        ]);
+        $fixture = $this->collectionProductFixture();
+        $source = $fixture['collectionProduct'];
 
-        $directStartingId = (int) CollectionProduct::query()->max('id');
-        (new ProcessDirectCollectionProducts(
-            $source->customer_id,
-            $source->warehouse_id,
-            [$payload],
-            now()->toDateString(),
-            [],
-            [],
-            $user,
-            $source->customer
-        ))->handle();
+        foreach (['direct', 'programmed'] as $type) {
+            $entry = VAPSampleEntry::factory()->create([
+                'lab_id' => $this->laboratory->id,
+                'customer_id' => $source->customer_id,
+                'warehouse_id' => $source->warehouse_id,
+                'department_id' => $fixture['department']->id,
+                'received_by_id' => $user->id,
+                'status' => 'POR_INICIAR',
+                'client_submitted_info' => [
+                    'product_id' => $source->product_id,
+                    'requested_profile_ids' => [$fixture['profile']->id],
+                    'collection_type' => $type,
+                    'collection_location' => 'Sala de receção QA',
+                    'vehicle_reference' => 'VIATURA-QA',
+                    'sampling_plan_ref' => 'PLANO-QA-2026',
+                    'customer_submitted_info' => 'Frasco selado e cadeia de custódia confirmada.',
+                ],
+            ]);
+            $record = DB::transaction(fn () => app(SampleEntryCollectionFlowService::class)->sync($entry));
 
-        $directRecord = CollectionProduct::query()->where('id', '>', $directStartingId)->firstOrFail();
-        $this->assertAccessionMetadata($directRecord);
-
-        $programmedStartingId = (int) CollectionProduct::query()->max('id');
-        (new ProcessProgrammedCollectionProducts(
-            $source->customer_id,
-            $source->warehouse_id,
-            [$payload],
-            now()->toDateString(),
-            'Sala de receção QA',
-            [],
-            [],
-            $user,
-            $source->customer,
-            'VIATURA-QA'
-        ))->handle();
-
-        $programmedRecord = CollectionProduct::query()->where('id', '>', $programmedStartingId)->firstOrFail();
-        $this->assertAccessionMetadata($programmedRecord);
+            $this->assertNotNull($record);
+            $this->assertAccessionMetadata($record);
+            $this->assertSame($type, $record->collection->collectionable_type);
+            $this->assertSame($entry->id, $record->sampleEntry->id);
+            $this->assertSame($this->laboratory->id, $record->sampleEntry->lab_id);
+            $this->assertSame(1, $record->samples()->count());
+        }
     }
 
     public function test_programmed_analysis_placement_is_a_scoped_post_action(): void
     {
-        Bus::fake();
-
         $user = $this->verifiedAdmin();
-        $source = CollectionProduct::query()
-            ->whereNotNull(['customer_id', 'warehouse_id', 'product_id'])
-            ->firstOrFail();
+        $source = $this->collectionProductFixture()['collectionProduct'];
         $programmedCollection = ProgrammedCollection::query()->create([
             'user_id' => $user->id,
             'col_date' => now()->toDateString(),
@@ -104,18 +107,25 @@ class AnalysisLifecycleIntegrityTest extends TestCase
             'product_id' => $source->product_id,
             'result_id' => $source->result_id,
         ]);
+        VAPSampleEntry::factory()->create([
+            'lab_id' => $this->laboratory->id,
+            'customer_id' => $source->customer_id,
+            'collection_product_id' => $collectionProduct->id,
+        ]);
         LabCode::query()->create([
             'code' => '',
             'codeable_type' => 'analysis',
             'cl_month' => now()->format('y/m'),
             'collection_id' => $collectionProduct->id,
         ]);
+        Bus::fake();
 
         $this->actingAs($user)
             ->post(route('programmedcollections.PlaceProductsInAnalysis', $collectionProduct))
             ->assertRedirect();
 
         Bus::assertDispatched(PlaceProductsInAnalysis::class, fn (PlaceProductsInAnalysis $job): bool => (int) $job->collection_product_id === $collectionProduct->id
+            && $job->user_id === $user->id && $job->lab_id === $this->laboratory->id && $job->afterCommit
         );
 
         $this->actingAs($user)
@@ -126,17 +136,20 @@ class AnalysisLifecycleIntegrityTest extends TestCase
     public function test_result_validation_rejects_cross_sample_lineage(): void
     {
         $user = $this->verifiedAdmin();
-        $result = Result::query()
-            ->whereNotNull([
-                'sample_id', 'product_id', 'parameter_id', 'code_id', 'profile_id', 'matrix_id',
-                'collection_id', 'type_id', 'unit_id', 'nwp_id', 'protocol_id', 'standard_id',
-            ])
-            ->whereHas('sample.analysis')
-            ->firstOrFail();
-        $otherSample = Sample::query()
-            ->whereKeyNot($result->sample_id)
-            ->whereHas('analysis')
-            ->firstOrFail();
+        $fixture = $this->collectionProductFixture();
+        $result = $fixture['result'];
+        $otherSample = Sample::query()->create([
+            'cl_id' => $fixture['code']->id,
+            'sample_month' => now()->format('y/m'),
+        ]);
+        Analysis::query()->create([
+            'cl_id' => $fixture['code']->id,
+            'sample_id' => $otherSample->id,
+            'profile_id' => $fixture['profile']->id,
+            'product_id' => $fixture['product']->id,
+            'department_id' => $fixture['department']->id,
+            'type_id' => $fixture['category']->id,
+        ]);
 
         $this->actingAs($user)
             ->from(route('analysis.index', ['category' => 'approve']))
@@ -151,55 +164,38 @@ class AnalysisLifecycleIntegrityTest extends TestCase
 
     public function test_approval_completes_the_collection_and_emits_certificate_event_once(): void
     {
+        Storage::fake('public');
+        config(['media-library.disk_name' => 'public']);
+        $user = $this->verifiedAdmin();
+        $fixture = $this->collectionProductFixture();
+        $collectionProduct = $fixture['collectionProduct'];
+        $entry = $collectionProduct->sampleEntry;
+        $analysis = $fixture['analysis'];
+        $result = $fixture['result'];
         Event::fake([AnalysisResultsApproved::class, AnalysisResultsValidated::class]);
 
-        $user = $this->verifiedAdmin();
-        $analysis = Analysis::query()
-            ->whereHas('sample.results')
-            ->whereHas('sample.collection.collection')
-            ->with('sample.results', 'sample.collection.collection')
-            ->firstOrFail();
-        $result = $analysis->sample->results->firstOrFail();
-        $collectionProduct = $analysis->sample->collection->collection;
-
-        Analysis::query()
-            ->whereHas('sample', fn ($query) => $query->where('cl_id', $analysis->cl_id))
-            ->update(['end_date' => now(), 'status' => true]);
-        $analysis->update(['end_date' => null, 'status' => false]);
-        QualityCertificate::query()->where('collection_id', $collectionProduct->id)->delete();
-
-        (new ApproveAnalysisResults([
-            [
-                'result_id' => $result->id,
-                'approved_by' => $user->name,
-                'approved_by_id' => $user->id,
-                'approved_date' => now(),
-                'approved_value' => $result->verified_value ?? $result->inserted_value ?? '1',
-            ],
-        ], $analysis->id, $user))->handle();
-
+        $job = new ApproveAnalysisResults([['result_id' => $result->id, 'parameter_id' => $result->parameter_id,
+            'approved_value' => '1.5', 'uncertainty_value' => '0.1']], $analysis->id, $user->id, $this->laboratory->id,
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9sX6lz4AAAAASUVORK5CYII=');
+        $job->handle(app(ProcessLaboratoryResults::class));
         $collectionProduct->refresh();
         $this->assertTrue($collectionProduct->status);
         $this->assertTrue($collectionProduct->processed);
         $this->assertSame('Concluída', $collectionProduct->sample_status);
         $this->assertNotNull($collectionProduct->analysis_end_date);
+        $this->assertSame('COMPLETADO', $entry->fresh()->status);
         Event::assertDispatchedTimes(AnalysisResultsValidated::class, 1);
-
-        if ($collectionProduct->sampleEntry) {
-            $this->assertSame('COMPLETADO', $collectionProduct->sampleEntry->fresh()->status);
-        }
+        $job->handle(app(ProcessLaboratoryResults::class));
+        Event::assertDispatchedTimes(AnalysisResultsValidated::class, 1);
     }
 
     public function test_report_certificate_generation_is_idempotent(): void
     {
-        $result = Result::query()
-            ->whereHas('code.collection')
-            ->with('code.collection')
-            ->firstOrFail();
+        $user = $this->verifiedAdmin();
+        $result = $this->collectionProductFixture()['result'];
         $collectionProduct = $result->code->collection;
-        QualityCertificate::query()->where('collection_id', $collectionProduct->id)->delete();
         $listener = new GenerateAnalysisReportDocument;
-        $event = new AnalysisResultsValidated($result, $this->verifiedAdmin()->id);
+        $event = new AnalysisResultsValidated($result, $user->id);
 
         $listener->handle($event);
         $listener->handle($event);
@@ -230,58 +226,88 @@ class AnalysisLifecycleIntegrityTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $user = User::factory()->create(['is_active' => true]);
+        $user->assignRole(Role::findOrCreate('admin', 'web'));
+        foreach (['add_analysis', 'approve_results'] as $permission) {
+            $user->givePermissionTo(Permission::findOrCreate($permission, 'web'));
+        }
+        $this->laboratory = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $this->laboratory->id, 'user_id' => $user->id]);
+        $this->withSession(['active_lab_id' => $this->laboratory->id]);
+
+        return $user;
     }
 
     /**
-     * @param  array<string, mixed>  $overrides
-     * @return array<string, mixed>
+     * @return array{collectionProduct: CollectionProduct, code: LabCode, analysis: Analysis, result: Result, product: Product, profile: Profile, department: Department, category: AnalysisCategory}
      */
-    private function collectionProductPayload(CollectionProduct $source, array $overrides = []): array
+    private function collectionProductFixture(): array
     {
-        return array_merge([
-            'product_id' => $source->product_id,
-            'temperature_id' => $source->temperature_id,
-            'vehicle_id' => $source->vehicle_id,
-            'collection_id' => null,
-            'pack_id' => $source->pack_id,
-            'owner_id' => $source->owner_id,
-            'result_id' => $source->result_id,
-            'invoice_id' => $source->invoice_id,
-            'comercial_brand' => $source->comercial_brand,
-            'du_no' => $source->du_no,
-            'origin' => $source->origin,
-            'location' => $source->location,
-            'term_no' => $source->term_no,
-            'container_no' => $source->container_no,
-            'recollection' => false,
-            'obs' => $source->obs,
-            'sample_status' => $source->sample_status,
-            'sampling_plan_ref' => $source->sampling_plan_ref,
-            'customer_submitted_info' => $source->customer_submitted_info,
-            'temperature_value' => $source->temperature_value,
-            'processed' => false,
-            'collected_by_lab' => true,
-            'expiry_date' => $this->dateValue($source->expiry_date),
-            'production_date' => $this->dateValue($source->production_date),
-            'collection_date' => now()->toDateString(),
-            'qty' => $source->qty ?: '1',
-            'collected_qty' => $source->collected_qty ?: '1',
-            'lot' => $source->lot,
-            'bl' => $source->bl,
-            'invoiced' => false,
-            'status' => false,
-        ], $overrides);
+        $customer = Customer::query()->create(['name' => fake()->unique()->company()]);
+        $warehouse = Warehouse::query()->create(['name' => fake()->unique()->company(), 'customer_id' => $customer->id]);
+        $matrix = Matrix::query()->create(['code' => fake()->unique()->bothify('LC-M-######')]);
+        $product = Product::query()->create(['name' => 'Lifecycle product', 'matrix_id' => $matrix->id]);
+        $department = Department::factory()->create();
+        $category = AnalysisCategory::query()->create([
+            'name' => fake()->unique()->bothify('Lifecycle category #######'),
+            'code' => fake()->unique()->bothify('LC-#######'),
+            'department_id' => $department->id,
+        ]);
+        $profile = Profile::query()->create([
+            'name' => fake()->unique()->bothify('Lifecycle profile #######'),
+            'code' => fake()->unique()->bothify('LP-#######'),
+            'category_id' => $category->id,
+        ]);
+        $matrix->profiles()->attach($profile->id);
+        $parameter = Parameter::query()->create(['name' => fake()->unique()->bothify('Lifecycle parameter #######'), 'active' => true]);
+        $unit = Unit::query()->create(['name' => 'Lifecycle unit', 'code' => fake()->unique()->bothify('U-######')]);
+        $protocol = Protocol::query()->create(['name' => 'Lifecycle protocol', 'code' => fake()->unique()->bothify('P-######')]);
+        $standard = Standard::query()->create(['name' => 'Lifecycle standard', 'code' => fake()->unique()->bothify('S-######')]);
+        $nwp = NormativeWorkProcedure::query()->create(['name' => 'Lifecycle procedure', 'code' => fake()->unique()->bothify('N-######')]);
+        $resultCategory = ResultCategory::query()->create(['name' => 'Lifecycle result category']);
+        $profile->parameters()->attach($parameter->id, [
+            'unit_id' => $unit->id, 'protocol_id' => $protocol->id, 'standard_id' => $standard->id,
+            'nwp_id' => $nwp->id, 'category_id' => $resultCategory->id,
+        ]);
+        $endResult = CollectionEndResult::query()->create(['name' => 'Lifecycle end result']);
+        $collection = Collection::query()->create(['customer_id' => $customer->id, 'warehouse_id' => $warehouse->id]);
+        $collectionProduct = CollectionProduct::query()->create([
+            'collection_id' => $collection->id, 'customer_id' => $customer->id, 'warehouse_id' => $warehouse->id,
+            'product_id' => $product->id, 'result_id' => $endResult->id,
+        ]);
+        $entryPayload = app(PrepareSampleEntryPayload::class)->execute([
+            'lab_id' => $this->laboratory->id,
+            'customer_id' => $customer->id,
+            'warehouse_id' => $warehouse->id,
+            'department_id' => $department->id,
+            'client_submitted_info' => [
+                'product_id' => $product->id,
+                'requested_profile_ids' => [$profile->id],
+            ],
+        ], null);
+        VAPSampleEntry::factory()->create([...$entryPayload, 'collection_product_id' => $collectionProduct->id]);
+        $code = LabCode::query()->create(['collection_id' => $collectionProduct->id, 'cl_month' => now()->format('y/m')]);
+        $sample = Sample::query()->create(['cl_id' => $code->id, 'sample_month' => now()->format('y/m')]);
+        $analysis = Analysis::query()->create([
+            'cl_id' => $code->id, 'sample_id' => $sample->id, 'profile_id' => $profile->id,
+            'product_id' => $product->id, 'department_id' => $department->id, 'type_id' => $category->id,
+        ]);
+        $result = Result::query()->create([
+            'sample_id' => $sample->id, 'product_id' => $product->id, 'parameter_id' => $parameter->id,
+            'code_id' => $code->id, 'profile_id' => $profile->id, 'matrix_id' => $matrix->id,
+            'collection_id' => $collectionProduct->id, 'type_id' => $resultCategory->id,
+            'unit_id' => $unit->id, 'nwp_id' => $nwp->id, 'protocol_id' => $protocol->id,
+            'standard_id' => $standard->id, 'inserted_date' => now()->subDays(2),
+            'verified_date' => now()->subDay(), 'inserted_value' => '1.25', 'verified_value' => '1.5',
+            'resultable_id' => $analysis->id, 'resultable_type' => $analysis->getMorphClass(),
+        ]);
+
+        return compact('collectionProduct', 'code', 'analysis', 'result', 'product', 'profile', 'department', 'category');
     }
 
     private function assertAccessionMetadata(CollectionProduct $record): void
     {
-        $this->assertSame('Recebida para controlo', $record->sample_status);
+        $this->assertSame('POR_INICIAR', $record->sample_status);
         $this->assertSame('PLANO-QA-2026', $record->sampling_plan_ref);
         $this->assertSame('Frasco selado e cadeia de custódia confirmada.', $record->customer_submitted_info);
     }
@@ -349,10 +375,5 @@ class AnalysisLifecycleIntegrityTest extends TestCase
     private function option(int $value): array
     {
         return ['value' => $value, 'label' => (string) $value];
-    }
-
-    private function dateValue(mixed $value): ?string
-    {
-        return filled($value) ? substr((string) $value, 0, 10) : null;
     }
 }

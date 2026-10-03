@@ -435,9 +435,9 @@
                         <div class="item-name">{{ $item->item->name ?? 'N/D' }}</div>
                         <div class="item-code">{{ $item->item->code ?? '' }}</div>
                     </td>
-                    <td class="text-center">{{ $item->qty }}</td>
-                    <td class="text-center text-green-500 font-semibold">{{ $item->received_qty ?? 0 }}</td>
-                    <td class="text-center text-yellow-500 font-semibold">{{ $item->pending_qty ?? $item->qty }}</td>
+                    <td class="text-center">{{ $item->qty }} {{ $item->item?->unit?->code }}</td>
+                    <td class="text-center text-green-500 font-semibold">{{ $item->received_qty ?? 0 }} {{ $item->item?->unit?->code }}</td>
+                    <td class="text-center text-yellow-500 font-semibold">{{ $item->pending_qty ?? $item->qty }} {{ $item->item?->unit?->code }}</td>
                     <td class="text-center">{{ $item->warehouse->name ?? 'N/A' }}</td>
                     <td class="text-right currency">{{ number_format($item->unit_price, 2, ',', ' ') }} {{ $item->currency }}</td>
                     <td class="text-right font-semibold currency">{{ number_format($item->total_price, 2, ',', ' ') }} {{ $item->currency }}</td>
@@ -455,17 +455,17 @@
         <thead>
             <tr>
                 <th style="width: 25%;">Total Itens</th>
-                <th style="width: 25%;">Quantidade Total</th>
-                <th style="width: 25%;">Recebido</th>
-                <th style="width: 25%;">Pendente</th>
+                <th style="width: 25%;">Linhas com entrada</th>
+                <th style="width: 25%;">Linhas pendentes</th>
+                <th style="width: 25%;">Unidades</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td class="text-sm font-semibold">{{ $totalItems }}</td>
-                <td class="text-sm font-semibold">{{ $totalQty }}</td>
-                <td class="text-sm font-semibold text-green-500">{{ $totalReceived }}</td>
-                <td class="text-sm font-semibold text-yellow-500">{{ $totalPending }}</td>
+                <td class="text-sm font-semibold text-green-500">{{ $receivedLineCount }}</td>
+                <td class="text-sm font-semibold text-yellow-500">{{ $pendingLineCount }}</td>
+                <td class="text-sm font-semibold">Por item</td>
             </tr>
             <tr class="total-row">
                 <td colspan="4" class="text-white">

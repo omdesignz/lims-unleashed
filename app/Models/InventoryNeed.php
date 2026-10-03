@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 
 class InventoryNeed extends Model
 {
@@ -35,6 +37,20 @@ class InventoryNeed extends Model
             'approved_at' => 'datetime',
             'rejected_at' => 'datetime',
         ];
+    }
+
+    public function scopeForLaboratory(Builder $query, int $labId): Builder
+    {
+        return $query->where('lab_id', $labId);
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (InventoryNeed $need): void {
+            if ($need->isDirty('lab_id')) {
+                throw new LogicException('A procurement need cannot change its owning laboratory.');
+            }
+        });
     }
 
     public function department(): BelongsTo

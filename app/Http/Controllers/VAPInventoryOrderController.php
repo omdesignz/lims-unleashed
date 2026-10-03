@@ -13,26 +13,32 @@ use App\Models\InventoryOrderDetail;
 use App\Models\InventoryTransaction;
 use App\Models\InventoryTransactionType;
 use App\Models\VAPNonConformity;
+use App\Services\SampleLaboratoryAccess;
+use App\Support\InventoryQuantity;
 use App\Support\PdfResponse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use PDF;
 
 class VAPInventoryOrderController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $query = InventoryOrder::with(['supplier'])
+        $labId = $this->laboratoryAccess->activeLabId();
+        $query = InventoryOrder::forLaboratory($labId)->with(['supplier'])
             ->withCount(['items as items_count'])
-            ->withSum('items as total_quantity', 'qty')
             ->withSum('items as total_amount', 'total_price')
             ->select('i_orders.*')
             ->addSelect([
@@ -79,17 +85,19 @@ class VAPInventoryOrderController extends Controller
 
         // Get stats for the dashboard
         $stats = [
-            'total_orders' => InventoryOrder::count(),
-            'pending_orders' => InventoryOrder::where('status', 'pending')->count(),
-            'orders_today' => InventoryOrder::whereDate('date', today())->count(),
-            'total_value' => InventoryOrder::where('status', '!=', 'cancelled')
+            'total_orders' => InventoryOrder::forLaboratory($labId)->count(),
+            'pending_orders' => InventoryOrder::forLaboratory($labId)->where('status', 'pending')->count(),
+            'orders_today' => InventoryOrder::forLaboratory($labId)->whereDate('date', today())->count(),
+            'total_value' => InventoryOrder::forLaboratory($labId)->where('status', '!=', 'cancelled')
                 ->sum('total_amount'),
             'open_items' => InventoryOrderDetail::whereIn('status', ['pending', 'ordered', 'partially_received'])
+                ->where('lab_id', $labId)
                 ->count(),
         ];
 
         $orders = $query->paginate(15)->withQueryString();
-        $receptionNonConformityLookup = $this->receptionNonConformityLookup($orders->getCollection()->pluck('id'));
+        $nonConformitiesAvailable = $this->nonConformitiesAvailable();
+        $receptionNonConformityLookup = $this->receptionNonConformityLookup($orders->getCollection()->pluck('id'), $nonConformitiesAvailable);
 
         $orders->setCollection(
             $orders->getCollection()->map(function (InventoryOrder $order) use ($receptionNonConformityLookup) {
@@ -115,6 +123,7 @@ class VAPInventoryOrderController extends Controller
             'suppliers' => $suppliers,
             'filters' => $request->only(['search', 'status', 'supplier_id', 'date_from', 'date_to', 'sort_by', 'sort_direction']),
             'stats' => $stats,
+            'nonConformitiesAvailable' => $nonConformitiesAvailable,
         ]);
     }
 
@@ -123,14 +132,14 @@ class VAPInventoryOrderController extends Controller
      */
     public function create()
     {
-        $items = InventoryItem::active()->with(['category', 'unit', 'inventory'])
+        $items = InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->active()->with(['category', 'unit', 'inventory'])
             ->select('id', 'name', 'code', 'category_id', 'unit_id', 'last_purchase_price', 'standard_cost')
             // ->where('is_active', true)
             ->get();
 
         $suppliers = $this->supplierOptions();
 
-        $warehouses = InventoryItemWarehouse::select('id', 'name')
+        $warehouses = InventoryItemWarehouse::where('lab_id', $this->laboratoryAccess->activeLabId())->select('id', 'name')
             ->active()
             ->get();
 
@@ -146,6 +155,7 @@ class VAPInventoryOrderController extends Controller
      */
     public function store(Request $request)
     {
+        $labId = $this->laboratoryAccess->activeLabId();
         // dd(request()->all());
 
         if ($request->has('status')) {
@@ -177,32 +187,31 @@ class VAPInventoryOrderController extends Controller
             'obs' => 'nullable|string|max:500',
             'currency' => 'nullable|string|size:3',
             'order_items' => 'required|array|min:1',
-            'order_items.*.item_id' => 'required|exists:i_items,id',
-            'order_items.*.qty' => 'required|integer|min:1',
-            'order_items.*.warehouse_id' => 'required|exists:i_warehouses,id',
+            'order_items.*.item_id' => ['required', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNotNull('unit_id')->whereNull('deleted_at')],
+            'order_items.*.qty' => 'required|numeric|decimal:0,4|min:0.0001',
+            'order_items.*.warehouse_id' => ['required', 'integer', Rule::exists('i_warehouses', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
             'order_items.*.expected_date' => 'nullable|date|after_or_equal:date',
-            'order_items.*.unit_price' => 'required|numeric|min:0',
+            'order_items.*.unit_price' => 'required|numeric|min:0|decimal:0,4',
             'order_items.*.status' => ['nullable', Rule::enum(InventoryOrderItemStatus::class)],
         ]);
+
+        $supplier = InventoryItemSupplier::findOrFail($request->supplier_id);
+        $supplierAssessmentBlocker = $this->supplierAssessmentBlocker($supplier);
+
+        if ($supplierAssessmentBlocker !== null) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $supplierAssessmentBlocker);
+        }
 
         DB::beginTransaction();
 
         try {
-
-            // Get supplier currency
-            $supplier = InventoryItemSupplier::find($request->supplier_id);
-            $supplierAssessmentBlocker = $this->supplierAssessmentBlocker($supplier);
-
-            if ($supplierAssessmentBlocker !== null) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', $supplierAssessmentBlocker);
-            }
-
             $currency = $request->currency ?? $supplier->currency ?? 'USD';
 
             // Create the order
             $order = InventoryOrder::create([
+                'lab_id' => $labId,
                 'date' => $request->date,
                 'user_id' => auth()->id(),
                 'supplier_id' => $request->supplier_id,
@@ -212,12 +221,9 @@ class VAPInventoryOrderController extends Controller
                 'currency' => $currency,
             ]);
 
-            $totalAmount = 0;
-
             // Create order items
             foreach ($request->order_items as $item) {
                 $unitPrice = $item['unit_price'];
-                $totalPrice = $unitPrice * $item['qty'];
 
                 InventoryOrderDetail::create([
                     'order_id' => $order->id,
@@ -230,14 +236,12 @@ class VAPInventoryOrderController extends Controller
                     'currency' => $currency,
                 ]);
 
-                $totalAmount += $totalPrice;
-
                 // Update item's last purchase price
                 $this->updateItemPurchasePrice($item['item_id'], $unitPrice);
             }
 
             // Update order total amount
-            $order->update(['total_amount' => $totalAmount]);
+            $order->update(['total_amount' => $order->items()->sum('total_price')]);
 
             DB::commit();
 
@@ -263,11 +267,12 @@ class VAPInventoryOrderController extends Controller
      */
     public function show(InventoryOrder $order)
     {
+        $this->ensureOwnedOrder($order);
         $order->load([
             'supplier',
             'user',
             'items' => function ($query) {
-                $query->with(['item', 'warehouse']);
+                $query->with(['item.unit', 'warehouse']);
             },
         ]);
 
@@ -276,17 +281,15 @@ class VAPInventoryOrderController extends Controller
             $item->received_qty = $this->getReceivedQuantity($item);
 
             // Update item status based on received quantity
-            if ($item->received_qty >= $item->qty) {
+            if (InventoryQuantity::compare($item->received_qty, $item->qty) >= 0) {
                 $item->status = InventoryOrderItemStatus::RECEIVED;
-            } elseif ($item->received_qty > 0) {
+            } elseif (InventoryQuantity::compare($item->received_qty, '0') > 0) {
                 $item->status = InventoryOrderItemStatus::PARTIALLY_RECEIVED;
             }
         });
 
         // Calculate order summary
         $order->item_count = $order->items->count();
-        $order->total_quantity = $order->items->sum('qty');
-        $order->received_quantity = $order->items->sum('received_qty');
         $order->total_amount = $order->items->sum('total_price');
         $order->received_amount = $order->items->sum(function ($item) {
             if ($item->unit_price && $item->received_qty) {
@@ -296,7 +299,8 @@ class VAPInventoryOrderController extends Controller
             return 0;
         });
 
-        $receptionNonConformitySummary = $this->receptionNonConformityLookup(collect([$order->id]))[$order->id] ?? [
+        $nonConformitiesAvailable = $this->nonConformitiesAvailable();
+        $receptionNonConformitySummary = $this->receptionNonConformityLookup(collect([$order->id]), $nonConformitiesAvailable)[$order->id] ?? [
             'count' => 0,
             'open_count' => 0,
             'latest_severity' => null,
@@ -306,30 +310,30 @@ class VAPInventoryOrderController extends Controller
         $order->setRelation('supplier', $this->decorateSupplierWithAssessment($order->supplier));
         $order->setAttribute('reception_non_conformity_summary', $receptionNonConformitySummary);
 
-        $pendingQuantity = max($order->total_quantity - $order->received_quantity, 0);
         $supplierScore = (int) data_get($order->supplier, 'latest_assessment.total_score', 0);
         $daysSinceCreation = max((int) $order->created_at?->startOfDay()->diffInDays(now()->startOfDay()), 0);
-        $pendingItemCount = $order->items->filter(function ($item) {
-            return (int) ($item->received_qty ?? 0) < (int) $item->qty;
-        })->count();
+        $pendingItemCount = $order->items->filter(fn ($item): bool => InventoryQuantity::compare($item->received_qty ?? '0', $item->qty) < 0)->count();
+        $receivedItemCount = $order->items->filter(fn ($item): bool => InventoryQuantity::compare($item->received_qty ?? '0', '0') > 0)->count();
+        $unreceivedItemCount = $order->item_count - $receivedItemCount;
 
         return Inertia::render('VAPInventory/Orders/Show', [
             'order' => $order,
+            'nonConformitiesAvailable' => $nonConformitiesAvailable,
             'charts' => [
                 'reception_progress' => [
-                    'labels' => ['Quantidade pedida', 'Quantidade recebida', 'Quantidade pendente'],
-                    'series' => [$order->total_quantity, $order->received_quantity, $pendingQuantity],
+                    'labels' => ['Linhas pedidas', 'Com entrada', 'Sem entrada'],
+                    'series' => [$order->item_count, $receivedItemCount, $unreceivedItemCount],
                 ],
                 'item_status_mix' => [
                     'labels' => ['Itens pendentes', 'Itens parciais', 'Itens completos'],
                     'series' => [
-                        $order->items->filter(fn ($item) => (int) ($item->received_qty ?? 0) === 0)->count(),
-                        $order->items->filter(fn ($item) => (int) ($item->received_qty ?? 0) > 0 && (int) ($item->received_qty ?? 0) < (int) $item->qty)->count(),
-                        $order->items->filter(fn ($item) => (int) ($item->received_qty ?? 0) >= (int) $item->qty)->count(),
+                        $order->items->filter(fn ($item): bool => InventoryQuantity::compare($item->received_qty ?? '0', '0') === 0)->count(),
+                        $order->items->filter(fn ($item): bool => InventoryQuantity::compare($item->received_qty ?? '0', '0') > 0 && InventoryQuantity::compare($item->received_qty, $item->qty) < 0)->count(),
+                        $order->items->filter(fn ($item): bool => InventoryQuantity::compare($item->received_qty ?? '0', $item->qty) >= 0)->count(),
                     ],
                 ],
                 'governance_summary' => [
-                    'labels' => ['Score fornecedor', 'NC abertas', 'Dias em curso', 'Linhas pendentes'],
+                    'labels' => ['Score fornecedor', $nonConformitiesAvailable ? 'NC abertas' : 'NC indisponíveis', 'Dias em curso', 'Linhas pendentes'],
                     'series' => [
                         $supplierScore,
                         (int) data_get($receptionNonConformitySummary, 'open_count', 0),
@@ -395,6 +399,7 @@ class VAPInventoryOrderController extends Controller
      */
     public function edit(InventoryOrder $order)
     {
+        $this->ensureOwnedOrder($order);
         // Only allow editing of pending or approved orders
         if (! in_array($order->status, [InventoryOrderTrackingStatus::PENDING, InventoryOrderTrackingStatus::APPROVED])) {
             return redirect()->route('vap-inventory.orders.show', $order->id)
@@ -410,13 +415,13 @@ class VAPInventoryOrderController extends Controller
             $item->received_qty = $this->getReceivedQuantity($item);
         });
 
-        $items = InventoryItem::active()->with(['category', 'unit'])
+        $items = InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->active()->with(['category', 'unit'])
             ->select('id', 'name', 'code', 'category_id', 'unit_id', 'last_purchase_price', 'standard_cost')
             ->get();
 
         $suppliers = $this->supplierOptions();
 
-        $warehouses = InventoryItemWarehouse::active()->select('id', 'name')
+        $warehouses = InventoryItemWarehouse::where('lab_id', $this->laboratoryAccess->activeLabId())->active()->select('id', 'name')
             ->get();
 
         return Inertia::render('VAPInventory/Orders/Edit', [
@@ -432,6 +437,8 @@ class VAPInventoryOrderController extends Controller
      */
     public function update(Request $request, InventoryOrder $order)
     {
+        $this->ensureOwnedOrder($order);
+        $labId = $this->laboratoryAccess->activeLabId();
         // Only allow updating of pending or approved orders
         if (! in_array($order->status, [InventoryOrderTrackingStatus::PENDING, InventoryOrderTrackingStatus::APPROVED])) {
             return redirect()->route('vap-inventory.orders.show', $order->id)
@@ -446,28 +453,37 @@ class VAPInventoryOrderController extends Controller
             'obs' => 'nullable|string|max:500',
             'currency' => 'nullable|string|size:3',
             'order_items' => 'required|array|min:1',
-            'order_items.*.id' => 'nullable|exists:i_order_details,id',
-            'order_items.*.item_id' => 'required|exists:i_items,id',
-            'order_items.*.qty' => 'required|integer|min:1',
-            'order_items.*.warehouse_id' => 'required|exists:i_warehouses,id',
+            'order_items.*.id' => [
+                'bail',
+                'nullable',
+                'integer',
+                'distinct',
+                Rule::exists('i_order_details', 'id')
+                    ->where('order_id', $order->id)
+                    ->whereNull('deleted_at'),
+            ],
+            'order_items.*.item_id' => ['required', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNotNull('unit_id')->whereNull('deleted_at')],
+            'order_items.*.qty' => 'required|numeric|decimal:0,4|min:0.0001',
+            'order_items.*.warehouse_id' => ['required', 'integer', Rule::exists('i_warehouses', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
             'order_items.*.expected_date' => 'nullable|date|after_or_equal:date',
-            'order_items.*.unit_price' => 'required|numeric|min:0',
-            'order_items.*.received_qty' => 'nullable|integer|min:0',
+            'order_items.*.unit_price' => 'required|numeric|min:0|decimal:0,4',
+            'order_items.*.received_qty' => 'nullable|numeric|decimal:0,4|min:0',
         ]);
+
+        $supplier = InventoryItemSupplier::findOrFail($request->supplier_id);
+        $supplierAssessmentBlocker = $this->supplierAssessmentBlocker($supplier);
+
+        if ($supplierAssessmentBlocker !== null) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $supplierAssessmentBlocker);
+        }
 
         DB::beginTransaction();
 
         try {
             // Get supplier currency if changed
             $currency = $request->currency ?? $order->currency;
-            $supplier = InventoryItemSupplier::find($request->supplier_id);
-            $supplierAssessmentBlocker = $this->supplierAssessmentBlocker($supplier);
-
-            if ($supplierAssessmentBlocker !== null) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', $supplierAssessmentBlocker);
-            }
 
             // Update the order
             $order->update([
@@ -482,13 +498,12 @@ class VAPInventoryOrderController extends Controller
             // Get existing item IDs
             $existingItemIds = $order->items->pluck('id')->toArray();
             $updatedItemIds = [];
-            $totalAmount = 0;
 
             // Update or create order items
             foreach ($request->order_items as $itemData) {
                 if (isset($itemData['id'])) {
                     // Update existing item
-                    $item = InventoryOrderDetail::find($itemData['id']);
+                    $item = $order->items()->findOrFail($itemData['id']);
 
                     $receivedQty = $this->getReceivedQuantity($item);
 
@@ -507,7 +522,6 @@ class VAPInventoryOrderController extends Controller
                     }
 
                     $unitPrice = $itemData['unit_price'];
-                    $totalPrice = $unitPrice * $itemData['qty'];
 
                     $item->update([
                         'item_id' => $itemData['item_id'],
@@ -518,7 +532,6 @@ class VAPInventoryOrderController extends Controller
                         'currency' => $currency,
                     ]);
 
-                    $totalAmount += $totalPrice;
                     $updatedItemIds[] = $itemData['id'];
 
                     // Update item's last purchase price if changed
@@ -528,7 +541,6 @@ class VAPInventoryOrderController extends Controller
                 } else {
                     // Create new item
                     $unitPrice = $itemData['unit_price'];
-                    $totalPrice = $unitPrice * $itemData['qty'];
 
                     InventoryOrderDetail::create([
                         'order_id' => $order->id,
@@ -541,8 +553,6 @@ class VAPInventoryOrderController extends Controller
                         'currency' => $currency,
                     ]);
 
-                    $totalAmount += $totalPrice;
-
                     // Update item's last purchase price
                     $this->updateItemPurchasePrice($itemData['item_id'], $unitPrice);
                 }
@@ -553,7 +563,7 @@ class VAPInventoryOrderController extends Controller
             if (! empty($itemsToDelete)) {
                 // Check if any of these items have been received
                 foreach ($itemsToDelete as $itemId) {
-                    $item = InventoryOrderDetail::find($itemId);
+                    $item = $order->items()->findOrFail($itemId);
                     $receivedQty = $this->getReceivedQuantity($item);
 
                     if ($receivedQty > 0) {
@@ -561,11 +571,11 @@ class VAPInventoryOrderController extends Controller
                     }
                 }
 
-                InventoryOrderDetail::whereIn('id', $itemsToDelete)->delete();
+                $order->items()->whereIn('id', $itemsToDelete)->delete();
             }
 
             // Update order total amount
-            $order->update(['total_amount' => $totalAmount]);
+            $order->update(['total_amount' => $order->items()->sum('total_price')]);
 
             // Update overall order status if items have been received
             $this->updateOrderStatus($order);
@@ -589,12 +599,17 @@ class VAPInventoryOrderController extends Controller
         }
     }
 
+    private function ensureOwnedOrder(InventoryOrder $order): void
+    {
+        abort_unless($order->lab_id === $this->laboratoryAccess->activeLabId(), 404);
+    }
+
     private function supplierOptions()
     {
         return InventoryItemSupplier::query()
             ->active()
             ->with(['assessments' => function ($query) {
-                $query->latest('assessment_date');
+                $query->where('lab_id', $this->laboratoryAccess->activeLabId())->latest('assessment_date');
             }])
             ->get(['id', 'name', 'address', 'currency'])
             ->map(function (InventoryItemSupplier $supplier) {
@@ -625,8 +640,8 @@ class VAPInventoryOrderController extends Controller
         }
 
         $latestAssessment = $supplier->relationLoaded('assessments')
-            ? $supplier->assessments->sortByDesc('assessment_date')->first()
-            : $supplier->assessments()->latest('assessment_date')->first();
+            ? $supplier->assessments->where('lab_id', $this->laboratoryAccess->activeLabId())->sortByDesc('assessment_date')->first()
+            : $supplier->assessments()->where('lab_id', $this->laboratoryAccess->activeLabId())->latest('assessment_date')->first();
 
         $supplier->setAttribute('latest_assessment', $latestAssessment ? [
             'id' => $latestAssessment->id,
@@ -642,7 +657,7 @@ class VAPInventoryOrderController extends Controller
 
     private function supplierAssessmentBlocker(?InventoryItemSupplier $supplier): ?string
     {
-        $assessment = $supplier?->assessments()->latest('assessment_date')->first();
+        $assessment = $supplier?->assessments()->where('lab_id', $this->laboratoryAccess->activeLabId())->latest('assessment_date')->first();
 
         if (! $assessment) {
             return null;
@@ -661,7 +676,7 @@ class VAPInventoryOrderController extends Controller
 
     private function supplierAssessmentWarning(?InventoryItemSupplier $supplier): ?string
     {
-        $assessment = $supplier?->assessments()->latest('assessment_date')->first();
+        $assessment = $supplier?->assessments()->where('lab_id', $this->laboratoryAccess->activeLabId())->latest('assessment_date')->first();
 
         if (! $assessment) {
             return 'A encomenda foi registada sem avaliação formal do fornecedor. Recomenda-se abrir a avaliação de fornecedores.';
@@ -683,6 +698,7 @@ class VAPInventoryOrderController extends Controller
      */
     public function destroy(InventoryOrder $order)
     {
+        $this->ensureOwnedOrder($order);
         // Only allow deletion of pending or cancelled orders
         if (! in_array($order->status, [InventoryOrderTrackingStatus::PENDING, InventoryOrderTrackingStatus::CANCELLED])) {
             return redirect()->route('vap-inventory.orders.show', $order->id)
@@ -734,6 +750,7 @@ class VAPInventoryOrderController extends Controller
      */
     public function receive(Request $request, InventoryOrder $order)
     {
+        $this->ensureOwnedOrder($order);
         // Only allow receiving of ordered or partially_received orders
         if (! in_array($order->status, [InventoryOrderTrackingStatus::ORDERED, InventoryOrderTrackingStatus::PARTIALLY_RECEIVED])) {
             return redirect()->route('vap-inventory.orders.show', $order->id)
@@ -741,9 +758,9 @@ class VAPInventoryOrderController extends Controller
         }
 
         $request->validate([
-            'items' => 'required|array',
-            'items.*.id' => 'required|exists:i_order_details,id',
-            'items.*.received_qty' => 'required|integer|min:1',
+            'items' => 'required|array|min:1',
+            'items.*.id' => ['required', 'integer', 'distinct', Rule::exists('i_order_details', 'id')->where('order_id', $order->id)->whereNull('deleted_at')],
+            'items.*.received_qty' => 'required|numeric|decimal:0,4|min:0.0001',
             'items.*.unit_price' => 'nullable|numeric|min:0',
             'receive_date' => 'required|date',
             'reason' => 'nullable|string|max:255',
@@ -754,13 +771,24 @@ class VAPInventoryOrderController extends Controller
             'non_conformity_severity' => 'nullable|in:low,medium,high,critical',
         ]);
 
+        if ($request->boolean('register_non_conformity') && ! $this->nonConformitiesAvailable()) {
+            throw ValidationException::withMessages([
+                'register_non_conformity' => 'O registo de não conformidades está indisponível. A recepção não foi alterada.',
+            ]);
+        }
+
         DB::beginTransaction();
 
         try {
+            $order = InventoryOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if (! in_array($order->status, [InventoryOrderTrackingStatus::ORDERED, InventoryOrderTrackingStatus::PARTIALLY_RECEIVED], true)) {
+                throw ValidationException::withMessages(['items' => 'Este pedido já não pode ser recepcionado.']);
+            }
             $receivedItems = [];
 
             foreach ($request->items as $itemData) {
-                $orderItem = InventoryOrderDetail::find($itemData['id']);
+                $orderItem = InventoryOrderDetail::query()->where('order_id', $order->id)
+                    ->whereKey($itemData['id'])->lockForUpdate()->firstOrFail();
 
                 // Check if item belongs to this order
                 if ($orderItem->order_id !== $order->id) {
@@ -772,27 +800,27 @@ class VAPInventoryOrderController extends Controller
 
                 // Check if quantity is valid
                 $alreadyReceived = $this->getReceivedQuantity($orderItem);
-                $newReceivedQty = $itemData['received_qty'];
-                $totalReceived = $alreadyReceived + $newReceivedQty;
+                $newReceivedQty = InventoryQuantity::fromScaled(InventoryQuantity::toScaled($itemData['received_qty']));
+                $totalReceived = InventoryQuantity::add($alreadyReceived, $newReceivedQty);
 
-                if ($totalReceived > $orderItem->qty) {
-                    throw new \Exception("Não é possível receber uma quantidade superior à encomendada para o artigo: {$orderItem->item->name}");
+                if (InventoryQuantity::compare($totalReceived, $orderItem->qty) > 0) {
+                    throw ValidationException::withMessages(['items' => "A quantidade excede a encomendada para {$orderItem->item->name}."]);
                 }
 
                 // Update inventory stock with cost
                 $this->updateInventoryStock($orderItem, $newReceivedQty, $unitPrice, $request->receive_date, $request->reason, $request->notes);
 
                 // Calculate new total received quantity
-                $newTotalReceived = $alreadyReceived + $newReceivedQty;
+                $newTotalReceived = $totalReceived;
 
                 // Update item's received_qty field
                 $orderItem->received_qty = $newTotalReceived;
 
                 // Update item status based on received quantity
-                if ($newTotalReceived >= $orderItem->qty) {
+                if (InventoryQuantity::compare($newTotalReceived, $orderItem->qty) >= 0) {
                     $orderItem->status = InventoryOrderItemStatus::RECEIVED;
                     $orderItem->actual_date = $request->receive_date;
-                } elseif ($newTotalReceived > 0) {
+                } elseif (InventoryQuantity::compare($newTotalReceived, '0') > 0) {
                     $orderItem->status = InventoryOrderItemStatus::PARTIALLY_RECEIVED;
                     $orderItem->actual_date = $request->receive_date;
                 }
@@ -835,6 +863,10 @@ class VAPInventoryOrderController extends Controller
             }
 
             return $response;
+        } catch (ValidationException $e) {
+            DB::rollBack();
+
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -922,84 +954,40 @@ class VAPInventoryOrderController extends Controller
      */
     public function cancel(InventoryOrder $order)
     {
-        // Only allow cancellation of pending, approved, or ordered orders
-        if (! in_array($order->status, ['pending', 'approved', 'ordered'])) {
-            return redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('error', 'Apenas os pedidos pendentes, aprovados ou encomendados podem ser cancelados.');
-        }
+        $this->ensureOwnedOrder($order);
 
-        // Check if any items have been received
-        $hasReceivedItems = false;
-        foreach ($order->items as $item) {
-            $receivedQty = $this->getReceivedQuantity($item);
-            if ($receivedQty > 0) {
-                $hasReceivedItems = true;
-                break;
+        return DB::transaction(function () use ($order) {
+            $order = InventoryOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if (! in_array($order->status, [
+                InventoryOrderTrackingStatus::PENDING,
+                InventoryOrderTrackingStatus::APPROVED,
+                InventoryOrderTrackingStatus::ORDERED,
+            ], true)) {
+                return redirect()->route('vap-inventory.orders.show', $order->id)
+                    ->with('error', 'Apenas os pedidos pendentes, aprovados ou encomendados podem ser cancelados.');
             }
-        }
 
-        if ($hasReceivedItems) {
+            $items = $order->items()->lockForUpdate()->get();
+
+            if ($items->contains(fn (InventoryOrderDetail $item): bool => InventoryQuantity::compare($this->getReceivedQuantity($item), '0') > 0)) {
+                return redirect()->route('vap-inventory.orders.show', $order->id)
+                    ->with('error', 'Não é possível cancelar um pedido com artigos já recebidos.');
+            }
+
+            $order->update(['status' => InventoryOrderTrackingStatus::CANCELLED]);
+            $order->items()->update(['status' => InventoryOrderItemStatus::CANCELLED]);
+
             return redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('error', 'Não é possível cancelar um pedido com artigos já recebidos.');
-        }
-
-        $order->update([
-            'status' => InventoryOrderTrackingStatus::CANCELLED,
-        ]);
-
-        // Also cancel all order items
-        $order->items()->update(['status' => InventoryOrderItemStatus::CANCELLED]);
-
-        return redirect()->route('vap-inventory.orders.show', $order->id)
-            ->with('success', 'Pedido cancelado com sucesso.');
+                ->with('success', 'Pedido cancelado com sucesso.');
+        });
     }
 
-    /**
-     * Get received quantity for an order item from transactions.
-     */
-    private function getReceivedQuantity(InventoryOrderDetail $orderItem): int
+    /** Get the quantity recorded by the canonical receiving action. */
+    private function getReceivedQuantity(InventoryOrderDetail $orderItem): string
     {
-        // First check the stored received_qty field
-        $storedReceivedQty = (int) $orderItem->received_qty;
-
-        // Also check from transactions for legacy data
-        $orderIdentifiers = array_values(array_unique(array_filter([
-            (string) $orderItem->order_id,
-            $orderItem->order?->reference,
-        ])));
-
-        $transactionReceivedQty = InventoryTransaction::where('item_id', $orderItem->item_id)
-            ->whereHas('type', function ($query) {
-                $query->where('code', 'RECEIPT');
-            })
-            ->whereHas('inventory', function ($query) use ($orderItem) {
-                $query->where('warehouse_id', $orderItem->warehouse_id);
-            })
-            ->where(function ($query) use ($orderIdentifiers) {
-                foreach ($orderIdentifiers as $orderIdentifier) {
-                    $query->orWhere('notes', 'LIKE', '%Order #'.$orderIdentifier.'%')
-                        ->orWhere('notes', 'LIKE', '%pedido #'.$orderIdentifier.'%');
-                }
-            })
-            ->sum('qty');
-
-        // Return the maximum between stored value and transaction value
-        return max($storedReceivedQty, (int) $transactionReceivedQty);
+        return InventoryQuantity::fromScaled(max(0, InventoryQuantity::toScaled($orderItem->received_qty ?? '0')));
     }
-    // private function getReceivedQuantity(InventoryOrderDetail $orderItem): int
-    // {
-    //     $receivedQty = InventoryTransaction::where('item_id', $orderItem->item_id)
-    //         ->whereHas('type', function ($query) {
-    //             $query->where('code', 'RECEIPT');
-    //         })
-    //         ->whereHas('inventory', function ($query) use ($orderItem) {
-    //             $query->where('warehouse_id', $orderItem->warehouse_id);
-    //         })
-    //         ->where('notes', 'LIKE', '%Order #' . $orderItem->order_id . '%')
-    //         ->sum('qty');
-
-    //     return (int) $receivedQty;
-    // }
 
     /**
      * Update inventory stock for received items.
@@ -1055,7 +1043,7 @@ class VAPInventoryOrderController extends Controller
     }
 
     /**
-     * @param  array<int, array{order_item: InventoryOrderDetail, received_qty: int|float|string, unit_price: int|float|string|null, already_received: int}>  $receivedItems
+     * @param  array<int, array{order_item: InventoryOrderDetail, received_qty: int|float|string, unit_price: int|float|string|null, already_received: string}>  $receivedItems
      */
     private function createReceivingNonConformity(InventoryOrder $order, array $receivedItems, Request $request): VAPNonConformity
     {
@@ -1089,8 +1077,9 @@ class VAPInventoryOrderController extends Controller
         $severity = $request->input('non_conformity_severity', 'medium');
 
         return VAPNonConformity::query()->create([
+            'lab_id' => $order->lab_id,
             'department_id' => $departmentId,
-            'nc_number' => (new VAPNonConformity)->generateNcNumber(),
+            'nc_number' => (new VAPNonConformity)->generateNcNumber((int) $order->lab_id),
             'title' => trim((string) $request->string('non_conformity_title')),
             'description' => trim($description."\n\nContexto da recepção:\n".$lines),
             'status' => 'opened',
@@ -1124,15 +1113,16 @@ class VAPInventoryOrderController extends Controller
     /**
      * @return array<int, array{count:int,open_count:int,latest_severity:?string,latest_status:?string}>
      */
-    private function receptionNonConformityLookup(Collection $orderIds): array
+    private function receptionNonConformityLookup(Collection $orderIds, bool $nonConformitiesAvailable): array
     {
         $orderIds = $orderIds->filter()->unique()->values();
 
-        if ($orderIds->isEmpty()) {
+        if ($orderIds->isEmpty() || ! $nonConformitiesAvailable) {
             return [];
         }
 
         $records = VAPNonConformity::query()
+            ->where('lab_id', $this->laboratoryAccess->activeLabId())
             ->where('occurrence_area', 'procurement_receipt')
             ->where(function ($query) use ($orderIds) {
                 foreach ($orderIds as $orderId) {
@@ -1171,12 +1161,17 @@ class VAPInventoryOrderController extends Controller
         return $grouped;
     }
 
+    private function nonConformitiesAvailable(): bool
+    {
+        return Schema::hasTable('v_non_conformities');
+    }
+
     /**
      * Update item's last purchase price.
      */
     private function updateItemPurchasePrice($itemId, $unitPrice)
     {
-        $item = InventoryItem::find($itemId);
+        $item = InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->find($itemId);
         if ($item) {
             $item->update([
                 'last_purchase_price' => $unitPrice,
@@ -1206,11 +1201,11 @@ class VAPInventoryOrderController extends Controller
             $receivedQty = $item->received_qty ?? $this->getReceivedQuantity($item);
 
             // Update item status based on received quantity
-            if ($receivedQty >= $item->qty) {
+            if (InventoryQuantity::compare($receivedQty, $item->qty) >= 0) {
                 $item->status = InventoryOrderItemStatus::RECEIVED;
                 $anyReceived = true;
                 $allCancelled = false;
-            } elseif ($receivedQty > 0) {
+            } elseif (InventoryQuantity::compare($receivedQty, '0') > 0) {
                 $item->status = InventoryOrderItemStatus::PARTIALLY_RECEIVED;
                 $anyPartiallyReceived = true;
                 $anyReceived = true;
@@ -1296,26 +1291,26 @@ class VAPInventoryOrderController extends Controller
      */
     public function exportPdf(InventoryOrder $order)
     {
+        $this->ensureOwnedOrder($order);
         // Load the order with all necessary relationships
         $order->load([
             'supplier',
             'user',
             'items' => function ($query) {
-                $query->with(['item', 'warehouse']);
+                $query->with(['item.unit', 'warehouse']);
             },
         ]);
 
         // Calculate received quantity for each item
         $order->items->each(function ($item) {
             $item->received_qty = $this->getReceivedQuantity($item);
-            $item->pending_qty = $item->qty - $item->received_qty;
+            $item->pending_qty = InventoryQuantity::subtract($item->qty, $item->received_qty);
         });
 
-        // Calculate totals
+        // Count lines; adding quantities with different units has no meaning.
         $totalItems = $order->items->count();
-        $totalQty = $order->items->sum('qty');
-        $totalReceived = $order->items->sum('received_qty');
-        $totalPending = $totalQty - $totalReceived;
+        $receivedLineCount = $order->items->filter(fn ($item): bool => InventoryQuantity::compare($item->received_qty ?? '0', '0') > 0)->count();
+        $pendingLineCount = $order->items->filter(fn ($item): bool => InventoryQuantity::compare($item->received_qty ?? '0', $item->qty) < 0)->count();
         $totalAmount = $order->items->sum('total_price');
 
         // Format dates
@@ -1341,9 +1336,8 @@ class VAPInventoryOrderController extends Controller
             'createdDate' => $createdDate,
             'orderStatus' => $orderStatus,
             'totalItems' => $totalItems,
-            'totalQty' => $totalQty,
-            'totalReceived' => $totalReceived,
-            'totalPending' => $totalPending,
+            'receivedLineCount' => $receivedLineCount,
+            'pendingLineCount' => $pendingLineCount,
             'totalAmount' => $totalAmount,
             'companyName' => config('app.name', 'LIMS System'),
             'companyAddress' => config('app.address', ''),

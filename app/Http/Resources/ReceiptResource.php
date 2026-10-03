@@ -16,9 +16,10 @@ class ReceiptResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'lab_id' => $this->lab_id,
             'rec_no' => $this->rec_no,
-            'user_id' => UserResource::make($this->whenLoaded('user')),
-            'user' => UserResource::make($this->whenLoaded('user'))?->name ?? null,
+            'user_id' => $this->whenLoaded('user', fn () => UserIdentityResource::make($this->user)->resolve($request)),
+            'user' => $this->whenLoaded('user', fn () => $this->user->name),
             'customer_id' => CustomerResource::make($this->whenLoaded('customer')),
             'customer' => CustomerResource::make($this->whenLoaded('customer'))?->name ?? null,
             'warehouse_id' => WarehouseResource::make($this->whenLoaded('warehouse')),
@@ -38,13 +39,9 @@ class ReceiptResource extends JsonResource
             'links' => [
                 'edit_path' => route('receipts.edit', $this->id),
                 'pdf_path' => route('receipts.getPDF', ['id' => $this->id]),
-                'delete_path' => route('receipts.destroy', [
-                    'recordIds' => [$this->id]
-                ]),
-                'restore_path' => route('receipts.restore', [
-                    'recordIds' => [$this->id]
-                ]),
-            ]
+                'delete_path' => route('receipts.destroy'),
+                'restore_path' => route('receipts.restore'),
+            ],
         ];
     }
 }

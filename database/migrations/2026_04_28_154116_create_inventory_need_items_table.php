@@ -16,12 +16,14 @@ return new class extends Migration
             if (DB::table('inventory_need_items')->count() === 0) {
                 Schema::drop('inventory_need_items');
             } else {
-                DB::statement('ALTER TABLE inventory_need_items ADD INDEX inventory_need_items_inventory_need_id_foreign (inventory_need_id)');
-                DB::statement('ALTER TABLE inventory_need_items ADD INDEX inventory_need_items_inventory_item_id_foreign (inventory_item_id)');
-                DB::statement('ALTER TABLE inventory_need_items ADD INDEX inventory_need_items_warehouse_id_foreign (warehouse_id)');
-                DB::statement('ALTER TABLE inventory_need_items ADD CONSTRAINT inventory_need_items_inventory_need_id_foreign FOREIGN KEY (inventory_need_id) REFERENCES inventory_needs(id) ON DELETE CASCADE');
-                DB::statement('ALTER TABLE inventory_need_items ADD CONSTRAINT inventory_need_items_inventory_item_id_foreign FOREIGN KEY (inventory_item_id) REFERENCES i_items(id)');
-                DB::statement('ALTER TABLE inventory_need_items ADD CONSTRAINT inventory_need_items_warehouse_id_foreign FOREIGN KEY (warehouse_id) REFERENCES i_warehouses(id) ON DELETE SET NULL');
+                Schema::table('inventory_need_items', function (Blueprint $table): void {
+                    $table->index('inventory_need_id');
+                    $table->index('inventory_item_id');
+                    $table->index('warehouse_id');
+                    $table->foreign('inventory_need_id')->references('id')->on('inventory_needs')->cascadeOnDelete();
+                    $table->foreign('inventory_item_id')->references('id')->on('i_items');
+                    $table->foreign('warehouse_id')->references('id')->on('i_warehouses')->nullOnDelete();
+                });
 
                 return;
             }

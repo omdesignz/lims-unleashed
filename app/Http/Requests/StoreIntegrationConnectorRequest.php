@@ -3,17 +3,27 @@
 namespace App\Http\Requests;
 
 use App\Models\IntegrationConnector;
+use App\Services\IntegrationConnectorValidation;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreIntegrationConnectorRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
-    public function authorize(): bool
+    public function authorize(SampleLaboratoryAccess $laboratory): bool
     {
+        if (! $this->user()?->can('edit_iequipments') && ! $this->user()?->can('edit_settings')) {
+            return false;
+        }
+        $labId = $laboratory->activeLabId();
+        $connector = $this->route('connector');
+        if ($connector instanceof IntegrationConnector) {
+            abort_unless((int) $connector->lab_id === $labId, 404);
+        }
+
         return true;
     }
 
@@ -22,37 +32,8 @@ class StoreIntegrationConnectorRequest extends FormRequest
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    public function rules(SampleLaboratoryAccess $laboratory, IntegrationConnectorValidation $validation): array
     {
-        $connector = $this->route('connector');
-
-        return [
-            'inventory_item_id' => ['nullable', 'integer', 'exists:i_items,id'],
-            'name' => ['required', 'string', 'max:120'],
-            'key' => [
-                'nullable',
-                'string',
-                'max:80',
-                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
-                Rule::unique('integration_connectors', 'key')->ignore($connector?->id),
-            ],
-            'direction' => ['required', Rule::in(IntegrationConnector::DIRECTIONS)],
-            'adapter' => ['required', Rule::in(IntegrationConnector::ADAPTERS)],
-            'status' => ['required', Rule::in(IntegrationConnector::STATUSES)],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'configuration' => ['nullable', 'array'],
-            'configuration.endpoint' => [
-                Rule::requiredIf(fn (): bool => in_array($this->string('direction')->value(), ['outbound', 'bidirectional'], true)),
-                'nullable',
-                'url:http,https',
-                'max:2000',
-            ],
-            'configuration.timeout_seconds' => ['nullable', 'integer', 'between:2,30'],
-            'configuration.edge_agent_id' => ['nullable', 'string', 'max:120'],
-            'credentials' => ['nullable', 'array'],
-            'credentials.bearer_token' => ['nullable', 'string', 'max:2000'],
-            'event_types' => ['nullable', 'array'],
-            'event_types.*' => ['string', Rule::in(['lims.analysis.validated', 'lims.connector.test'])],
-        ];
+        return $validation->rules($laboratory->activeLabId(), $this->only(['inventory_item_id', 'direction']), $this->route('connector'));
     }
 }

@@ -17,24 +17,24 @@ class ProposalResource extends JsonResource
         return [
             'id' => $this->id,
             'proposal_no' => $this->proposal_no,
-            'user_id' => UserResource::make($this->whenLoaded('user')),
-            'user' => UserResource::make($this->whenLoaded('user'))?->name ?? null,
+            'user' => $this->whenLoaded('user', fn (): string => $this->user->name),
             'customer_id' => CustomerResource::make($this->whenLoaded('customer')),
             'customer' => CustomerResource::make($this->whenLoaded('customer'))?->name ?? null,
             'warehouse_id' => WarehouseResource::make($this->whenLoaded('warehouse')),
             'warehouse' => WarehouseResource::make($this->whenLoaded('warehouse'))?->address ?? null,
-            'discount_type' => DiscountCategoryResource::make($this->whenLoaded('discount_category')),
             'discount_category' => DiscountCategoryResource::make($this->whenLoaded('discount_category'))?->name ?? null,
-            'template_id' => ProposalTemplateResource::make($this->whenLoaded('template')),
-            'template' => ProposalTemplateResource::make($this->whenLoaded('template'))?->name ?? null,
+            'template' => $this->whenLoaded('template', fn (): string => $this->template->name),
             'template_id' => $this->template_id,
             'service_location' => $this->service_location,
-            'details' => json_decode($this->details),
+            'details' => $this->details,
+            'status' => $this->resource->getRawOriginal('status'),
+            'can_archive' => ! $this->resource->trashed()
+                && in_array($this->resource->getRawOriginal('status'), ['PENDING', 'REJECTED'], true),
             'expiry_date' => $this->expiry_date,
             'is_original' => $this->is_original,
             'qr' => $this->Qr,
             'discount_type' => $this->discount_type,
-            'file_path' => $this->file_path,
+            'has_document' => filled($this->file_path),
             'sub_total' => $this->sub_total,
             'total' => $this->total,
             'unique_hash' => $this->unique_hash,
@@ -45,7 +45,7 @@ class ProposalResource extends JsonResource
             'global_discount_percentage' => $this->global_discount_percentage,
             'withhold_tax' => $this->withhold_tax,
             'converted_to_invoice' => $this->converted_to_invoice,
-            'items' => $this->items,
+            'items' => VAPProposalItemResource::collection($this->whenLoaded('items')),
             'user_id' => $this->user_id,
             'tolerance_days' => $this->tolerance_days,
             'obs' => $this->obs,
@@ -54,17 +54,18 @@ class ProposalResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'deleted_at' => $this->deleted_at,
+            'deleted' => $this->resource->trashed(),
             'links' => [
                 'edit_path' => route('proposals.edit', $this->id),
                 'show_path' => route('proposals.show', $this->id),
                 'delete_path' => route('proposals.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('proposals.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-                'pdf_path' => route('proposals.getPDF', ['id' => $this->id])
-            ]
+                'pdf_path' => route('proposals.getPDF', ['id' => $this->id]),
+            ],
         ];
     }
 }

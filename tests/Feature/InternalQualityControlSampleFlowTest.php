@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Analysis;
+use App\Models\AnalysisCategory;
 use App\Models\Customer;
 use App\Models\Department;
+use App\Models\Matrix;
+use App\Models\Parameter;
 use App\Models\PersonnelQualification;
 use App\Models\Product;
 use App\Models\Profile;
@@ -15,32 +18,43 @@ use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
 use App\Settings\GeneralSettings;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class InternalQualityControlSampleFlowTest extends TestCase
 {
     use DatabaseTransactions;
 
+    private User $admin;
+
+    private VAPLab $lab;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->admin = User::factory()->create(['is_active' => true]);
+        $this->admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $this->lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['user_id' => $this->admin->id, 'lab_id' => $this->lab->id]);
+        $this->withSession(['active_lab_id' => $this->lab->id]);
+        Notification::fake();
+    }
+
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for internal QC testing.');
-
-        return $admin;
+        return $this->admin;
     }
 
     private function qualifyUser(User $user, Department $department): void
     {
         PersonnelQualification::query()->updateOrCreate(
             [
+                'lab_id' => $this->lab->id,
                 'user_id' => $user->id,
                 'capability' => 'sample_intake_validation',
                 'department_id' => $department->id,
@@ -75,17 +89,23 @@ class InternalQualityControlSampleFlowTest extends TestCase
     public function test_internal_raw_material_quality_control_sample_enters_normal_analysis_flow(): void
     {
         $user = $this->verifiedAdmin();
-        $product = Product::query()
-            ->whereHas('matrix.profiles.type')
-            ->with(['matrix.profiles.type', 'matrix.profiles.parameters'])
-            ->firstOrFail();
-
-        /** @var Profile $profile */
-        $profile = $product->matrix->profiles->first();
-        $department = Department::query()->findOrFail($profile->type->department_id);
-        $customer = Customer::query()->firstOrFail();
-        $warehouse = Warehouse::query()->where('customer_id', $customer->id)->first() ?: Warehouse::query()->firstOrFail();
-        $lab = VAPLab::query()->firstOrFail();
+        $department = Department::factory()->create();
+        $category = AnalysisCategory::query()->create([
+            'name' => 'Internal QC category', 'code' => fake()->unique()->bothify('ICQ-######'),
+            'department_id' => $department->id,
+        ]);
+        $matrix = Matrix::query()->create(['code' => fake()->unique()->bothify('ICQ-M-######')]);
+        $profile = Profile::query()->create([
+            'name' => 'Internal QC profile', 'code' => fake()->unique()->bothify('ICQ-P-######'),
+            'category_id' => $category->id,
+        ]);
+        $matrix->profiles()->attach($profile->id);
+        $parameter = Parameter::query()->create(['name' => 'Internal QC parameter', 'active' => true]);
+        $profile->parameters()->attach($parameter->id);
+        $product = Product::query()->create(['name' => 'Internal QC product', 'matrix_id' => $matrix->id]);
+        $customer = Customer::query()->create(['name' => 'Internal QC customer']);
+        $warehouse = Warehouse::query()->create(['name' => 'Internal QC site', 'customer_id' => $customer->id]);
+        $lab = $this->lab;
         $this->qualifyUser($user, $department);
 
         /** @var GeneralSettings $settings */

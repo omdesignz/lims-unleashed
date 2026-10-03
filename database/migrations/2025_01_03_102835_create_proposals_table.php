@@ -25,7 +25,11 @@ return new class extends Migration
             $table->foreignId('template_id')->constrained('proposal_templates')->onDelete('cascade');
             $table->string('status')->default(ProposalTrackingStatus::PENDING); // Draft, Sent, Accepted, Rejected, Expired
             $table->json('details'); // Store proposal details as JSON for flexibility
-            $table->date('expiry_date')->virtualAs("DATE_ADD(created_at, INTERVAL tolerance_days DAY)");
+            if (Schema::getConnection()->getDriverName() === 'pgsql') {
+                $table->date('expiry_date')->nullable()->storedAs('created_at::date + tolerance_days::integer');
+            } else {
+                $table->date('expiry_date')->nullable()->virtualAs('DATE_ADD(created_at, INTERVAL tolerance_days DAY)');
+            }
             $table->boolean('is_original')->default(true);
             $table->foreignId('discount_type')->nullable()->constrained('discount_categories');
             $table->string('file_path')->nullable();

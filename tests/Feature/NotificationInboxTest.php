@@ -14,12 +14,9 @@ class NotificationInboxTest extends TestCase
 {
     use DatabaseTransactions;
 
-    private function verifiedUser(?int $exceptId = null): User
+    private function verifiedUser(): User
     {
-        return User::query()
-            ->when($exceptId, fn ($query) => $query->whereKeyNot($exceptId))
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        return User::factory()->create(['is_active' => true]);
     }
 
     /**
@@ -71,7 +68,7 @@ class NotificationInboxTest extends TestCase
     public function test_user_can_clear_only_their_notification_inbox(): void
     {
         $user = $this->verifiedUser();
-        $otherUser = $this->verifiedUser($user->id);
+        $otherUser = $this->verifiedUser();
         $ownNotification = $this->createNotification($user);
         $otherNotification = $this->createNotification($otherUser);
 
@@ -85,7 +82,7 @@ class NotificationInboxTest extends TestCase
     public function test_user_cannot_modify_another_users_notification(): void
     {
         $user = $this->verifiedUser();
-        $otherUser = $this->verifiedUser($user->id);
+        $otherUser = $this->verifiedUser();
         $notification = $this->createNotification($otherUser);
 
         $this->actingAs($user)

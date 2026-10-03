@@ -1,13 +1,11 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import confirmDialog from "@/Components/confirm-dialog.vue";
-import { ref, computed, reactive } from "vue";
+import { computed, reactive } from "vue";
 import { router } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
 import {pickBy} from 'lodash';
 import pagination from "@/Components/media-pagination.vue";
-import selectAction from '@/Components/select-action.vue';
 import emptyState from '@/Components/empty-state.vue';
 import { SquaresPlusIcon } from '@heroicons/vue/24/outline'
 import { usePermission } from '@/Composables/usePermissions'
@@ -39,10 +37,6 @@ function filter() {
     });
 }
 
-const toggleSelectAll = (e) => {
-      props.record.data.forEach(record => record.selected = e.target.checked);
-}
-
 const allFileTypes = computed(() => {
     return [
         {value: null, label: trans('gestlab.general.labels.files.any_type')},
@@ -57,85 +51,14 @@ const allMonths = computed(() => {
       ];
 });
 
-const actionId = ref(null);
-
-
-const confirmationDialogTitle = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_title.' + actionId.value);
-})
-
-
-const confirmationDialogDescription = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_description.' + actionId.value);
-})
-
-
-let actions = [
-  {
-    id: null,
-    label: 'gestlab.actions.bulk_actions_text'
-  },
-  {
-    id: 'delete',
-    label: 'gestlab.actions.delete'
-  },
-  {
-    id: 'restore',
-    label: 'gestlab.actions.restore'
-  },
-];
-
-
-const showDeleteConfirmation = ref(false);
-
-
-  const confirmAction = () => {
-    executeAction(actionId.value);
-  }
-
-  const executeAction = (actionId) => {
-  const recordIds = props.record.data.filter(record => record.selected).map(record => record.id);
-
-  if(!recordIds.length) return;
-
-  switch (actionId) {
-    case 'delete':
-
-      router.get(route('media.destroy'), {
-          recordIds: recordIds
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId = null;
-        }
-      });
-
-    break;  
-
-    case 'restore':
-        router.get(`/media/restore`, {
-          recordIds: recordIds
-        }, {
-            preserveState:false,
-            preserveScroll: true,
-            onSuccess: () => {
-                showDeleteConfirmation.value = false;
-                actionId = null;
-            }
-        });
-        showDeleteConfirmation.value = false;
-  }
-}  
 </script>
 <template>
+<div>
 <div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.files.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
 </div>
 
-<confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
 
 <div class="mx-auto max-w-7xl">
       <section class="flex flex-col p-4 mb-4 space-y-4 bg-white shadow sm:rounded lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:p-2">
@@ -166,17 +89,7 @@ const showDeleteConfirmation = ref(false);
       </section>
  
       <section class="flex flex-col mb-4 lg:flex-row lg:justify-between">
-        <div class="hidden space-x-2 lg:flex -ml-4">
-        <select-action 
-            :record-ids="props.record.data.filter(record => record.selected).map(record => record.id)" 
-            :actions="actions" 
-            @execute="(e) => {
-                actionId = e;
-                showDeleteConfirmation = true
-            }"
-        />
 
-        </div>
 
         <pagination :pagination="props.record.meta"></pagination>
  
@@ -186,9 +99,7 @@ const showDeleteConfirmation = ref(false);
         <DataTable class="min-w-full bg-white shadow table-fixed sm:rounded">
           <thead>
           <tr class="border-b border-gray-200">
-            <th class="px-2 w-10 text-center">
-              <CheckboxInput type="checkbox" @change="toggleSelectAll" class="w-6 h-6 text-blue-600 rounded-full border-gray-300 lg:w-4 lg:h-4 focus:ring-blue-500" />
-            </th>
+
             <th class="text-left">
               <Link
                   href="#"
@@ -211,33 +122,19 @@ const showDeleteConfirmation = ref(false);
  
           <tbody class="divide-y divide-gray-100">
           <tr class="align-top group" v-for="(item, index) in props.record.data" :key="item.id">
-            <td class="p-2 w-10 text-center">
-              <CheckboxInput type="checkbox" v-model="item.selected" class="w-6 h-6 text-blue-600 rounded-full border-gray-300 lg:w-4 lg:h-4 focus:ring-blue-500" />
-            </td>
+
             <td class="p-2 text-left">
               <div class="flex space-x-4">
                 <div class="overflow-hidden flex-shrink-0 w-12 h-12 bg-gray-100 rounded lg:w-16 lg:h-16">
                   <img :src="item.preview_url" class="object-cover">
                 </div>
                 <div>
-                  <Link href="#" class="text-sm font-semibold text-blue-600 break-all rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <a :href="item.url" class="text-sm font-semibold text-blue-600 break-all rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
                     {{ item.name }}
-                  </Link>
+                  </a>
                   <p class="text-xs text-gray-500 break-all">{{ item.file_name }}</p>
  
-                  <div class="flex items-center mt-2 space-x-2 lg:invisible group-hover:visible">
-                    <Link href="#" class="text-xs text-blue-600 rounded hover:text-blue-900 transform transition-all duration-200 hover:scale-150 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </Link>
-                    <span class="text-xs text-gray-300">|</span>
-                    <Link :href="item.links.delete_path" class="text-xs text-blue-600 rounded hover:text-red-600 transform transition-all duration-200 hover:scale-150 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </Link>
-                    <span class="text-xs text-gray-300">|</span>
+                  <div class="flex items-center mt-2 space-x-2">
                     <a :href="item.url" target="_blank" class="text-xs text-blue-600 rounded hover:text-blue-900 transform transition-all duration-200 hover:scale-150 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
@@ -268,19 +165,11 @@ const showDeleteConfirmation = ref(false);
       </section>
  
       <section class="flex flex-col mb-4 lg:flex-row lg:justify-between">
-        <div class="hidden space-x-2 lg:flex -ml-4">
-        <select-action 
-            :record-ids="props.record.data.filter(record => record.selected).map(record => record.id)" 
-            :actions="actions" 
-            @execute="(e) => {
-                actionId = e;
-                showDeleteConfirmation = true
-            }"
-        />
-        </div>
+
 
         <pagination :pagination="props.record.meta"></pagination>
 
       </section>
     </div>
+</div>
 </template>

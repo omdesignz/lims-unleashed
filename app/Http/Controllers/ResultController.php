@@ -12,19 +12,25 @@ use App\Jobs\InsertIndividualResult;
 use App\Jobs\VerifyAnalysisResults;
 use App\Jobs\VerifyCounterAnalysisResults;
 use App\Jobs\VerifyIndividualResult;
+use App\Models\Analysis;
+use App\Models\CounterAnalysis;
 use App\Models\Result;
 use App\Models\Sample;
+use App\Services\IssuedAnalyticalScope;
+use App\Services\LaboratoryWorkflowOwnership;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\DuplicateSubmissionGuard;
 use App\Support\EquipmentMetrologyGate;
 use App\Support\PersonnelQualificationGate;
-use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Inertia\Inertia;
+use Illuminate\Validation\ValidationException;
 
 class ResultController extends Controller
 {
+    public function __construct(private readonly IssuedAnalyticalScope $issuedScope) {}
+
     private const RESULT_DISPLAY_FORMAT_STANDARD = 'standard';
 
     private const RESULT_DISPLAY_FORMAT_SCIENTIFIC = 'scientific';
@@ -122,6 +128,31 @@ class ResultController extends Controller
             ->all();
     }
 
+    /** @return Collection<int, Result> */
+    private function issuedResultsFor(Analysis|CounterAnalysis $root): Collection
+    {
+        $root->loadMissing('sample.collection.collection.sampleEntry');
+        $product = $root->sample?->collection?->collection;
+        abort_unless($product, 404);
+        $issuedParameters = $this->issuedScope->parametersFor($root, $product)->keyBy('id');
+
+        return Result::with('product')
+            ->where('sample_id', $root->sample_id)
+            ->where('code_id', $root->cl_id)
+            ->where('profile_id', $root->profile_id)
+            ->where('resultable_type', $root->getMorphClass())
+            ->where('resultable_id', $root->id)
+            ->get()
+            ->each(function (Result $result) use ($issuedParameters): void {
+                $parameter = $issuedParameters->get($result->parameter_id);
+                if (! $parameter) {
+                    throw ValidationException::withMessages(['results' => 'O resultado não pertence ao âmbito analítico emitido.']);
+                }
+
+                $result->setRelation('parameter', $parameter);
+            });
+    }
+
     public function getDefaultResultsData()
     {
         abort_if(! auth()->user()->can('view_results'), 403, '');
@@ -141,18 +172,15 @@ class ResultController extends Controller
             ], 422);
         }
 
-        // dd(Sample::with('analysis.profile.parameters.pivot.protocol', 'collection.collection.product', 'results')->findOrFail(request()->sample_id));
+        $analysis = app(LaboratoryWorkflowOwnership::class)
+            ->analysesForLaboratory(app(SampleLaboratoryAccess::class)->activeLabId())
+            ->where('sample_id', $sampleId)->firstOrFail();
 
         if ($action == 'analyze') {
             $sample = Sample::with(
-                'analysis.profile.parameters.formula',
-                'analysis.profile.parameters.pivot.protocol',
-                'analysis.profile.parameters.pivot.nwp',
-                'analysis.profile.parameters.pivot.standard',
-                'analysis.profile.parameters.pivot.category',
-                'analysis.profile.parameters.pivot.formula',
-                'analysis.profile.parameters.pivot.unit',
+                'analysis.profile',
                 'collection.collection.product',
+                'collection.collection.sampleEntry',
                 'results'
             )->findOrFail($sampleId);
 
@@ -162,7 +190,7 @@ class ResultController extends Controller
                 ], 422);
             }
 
-            return collect($sample->analysis->profile->parameters)->map(function ($item) use ($sample) {
+            return $this->issuedScope->parametersFor($sample->analysis, $sample->collection->collection)->map(function ($item) use ($sample) {
                 $isQualitative = $this->parameterIsQualitative($item);
 
                 return [
@@ -215,29 +243,29 @@ class ResultController extends Controller
                     'approved_by_id' => null,
                     'type_id' => [
                         'value' => $item->pivot->category_id,
-                        'label' => $item->pivot->category?->name,
+                        'label' => $item->pivot->category_label,
                     ],
-                    'category_label' => $item->pivot->category?->name,
+                    'category_label' => $item->pivot->category_label,
                     'nwp_id' => [
                         'value' => $item->pivot->nwp_id,
-                        'label' => $item->pivot->nwp?->code,
+                        'label' => $item->pivot->nwp_label,
                     ],
-                    'nwp_label' => $item->pivot->nwp?->code,
+                    'nwp_label' => $item->pivot->nwp_label,
                     'unit_id' => [
                         'value' => $item->pivot->unit_id,
-                        'label' => $item->pivot->unit?->code,
+                        'label' => $item->pivot->unit_label,
                     ],
-                    'unit_label' => $item->pivot->unit?->code,
+                    'unit_label' => $item->pivot->unit_label,
                     'protocol_id' => [
                         'value' => $item->pivot->protocol_id,
-                        'label' => $item->pivot->protocol?->code,
+                        'label' => $item->pivot->protocol_label,
                     ],
-                    'protocol_label' => $item->pivot->protocol?->code,
+                    'protocol_label' => $item->pivot->protocol_label,
                     'standard_id' => [
                         'value' => $item->pivot->standard_id,
-                        'label' => $item->pivot->standard?->code,
+                        'label' => $item->pivot->standard_label,
                     ],
-                    'standard_label' => $item->pivot->standard?->code,
+                    'standard_label' => $item->pivot->standard_label,
                     'status' => false,
                     'count' => true,
                     'requested_counter_analysis' => false,
@@ -276,13 +304,7 @@ class ResultController extends Controller
         }
 
         if ($action == 'verify') {
-            $results = Result::with(
-                'parameter.profiles',
-                'sample.collection.collection.recollection',
-                'sample.analysis.profile',
-                'sample.collection.collection.product',
-                'category'
-            )->where('sample_id', '=', $sampleId)->get();
+            $results = $this->issuedResultsFor($analysis);
 
             return collect($results)->map(function ($item) {
                 $isQualitative = $this->parameterIsQualitative($item->parameter);
@@ -398,13 +420,7 @@ class ResultController extends Controller
         }
 
         if ($action == 'approve') {
-            $results = Result::with(
-                'parameter.profiles',
-                'sample.collection.collection.recollection',
-                'sample.analysis.profile',
-                'sample.collection.collection.product',
-                'category'
-            )->where('sample_id', '=', $sampleId)->get();
+            $results = $this->issuedResultsFor($analysis);
 
             return collect($results)->map(function ($item) {
                 $isQualitative = $this->parameterIsQualitative($item->parameter);
@@ -428,27 +444,27 @@ class ResultController extends Controller
                         'name' => $item->parameter?->name,
                         'result_is_qualitative' => $isQualitative,
                         'result_options' => $this->qualitativeResultOptions($isQualitative),
-                        'decimal_places' => $item->decimal_places,
-                        'requires_calculation' => $item->requires_calculation ?? false,
-                        'formula_expression' => $item->formula_expression,
-                        'formula_id' => $item->formula_id,
-                        'calculation_parameters' => $item->calculation_parameters,
-                        'result_type' => $item->result_type,
+                        'decimal_places' => $item->parameter?->decimal_places,
+                        'requires_calculation' => $item->parameter?->requires_calculation ?? false,
+                        'formula_expression' => $item->parameter?->formula_expression,
+                        'formula_id' => $item->parameter?->formula_id,
+                        'calculation_parameters' => $item->parameter?->calculation_parameters,
+                        'result_type' => $item->parameter?->result_type,
                         'active' => $item->parameter?->active ?? true,
                         'code' => $item->parameter?->code,
                     ],
-                    'formula' => $item->formula,
+                    'formula' => $item->parameter?->formula,
                     'result_is_qualitative' => $isQualitative,
                     'result_options' => $this->qualitativeResultOptions($isQualitative),
                     'display_format' => $this->resultDisplayFormat($item),
 
                     // Added
-                    'decimal_places' => $item->decimal_places,
-                    'requires_calculation' => $item->requires_calculation ?? false,
-                    'formula_expression' => $item->formula_expression,
-                    'formula_id' => $item->formula_id,
+                    'decimal_places' => $item->parameter?->decimal_places,
+                    'requires_calculation' => $item->parameter?->requires_calculation ?? false,
+                    'formula_expression' => $item->parameter?->formula_expression,
+                    'formula_id' => $item->parameter?->formula_id,
                     'calculation_parameters' => $item->parameter?->calculation_parameters,
-                    'result_type' => $item->result_type,
+                    'result_type' => $item->parameter?->result_type,
                     'active' => $item->parameter?->active ?? true,
                     // End Added
 
@@ -541,16 +557,15 @@ class ResultController extends Controller
             ], 422);
         }
 
+        $counterAnalysis = app(LaboratoryWorkflowOwnership::class)
+            ->counterAnalysesForLaboratory(app(SampleLaboratoryAccess::class)->activeLabId())
+            ->where('sample_id', $sampleId)->firstOrFail();
+
         if ($action == 'analyze') {
             $sample = Sample::with(
-                'counteranalysis.profile.parameters.formula',
-                'counteranalysis.profile.parameters.pivot.protocol',
-                'counteranalysis.profile.parameters.pivot.nwp',
-                'counteranalysis.profile.parameters.pivot.standard',
-                'counteranalysis.profile.parameters.pivot.category',
-                'counteranalysis.profile.parameters.pivot.formula',
-                'counteranalysis.profile.parameters.pivot.unit',
+                'counteranalysis.profile',
                 'collection.collection.product',
+                'collection.collection.sampleEntry',
                 'results'
             )->findOrFail($sampleId);
 
@@ -560,7 +575,7 @@ class ResultController extends Controller
                 ], 422);
             }
 
-            return collect($sample->counteranalysis->profile->parameters)->map(function ($item) use ($sample) {
+            return $this->issuedScope->parametersFor($sample->counteranalysis, $sample->collection->collection)->map(function ($item) use ($sample) {
                 $isQualitative = $this->parameterIsQualitative($item);
 
                 return [
@@ -609,29 +624,29 @@ class ResultController extends Controller
                     'approved_by_id' => null,
                     'type_id' => [
                         'value' => $item->pivot->category_id,
-                        'label' => $item->pivot->category?->name,
+                        'label' => $item->pivot->category_label,
                     ],
-                    'category_label' => $item->pivot->category?->name,
+                    'category_label' => $item->pivot->category_label,
                     'nwp_id' => [
                         'value' => $item->pivot->nwp_id,
-                        'label' => $item->pivot->nwp?->code,
+                        'label' => $item->pivot->nwp_label,
                     ],
-                    'nwp_label' => $item->pivot->nwp?->code,
+                    'nwp_label' => $item->pivot->nwp_label,
                     'unit_id' => [
                         'value' => $item->pivot->unit_id,
-                        'label' => $item->pivot->unit?->code,
+                        'label' => $item->pivot->unit_label,
                     ],
-                    'unit_label' => $item->pivot->unit?->code,
+                    'unit_label' => $item->pivot->unit_label,
                     'protocol_id' => [
                         'value' => $item->pivot->protocol_id,
-                        'label' => $item->pivot->protocol?->code,
+                        'label' => $item->pivot->protocol_label,
                     ],
-                    'protocol_label' => $item->pivot->protocol?->code,
+                    'protocol_label' => $item->pivot->protocol_label,
                     'standard_id' => [
                         'value' => $item->pivot->standard_id,
-                        'label' => $item->pivot->standard?->code,
+                        'label' => $item->pivot->standard_label,
                     ],
-                    'standard_label' => $item->pivot->standard?->code,
+                    'standard_label' => $item->pivot->standard_label,
                     'status' => false,
                     'count' => true,
                     'requested_counter_analysis' => false,
@@ -666,13 +681,7 @@ class ResultController extends Controller
         }
 
         if ($action == 'verify') {
-            $results = Result::with(
-                'parameter.profiles',
-                'sample.collection.collection.recollection',
-                'sample.counteranalysis.profile',
-                'sample.collection.collection.product',
-                'category'
-            )->where('sample_id', '=', $sampleId)->get();
+            $results = $this->issuedResultsFor($counterAnalysis);
 
             return collect($results)->map(function ($item) {
                 $isQualitative = $this->parameterIsQualitative($item->parameter);
@@ -780,13 +789,7 @@ class ResultController extends Controller
         }
 
         if ($action == 'approve') {
-            $results = Result::with(
-                'parameter.profiles',
-                'sample.collection.collection.recollection',
-                'sample.counteranalysis.profile',
-                'sample.collection.collection.product',
-                'category'
-            )->where('sample_id', '=', $sampleId)->get();
+            $results = $this->issuedResultsFor($counterAnalysis);
 
             return collect($results)->map(function ($item) {
                 $isQualitative = $this->parameterIsQualitative($item->parameter);
@@ -897,27 +900,17 @@ class ResultController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        // Get any required data
-
-        // Load form
-
-        return Inertia::render('Analysis/Create', []);
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(ResultRequest $request, DuplicateSubmissionGuard $duplicateSubmissionGuard)
     {
         $validated = $request->validated();
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
         $action = (string) $request->action;
         $qualificationGate = app(PersonnelQualificationGate::class);
         $signature = $request->input('signature');
-        $sample = Sample::with('analysis.profile.parameters', 'collection.collection')
+        $sample = app(LaboratoryWorkflowOwnership::class)->samplesForLaboratory($labId)
+            ->with('analysis', 'collection.collection.sampleEntry')
             ->findOrFail($validated['sample_id']);
         $analysisId = $sample->analysis?->id;
         $departmentId = $sample->analysis?->department_id;
@@ -934,20 +927,24 @@ class ResultController extends Controller
             ], 'A amostra seleccionada ainda não tem uma análise associada.');
         }
 
+        $collectionProduct = $sample->collection?->collection;
+        abort_unless($collectionProduct, 404);
+
         $results = $this->prepareResultsForWorkflow(
             collect($validated['results'] ?? [])->values()->all(),
             $action,
-            $this->qualitativeParameterIds($sample->analysis?->profile?->parameters ?? [])
+            $this->qualitativeParameterIds($this->issuedScope->parametersFor($sample->analysis, $collectionProduct))
         );
-        app(EquipmentMetrologyGate::class)->ensureResultsReady($results);
+        app(EquipmentMetrologyGate::class)->ensureResultsReady($results, $labId);
 
         // Persiste data to DB
         if ($action === 'analyze') {
 
             abort_if(! auth()->user()->can('insert_results'), 403, '');
-            $qualificationGate->ensure(auth()->user(), 'insert_results', $departmentId);
+            $qualificationGate->ensure(auth()->user(), 'insert_results', $departmentId, $labId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'analysis-results-analyze', [
+                'lab_id' => $labId,
                 'sample_id' => $validated['sample_id'],
                 'action' => $request->action,
                 'results' => $results,
@@ -959,6 +956,7 @@ class ResultController extends Controller
                 $results,
                 $analysisId,
                 auth()->user(),
+                $labId,
             ));
 
             return to_route('analysis.index', ['category' => 'insert'])->with([
@@ -973,9 +971,10 @@ class ResultController extends Controller
         if ($action === 'verify') {
 
             abort_if(! auth()->user()->can('verify_results'), 403, '');
-            $qualificationGate->ensure(auth()->user(), 'verify_results', $departmentId);
+            $qualificationGate->ensure(auth()->user(), 'verify_results', $departmentId, $labId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'analysis-results-verify', [
+                'lab_id' => $labId,
                 'sample_id' => $validated['sample_id'],
                 'action' => $request->action,
                 'results' => $results,
@@ -987,6 +986,7 @@ class ResultController extends Controller
                 $results,
                 $analysisId,
                 auth()->user(),
+                $labId,
                 $signature,
             ));
 
@@ -1002,9 +1002,10 @@ class ResultController extends Controller
         if ($action === 'approve') {
 
             abort_if(! auth()->user()->can('approve_results'), 403, '');
-            $qualificationGate->ensure(auth()->user(), 'approve_results', $departmentId);
+            $qualificationGate->ensure(auth()->user(), 'approve_results', $departmentId, $labId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'analysis-results-approve', [
+                'lab_id' => $labId,
                 'sample_id' => $validated['sample_id'],
                 'action' => $request->action,
                 'results' => $results,
@@ -1016,6 +1017,7 @@ class ResultController extends Controller
                 $results,
                 $analysisId,
                 auth()->user(),
+                $labId,
                 $signature,
             ));
 
@@ -1036,10 +1038,12 @@ class ResultController extends Controller
     public function storeCounterAnalysisResults(ResultRequest $request, DuplicateSubmissionGuard $duplicateSubmissionGuard)
     {
         $validated = $request->validated();
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
         $action = (string) $request->action;
         $qualificationGate = app(PersonnelQualificationGate::class);
         $signature = $request->input('signature');
-        $sample = Sample::with('counteranalysis.profile.parameters', 'collection.collection')
+        $sample = app(LaboratoryWorkflowOwnership::class)->samplesForLaboratory($labId)
+            ->with('counteranalysis', 'collection.collection.sampleEntry')
             ->findOrFail($validated['sample_id']);
         $counterAnalysisId = $sample->counteranalysis?->id;
         $departmentId = $sample->counteranalysis?->department_id;
@@ -1054,20 +1058,24 @@ class ResultController extends Controller
             return $this->missingWorkflowRedirect('counteranalysis.index', [], 'A amostra seleccionada ainda não tem uma contra-análise associada.');
         }
 
+        $collectionProduct = $sample->collection?->collection;
+        abort_unless($collectionProduct, 404);
+
         $results = $this->prepareResultsForWorkflow(
             collect($validated['results'] ?? [])->values()->all(),
             $action,
-            $this->qualitativeParameterIds($sample->counteranalysis?->profile?->parameters ?? [])
+            $this->qualitativeParameterIds($this->issuedScope->parametersFor($sample->counteranalysis, $collectionProduct))
         );
-        app(EquipmentMetrologyGate::class)->ensureResultsReady($results);
+        app(EquipmentMetrologyGate::class)->ensureResultsReady($results, $labId);
 
         // Persiste data to DB
         if ($action === 'analyze') {
 
             abort_if(! auth()->user()->can('insert_results'), 403, '');
-            $qualificationGate->ensure(auth()->user(), 'insert_results', $departmentId);
+            $qualificationGate->ensure(auth()->user(), 'insert_results', $departmentId, $labId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'counter-analysis-results-analyze', [
+                'lab_id' => $labId,
                 'sample_id' => $validated['sample_id'],
                 'action' => $request->action,
                 'results' => $results,
@@ -1079,6 +1087,7 @@ class ResultController extends Controller
                 $results,
                 $counterAnalysisId,
                 auth()->user(),
+                $labId,
             ));
 
             return to_route('counteranalysis.index')->with([
@@ -1093,9 +1102,10 @@ class ResultController extends Controller
         if ($action === 'verify') {
 
             abort_if(! auth()->user()->can('verify_results'), 403, '');
-            $qualificationGate->ensure(auth()->user(), 'verify_results', $departmentId);
+            $qualificationGate->ensure(auth()->user(), 'verify_results', $departmentId, $labId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'counter-analysis-results-verify', [
+                'lab_id' => $labId,
                 'sample_id' => $validated['sample_id'],
                 'action' => $request->action,
                 'results' => $results,
@@ -1107,6 +1117,7 @@ class ResultController extends Controller
                 $results,
                 $counterAnalysisId,
                 auth()->user(),
+                $labId,
                 $signature,
             ));
 
@@ -1122,9 +1133,10 @@ class ResultController extends Controller
         if ($action === 'approve') {
 
             abort_if(! auth()->user()->can('approve_results'), 403, '');
-            $qualificationGate->ensure(auth()->user(), 'approve_results', $departmentId);
+            $qualificationGate->ensure(auth()->user(), 'approve_results', $departmentId, $labId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'counter-analysis-results-approve', [
+                'lab_id' => $labId,
                 'sample_id' => $validated['sample_id'],
                 'action' => $request->action,
                 'results' => $results,
@@ -1136,6 +1148,7 @@ class ResultController extends Controller
                 $results,
                 $counterAnalysisId,
                 auth()->user(),
+                $labId,
                 $signature,
             ));
 
@@ -1182,26 +1195,14 @@ class ResultController extends Controller
     public function storeIndividual(ResultRequest $request, DuplicateSubmissionGuard $duplicateSubmissionGuard)
     {
         $validated = $request->validated();
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
         $action = $request->input('action', 'analyze');
 
-        // Validate individual result
-        $validator = Validator::make($validated, [
-            'sample_id' => 'required|exists:samples,id',
-            'parameter_id.value' => 'required',
-            'inserted_value' => 'required_if:action,analyze',
-            'verified_value' => 'required_if:action,verify',
-            'approved_value' => 'required_if:action,approve',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+        $resultData = $validated['results'][0];
 
         // Get analysis ID from sample
-        $sample = Sample::with('analysis.profile.parameters')->findOrFail($validated['sample_id']);
+        $sample = app(LaboratoryWorkflowOwnership::class)->samplesForLaboratory($labId)
+            ->with('analysis', 'collection.collection.sampleEntry')->findOrFail($validated['sample_id']);
         $analysisId = $sample->analysis?->id;
 
         if (! $analysisId) {
@@ -1210,22 +1211,25 @@ class ResultController extends Controller
                 'message' => 'A amostra seleccionada ainda não tem uma análise associada.',
             ], 422);
         }
+        $collectionProduct = $sample->collection?->collection;
+        abort_unless($collectionProduct, 404);
         $preparedResult = $this->prepareIndividualResultForWorkflow(
-            $validated,
+            $resultData,
             $action,
-            $this->qualitativeParameterIds($sample->analysis?->profile?->parameters ?? [])
+            $this->qualitativeParameterIds($this->issuedScope->parametersFor($sample->analysis, $collectionProduct))
         );
 
-        app(EquipmentMetrologyGate::class)->ensureResultsReady([$preparedResult]);
+        app(EquipmentMetrologyGate::class)->ensureResultsReady([$preparedResult], $labId);
 
         if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'analysis-results-individual', [
+            'lab_id' => $labId,
             'sample_id' => $validated['sample_id'],
             'action' => $action,
-            'parameter_id' => data_get($validated, 'parameter_id.value'),
-            'result_id' => data_get($validated, 'result_id'),
-            'inserted_value' => data_get($validated, 'inserted_value'),
-            'verified_value' => data_get($validated, 'verified_value'),
-            'approved_value' => data_get($validated, 'approved_value'),
+            'parameter_id' => data_get($resultData, 'parameter_id'),
+            'result_id' => data_get($resultData, 'result_id'),
+            'inserted_value' => data_get($resultData, 'inserted_value'),
+            'verified_value' => data_get($resultData, 'verified_value'),
+            'approved_value' => data_get($resultData, 'approved_value'),
         ], 60)) {
             return response()->json([
                 'success' => false,
@@ -1236,35 +1240,38 @@ class ResultController extends Controller
         // Dispatch appropriate job based on action
         if ($action === 'analyze') {
             abort_if(! auth()->user()->can('insert_results'), 403);
-            app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'insert_results', $sample->analysis?->department_id);
+            app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'insert_results', $sample->analysis?->department_id, $labId);
 
             dispatch(new InsertIndividualResult(
                 $preparedResult,
                 $analysisId,
-                auth()->user()
+                auth()->user(),
+                $labId,
             ));
 
             $message = 'Resultado inserido individualmente com sucesso';
         } elseif ($action === 'verify') {
             abort_if(! auth()->user()->can('verify_results'), 403);
-            app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'verify_results', $sample->analysis?->department_id);
+            app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'verify_results', $sample->analysis?->department_id, $labId);
 
             dispatch(new VerifyIndividualResult(
                 $preparedResult,
                 $analysisId,
                 auth()->user(),
+                $labId,
                 $request->input('signature'),
             ));
 
             $message = 'Resultado verificado individualmente com sucesso';
         } elseif ($action === 'approve') {
             abort_if(! auth()->user()->can('approve_results'), 403);
-            app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'approve_results', $sample->analysis?->department_id);
+            app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'approve_results', $sample->analysis?->department_id, $labId);
 
             dispatch(new ApproveIndividualResult(
                 $preparedResult,
                 $analysisId,
                 auth()->user(),
+                $labId,
                 $request->input('signature'),
             ));
 

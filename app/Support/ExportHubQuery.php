@@ -3,13 +3,17 @@
 namespace App\Support;
 
 use App\Models\User;
+use App\Services\SampleLaboratoryAccess;
 use Carbon\Carbon;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Activitylog\Models\Activity;
 
 class ExportHubQuery
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     /**
      * @param  array<string, mixed>  $filters
      */
@@ -42,7 +46,7 @@ class ExportHubQuery
      */
     public function activityLog(array $filters): Builder
     {
-        $query = DB::table('activity_log')
+        $query = Activity::query()->toBase()
             ->leftJoin('users as causers', function ($join): void {
                 $join->on('causers.id', '=', 'activity_log.causer_id')
                     ->whereIn('activity_log.causer_type', ['user', User::class]);
@@ -281,7 +285,7 @@ class ExportHubQuery
     {
         $parameterStats = DB::table('parameter_profile as pp')
             ->leftJoin('parameters as pp_parameters', 'pp_parameters.id', '=', 'pp.parameter_id')
-            ->selectRaw('pp.profile_id, COUNT(DISTINCT pp.parameter_id) as parameter_count, COALESCE(SUM(CASE WHEN pp.count = 1 OR pp.count IS NULL THEN pp_parameters.price ELSE 0 END), 0) as calculated_price')
+            ->selectRaw('pp.profile_id, COUNT(DISTINCT pp.parameter_id) as parameter_count, COALESCE(SUM(CASE WHEN pp.count = true OR pp.count IS NULL THEN pp_parameters.price ELSE 0 END), 0) as calculated_price')
             ->whereNull('pp.deleted_at')
             ->groupBy('pp.profile_id');
         $matrixCounts = DB::table('matrix_profile')
@@ -353,6 +357,7 @@ class ExportHubQuery
             ? 'invoices.due_date'
             : DB::raw('NULL as due_date');
         $query = DB::table('invoices')
+            ->where('invoices.lab_id', $this->laboratoryAccess->activeLabId())
             ->leftJoin('customers', 'customers.id', '=', 'invoices.customer_id')
             ->leftJoin('warehouses', 'warehouses.id', '=', 'invoices.warehouse_id')
             ->leftJoin('users', 'users.id', '=', 'invoices.user_id')
@@ -387,10 +392,12 @@ class ExportHubQuery
     {
         $itemCounts = $this->countSubquery('quote_items', 'quote_id');
         $query = DB::table('quotes')
+            ->where('quotes.lab_id', $this->laboratoryAccess->activeLabId())
             ->leftJoin('customers', 'customers.id', '=', 'quotes.customer_id')
             ->leftJoin('warehouses', 'warehouses.id', '=', 'quotes.warehouse_id')
             ->leftJoin('users', 'users.id', '=', 'quotes.user_id')
-            ->leftJoin('invoices', 'invoices.id', '=', 'quotes.invoice_id')
+            ->leftJoin('invoices', fn ($join) => $join->on('invoices.id', '=', 'quotes.invoice_id')
+                ->where('invoices.lab_id', (int) request()->attributes->get('proposal_laboratory_id', 0)))
             ->leftJoinSub($itemCounts, 'item_counts', fn ($join) => $join->on('item_counts.parent_id', '=', 'quotes.id'))
             ->select([
                 'quotes.id', 'quotes.quote_no', 'quotes.date', 'quotes.due_date', 'customers.code as customer_code', 'customers.name as customer',
@@ -418,10 +425,12 @@ class ExportHubQuery
     {
         $itemCounts = $this->countSubquery('credit_note_items', 'note_id');
         $query = DB::table('credit_notes')
+            ->where('credit_notes.lab_id', $this->laboratoryAccess->activeLabId())
             ->leftJoin('customers', 'customers.id', '=', 'credit_notes.customer_id')
             ->leftJoin('warehouses', 'warehouses.id', '=', 'credit_notes.warehouse_id')
             ->leftJoin('users', 'users.id', '=', 'credit_notes.user_id')
-            ->leftJoin('invoices', 'invoices.id', '=', 'credit_notes.invoice_id')
+            ->leftJoin('invoices', fn ($join) => $join->on('invoices.id', '=', 'credit_notes.invoice_id')
+                ->on('invoices.lab_id', '=', 'credit_notes.lab_id'))
             ->leftJoinSub($itemCounts, 'item_counts', fn ($join) => $join->on('item_counts.parent_id', '=', 'credit_notes.id'))
             ->select([
                 'credit_notes.id', 'credit_notes.note_no', 'credit_notes.date', 'credit_notes.reason', 'invoices.inv_no as invoice_no',
@@ -450,6 +459,7 @@ class ExportHubQuery
             ->whereNull('deleted_at')
             ->groupBy('receipt_id');
         $query = DB::table('receipts')
+            ->where('receipts.lab_id', $this->laboratoryAccess->activeLabId())
             ->leftJoin('customers', 'customers.id', '=', 'receipts.customer_id')
             ->leftJoin('warehouses', 'warehouses.id', '=', 'receipts.warehouse_id')
             ->leftJoin('users', 'users.id', '=', 'receipts.user_id')
@@ -506,6 +516,7 @@ class ExportHubQuery
     {
         $itemCounts = $this->countSubquery('import_certificate_items', 'certificate_id');
         $query = DB::table('import_certificates')
+            ->where('import_certificates.lab_id', $this->laboratoryAccess->activeLabId())
             ->leftJoin('customers as importers', 'importers.id', '=', 'import_certificates.importer_id')
             ->leftJoin('warehouses as importer_sites', 'importer_sites.id', '=', 'import_certificates.importer_warehouse_id')
             ->leftJoin('customers as exporters', 'exporters.id', '=', 'import_certificates.exporter_id')
@@ -514,7 +525,8 @@ class ExportHubQuery
             ->leftJoin('countries', 'countries.id', '=', 'import_certificates.destination_country_id')
             ->leftJoin('currencies', 'currencies.id', '=', 'import_certificates.currency_id')
             ->leftJoin('users', 'users.id', '=', 'import_certificates.user_id')
-            ->leftJoin('invoices', 'invoices.id', '=', 'import_certificates.invoice_id')
+            ->leftJoin('invoices', fn ($join) => $join->on('invoices.id', '=', 'import_certificates.invoice_id')
+                ->where('invoices.lab_id', (int) request()->attributes->get('proposal_laboratory_id', 0)))
             ->leftJoinSub($itemCounts, 'item_counts', fn ($join) => $join->on('item_counts.parent_id', '=', 'import_certificates.id'))
             ->select([
                 'import_certificates.id', 'import_certificates.cert_no', 'import_certificates.date', 'importers.name as importer', 'importer_sites.name as importer_site',
@@ -541,13 +553,15 @@ class ExportHubQuery
     {
         $itemCounts = $this->countSubquery('export_certificate_items', 'certificate_id');
         $query = DB::table('export_certificates')
+            ->where('export_certificates.lab_id', $this->laboratoryAccess->activeLabId())
             ->leftJoin('customers as exporters', 'exporters.id', '=', 'export_certificates.exporter_id')
             ->leftJoin('warehouses as exporter_sites', 'exporter_sites.id', '=', 'export_certificates.exporter_warehouse_id')
             ->leftJoin('trans_categories', 'trans_categories.id', '=', 'export_certificates.trans_type_id')
             ->leftJoin('countries as origin_countries', 'origin_countries.id', '=', 'export_certificates.country_origin_id')
             ->leftJoin('countries as destination_countries', 'destination_countries.id', '=', 'export_certificates.country_destination_id')
             ->leftJoin('users', 'users.id', '=', 'export_certificates.user_id')
-            ->leftJoin('invoices', 'invoices.id', '=', 'export_certificates.invoice_id')
+            ->leftJoin('invoices', fn ($join) => $join->on('invoices.id', '=', 'export_certificates.invoice_id')
+                ->where('invoices.lab_id', (int) request()->attributes->get('proposal_laboratory_id', 0)))
             ->leftJoinSub($itemCounts, 'item_counts', fn ($join) => $join->on('item_counts.parent_id', '=', 'export_certificates.id'))
             ->select([
                 'export_certificates.id', 'export_certificates.cert_no', 'export_certificates.date', 'exporters.name as exporter', 'exporter_sites.name as exporter_site',
@@ -573,14 +587,15 @@ class ExportHubQuery
     public function qualityCertificates(array $filters): Builder
     {
         $revisions = DB::table('quality_certificate_revisions')
-            ->selectRaw('quality_certificate_id, COUNT(*) as revision_count, MAX(CASE WHEN is_current = 1 THEN version END) as current_version')
+            ->selectRaw('quality_certificate_id, COUNT(*) as revision_count, MAX(CASE WHEN is_current = true THEN version END) as current_version')
             ->whereNull('deleted_at')
             ->groupBy('quality_certificate_id');
         $query = DB::table('quality_certificates')
             ->leftJoin('customers', 'customers.id', '=', 'quality_certificates.customer_id')
             ->leftJoin('warehouses', 'warehouses.id', '=', 'quality_certificates.warehouse_id')
             ->leftJoin('products', 'products.id', '=', 'quality_certificates.product_id')
-            ->leftJoin('invoices', 'invoices.id', '=', 'quality_certificates.invoice_id')
+            ->leftJoin('invoices', fn ($join) => $join->on('invoices.id', '=', 'quality_certificates.invoice_id')
+                ->where('invoices.lab_id', (int) request()->attributes->get('proposal_laboratory_id', 0)))
             ->leftJoin('lab_codes', 'lab_codes.id', '=', 'quality_certificates.cl_id')
             ->leftJoin('users as issuers', 'issuers.id', '=', 'quality_certificates.user_id')
             ->leftJoin('users as validators', 'validators.id', '=', 'quality_certificates.validated_by_id')
@@ -641,6 +656,7 @@ class ExportHubQuery
     public function occurrences(array $filters): Builder
     {
         $query = DB::table('occurrences')
+            ->where('occurrences.lab_id', $this->laboratoryAccess->activeLabId())
             ->leftJoin('occurrence_statuses', 'occurrence_statuses.id', '=', 'occurrences.status_id')
             ->leftJoin('occurrence_categories', 'occurrence_categories.id', '=', 'occurrences.category_id')
             ->leftJoin('occurrence_origins', 'occurrence_origins.id', '=', 'occurrences.origin_id')
@@ -649,7 +665,7 @@ class ExportHubQuery
             ->select([
                 'occurrences.id', 'occurrences.occurrence_no', 'occurrences.date_reported', 'occurrence_statuses.name as status',
                 'occurrence_categories.name as category', 'occurrence_origins.name as origin', 'departments.name as department',
-                'occurrences.responsible_name', 'users.name as reported_by', 'occurrences.issue_description', 'occurrences.analysis',
+                'occurrences.responsible_name', 'users.name as responsible_user', 'occurrences.issue_description', 'occurrences.analysis',
                 'occurrences.corrective_action', 'occurrences.implementation_date', 'occurrences.date_resolved', 'occurrences.date_closed',
                 'occurrences.was_effective', 'occurrences.client_acceptance', 'occurrences.update_risk_matrix', 'occurrences.deleted_at', 'occurrences.created_at',
             ]);
@@ -675,8 +691,8 @@ class ExportHubQuery
             'activity_log' => [
                 'log_names' => $this->simpleOptions('activity_log', 'log_name'),
                 'events' => $this->simpleOptions('activity_log', 'event'),
-                'subject_types' => DB::table('activity_log')->whereNotNull('subject_type')->distinct()->orderBy('subject_type')->pluck('subject_type')->map(fn (string $value): array => ['value' => $value, 'label' => class_basename($value)])->values()->all(),
-                'actors' => DB::table('activity_log')->join('users', 'users.id', '=', 'activity_log.causer_id')->whereIn('activity_log.causer_type', ['user', User::class])->select(['users.id', 'users.name', 'users.email'])->distinct()->orderBy('users.name')->get()->map(fn (object $user): array => ['value' => $user->id, 'label' => trim($user->name.' · '.$user->email, ' ·')])->all(),
+                'subject_types' => Activity::query()->toBase()->whereNotNull('subject_type')->distinct()->orderBy('subject_type')->pluck('subject_type')->map(fn (string $value): array => ['value' => $value, 'label' => class_basename($value)])->values()->all(),
+                'actors' => Activity::query()->toBase()->join('users', 'users.id', '=', 'activity_log.causer_id')->whereIn('activity_log.causer_type', ['user', User::class])->select(['users.id', 'users.name', 'users.email'])->distinct()->orderBy('users.name')->get()->map(fn (object $user): array => ['value' => $user->id, 'label' => trim($user->name.' · '.$user->email, ' ·')])->all(),
             ],
             'customers' => [
                 'categories' => DB::table('customer_categories')->whereNull('deleted_at')->orderBy('name')->get(['id', 'name'])->map(fn (object $row): array => ['value' => $row->id, 'label' => $row->name])->all(),
@@ -727,7 +743,9 @@ class ExportHubQuery
      */
     private function simpleOptions(string $table, string $column, bool $excludeDeleted = false): array
     {
-        return DB::table($table)
+        $query = $table === 'activity_log' ? Activity::query()->toBase() : DB::table($table);
+
+        return $query
             ->when($excludeDeleted, fn (Builder $query) => $query->whereNull('deleted_at'))
             ->whereNotNull($column)
             ->where($column, '!=', '')

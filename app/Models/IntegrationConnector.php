@@ -32,6 +32,7 @@ class IntegrationConnector extends Model
     public const STATUSES = ['draft', 'active', 'paused', 'error'];
 
     protected $fillable = [
+        'lab_id',
         'inventory_item_id',
         'created_by_id',
         'name',
@@ -84,6 +85,11 @@ class IntegrationConnector extends Model
     public function equipment(): BelongsTo
     {
         return $this->belongsTo(InventoryItem::class, 'inventory_item_id');
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
     }
 
     public function creator(): BelongsTo

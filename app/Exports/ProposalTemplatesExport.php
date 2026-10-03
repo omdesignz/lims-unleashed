@@ -5,10 +5,12 @@ namespace App\Exports;
 use App\Models\VAPProposalTemplate;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 
-class ProposalTemplatesExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize
+class ProposalTemplatesExport extends StringValueBinder implements FromCollection, ShouldAutoSize, WithCustomValueBinder, WithHeadings, WithMapping
 {
     public function collection()
     {

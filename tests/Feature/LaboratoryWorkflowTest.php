@@ -12,10 +12,13 @@ use App\Models\VAPProposal;
 use App\Models\VAPProposalTemplate;
 use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
+use App\Support\AnalysisReportService;
 use App\Support\LaboratoryDossierService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class LaboratoryWorkflowTest extends TestCase
@@ -81,7 +84,7 @@ class LaboratoryWorkflowTest extends TestCase
             'customer_id' => $proposal->customer_id,
             'warehouse_id' => $proposal->warehouse_id,
             'department_id' => $proposal->department_id,
-            'lab_id' => VAPLab::query()->value('id'),
+            'lab_id' => $proposal->lab_id,
             'received_by_id' => $user->id,
             'received_by_label' => $user->name,
             'received_at' => now(),
@@ -101,9 +104,11 @@ class LaboratoryWorkflowTest extends TestCase
     {
         $user = $this->verifiedAdmin();
         $proposal = $this->acceptedProposal($user);
-        $otherCustomer = Customer::query()->whereKeyNot($proposal->customer_id)->firstOrFail();
+        $otherCustomer = Customer::query()->create(['name' => 'Different customer']);
+        $otherWarehouse = Warehouse::query()->create(['name' => 'Different customer site', 'customer_id' => $otherCustomer->id]);
 
         PersonnelQualification::query()->updateOrCreate([
+            'lab_id' => $proposal->lab_id,
             'user_id' => $user->id,
             'capability' => 'sample_intake_validation',
             'department_id' => $proposal->department_id,
@@ -124,9 +129,9 @@ class LaboratoryWorkflowTest extends TestCase
                 'status' => 'POR_INICIAR',
                 'proposal_id' => $proposal->id,
                 'customer_id' => $otherCustomer->id,
-                'warehouse_id' => $proposal->warehouse_id,
+                'warehouse_id' => $otherWarehouse->id,
                 'department_id' => $proposal->department_id,
-                'lab_id' => VAPLab::query()->value('id'),
+                'lab_id' => $proposal->lab_id,
                 'received_at' => now()->toDateTimeString(),
                 'client_submitted_info' => ['request_origin' => 'client'],
             ])
@@ -141,7 +146,8 @@ class LaboratoryWorkflowTest extends TestCase
         $admin = $this->verifiedAdmin();
         $proposal = $this->acceptedProposal($admin);
         $viewer = User::factory()->create(['is_active' => true]);
-        $viewer->givePermissionTo('view_samples');
+        $viewer->givePermissionTo(Permission::findOrCreate('view_samples', 'web'));
+        DB::table('lab_user')->insert(['lab_id' => $proposal->lab_id, 'user_id' => $viewer->id]);
 
         $this->actingAs($viewer)
             ->get(route('laboratory-workflow.index'))
@@ -152,30 +158,69 @@ class LaboratoryWorkflowTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_workflow_excludes_peer_proposals_and_wrongly_linked_peer_samples(): void
+    {
+        $user = $this->verifiedAdmin();
+        $proposal = $this->acceptedProposal($user);
+        $peerUser = $this->verifiedAdmin();
+        $peerProposal = $this->acceptedProposal($peerUser);
+        $localSample = VAPSampleEntry::factory()->create([
+            'proposal_id' => $proposal->id, 'lab_id' => $proposal->lab_id,
+        ]);
+        $peerSample = VAPSampleEntry::factory()->create([
+            'proposal_id' => $proposal->id, 'lab_id' => $peerProposal->lab_id,
+        ]);
+        $peerOwnedSample = VAPSampleEntry::factory()->create([
+            'proposal_id' => $peerProposal->id, 'lab_id' => $peerProposal->lab_id,
+        ]);
+
+        $this->assertSame([$localSample->id], $proposal->sampleEntries()->pluck('sample_entries.id')->all());
+        $eagerProposal = VAPProposal::query()->with('sampleEntries')->findOrFail($proposal->id);
+        $this->assertSame([$localSample->id], $eagerProposal->sampleEntries->modelKeys());
+        $proposals = VAPProposal::query()->with('sampleEntries')->findMany([$proposal->id, $peerProposal->id])->keyBy('id');
+        $this->assertSame([$peerOwnedSample->id], $proposals[$peerProposal->id]->sampleEntries->modelKeys());
+        $reportProposal = $proposal->fresh();
+        app(AnalysisReportService::class)->ensureForProposal($reportProposal, $user->id);
+        $this->assertSame([$localSample->id], $reportProposal->sampleEntries->modelKeys());
+
+        $this->actingAs($user)->get(route('laboratory-workflow.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('dossiers', 1)
+                ->where('dossiers.0.id', $proposal->id)
+                ->where('dossiers.0.counts.samples', 1)
+                ->has('dossiers.0.samples', 1)
+                ->where('dossiers.0.samples.0.id', $localSample->id)
+                ->where('stats.total', 1)
+            );
+
+        $this->post(route('laboratory-workflow.reports.store', $peerProposal))->assertNotFound();
+        $this->assertModelExists($peerSample);
+    }
+
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $user = User::factory()->create(['is_active' => true]);
+        $user->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $user->id]);
+
+        return $user;
     }
 
     private function acceptedProposal(User $user): VAPProposal
     {
-        $warehouse = Warehouse::query()->whereNotNull('customer_id')->firstOrFail();
-        $customer = Customer::query()->findOrFail($warehouse->customer_id);
-        $department = Department::query()->firstOrFail();
-        $template = VAPProposalTemplate::query()->first()
-            ?? VAPProposalTemplate::query()->create([
-                'name' => 'Laboratory workflow test',
-                'content' => '<p>Laboratory workflow</p>',
-                'user_id' => $user->id,
-                'is_active' => true,
-            ]);
+        $customer = Customer::query()->create(['name' => 'Workflow customer']);
+        $warehouse = Warehouse::query()->create(['name' => 'Workflow site '.Str::uuid(), 'customer_id' => $customer->id]);
+        $department = Department::factory()->create();
+        $template = VAPProposalTemplate::query()->create([
+            'name' => 'Laboratory workflow test',
+            'content' => '<p>Laboratory workflow</p>',
+            'user_id' => $user->id,
+            'is_active' => true,
+        ]);
 
-        $proposal = VAPProposal::query()->create([
+        $proposal = new VAPProposal([
             'proposal_year' => now()->year,
             'service_location' => $warehouse->address ?: $warehouse->name,
             'customer_id' => $customer->id,
@@ -190,6 +235,8 @@ class LaboratoryWorkflowTest extends TestCase
             'unique_hash' => (string) Str::uuid(),
             'tolerance_days' => 30,
         ]);
+        $proposal->lab_id = DB::table('lab_user')->where('user_id', $user->id)->value('lab_id');
+        $proposal->save();
 
         $proposal->complianceAgreement()->create([
             'confidentiality' => true,

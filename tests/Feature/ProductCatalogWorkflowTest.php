@@ -19,14 +19,8 @@ class ProductCatalogWorkflowTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for product catalog testing.');
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
 
         return $admin;
     }
@@ -34,8 +28,8 @@ class ProductCatalogWorkflowTest extends TestCase
     public function test_taxed_product_persists_matrix_pricing_and_tax_type(): void
     {
         $admin = $this->verifiedAdmin();
-        $matrix = Matrix::query()->firstOrFail();
-        $taxType = TaxType::query()->firstOrFail();
+        $matrix = Matrix::query()->create(['description' => 'Taxed product matrix']);
+        $taxType = TaxType::query()->create(['name' => 'Test VAT', 'percent' => 14]);
         $name = 'Taxed product '.Str::uuid();
 
         $response = $this->actingAs($admin)
@@ -66,8 +60,8 @@ class ProductCatalogWorkflowTest extends TestCase
     public function test_exempt_product_is_listed_with_a_human_readable_tax_status(): void
     {
         $admin = $this->verifiedAdmin();
-        $matrix = Matrix::query()->firstOrFail();
-        $exemption = TaxExemption::query()->firstOrFail();
+        $matrix = Matrix::query()->create(['description' => 'Exempt product matrix']);
+        $exemption = TaxExemption::query()->create(['code' => 'TEST-EXEMPT', 'reason' => 'Test exemption']);
         $name = 'Exempt product '.Str::uuid();
 
         $response = $this->actingAs($admin)
@@ -103,7 +97,7 @@ class ProductCatalogWorkflowTest extends TestCase
     public function test_product_rejects_unknown_tax_and_exemption_references(): void
     {
         $admin = $this->verifiedAdmin();
-        $matrix = Matrix::query()->firstOrFail();
+        $matrix = Matrix::query()->create(['description' => 'Reference validation matrix']);
 
         $this->actingAs($admin)
             ->from(route('products.create'))

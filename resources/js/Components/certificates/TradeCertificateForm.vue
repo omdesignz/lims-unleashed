@@ -1,5 +1,6 @@
 <script setup>
 import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
+import FinancialObservationForm from "@/Components/documents/FinancialObservationForm.vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
   ArrowLeftIcon,
@@ -25,6 +26,7 @@ const props = defineProps({
 const source = props.record?.data || props.record || {};
 const isImport = computed(() => props.kind === "import");
 const isEditing = computed(() => Boolean(source.id));
+const observationsOnly = computed(() => isEditing.value && Boolean(source.invoice_id || source.invoiced));
 const config = computed(() => isImport.value
   ? {
       title: "Certificado de importação",
@@ -58,7 +60,6 @@ const existingItems = (source.items || []).map((item) => ({
 
 const form = useForm(isImport.value
   ? {
-      cert_no: source.cert_no || "",
       date: source.date || "",
       trans_type_id: option(source.trans_type_id, source.trans_type, "Transporte"),
       port_exit: source.port_exit || "",
@@ -75,8 +76,6 @@ const form = useForm(isImport.value
       vat: source.vat ?? 0,
       vat_cost: source.vat_cost ?? 0,
       authorized_personnel: source.authorized_personnel || "",
-      invoiced: Boolean(source.invoiced),
-      invoice_id: option(source.invoice_id, null, "Factura"),
       obs: source.obs || "",
       items: existingItems.length ? existingItems : [emptyItem()],
     }
@@ -92,8 +91,6 @@ const form = useForm(isImport.value
       destination_city: source.destination_city || "",
       expedition_location: source.expedition_location || "",
       authorized_personnel: source.authorized_personnel || "",
-      invoiced: Boolean(source.invoiced),
-      invoice_id: option(source.invoice_id, null, "Factura"),
       obs: source.obs || "",
       items: existingItems.length ? existingItems : [emptyItem()],
     });
@@ -209,14 +206,6 @@ async function loadCurrencies(query, setOptions) {
   })));
 }
 
-async function loadInvoices(query, setOptions) {
-  const records = await fetchRecords(queryUrl("/invoices/getInvoice", query));
-  setOptions(records.map((record) => ({
-    value: record.id,
-    label: [record.inv_no, record.customer?.name].filter(Boolean).join(" · "),
-  })));
-}
-
 async function loadProducts(query, setOptions) {
   const records = await fetchRecords(queryUrl("/phytosanitary-products/getPhytosanitaryProduct", query));
   setOptions(records.map((record) => ({ value: record.id, label: record.name })));
@@ -238,34 +227,41 @@ function formatNumber(value) {
 }
 
 function submit() {
-  form.transform((data) => ({
-    ...data,
-    invoice_id: isImport.value ? data.invoice_id?.value || null : data.invoice_id,
-  }));
-
+  if (form.processing || observationsOnly.value) return;
   const options = {
     preserveScroll: true,
-    preserveState: false,
+    preserveState: true,
     onSuccess: () => {
       if (!isEditing.value) {
         form.reset();
+      } else {
+        form.defaults();
       }
     },
+    onNetworkError: () => form.setError('request', 'Ligação interrompida. Os dados foram preservados; tente novamente.'),
+    onHttpException: () => form.setError('request', 'Não foi possível guardar. Os dados foram preservados; tente novamente.'),
   };
 
-  if (isEditing.value) {
-    form.put(route(`${config.value.routePrefix}.update`, {
-      [config.value.routeParameter]: source.id,
-    }), options);
-    return;
-  }
+  try {
+    if (isEditing.value) {
+      form.put(route(`${config.value.routePrefix}.update`, {
+        [config.value.routeParameter]: source.id,
+      }), options);
+      return;
+    }
 
-  form.post(route(`${config.value.routePrefix}.store`), options);
+    form.post(route(`${config.value.routePrefix}.store`), options);
+  } catch {
+    form.setError('request', 'Não foi possível iniciar o pedido. Os dados foram preservados; tente novamente.');
+  }
 }
 </script>
 
 <template>
-  <form class="min-w-0 space-y-6 overflow-x-clip" @submit.prevent="submit">
+  <div>
+  <FinancialObservationForm v-if="observationsOnly" :kind="`${kind}_certificate`" :record="record" />
+  <form v-else class="min-w-0 space-y-6 overflow-x-clip" @submit.prevent="submit">
+    <p v-if="form.errors.request" role="alert" class="ds-field-error">{{ form.errors.request }}</p>
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <Link :href="route(`${config.routePrefix}.index`)" class="ds-button ds-button-ghost px-0">
         <ArrowLeftIcon class="h-4 w-4" />
@@ -549,15 +545,15 @@ function submit() {
       </header>
       <div class="grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
         <div class="space-y-4">
-          <div class="ds-field-group">
-            <label class="ds-field-label">Factura associada</label>
-            <ComboboxEnhanced v-model="form.invoice_id" :has-error="form.errors.invoice_id" :load-options="loadInvoices" placeholder="Sem factura associada" />
-            <p v-if="form.errors.invoice_id" class="ds-field-error">{{ form.errors.invoice_id }}</p>
+          <div>
+            <p class="ds-field-label">Estado de facturação</p>
+            <p class="mt-2 text-sm font-semibold text-[var(--ds-text)]">
+              {{ source.invoice_id ? `Factura associada #${source.invoice_id}` : source.invoiced ? "Facturado · vínculo histórico indisponível" : "Ainda não facturado" }}
+            </p>
+            <p class="ds-copy mt-2 text-xs">
+              {{ source.invoice_id || source.invoiced ? "O vínculo financeiro existente é preservado ao guardar." : "A factura é criada pela acção Emitir factura, após guardar o certificado." }}
+            </p>
           </div>
-          <label class="flex items-start gap-3 border-t border-[var(--ds-border)] pt-4 text-sm font-semibold text-[var(--ds-text-muted)]">
-            <CheckboxInput v-model="form.invoiced" type="checkbox" class="ds-checkbox mt-0.5" />
-            Marcar certificado como facturado
-          </label>
         </div>
         <div class="ds-field-group">
           <label for="certificate-observations" class="ds-field-label">Observações</label>
@@ -578,4 +574,5 @@ function submit() {
       </div>
     </section>
   </form>
+  </div>
 </template>

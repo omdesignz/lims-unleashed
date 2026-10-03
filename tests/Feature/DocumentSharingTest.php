@@ -3,29 +3,28 @@
 namespace Tests\Feature;
 
 use App\Jobs\SendSharedDocumentEmail;
-use App\Mail\SharedDocumentMail;
 use App\Models\DocumentDelivery;
 use App\Models\Invoice;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Support\NotificationTemplateService;
 use App\Support\ShareableDocumentRegistry;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
 use RuntimeException;
-use Tests\TestCase;
+use Tests\IsolatedPostgresTestCase;
 
-class DocumentSharingTest extends TestCase
+class DocumentSharingTest extends IsolatedPostgresTestCase
 {
-    use DatabaseTransactions;
-
     public function test_authorized_user_can_queue_an_invoice_pdf_delivery(): void
     {
-        Queue::fake();
         $admin = $this->verifiedAdmin();
-        $invoice = Invoice::query()->firstOrFail();
+        $invoice = $this->invoice($admin);
+        Queue::fake();
 
         $this->actingAs($admin)
             ->post(route('documents.share'), [
@@ -49,9 +48,9 @@ class DocumentSharingTest extends TestCase
 
     public function test_user_without_document_permission_cannot_queue_delivery(): void
     {
-        Queue::fake();
         $user = User::factory()->create(['is_active' => true]);
-        $invoice = Invoice::query()->firstOrFail();
+        $invoice = $this->invoice($user);
+        Queue::fake();
 
         $this->actingAs($user)
             ->post(route('documents.share'), [
@@ -85,9 +84,8 @@ class DocumentSharingTest extends TestCase
 
     public function test_delivery_job_sends_pdf_attachment_and_records_completion(): void
     {
-        Mail::fake();
         $admin = $this->verifiedAdmin();
-        $invoice = Invoice::query()->firstOrFail();
+        $invoice = $this->invoice($admin);
         $delivery = DocumentDelivery::query()->create([
             'sender_id' => $admin->id,
             'document_type' => 'invoice',
@@ -114,11 +112,10 @@ class DocumentSharingTest extends TestCase
 
         (new SendSharedDocumentEmail($delivery))->handle($documents, $templates);
 
-        Mail::assertSent(SharedDocumentMail::class, function (SharedDocumentMail $mail): bool {
-            return $mail->hasTo('finance@example.test')
-                && $mail->hasCc('audit@example.test')
-                && count($mail->attachments()) === 1;
-        });
+        $sent = Mail::mailer()->getSymfonyTransport()->messages()->sole()->getOriginalMessage();
+        $this->assertSame('finance@example.test', $sent->getTo()[0]->getAddress());
+        $this->assertSame('audit@example.test', $sent->getCc()[0]->getAddress());
+        $this->assertCount(1, $sent->getAttachments());
 
         $delivery->refresh();
         $this->assertSame('sent', $delivery->status);
@@ -128,10 +125,12 @@ class DocumentSharingTest extends TestCase
 
     public function test_failed_delivery_records_error_and_notifies_the_sender(): void
     {
+        $admin = $this->verifiedAdmin();
+        $invoice = $this->invoice($admin);
         $delivery = DocumentDelivery::query()->create([
-            'sender_id' => $this->verifiedAdmin()->id,
+            'sender_id' => $admin->id,
             'document_type' => 'invoice',
-            'document_id' => Invoice::query()->value('id'),
+            'document_id' => $invoice->id,
             'recipients' => ['finance@example.test'],
             'subject' => 'Factura indisponível',
             'message' => 'Segue o documento.',
@@ -155,11 +154,62 @@ class DocumentSharingTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+
+        return $admin;
+    }
+
+    public function test_financial_delivery_rechecks_membership_before_render_and_before_sending(): void
+    {
+        foreach ([false, true] as $revokeWhileRendering) {
+            $admin = $this->verifiedAdmin();
+            $invoice = $this->invoice($admin);
+            Mail::fake();
+            $delivery = DocumentDelivery::create([
+                'sender_id' => $admin->id, 'document_type' => 'invoice', 'document_id' => $invoice->id,
+                'recipients' => ['finance@example.test'], 'subject' => 'Private invoice',
+                'message' => 'Private financial data', 'status' => 'queued',
+            ]);
+            $documents = Mockery::mock(ShareableDocumentRegistry::class);
+            if ($revokeWhileRendering) {
+                $documents->shouldReceive('render')->once()->with('invoice', $invoice->id)
+                    ->andReturnUsing(function () use ($admin): array {
+                        DB::table('lab_user')->where('user_id', $admin->id)->delete();
+
+                        return ['content' => '%PDF', 'label' => 'Invoice', 'number' => 'Private', 'url' => '/private', 'filename' => 'private.pdf'];
+                    });
+            } else {
+                DB::table('lab_user')->where('user_id', $admin->id)->delete();
+                $documents->shouldNotReceive('render');
+            }
+            $templates = Mockery::mock(NotificationTemplateService::class);
+            $templates->shouldNotReceive('notify');
+            try {
+                (new SendSharedDocumentEmail($delivery))->handle($documents, $templates);
+                $this->fail('Revoked financial access must prevent delivery.');
+            } catch (AuthorizationException) {
+                Mail::assertNothingSent();
+                $this->assertSame('queued', $delivery->fresh()->status);
+                $this->assertNull($delivery->fresh()->sent_at);
+            }
+        }
+    }
+
+    private function invoice(User $user): Invoice
+    {
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $user->id]);
+        $invoice = new Invoice([
+            'user_id' => $user->id,
+            'inv_no' => fake()->unique()->bothify('SHARE-########'),
+            'invoice_month' => now()->format('m/Y'),
+            'date' => now()->toDateString(),
+            'due_date' => now()->addMonth()->toDateString(),
+        ]);
+        $invoice->lab_id = $lab->id;
+        $invoice->saveQuietly();
+
+        return $invoice;
     }
 }

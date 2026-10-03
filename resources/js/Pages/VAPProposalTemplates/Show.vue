@@ -14,11 +14,11 @@
               </span>
               <span :class="[
                 'ds-badge',
-                template.is_active
+                templateActive
                   ? 'ds-badge-success'
                   : 'ds-badge-neutral'
               ]">
-                {{ template.is_active ? $t('gestlab.general.labels.vap_proposal_templates.active') : $t('gestlab.general.labels.vap_proposal_templates.inactive') }}
+                {{ templateActive ? $t('gestlab.general.labels.vap_proposal_templates.active') : $t('gestlab.general.labels.vap_proposal_templates.inactive') }}
               </span>
             </div>
             <h1 class="ds-heading mt-3 break-words text-2xl sm:text-3xl">
@@ -63,7 +63,7 @@
         </article>
         <article class="bg-[var(--ds-panel)] px-5 py-4 sm:px-6">
           <p class="text-xs font-bold text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_proposal_templates.show.created_by') }}</p>
-          <p class="mt-1 truncate text-base font-bold text-[var(--ds-text)]">{{ template.user.name }}</p>
+          <p class="mt-1 truncate text-base font-bold text-[var(--ds-text)]">{{ template.user?.name || '—' }}</p>
         </article>
       </div>
     </section>
@@ -219,6 +219,7 @@
                       AOA {{ formatCurrency(proposal.total) }}
                     </span>
                     <Link 
+                      v-if="proposal.can_view"
                       :href="route('vap-proposals.show', proposal.id)"
                       class="ds-table-action px-2"
                       :title="$t('gestlab.general.labels.vap_proposal_templates.show.view_proposal')"
@@ -265,7 +266,7 @@
                 <div class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800">
                   <UserIcon class="h-4 w-4 text-slate-600 dark:text-slate-300" />
                 </div>
-                <span class="text-sm text-slate-900 dark:text-slate-100">{{ template.user.name }}</span>
+                <span class="text-sm text-slate-900 dark:text-slate-100">{{ template.user?.name || '—' }}</span>
               </div>
             </div>
 
@@ -312,8 +313,8 @@
                     {{ $t('gestlab.general.labels.vap_proposal_templates.show.status') }}
                   </label>
                   <div class="mt-1">
-                    <span :class="['ds-badge', template.is_active ? 'ds-badge-success' : 'ds-badge-neutral']">
-                      {{ template.is_active ? $t('gestlab.general.labels.vap_proposal_templates.active') : $t('gestlab.general.labels.vap_proposal_templates.inactive') }}
+                    <span :class="['ds-badge', templateActive ? 'ds-badge-success' : 'ds-badge-neutral']">
+                      {{ templateActive ? $t('gestlab.general.labels.vap_proposal_templates.active') : $t('gestlab.general.labels.vap_proposal_templates.inactive') }}
                     </span>
                   </div>
                 </div>
@@ -345,17 +346,20 @@
             </Link>
             
             <button
+              type="button"
               @click="requestStatusToggle"
+              :disabled="statusProcessing || archive.processing.value"
               :class="[
                 'ds-button w-full',
-                template.is_active 
+                templateActive
                   ? 'ds-button-secondary text-yellow-700 dark:text-yellow-300'
                   : 'ds-button-secondary text-green-700 dark:text-green-300'
               ]"
             >
               <ArrowPathIcon class="h-5 w-5" />
-              {{ template.is_active ? $t('gestlab.general.labels.vap_proposal_templates.show.deactivate') : $t('gestlab.general.labels.vap_proposal_templates.show.activate') }}
+              {{ templateActive ? $t('gestlab.general.labels.vap_proposal_templates.show.deactivate') : $t('gestlab.general.labels.vap_proposal_templates.show.activate') }}
             </button>
+            <p v-if="statusRefreshError" class="text-sm text-red-700 dark:text-red-300" role="alert">{{ statusRefreshError }}</p>
           </div>
           
           <details class="mt-4 border-t border-[var(--ds-border)] pt-4">
@@ -418,8 +422,9 @@
             {{ $t('gestlab.general.labels.vap_proposal_templates.show.delete_warning') }}
           </p>
           <button
+            type="button"
             @click="confirmDelete"
-            :disabled="template.proposals_count > 0"
+            :disabled="template.proposals_count > 0 || statusProcessing || archive.processing.value"
             :class="[
               'ds-button w-full',
               template.proposals_count > 0
@@ -445,15 +450,15 @@
 
   <!-- DELETE CONFIRMATION MODAL -->
   <ConfirmationModal
-    :show="showDeleteModal"
-    @close="showDeleteModal = false"
-    @confirm="deleteTemplate"
-    :danger="true"
+    v-if="showDeleteModal"
+    :title="$t('gestlab.general.labels.vap_proposal_templates.show.delete_confirm_title')"
+    :disabled="archive.processing.value"
+    :confirm="archive.processing.value ? 'A arquivar…' : $t('gestlab.general.buttons.confirm')"
+    keep-open-on-confirm
+    @canceled="cancelDelete"
+    @confirmed="deleteTemplate"
   >
-    <template #title>
-      {{ $t('gestlab.general.labels.vap_proposal_templates.show.delete_confirm_title') }}
-    </template>
-    <template #content>
+    <template #default>
       <p class="text-sm text-slate-600 dark:text-slate-300">
         {{ $t('gestlab.general.labels.vap_proposal_templates.show.delete_confirm_message', { name: template.name }) }}
       </p>
@@ -470,35 +475,40 @@
           </div>
         </div>
       </div>
+      <p v-if="archive.processing.value" class="ds-copy mt-3 text-sm" role="status">A arquivar o modelo…</p>
+      <p v-if="archive.failed.value" class="mt-3 text-sm text-red-700 dark:text-red-300" role="alert">{{ archive.message.value }}</p>
     </template>
   </ConfirmationModal>
 
   <!-- STATUS CONFIRMATION MODAL -->
   <ConfirmationModal
-    :show="showStatusModal"
-    @close="showStatusModal = false"
-    @confirm="toggleTemplateStatus"
-    :danger="template.is_active"
+    v-if="showStatusModal"
+    :title="pendingStatus?.is_active ? $t('gestlab.general.labels.vap_proposal_templates.show.status_modal_activate_title') : $t('gestlab.general.labels.vap_proposal_templates.show.status_modal_deactivate_title')"
+    :variant="pendingStatus?.is_active ? 'success' : 'warning'"
+    :disabled="statusProcessing"
+    :confirm="statusProcessing ? 'A actualizar…' : $t('gestlab.general.buttons.confirm')"
+    keep-open-on-confirm
+    @canceled="cancelStatusToggle"
+    @confirmed="toggleTemplateStatus"
   >
-    <template #title>
-      {{ template.is_active ? $t('gestlab.general.labels.vap_proposal_templates.show.status_modal_deactivate_title') : $t('gestlab.general.labels.vap_proposal_templates.show.status_modal_activate_title') }}
-    </template>
-    <template #content>
+    <template #default>
       <p class="text-sm text-slate-600 dark:text-slate-300">
         {{
-          template.is_active
-            ? $t('gestlab.general.labels.vap_proposal_templates.show.status_modal_deactivate_content')
-            : $t('gestlab.general.labels.vap_proposal_templates.show.status_modal_activate_content')
+          pendingStatus?.is_active
+            ? $t('gestlab.general.labels.vap_proposal_templates.show.status_modal_activate_content')
+            : $t('gestlab.general.labels.vap_proposal_templates.show.status_modal_deactivate_content')
         }}
       </p>
+      <p v-if="statusProcessing" class="ds-copy mt-3 text-sm" role="status">A actualizar o estado…</p>
+      <p v-if="statusError" class="mt-3 text-sm text-red-700 dark:text-red-300" role="alert">{{ statusError }}</p>
     </template>
   </ConfirmationModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { ref, computed, onMounted, watch } from 'vue'
+import { Link, router, useHttp } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
   ArrowLeftIcon, DocumentTextIcon, DocumentPlusIcon,
@@ -511,6 +521,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import ConfirmationModal from '@/Components/confirm-dialog.vue'
 import { useToast } from 'vue-toastification'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
 
 const props = defineProps({
   template: Object,
@@ -546,6 +557,24 @@ const props = defineProps({
 const showRawView = ref(false)
 const showDeleteModal = ref(false)
 const showStatusModal = ref(false)
+const pendingStatus = ref(null)
+const statusError = ref('')
+const statusRefreshError = ref('')
+const confirmedStatus = ref(null)
+const templateActive = computed(() => confirmedStatus.value?.id === props.template.id ? confirmedStatus.value.is_active : props.template.is_active)
+watch(() => props.template, syncConfirmedTemplateStatus)
+const statusSubmitting = ref(false)
+const statusRequest = useHttp({ is_active: false })
+const statusProcessing = computed(() => statusSubmitting.value || statusRequest.processing)
+const pendingDeleteId = ref(null)
+const archive = useRecordArchive({
+  destroyUrl: ids => route('vap-proposals.templates.destroy', ids[0]),
+  onSuccess: () => {
+    showDeleteModal.value = false
+    pendingDeleteId.value = null
+    router.visit(route('vap-proposals.templates.index'))
+  },
+})
 const copied = ref(false)
 const toast = useToast()
 
@@ -695,35 +724,83 @@ const copyRawContent = async () => {
   }
 }
 
-const requestStatusToggle = () => {
+function requestStatusToggle() {
+  if (statusProcessing.value || archive.processing.value || showStatusModal.value || showDeleteModal.value) return
+  pendingStatus.value = { id: props.template.id, is_active: !templateActive.value }
+  statusError.value = ''
+  statusRequest.clearErrors()
   showStatusModal.value = true
 }
 
-const toggleTemplateStatus = async () => {
-  const newStatus = !props.template.is_active
-  
+function cancelStatusToggle() {
+  if (statusProcessing.value) return
+  showStatusModal.value = false
+  pendingStatus.value = null
+}
+
+function reportStatusRefreshFailure() {
+  statusRefreshError.value = 'Estado guardado. Não foi possível actualizar os restantes dados. Actualize a página.'
+  return false
+}
+
+function syncConfirmedTemplateStatus(template) {
+  if (!confirmedStatus.value) return
+  if (template.id !== confirmedStatus.value.id || template.is_active === confirmedStatus.value.is_active) {
+    confirmedStatus.value = null
+    return
+  }
+  reportStatusRefreshFailure()
+}
+
+async function toggleTemplateStatus() {
+  if (statusProcessing.value || !pendingStatus.value) return
+  const intent = { ...pendingStatus.value }
+  statusError.value = ''
+  statusRequest.clearErrors()
+  statusSubmitting.value = true
   try {
-    const response = await fetch(route('vap-proposals.templates.toggle-status', props.template.id), {
-      method: 'PUT',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+    await statusRequest.transform(() => ({ is_active: intent.is_active })).put(route('vap-proposals.templates.toggle-status', intent.id), {
+      onSuccess: payload => {
+        if (payload?.success !== true || payload.is_active !== intent.is_active) {
+          statusError.value = 'Não foi possível confirmar o estado solicitado. Actualize a página antes de tentar novamente.'
+          return
+        }
+        showStatusModal.value = false
+        pendingStatus.value = null
+        confirmedStatus.value = { ...intent }
+        toast.success(payload.is_active ? trans('gestlab.general.labels.vap_proposal_templates.show.notifications.activated') : trans('gestlab.general.labels.vap_proposal_templates.show.notifications.deactivated'))
+        try {
+          router.reload({ only: ['template'],
+            onSuccess: () => {
+              if (confirmedStatus.value?.id === props.template.id && props.template.is_active !== confirmedStatus.value.is_active) reportStatusRefreshFailure()
+              else statusRefreshError.value = ''
+            },
+            onError: reportStatusRefreshFailure,
+            onHttpException: reportStatusRefreshFailure,
+            onNetworkError: reportStatusRefreshFailure,
+            onCancel: reportStatusRefreshFailure,
+          })
+        } catch {
+          reportStatusRefreshFailure()
+        }
       },
+      onError: errors => { statusError.value = Object.values(errors).flat().join(' ') || trans('gestlab.general.labels.vap_proposal_templates.show.notifications.status_error') },
+      onHttpException: response => {
+        statusError.value = [403, 404].includes(response.status)
+          ? 'O modelo ou a autorização já não está disponível. Actualize a página.'
+          : trans('gestlab.general.labels.vap_proposal_templates.show.notifications.status_error')
+        return false
+      },
+      onNetworkError: () => {
+        statusError.value = 'Falha de ligação. Não foi possível confirmar o estado. Tente novamente para aplicar a mesma decisão.'
+        return false
+      },
+      onCancel: () => { statusError.value = 'Operação interrompida. Tente novamente para aplicar a mesma decisão.' },
     })
-
-    const payload = await response.json()
-    
-    if (!response.ok || !payload.success) {
-      throw new Error(payload.message || trans('gestlab.general.labels.vap_proposal_templates.show.notifications.status_error'))
-    }
-
-    showStatusModal.value = false
-    toast.success(newStatus ? trans('gestlab.general.labels.vap_proposal_templates.show.notifications.activated') : trans('gestlab.general.labels.vap_proposal_templates.show.notifications.deactivated'))
-    router.reload({ only: ['template'] })
-  } catch (error) {
-    toast.error(error.message || trans('gestlab.general.labels.vap_proposal_templates.show.notifications.status_request_error'))
+  } catch {
+    if (!statusError.value) statusError.value = trans('gestlab.general.labels.vap_proposal_templates.show.notifications.status_request_error')
+  } finally {
+    statusSubmitting.value = false
   }
 }
 
@@ -735,7 +812,7 @@ const exportTemplate = async () => {
       category: props.template.category,
       description: props.template.description,
       theme_preset: props.template.theme_preset,
-      is_active: props.template.is_active,
+      is_active: templateActive.value,
       layout_schema: props.template.layout_schema || {},
       export_settings: props.template.export_settings || {},
       variables: templateVariables.value,
@@ -770,22 +847,27 @@ const exportAsPdf = () => {
   window.open(route('vap-proposals.templates.pdf', props.template.id), '_blank')
 }
 
-const confirmDelete = () => {
+function confirmDelete() {
+  if (statusProcessing.value || archive.processing.value || showStatusModal.value || showDeleteModal.value) return
   if (props.template.proposals_count > 0) {
     toast.warning(trans('gestlab.general.labels.vap_proposal_templates.show.notifications.cannot_delete_in_use'))
     return
   }
-  
+  pendingDeleteId.value = props.template.id
+  archive.failed.value = false
+  archive.message.value = ''
   showDeleteModal.value = true
 }
 
-const deleteTemplate = () => {
-  router.delete(route('vap-proposals.templates.destroy', props.template.id), {
-    onSuccess: () => {
-      showDeleteModal.value = false
-      router.visit(route('vap-proposals.templates.index'))
-    }
-  })
+function cancelDelete() {
+  if (archive.processing.value) return
+  showDeleteModal.value = false
+  pendingDeleteId.value = null
+}
+
+function deleteTemplate() {
+  if (archive.processing.value || !pendingDeleteId.value) return
+  archive.submit('delete', [pendingDeleteId.value])
 }
 
 onMounted(() => {

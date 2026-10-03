@@ -1,5 +1,4 @@
 <script setup>
-import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
   ArrowLeftIcon,
@@ -18,7 +17,6 @@ const props = defineProps({
   record: { type: Object, default: () => ({ data: {} }) },
 });
 
-const { hasPermission } = usePermission();
 const position = computed(() => props.record?.data ?? {});
 const quantity = computed(() => Number(position.value.qty_available ?? 0));
 const reorderPoint = computed(() => Number(position.value.reorder_point ?? 0));
@@ -63,7 +61,7 @@ const metrics = computed(() => [
             Voltar ao existências
           </Link>
           <Link
-            v-if="hasPermission('view_iitems')"
+            v-if="position.can_open_item"
             :href="route('vap-inventory.items.show', { item: position.item_id })"
             class="ds-button ds-button-primary"
           >

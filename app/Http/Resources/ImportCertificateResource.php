@@ -16,6 +16,7 @@ class ImportCertificateResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'lab_id' => $this->lab_id,
             'importer_id' => $this->importer_id,
             'importer' => CustomerResource::make($this->whenLoaded('importer'))?->name ?? null,
             'currency_id' => $this->currency_id,
@@ -55,12 +56,8 @@ class ImportCertificateResource extends JsonResource
             'deleted' => $this->deleted_at ? true : false,
             'links' => [
                 'edit_path' => route('importcertificates.edit', $this->id),
-                'delete_path' => route('importcertificates.destroy', [
-                    'recordIds' => [$this->id],
-                ]),
-                'restore_path' => route('importcertificates.restore', [
-                    'recordIds' => [$this->id],
-                ]),
+                'delete_path' => route('importcertificates.destroy'),
+                'restore_path' => route('importcertificates.restore'),
             ],
         ];
     }

@@ -353,6 +353,7 @@ function closeDetails() {
 }
 
 function requestDelete(activity = null) {
+  if (activity?.is_retained) return;
   deleteMode.value = activity ? "single" : "all";
   selectedActivity.value = activity;
   showDeleteConfirmation.value = true;
@@ -552,7 +553,8 @@ function confirmDelete() {
                   <button type="button" class="ds-icon-button" title="Ver detalhes" @click="viewActivityDetails(activity)">
                     <EyeIcon class="h-4 w-4" />
                   </button>
-                  <button v-if="hasPermission('delete_activity_log')" type="button" class="ds-icon-button hover:!text-red-600" title="Eliminar evento" @click="requestDelete(activity)">
+                  <span v-if="activity.is_retained" class="ds-badge" title="Este histórico permanece conservado">Conservado</span>
+                  <button v-if="hasPermission('delete_activity_log') && !activity.is_retained" type="button" class="ds-icon-button hover:!text-red-600" title="Eliminar evento" @click="requestDelete(activity)">
                     <TrashIcon class="h-4 w-4" />
                   </button>
                 </div>
@@ -672,8 +674,8 @@ function confirmDelete() {
 
     <ConfirmDialog
       v-if="showDeleteConfirmation"
-      :title="deleteMode === 'all' ? 'Eliminar todo o registo de actividade?' : 'Eliminar este evento?'"
-      :description="deleteMode === 'all' ? 'Esta acção remove permanentemente todos os eventos de auditoria disponíveis.' : selectedActivity?.description"
+      :title="deleteMode === 'all' ? 'Limpar eventos não conservados?' : 'Eliminar este evento?'"
+      :description="deleteMode === 'all' ? 'Remove os eventos elegíveis para limpeza. O histórico conservado de contas, qualificações e adesões permanece disponível.' : selectedActivity?.description"
       variant="danger"
       confirm="Eliminar"
       cancel="Cancelar"

@@ -2,34 +2,60 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\AnalysisRequest;
+use App\Actions\SetAnalysisArchived;
 use App\Http\Resources\AnalysisResource;
 use App\Models\Analysis;
 use App\Models\CollectionProduct;
 use App\Models\Department;
 use App\Models\ReportStudioTemplate;
-use App\Models\Worksheet;
+use App\Models\User;
+use App\Services\IssuedAnalyticalScope;
+use App\Services\LaboratoryWorkflowOwnership;
+use App\Services\LaboratoryWorksheetAccess;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Inertia\Response;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class AnalysisController extends Controller
 {
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratory,
+        private readonly LaboratoryWorkflowOwnership $ownership,
+        private readonly LaboratoryWorksheetAccess $worksheets,
+        private readonly IssuedAnalyticalScope $issuedScope,
+    ) {}
+
+    /** @return Builder<Analysis> */
+    private function records(): Builder
+    {
+        return $this->ownership->analysesForLaboratory($this->laboratory->activeLabId());
+    }
+
+    private function readOperator(string $permission): User
+    {
+        $operator = $this->ownership->eligibleUsers($this->laboratory->activeLabId())->find(auth()->id());
+        abort_unless($operator?->can($permission), 403);
+
+        return $operator;
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): Response
     {
-        abort_if(! auth()->user()->can('view_analysis'), 403, '');
+        $this->readOperator('view_analysis');
 
         $category = request()->query('category', 'insert');
         $category = in_array($category, ['insert', 'verify', 'approve', 'archived'], true) ? $category : 'insert';
         $scope = ucfirst($category);
 
-        // Get the base query - DON'T apply category scope here
-        $baseQuery = Analysis::query()
+        $baseQuery = $this->records()
             ->{$scope}()
             ->with('department', 'sample.collection.collection.collection', 'sample.collection.collection.sampleEntry', 'profile', 'type', 'code', 'product')
             ->when(! is_null(request()->department), function ($query) {
@@ -40,11 +66,8 @@ class AnalysisController extends Controller
         $records = QueryBuilder::for($baseQuery)
             ->allowedFilters(Analysis::getAllowedFilters())
             ->allowedSorts(Analysis::getAllowedSorts())
+            ->orderBy('analysis.id')
             ->paginate(request()->query('per_page', 10));
-
-        // Debug
-        // Log::info('SQL: ' . $records->toArray()['sql'] ?? 'N/A');
-        // Log::info('Results count: ' . $records->total());
 
         return Inertia::render('Analysis/Index', [
             'record' => AnalysisResource::collection($records),
@@ -69,7 +92,7 @@ class AnalysisController extends Controller
             'slideOverEdit' => false,
             'entrypoint' => [
                 'label' => 'Novas análises começam pela entrada de amostra',
-                'description' => 'A criação manual de análises deve ser evitada. Use a recepção de amostra para gerar lab code, amostras e análises com rastreabilidade completa.',
+                'description' => 'Registe a amostra na recepção para gerar os códigos e as análises a partir do âmbito autorizado.',
                 'create_sample_url' => route('vap_samples.index'),
             ],
             'trashedFilter' => true,
@@ -85,137 +108,13 @@ class AnalysisController extends Controller
             ),
         ]);
     }
-    // public function index()
-    // {
-    //     // dd(Analysis::byParameters([2])->paginate());
-    //     // dd(request()->input('department.value'));
-
-    //     abort_if( !auth()->user()->can('view_analysis'), 403, '');
-
-    //     // Build the query
-    // $query = Analysis::query()
-    //     ->{ucfirst(request()->category ?? 'Insert')}() // Apply default scope
-    //     ->with('department', 'sample', 'profile', 'type', 'code', 'product')
-    //     ->when(!is_null(request()->department), function($query){
-    //         $query->where('department_id', request()->input('department.value'));
-    //     });
-
-    //     // DEBUG: Log the SQL before pagination
-    // Log::info('Category: ' . request()->category);
-    // Log::info('SQL: ' . $query->toSql());
-    // Log::info('Bindings: ', $query->getBindings());
-
-    // $records = QueryBuilder::for($query)
-    //     ->allowedFilters(Analysis::getAllowedFilters())
-    //     ->allowedSorts(Analysis::getAllowedSorts())
-    //     ->paginate(request()->query('per_page', 10));
-
-    // // DEBUG: Check if we got results
-    // Log::info('Results count: ' . $records->total());
-
-    //     // $records = QueryBuilder::for(Analysis::query()->{ucfirst(request()->category ?? 'Insert') }()) # Analysis::Insert(), Analysis::Verify(), Analysis::Approve()
-    //     //                         ->with('department', 'sample', 'profile', 'type', 'code', 'product')
-    //     //                         ->allowedFilters(Analysis::getAllowedFilters())
-    //     //                         ->allowedSorts(Analysis::getAllowedSorts())
-    //     //                         ->when(!is_null(request()->department), function($query){
-    //     //                             $query->where('department_id', request()->input('department.value'));
-    //     //                         })
-    //     //                         ->paginate(request()->query('per_page', 10));
-
-    //     return Inertia::render('Analysis/Index', [
-    //         'record' => AnalysisResource::collection($records),
-    //         'departments' => Department::all()->map(function($item){
-    //             return [
-    //                 'value' => $item->id,
-    //                 'label' => $item->name,
-    //             ];
-    //         }),
-    //         'initialFilters' => request()->query('filter', ['department.name' => '', 'product.name' => '', 'code.code' => '', 'created_at' => '', 'globalFilter' => '', 'category' => 'insert', 'col_date' => ['start' => null, 'end' => null]]),
-    //         'initialSortField' => request()->query('sort') ? (request()->query('sort')[0] === '-' ? ltrim(request()->query('sort'), '-') : request()->query('sort')) : '',
-    //         'initialSortDirection' => request()->query('sort') ? (request()->query('sort')[0] === '-' ? 'desc' : 'asc') : 'asc',
-    //         'initialIncludes' => request()->query('includes', []),
-    //         'initialGlobalFilter' => request()->query('globalFilter', ''),
-    //         'per_page' => request()->query('per_page', 2),
-    //         'slideOverEdit' => false,
-    //         'trashedFilter' => true,
-    //         'trashedOptions' => Analysis::getTrashedOptions(),
-    //         'fields' => Analysis::getColumns(),
-    //         'model' => Analysis::MENU_NAME,
-    //         'abilities' => method_exists(Analysis::class, 'getAbilities') ? collect(Analysis::ABILITIES)->map(function($item){
-    //             return $item . '_' . Analysis::MENU_NAME;
-    //         }) : collect(config('gestlab.default_abilities'))->map(function($item){
-    //             return $item . '_' . Analysis::MENU_NAME;
-    //         }),
-    //         'query' => request()->only(['search', 'trashed', 'date', 'orderBy', 'category', 'department'])
-    //     ]);
-
-    //     // return Inertia::render('Analysis/Index', [
-    //     //     'record' => AnalysisResource::collection(
-    //     //         Analysis::query()
-    //     //                     ->when(request()->input('category'), function($query, $category){
-    //     //                         if(request()->category){
-    //     //                             return $query->{ucfirst($category)}();
-    //     //                         }
-
-    //     //                         return $query->Insert();
-
-    //     //                     })
-    //     //                     ->whereNull('end_date')
-    //     //                     ->with('department', 'sample', 'profile', 'type', 'code')
-    //     //                     ->when(request()->input('search'), function($query, $search){
-    //     //                         $query->whereRelation('code', 'code', 'like', "%{$search}%")
-    //     //                         ->orWhere('col_date', 'like', "%{$search}%")
-    //     //                         ->orWhereRelation('profile', 'name', 'like', "%{$search}%")
-    //     //                         ->orWhereRelation('department', 'name', 'like', "%{$search}%");
-    //     //                     })
-    //     //                     ->when(request()->input('filter'), function($query, $filter){
-    //     //                         if($filter = 'trashed'){
-    //     //                             $query->withTrashed();
-    //     //                         }
-    //     //                     })
-    //     //                     ->latest()
-    //     //                     ->paginate(10)
-    //     //                     ->withQueryString()
-    //     //                 ),
-    //     //     'slideOverEdit' => false,
-    //     //     'fields' => [
-    //     //         [
-    //     //             'name' => 'Código',
-    //     //             'value' => 'cl'
-    //     //         ],
-    //     //         [
-    //     //             'name' => 'Colheita',
-    //     //             'value' => 'col_date'
-    //     //         ],
-    //     //         [
-    //     //             'name' => 'Perfil',
-    //     //             'value' => 'profile'
-    //     //         ],
-    //     //         [
-    //     //             'name' => 'Departamento',
-    //     //             'value' => 'department'
-    //     //         ],
-    //     //         [
-    //     //             'name' => 'Estado',
-    //     //             'value' => 'status'
-    //     //         ],
-    //     //     ],
-    //     //     'model' => Analysis::MENU_NAME,
-    //     //     'abilities' => method_exists(Analysis::class, 'getAbilities') ? collect(Analysis::ABILITIES)->map(function($item){
-    //     //         return $item . '_' . Analysis::MENU_NAME;
-    //     //     }) : collect(config('gestlab.default_abilities'))->map(function($item){
-    //     //         return $item . '_' . Analysis::MENU_NAME;
-    //     //     }),
-    //     //     'query' => request()->only(['search', 'trashed', 'category'])
-    //     // ]);
-    // }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): RedirectResponse
     {
-        abort_if(! auth()->user()->can('add_analysis'), 403, '');
+        $this->readOperator('add_analysis');
 
         return to_route('vap_samples.index')->with([
             'toast' => [
@@ -226,84 +125,18 @@ class AnalysisController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
-    public function store(AnalysisRequest $request)
-    {
-        abort_if(! auth()->user()->can('add_analysis'), 403, '');
-
-        // Persiste data to DB
-        Analysis::create($request->validated());
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ],
-        ]);
-
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
      * Show the form for editing the specified resource.
      */
-    // public function edit($id)
-    // {
-    //     abort_if( !auth()->user()->can('edit_analysis'), 403, '');
-
-    //     // Find the record
-    //     $record = Analysis::with('department', 'sample', 'profile', 'type', 'code')->findOrFail($id);
-
-    //     // dd($record);
-
-    //     // Return Inertia View with record data
-    //     return Inertia::render('Analysis/ResultsWorkflow', [
-    //         'action' => ($record->sample->results->count() < 1 ? 'analyze' : ($record->sample->results()->whereNotNull('inserted_date')->whereNull('verified_date')->count() > 1 ? 'verify' : 'approve')),
-    //         'record' => [
-    //             'id' => $record->id,
-    //             'code' => $record->code->code,
-    //             'cl_id' => [
-    //                 'value' => $record?->cl_id,
-    //                 'label' => $record?->code?->code
-    //             ],
-    //             'profile_id' => [
-    //                 'value' => $record?->profile_id,
-    //                 'label' => $record?->profile?->name
-    //             ],
-    //             'type_id' => [
-    //                 'value' => $record?->type_id,
-    //                 'label' => $record?->type?->name
-    //             ],
-    //             'sample_id' => [
-    //                 'value' => $record?->sample_id,
-    //                 'label' => $record?->sample?->code
-    //             ],
-    //             'department_id' => [
-    //                 'value' => $record?->department_id,
-    //                 'label' => $record?->department?->name
-    //             ]
-    //         ],
-    //     ]);
-    // }
-
-    public function edit($id)
+    public function edit(int $id): Response|RedirectResponse
     {
-        $user = auth()->user();
+        $user = $this->readOperator('edit_analysis');
         $canWorkResults = collect(['add_results', 'insert_results', 'verify_results', 'approve_results'])
             ->contains(fn (string $permission): bool => $user->can($permission));
 
-        abort_if(! $user->can('edit_analysis') || ! $canWorkResults, 403, '');
+        abort_unless($canWorkResults, 403);
 
         // Eager load all necessary relationships
-        $record = Analysis::with([
+        $record = $this->records()->with([
             'sample.results',
             'sample.results.parameter', // If you need parameter details
             'sample.collection.collection.collection',
@@ -311,11 +144,21 @@ class AnalysisController extends Controller
             'sample.collection.collection.sampleEntry',
             'department',
             'profile',
-            'profile.parameters', // To know expected result count
             'type',
             'code',
             'product',
         ])->findOrFail($id);
+
+        /** @var CollectionProduct|null $collectionProduct */
+        $collectionProduct = $record->sample?->collection?->collection;
+        abort_unless($record->profile && $collectionProduct, 404);
+        $record->profile->setRelation('parameters', $this->issuedScope->parametersFor($record, $collectionProduct));
+        $record->sample->setRelation('results', $record->sample->results
+            ->filter(fn ($result): bool => (int) $result->profile_id === $record->profile_id
+                && (int) $result->code_id === $record->cl_id
+                && $result->resultable_type === $record->getMorphClass()
+                && (int) $result->resultable_id === $record->id)
+            ->values());
 
         // Check if analysis is archived/completed
         if ($record->end_date !== null) {
@@ -348,14 +191,13 @@ class AnalysisController extends Controller
                 'can_approve' => $user->can('approve_results'),
                 'scope_audit' => $this->buildScopeAudit($record),
                 'worksheet_brief' => $this->buildWorksheetBrief($record),
+                'allow_worksheet_draft' => $user->can('add_worksheets') && $user->can('view_worksheets'),
                 'report_studio' => $this->resolveAnalysisReportStudio(),
             ]);
         }
 
         // Calculate status counts
         $totalResults = $results->count();
-        $insertedCount = $results->whereNotNull('inserted_date')->count();
-        $verifiedCount = $results->whereNotNull('verified_date')->count();
         $approvedCount = $results->whereNotNull('approved_date')->count();
         $pendingInsertion = $results->whereNull('inserted_date')->count();
         $pendingVerification = $results->whereNotNull('inserted_date')->whereNull('verified_date')->count();
@@ -370,21 +212,6 @@ class AnalysisController extends Controller
             default => 'unknown'                     // Shouldn't happen, but safe fallback
         };
 
-        // Optional: Auto-set end_date if completed and not already set
-        if ($action === 'completed' && $record->end_date === null) {
-            $record->update([
-                'end_date' => now(),
-                'status' => true,
-            ]);
-
-            return to_route('analysis.index', ['category' => 'archived'])->with([
-                'toast' => [
-                    'title' => trans('gestlab.toasts.notification'),
-                    'message' => 'A análise está concluída e foi arquivada no fluxo de resultados validados.',
-                ],
-            ]);
-        }
-
         return Inertia::render('Analysis/ResultsWorkflow', [
             'action' => $action,
             'record' => $this->formatRecord($record),
@@ -395,11 +222,12 @@ class AnalysisController extends Controller
                 'pending_approval' => $pendingApproval,
                 'approved' => $approvedCount,
             ],
-            'can_insert' => auth()->user()->can('insert_results'),
-            'can_verify' => auth()->user()->can('verify_results'),
-            'can_approve' => auth()->user()->can('approve_results'),
+            'can_insert' => $user->can('insert_results'),
+            'can_verify' => $user->can('verify_results'),
+            'can_approve' => $user->can('approve_results'),
             'scope_audit' => $this->buildScopeAudit($record),
             'worksheet_brief' => $this->buildWorksheetBrief($record),
+            'allow_worksheet_draft' => $user->can('add_worksheets') && $user->can('view_worksheets'),
             'report_studio' => $this->resolveAnalysisReportStudio(),
         ]);
     }
@@ -490,7 +318,9 @@ class AnalysisController extends Controller
         /** @var CollectionProduct|null $collectionProduct */
         $collectionProduct = $record->sample?->collection?->collection;
 
-        $receptionParameters = collect(data_get($collectionProduct?->extra_data, 'submitted_payload.required_parameters', []))
+        $receptionParameters = collect(data_get($collectionProduct?->sampleEntry?->client_submitted_info, 'required_parameters', []))
+            ->filter(fn (array $parameter): bool => in_array((int) $record->profile_id,
+                array_map('intval', $parameter['profile_ids'] ?? []), true))
             ->map(fn ($parameter) => [
                 'id' => data_get($parameter, 'id'),
                 'code' => data_get($parameter, 'code'),
@@ -522,7 +352,7 @@ class AnalysisController extends Controller
             'temperature_condition' => data_get($collectionProduct?->extra_data, 'submitted_payload.temperature_condition'),
             'integrity_observations' => data_get($collectionProduct?->extra_data, 'submitted_payload.integrity_observations'),
             'chain_of_custody_notes' => data_get($collectionProduct?->extra_data, 'submitted_payload.chain_of_custody_notes'),
-            'resolved_profiles' => data_get($collectionProduct?->extra_data, 'submitted_payload.resolved_profiles', []),
+            'resolved_profiles' => data_get($collectionProduct?->sampleEntry?->client_submitted_info, 'resolved_profiles', []),
             'expected_parameters' => $expectedParameters->all(),
             'reception_parameters' => $receptionParameters->all(),
             'existing_results' => $existingResults->all(),
@@ -552,16 +382,21 @@ class AnalysisController extends Controller
 
     private function buildWorksheetBrief(Analysis $record): ?array
     {
+        if (! $this->readOperator('edit_analysis')->can('view_worksheets')) {
+            return null;
+        }
+
         $collectionProductId = $record->code?->collection_id;
 
         if (! $collectionProductId) {
             return null;
         }
 
-        $worksheet = Worksheet::query()
-            ->where('worksheets->analysis_id', $record->id)
-            ->orWhere('worksheets->collection_product_id', $collectionProductId)
+        $worksheet = $this->worksheets->records($this->laboratory->activeLabId())
+            ->where('analysis_id', $record->id)
+            ->where('worksheets->collection_product_id', $collectionProductId)
             ->latest('updated_at')
+            ->latest('id')
             ->first();
 
         if (! $worksheet) {
@@ -600,39 +435,11 @@ class AnalysisController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
-     */
-    public function update(AnalysisRequest $request, $id)
-    {
-        abort_if(! auth()->user()->can('edit_analysis'), 403, '');
-
-        // Find the record
-        $record = Analysis::findOrFail($id);
-
-        $record->update($request->validated());
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ],
-        ]);
-    }
-
-    /**
      * Remove the specified resource from storage.
      */
-    public function destroy()
+    public function destroy(Request $request, SetAnalysisArchived $archive): RedirectResponse
     {
-        abort_if(! auth()->user()->can('restore_delete'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (Analysis::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $this->archive($request, $archive, true);
 
         return redirect()->back()->with([
             'toast' => [
@@ -645,17 +452,9 @@ class AnalysisController extends Controller
     /**
      * restore the specified resource from storage.
      */
-    public function restore()
+    public function restore(Request $request, SetAnalysisArchived $archive): RedirectResponse
     {
-        abort_if(! auth()->user()->can('restore_analysis'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (Analysis::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $this->archive($request, $archive, false);
 
         return redirect()->back()->with([
             'toast' => [
@@ -665,20 +464,24 @@ class AnalysisController extends Controller
         ]);
     }
 
-    public function getAnalysis()
+    private function archive(Request $request, SetAnalysisArchived $archive, bool $archived): void
     {
-        $data = [];
+        $this->readOperator($archived ? 'delete_analysis' : 'restore_analysis');
+        $validated = $request->validate([
+            'recordIds' => ['required', 'array', 'min:1', 'max:500'],
+            'recordIds.*' => ['required', 'integer', 'min:1', 'max:'.PHP_INT_MAX, 'distinct'],
+        ], [], ['recordIds' => 'análises', 'recordIds.*' => 'identificador da análise']);
 
-        if (request()->has('q')) {
-            $search = request()->q;
+        $archive->execute($this->laboratory->activeLabId(), (int) $request->user()->id,
+            array_map(intval(...), $validated['recordIds']), $archived);
+    }
 
-            $data = DB::table('analysis')
-                ->select('analysis.*')
-                ->where('name', 'LIKE', "%$search%")
-                ->orWhere('description', 'LIKE', "%$search%")
-                ->get();
-        }
+    public function getAnalysis(Request $request): JsonResponse
+    {
+        $this->readOperator('view_analysis');
+        $validated = $request->validate(['q' => ['nullable', 'string', 'max:255']]);
+        $records = $this->records()->matchingSearch($validated['q'] ?? '')->orderBy('analysis.id')->get();
 
-        return response()->json($data);
+        return response()->json($records);
     }
 }

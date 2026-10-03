@@ -2,9 +2,6 @@
 
 namespace App\Support;
 
-use App\Models\NotificationTemplate;
-use Illuminate\Support\Collection;
-
 class NotificationTemplateCatalog
 {
     /**
@@ -64,38 +61,13 @@ class NotificationTemplateCatalog
             'maintenance.completed' => $this->definition('Manutenção concluída', 'maintenance', 'A manutenção de {{equipment_name}} foi concluída.', 'Abrir manutenção', '{{document_url}}', 'view_maintenance_tasks'),
             'documents.shared' => $this->definition('Documento enviado', 'documents', '{{document_label}} {{document_number}} foi enviado para {{recipients}}.', 'Abrir documento', '{{document_url}}', null, ['database', 'broadcast']),
             'documents.share_failed' => $this->definition('Falha no envio do documento', 'documents', 'Não foi possível enviar {{document_label}}. {{detail}}', 'Rever envios', '{{document_url}}', null, ['database', 'broadcast'], 'urgent'),
+            'documents.share_uncertain' => $this->definition('Envio por confirmar', 'documents', 'Não foi possível confirmar o envio de {{document_label}}. Verifique o resultado antes de repetir o envio.', 'Rever envios', '{{document_url}}', null, ['database', 'broadcast'], 'urgent'),
             'documents.controlled_file.shared' => $this->definition('Documento controlado partilhado', 'documents', '{{actor_name}} concedeu acesso {{access_level}} ao documento {{document_label}}.', 'Abrir gestor documental', '{{document_url}}', null),
             'documents.export.ready' => $this->definition('Exportação pronta', 'documents', '{{document_label}} está pronto para transferência.', 'Transferir', '{{document_url}}', null, ['database', 'broadcast', 'mail']),
             'system.import.completed' => $this->definition('Importação concluída', 'system', 'A importação de {{document_label}} terminou com sucesso.', 'Abrir registos', '{{document_url}}', null),
             'system.import.failed' => $this->definition('Falha na importação', 'system', 'A importação de {{document_label}} falhou. {{detail}}', 'Rever importação', '{{document_url}}', null, ['database', 'broadcast', 'mail'], 'high'),
             'system.message.received' => $this->definition('Nova mensagem recebida', 'system', '{{actor_name}} enviou: {{message_excerpt}}', 'Abrir mensagens', '{{document_url}}', null, ['database', 'broadcast', 'mail']),
         ];
-    }
-
-    /**
-     * @return Collection<int, NotificationTemplate>
-     */
-    public function synchronize(): Collection
-    {
-        return collect($this->definitions())->map(function (array $definition, string $key): NotificationTemplate {
-            $template = NotificationTemplate::query()->firstOrNew(['key' => $key]);
-
-            if (! $template->exists) {
-                $template->fill(['key' => $key, ...$definition]);
-            } else {
-                $template->fill(collect($definition)->only([
-                    'name',
-                    'category',
-                    'description',
-                    'audience_permission',
-                    'variables',
-                ])->all());
-            }
-
-            $template->save();
-
-            return $template;
-        })->values();
     }
 
     /**

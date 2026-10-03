@@ -27,6 +27,7 @@ const props = defineProps({
 
 const selectedAction = ref(null);
 const showActionConfirmation = ref(false);
+const isSubmitting = ref(false);
 const rows = computed(() => props.record?.data ?? []);
 const totalRecords = computed(() => props.record?.meta?.total ?? rows.value.length);
 const linkedToEntry = computed(() => rows.value.filter((row) => row.sample_entry || row.entry_origin?.is_sample_entry_first || row.entry_lineage).length);
@@ -49,6 +50,7 @@ function openResults() {
 }
 
 function requestBulkAction(action) {
+  if (isSubmitting.value) return;
   selectedAction.value = action;
   showActionConfirmation.value = true;
 }
@@ -59,6 +61,7 @@ function closeConfirmation() {
 }
 
 function executeBulkAction() {
+  if (isSubmitting.value) return;
   const recordIds = rows.value.filter((row) => row.selected).map((row) => row.id);
 
   if (!recordIds.length || !["delete", "restore"].includes(selectedAction.value)) {
@@ -66,9 +69,13 @@ function executeBulkAction() {
     return;
   }
 
-  router.get(route(`counteranalysis.${selectedAction.value}`), { recordIds }, {
+  isSubmitting.value = true;
+  router.post(route(`counteranalysis.${selectedAction.value}`), { recordIds }, {
     preserveScroll: true,
-    onFinish: closeConfirmation,
+    onFinish: () => {
+      isSubmitting.value = false;
+      closeConfirmation();
+    },
   });
 }
 </script>
@@ -115,6 +122,8 @@ function executeBulkAction() {
       :slide-over-edit="slideOverEdit"
       :query="query"
       :actions="actions"
+      :action-methods="{ delete: 'post', restore: 'post' }"
+      :action-processing="isSubmitting"
       @execute-action="requestBulkAction"
       @create-record="openResults"
     />

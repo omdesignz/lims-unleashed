@@ -9,17 +9,24 @@ use App\Models\VAPLab;
 use App\Models\VAPLabel;
 use App\Models\VAPLabelTemplate;
 use App\Models\VAPSampleEntry;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\LabelStudioSourceResolver;
 use App\Support\VAPLabelPdfRenderer;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class VAPLabelController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     public function index(Request $request)
     {
-        $baseQuery = VAPLabel::query()->where('tenant_id', $this->tenantId());
+        $labId = $this->laboratoryAccess->activeLabId();
+        $baseQuery = VAPLabel::query()->where('lab_id', $labId);
         $query = (clone $baseQuery)->with(['lab', 'department', 'user'])
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($searchQuery) use ($search) {
@@ -38,7 +45,7 @@ class VAPLabelController extends Controller
             });
 
         $labels = $query->latest()->paginate(20);
-        $labs = VAPLab::active()->get(['id', 'name']);
+        $labs = VAPLab::query()->whereKey($labId)->get(['id', 'name']);
         $departments = Department::active()->get(['id', 'name']);
 
         return Inertia::render('VAPLabels/Index', [
@@ -56,13 +63,14 @@ class VAPLabelController extends Controller
 
     public function create(Request $request, LabelStudioSourceResolver $resolver)
     {
-        $templates = VAPLabelTemplate::where('is_active', true)
+        $labId = $this->laboratoryAccess->activeLabId();
+        $templates = $this->availableTemplates()->where('is_active', true)
             ->orderBy('is_featured', 'desc')
             ->orderBy('name')
             ->get();
         $selectedTemplate = $templates->firstWhere('id', $request->integer('template_id'));
 
-        $labs = VAPLab::active()->get(['id', 'name']);
+        $labs = VAPLab::query()->whereKey($labId)->get(['id', 'name']);
         $departments = Department::active()->get(['id', 'name']);
 
         return Inertia::render('VAPLabels/Create', [
@@ -70,7 +78,7 @@ class VAPLabelController extends Controller
             'selectedTemplateId' => $selectedTemplate?->id,
             'labs' => $labs,
             'departments' => $departments,
-            'sourcePreview' => $resolver->resolve($request->string('source_type')->value(), $request->input('source_id')),
+            'sourcePreview' => $resolver->resolve($request->string('source_type')->value(), $request->input('source_id'), $labId),
             'supportedPlaceholders' => $resolver->supportedPlaceholders(),
             'sourceOptions' => $this->labelStudioSourceOptions(),
             'defaultSettings' => $this->defaultLabelSettings(),
@@ -79,6 +87,7 @@ class VAPLabelController extends Controller
 
     public function store(Request $request, LabelStudioSourceResolver $resolver)
     {
+        $labId = $this->laboratoryAccess->activeLabId();
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:equipment,material,sample,custom',
@@ -91,7 +100,7 @@ class VAPLabelController extends Controller
             'border_width' => 'required|integer|min:0|max:10',
             'border_color' => 'required|string|size:7',
             'text_alignment' => 'required|in:left,center,right,justify',
-            'lab_id' => 'nullable|exists:labs,id',
+            'lab_id' => ['nullable', Rule::in([$labId])],
             'department_id' => 'nullable|exists:departments,id',
             'logo_path' => 'nullable|string',
             'logo_size' => 'nullable|numeric|min:1|max:50',
@@ -113,8 +122,12 @@ class VAPLabelController extends Controller
             'template_id' => 'nullable|exists:label_templates,id',
         ]);
 
+        if ($validated['template_id'] ?? null) {
+            $this->availableTemplates()->where('is_active', true)->findOrFail($validated['template_id']);
+        }
         $validated['user_id'] = auth()->id();
         $validated['tenant_id'] = auth()->user()->tenant_id;
+        $validated['lab_id'] = $labId;
         $validated = $this->enrichLabelPayload($validated, $resolver);
 
         $label = VAPLabel::create($validated);
@@ -125,15 +138,16 @@ class VAPLabelController extends Controller
 
     public function show(VAPLabel $label, LabelStudioSourceResolver $resolver, VAPLabelPdfRenderer $renderer)
     {
-        $this->ensureTenantOwns($label);
+        $this->ensureLaboratoryOwns($label);
         $label->load(['lab', 'department', 'user']);
-        $templates = VAPLabelTemplate::where('is_active', true)
+        $templates = $this->availableTemplates()->where('is_active', true)
             ->orderBy('is_featured', 'desc')
             ->orderBy('name')
             ->get();
         $sourcePreview = $resolver->resolve(
             data_get($label->template_data, 'source_type'),
-            data_get($label->template_data, 'source_id')
+            data_get($label->template_data, 'source_id'),
+            (int) $label->lab_id
         );
 
         if (request()->wantsJson()) {
@@ -161,12 +175,12 @@ class VAPLabelController extends Controller
 
     public function edit(VAPLabel $label, LabelStudioSourceResolver $resolver)
     {
-        $this->ensureTenantOwns($label);
-        $templates = VAPLabelTemplate::where('is_active', true)
+        $this->ensureLaboratoryOwns($label);
+        $templates = $this->availableTemplates()->where('is_active', true)
             ->orderBy('is_featured', 'desc')
             ->orderBy('name')
             ->get();
-        $labs = VAPLab::active()->get(['id', 'name']);
+        $labs = VAPLab::query()->whereKey($label->lab_id)->get(['id', 'name']);
         $departments = Department::active()->get(['id', 'name']);
 
         return Inertia::render('VAPLabels/Create', [
@@ -177,7 +191,8 @@ class VAPLabelController extends Controller
             'departments' => $departments,
             'sourcePreview' => $resolver->resolve(
                 data_get($label->template_data, 'source_type'),
-                data_get($label->template_data, 'source_id')
+                data_get($label->template_data, 'source_id'),
+                (int) $label->lab_id
             ),
             'supportedPlaceholders' => $resolver->supportedPlaceholders(),
             'sourceOptions' => $this->labelStudioSourceOptions(),
@@ -187,7 +202,8 @@ class VAPLabelController extends Controller
 
     public function update(Request $request, VAPLabel $label, LabelStudioSourceResolver $resolver)
     {
-        $this->ensureTenantOwns($label);
+        $this->ensureLaboratoryOwns($label);
+        $labId = $this->laboratoryAccess->activeLabId();
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:equipment,material,sample,custom',
@@ -200,7 +216,7 @@ class VAPLabelController extends Controller
             'border_width' => 'required|integer|min:0|max:10',
             'border_color' => 'required|string|size:7',
             'text_alignment' => 'required|in:left,center,right,justify',
-            'lab_id' => 'nullable|exists:labs,id',
+            'lab_id' => ['nullable', Rule::in([$labId])],
             'department_id' => 'nullable|exists:departments,id',
             'logo_path' => 'nullable|string',
             'logo_size' => 'nullable|numeric|min:1|max:50',
@@ -218,6 +234,10 @@ class VAPLabelController extends Controller
             'template_id' => 'nullable|exists:label_templates,id',
         ]);
 
+        if ($validated['template_id'] ?? null) {
+            $this->availableTemplates()->where('is_active', true)->findOrFail($validated['template_id']);
+        }
+        unset($validated['lab_id']);
         $validated = $this->enrichLabelPayload($validated, $resolver, $label);
         $label->update($validated);
 
@@ -227,7 +247,7 @@ class VAPLabelController extends Controller
 
     public function destroy(VAPLabel $label)
     {
-        $this->ensureTenantOwns($label);
+        $this->ensureLaboratoryOwns($label);
         $label->delete();
 
         return redirect()->route('vap_labels.labels.index')
@@ -236,7 +256,7 @@ class VAPLabelController extends Controller
 
     public function duplicate(VAPLabel $label)
     {
-        $this->ensureTenantOwns($label);
+        $this->ensureLaboratoryOwns($label);
         $duplicate = $label->replicate();
         $duplicate->name = $label->name.' (Copy)';
         $duplicate->tenant_id = auth()->user()->tenant_id;
@@ -249,7 +269,7 @@ class VAPLabelController extends Controller
 
     public function previewPdf(VAPLabel $label, LabelStudioSourceResolver $resolver, VAPLabelPdfRenderer $renderer)
     {
-        $this->ensureTenantOwns($label);
+        $this->ensureLaboratoryOwns($label);
         $renderedPdf = $renderer->renderPreview($label, $resolver);
 
         return response($renderedPdf['content'])
@@ -260,7 +280,7 @@ class VAPLabelController extends Controller
 
     public function generatePdf(Request $request, VAPLabel $label, LabelStudioSourceResolver $resolver, VAPLabelPdfRenderer $renderer)
     {
-        $this->ensureTenantOwns($label);
+        $this->ensureLaboratoryOwns($label);
         $validated = $request->validate([
             'data' => 'required|array',
             'data.*.content' => 'required|string',
@@ -291,7 +311,7 @@ class VAPLabelController extends Controller
 
     public function generateBatchPdf(Request $request, VAPLabel $label, VAPLabelPdfRenderer $renderer)
     {
-        $this->ensureTenantOwns($label);
+        $this->ensureLaboratoryOwns($label);
         $validated = $request->validate([
             'data' => 'required|array',
             'data.*.content' => 'required|string',
@@ -324,7 +344,7 @@ class VAPLabelController extends Controller
 
     public function toggleStatus(VAPLabel $label)
     {
-        $this->ensureTenantOwns($label);
+        $this->ensureLaboratoryOwns($label);
         $label->update(['is_active' => ! $label->is_active]);
 
         return back()->with('success', __('gestlab.general.labels.vap_labels.status_updated'));
@@ -332,18 +352,20 @@ class VAPLabelController extends Controller
 
     public function getTemplates()
     {
+        $labId = $this->laboratoryAccess->activeLabId();
         if (request()->filled('lab_id')) {
+            abort_unless(request()->integer('lab_id') === $labId, 404);
+
             return response()->json(
                 VAPLabel::query()
-                    ->where('tenant_id', $this->tenantId())
+                    ->where('lab_id', $labId)
                     ->where('is_active', true)
-                    ->where('lab_id', request('lab_id'))
                     ->orderBy('name')
                     ->get(['id', 'name'])
             );
         }
 
-        $templates = VAPLabelTemplate::where('is_active', true)
+        $templates = $this->availableTemplates()->where('is_active', true)
             ->orderBy('is_featured', 'desc')
             ->orderBy('name')
             ->get();
@@ -353,14 +375,15 @@ class VAPLabelController extends Controller
 
     public function applyTemplate(Request $request, VAPLabel $label)
     {
-        $this->ensureTenantOwns($label);
+        $this->ensureLaboratoryOwns($label);
         $validated = $request->validate([
             'template_id' => 'required|exists:label_templates,id',
         ]);
 
-        $template = VAPLabelTemplate::findOrFail($validated['template_id']);
+        $template = $this->availableTemplates()->where('is_active', true)->findOrFail($validated['template_id']);
+        $presentation = Arr::only($template->template_data ?? [], VAPLabelTemplate::PRESENTATION_FIELDS);
         $templateData = array_merge(
-            $template->template_data ?? [],
+            $presentation,
             array_filter([
                 'template_id' => $template->id,
                 'source_type' => data_get($label->template_data, 'source_type'),
@@ -368,7 +391,7 @@ class VAPLabelController extends Controller
             ], fn ($value) => ! is_null($value))
         );
 
-        $label->update(array_merge($template->template_data ?? [], [
+        $label->update(array_merge($presentation, [
             'template_data' => $templateData,
         ]));
 
@@ -377,17 +400,18 @@ class VAPLabelController extends Controller
 
     public function generateFromSource(Request $request, LabelStudioSourceResolver $resolver)
     {
+        $labId = $this->laboratoryAccess->activeLabId();
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'template_id' => 'required|exists:label_templates,id',
             'source_type' => 'required|in:sample_entry,sample,equipment,reagent,collection_product',
             'source_id' => 'required|integer',
-            'lab_id' => 'nullable|exists:labs,id',
+            'lab_id' => ['nullable', Rule::in([$labId])],
             'department_id' => 'nullable|exists:departments,id',
         ]);
 
-        $template = VAPLabelTemplate::findOrFail($validated['template_id']);
-        $sourcePayload = $resolver->resolve($validated['source_type'], $validated['source_id']);
+        $template = $this->availableTemplates()->where('is_active', true)->findOrFail($validated['template_id']);
+        $sourcePayload = $resolver->resolve($validated['source_type'], $validated['source_id'], $labId);
 
         abort_if(! $sourcePayload, 404, 'Registo de origem não encontrado.');
 
@@ -417,7 +441,7 @@ class VAPLabelController extends Controller
             'barcode_type' => data_get($templateData, 'barcode_type', 'CODE128'),
             'barcode_width' => data_get($templateData, 'barcode_width'),
             'barcode_height' => data_get($templateData, 'barcode_height'),
-            'lab_id' => $validated['lab_id'] ?? null,
+            'lab_id' => $labId,
             'department_id' => $validated['department_id'] ?? null,
             'template_data' => array_merge($templateData, [
                 'template_id' => $template->id,
@@ -445,8 +469,13 @@ class VAPLabelController extends Controller
 
         $sourcePayload = $resolver->resolve(
             $validated['source_type'] ?? data_get($templateData, 'source_type'),
-            $validated['source_id'] ?? data_get($templateData, 'source_id')
+            $validated['source_id'] ?? data_get($templateData, 'source_id'),
+            $this->laboratoryAccess->activeLabId()
         );
+
+        if (filled(data_get($templateData, 'source_type')) && filled(data_get($templateData, 'source_id'))) {
+            abort_unless($sourcePayload, 404, 'Registo de origem não encontrado.');
+        }
 
         if ($sourcePayload) {
             $validated['content'] = $resolver->renderContent($validated['content'], $sourcePayload);
@@ -477,8 +506,11 @@ class VAPLabelController extends Controller
 
     private function labelStudioSourceOptions(): array
     {
+        $labId = $this->laboratoryAccess->activeLabId();
+
         return [
             'samples' => VAPSampleEntry::query()
+                ->where('lab_id', $labId)
                 ->latest()
                 ->limit(50)
                 ->get(['id', 'name', 'code'])
@@ -487,7 +519,9 @@ class VAPLabelController extends Controller
                     'label' => trim(($sample->code ? $sample->code.' · ' : '').($sample->name ?: 'Amostra')),
                 ])
                 ->values(),
-            'inventory' => InventoryItem::query()
+            'inventory' => InventoryItem::forLaboratory($labId)
+                ->whereHas('inventory', fn (Builder $query): Builder => $query
+                    ->whereHas('warehouse', fn (Builder $warehouse): Builder => $warehouse->where('lab_id', $labId)))
                 ->latest()
                 ->limit(50)
                 ->get(['id', 'name', 'code', 'internal_code'])
@@ -497,6 +531,7 @@ class VAPLabelController extends Controller
                 ])
                 ->values(),
             'collection_products' => CollectionProduct::query()
+                ->whereHas('sampleEntry', fn (Builder $query): Builder => $query->where('lab_id', $labId))
                 ->latest()
                 ->limit(50)
                 ->get(['id', 'lot'])
@@ -570,15 +605,17 @@ class VAPLabelController extends Controller
         ];
     }
 
-    private function ensureTenantOwns(VAPLabel $label): void
+    private function ensureLaboratoryOwns(VAPLabel $label): void
     {
-        abort_unless((string) $label->tenant_id === (string) $this->tenantId(), 404);
+        abort_unless((int) $label->lab_id === $this->laboratoryAccess->activeLabId(), 404);
     }
 
-    private function tenantId(): ?int
+    /** @return Builder<VAPLabelTemplate> */
+    private function availableTemplates(): Builder
     {
-        $tenantId = auth()->user()?->tenant_id;
+        $labId = $this->laboratoryAccess->activeLabId();
 
-        return is_numeric($tenantId) ? (int) $tenantId : null;
+        return VAPLabelTemplate::query()
+            ->where(fn (Builder $query): Builder => $query->where('lab_id', $labId)->orWhere('is_system', true));
     }
 }

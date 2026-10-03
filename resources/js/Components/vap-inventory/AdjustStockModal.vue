@@ -108,9 +108,10 @@
           </label>
           <div class="relative">
             <BaseInput
-              v-model.number="form.quantity"
+              v-model="form.quantity"
               type="number"
-              :min="form.adjustment_type === 'remove' ? 1 : 1"
+              :min="form.adjustment_type === 'set' ? 0 : 0.0001"
+              step="0.0001"
               :max="form.adjustment_type === 'remove' ? selectedInventory?.qty_available : null"
               required
               :class="[
@@ -243,7 +244,7 @@ const form = useForm({
 })
 
 const isFormValid = computed(() => {
-  return form.warehouse_id && form.adjustment_type && form.quantity && form.reason
+  return form.warehouse_id && form.adjustment_type && form.quantity !== '' && form.reason
 })
 
 const updateWarehouseStock = () => {
@@ -259,14 +260,14 @@ const updateWarehouseStock = () => {
 const calculateNewStock = () => {
   if (!selectedInventory.value || !form.quantity) return 0
   
-  const current = selectedInventory.value.qty_available
-  const adjustment = parseInt(form.quantity)
-  
+  const current = Number(selectedInventory.value.qty_available)
+  const adjustment = Number(form.quantity)
+
   if (form.adjustment_type === 'add') {
-    return current + adjustment
-  } else {
-    return Math.max(0, current - adjustment)
+    return (current + adjustment).toFixed(4)
   }
+  if (form.adjustment_type === 'set') return adjustment.toFixed(4)
+  return Math.max(0, current - adjustment).toFixed(4)
 }
 
 const submit = () => {

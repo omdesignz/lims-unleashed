@@ -3,21 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\VAPFileResource;
+use App\Http\Resources\VAPFileVersionResource;
 use App\Models\User;
 use App\Models\VAPFile;
 use App\Models\VAPFilePermission;
 use App\Models\VAPFileShare;
 use App\Models\VAPFileVersion;
 use App\Models\WorkflowTask;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\NotificationTemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class VAPFileController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratory) {}
+
     public function index(Request $request)
     {
         $files = VAPFile::query()
@@ -63,6 +69,7 @@ class VAPFileController extends Controller
 
     public function upload(Request $request)
     {
+        $labId = $this->laboratory->activeLabId();
         $validated = $request->validate([
             'file' => 'required|file',
             'parent_id' => 'nullable|exists:v_files,id',
@@ -74,11 +81,15 @@ class VAPFileController extends Controller
         $parent = $parentId ? VAPFile::query()->findOrFail($parentId) : null;
         if ($parent) {
             $this->authorizeWrite($request, $parent);
+            if ($parent->type !== 'folder') {
+                throw ValidationException::withMessages(['parent_id' => 'O destino deve ser uma pasta.']);
+            }
         }
 
         $uploadedFile = $request->file('file');
         $fileName = $uploadedFile->getClientOriginalName();
         $existingFile = VAPFile::query()
+            ->where('lab_id', $labId)
             ->where('parent_id', $parentId)
             ->where('name', $fileName)
             ->first();
@@ -143,10 +154,11 @@ class VAPFileController extends Controller
             ]));
         }
 
-        $file = DB::transaction(function () use ($fileName, $uploadedFile, $parentId, $storagePath, $checksum, $validated, $request, $changeReason) {
+        $file = DB::transaction(function () use ($fileName, $uploadedFile, $parentId, $storagePath, $checksum, $validated, $request, $changeReason, $labId) {
             $file = VAPFile::create(array_merge(
                 $this->buildMetadataPayload($validated, $request),
                 [
+                    'lab_id' => $labId,
                     'name' => $fileName,
                     'type' => 'file',
                     'size' => $uploadedFile->getSize(),
@@ -199,19 +211,25 @@ class VAPFileController extends Controller
 
     public function uploadFolder(Request $request)
     {
+        $labId = $this->laboratory->activeLabId();
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'parent_id' => 'nullable|exists:v_files,id',
             ...$this->documentMetadataRules(false),
         ]);
 
-        $parent = $validated['parent_id'] ? VAPFile::query()->findOrFail($validated['parent_id']) : null;
+        $parentId = $validated['parent_id'] ?? null;
+        $parent = $parentId ? VAPFile::query()->findOrFail($parentId) : null;
         if ($parent) {
             $this->authorizeWrite($request, $parent);
+            if ($parent->type !== 'folder') {
+                throw ValidationException::withMessages(['parent_id' => 'O destino deve ser uma pasta.']);
+            }
         }
 
         $existingFolder = VAPFile::query()
-            ->where('parent_id', $validated['parent_id'] ?? null)
+            ->where('lab_id', $labId)
+            ->where('parent_id', $parentId)
             ->where('name', $validated['name'])
             ->where('type', 'folder')
             ->first();
@@ -223,13 +241,14 @@ class VAPFileController extends Controller
             ], 409);
         }
 
-        $folder = DB::transaction(function () use ($validated, $request) {
+        $folder = DB::transaction(function () use ($validated, $request, $labId, $parentId) {
             $folder = VAPFile::create(array_merge(
                 $this->buildMetadataPayload($validated, $request, false),
                 [
+                    'lab_id' => $labId,
                     'name' => $validated['name'],
                     'type' => 'folder',
-                    'parent_id' => $validated['parent_id'] ?? null,
+                    'parent_id' => $parentId,
                     'modified_at' => now(),
                     'created_by' => $request->user()->id,
                     'status' => $validated['status'] ?? 'effective',
@@ -262,6 +281,7 @@ class VAPFileController extends Controller
         ]);
 
         $exists = VAPFile::query()
+            ->where('lab_id', $file->lab_id)
             ->where('parent_id', $file->parent_id)
             ->where('name', $validated['name'])
             ->where('id', '!=', $file->id)
@@ -307,9 +327,26 @@ class VAPFileController extends Controller
                     'message' => trans('gestlab.general.labels.vap_filemanager.notifications.error_target_location_not_folder'),
                 ], 400);
             }
+
+            if ($file->type === 'folder') {
+                $ancestor = $targetFolder;
+                $visited = [];
+
+                while ($ancestor) {
+                    if ($ancestor->is($file) || isset($visited[$ancestor->id])) {
+                        throw ValidationException::withMessages(['parent_id' => 'Uma pasta não pode ser movida para dentro de si própria.']);
+                    }
+
+                    $visited[$ancestor->id] = true;
+                    $ancestor = $ancestor->parent_id
+                        ? VAPFile::query()->where('lab_id', $file->lab_id)->findOrFail($ancestor->parent_id)
+                        : null;
+                }
+            }
         }
 
         $exists = VAPFile::query()
+            ->where('lab_id', $file->lab_id)
             ->where('parent_id', $newParentId)
             ->where('name', $file->name)
             ->where('id', '!=', $file->id)
@@ -348,6 +385,7 @@ class VAPFileController extends Controller
 
             if ($file->type === 'folder') {
                 VAPFile::query()
+                    ->where('lab_id', $file->lab_id)
                     ->where('parent_id', $file->id)
                     ->update([
                         'archived' => true,
@@ -377,6 +415,7 @@ class VAPFileController extends Controller
 
             if ($file->type === 'folder') {
                 VAPFile::query()
+                    ->where('lab_id', $file->lab_id)
                     ->where('parent_id', $file->id)
                     ->update([
                         'archived' => false,
@@ -421,6 +460,12 @@ class VAPFileController extends Controller
             'access_level' => 'required|in:read,write,admin',
         ]);
 
+        $recipient = User::query()->findOrFail($validated['user_id']);
+        if (! $recipient->is_active || ! $recipient->hasVerifiedEmail()
+            || ! DB::table('lab_user')->where('lab_id', $file->lab_id)->where('user_id', $recipient->id)->exists()) {
+            throw ValidationException::withMessages(['user_id' => 'O destinatário deve pertencer directamente ao laboratório deste documento.']);
+        }
+
         DB::transaction(function () use ($file, $validated) {
             VAPFilePermission::query()->updateOrCreate(
                 ['file_id' => $file->id, 'user_id' => $validated['user_id']],
@@ -438,10 +483,9 @@ class VAPFileController extends Controller
             'access_level' => $validated['access_level'],
         ]);
 
-        $recipient = User::query()->find($validated['user_id']);
-
-        if ($recipient && ! $recipient->is($request->user())) {
+        if (! $recipient->is($request->user())) {
             $templates->notify([$recipient], 'documents.controlled_file.shared', [
+                'lab_id' => $file->lab_id,
                 'actor_name' => $request->user()->name,
                 'access_level' => $validated['access_level'],
                 'document_label' => $file->name,
@@ -456,7 +500,41 @@ class VAPFileController extends Controller
     {
         $this->authorizeRead($request, $file);
 
-        return response()->json($file->versions()->with('creator')->latest()->get());
+        return VAPFileVersionResource::collection($file->versions()->with('creator')->latest()->get());
+    }
+
+    public function compareVersions(Request $request, VAPFile $file, string $older, string $newer)
+    {
+        $this->authorizeRead($request, $file);
+        abort_unless($file->type === 'file', 404);
+
+        $versions = $file->versions()->whereKey([$older, $newer])->get()->keyBy('id');
+        abort_unless($older !== $newer && $versions->has($older) && $versions->has($newer), 404);
+
+        $readText = function (VAPFileVersion $version): string {
+            $mimeType = (string) $version->mime_type;
+            abort_unless(str_starts_with($mimeType, 'text/') || in_array($mimeType, ['application/json', 'application/xml', 'application/javascript'], true), 415);
+            abort_unless($version->content && Storage::exists($version->content), 404);
+            abort_if((int) $version->size > 1048576 || Storage::size($version->content) > 1048576, 413);
+
+            $content = Storage::get($version->content);
+            abort_unless(mb_check_encoding($content, 'UTF-8'), 422);
+
+            return $content;
+        };
+
+        return response()->json([
+            'older' => [
+                'id' => $older,
+                'revision_code' => $versions[$older]->revision_code,
+                'text' => $readText($versions[$older]),
+            ],
+            'newer' => [
+                'id' => $newer,
+                'revision_code' => $versions[$newer]->revision_code,
+                'text' => $readText($versions[$newer]),
+            ],
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     public function restoreVersion(Request $request, VAPFile $file, string $version)
@@ -544,7 +622,11 @@ class VAPFileController extends Controller
         $this->authorizeWrite($request, $file);
 
         $validated = $request->validate([
-            'assigned_to' => 'nullable|exists:users,id',
+            'assigned_to' => [
+                'nullable',
+                Rule::exists('users', 'id'),
+                Rule::exists('lab_user', 'user_id')->where('lab_id', $file->lab_id),
+            ],
             'due_date' => 'nullable|date',
             'change_reason' => 'required|string|max:1000',
         ]);
@@ -625,7 +707,7 @@ class VAPFileController extends Controller
         $this->authorizeApprove($request, $file);
 
         $validated = $request->validate([
-            'superseded_by' => 'nullable|exists:v_files,id',
+            'superseded_by' => ['nullable', Rule::exists('v_files', 'id')->where('lab_id', $file->lab_id)],
             'change_reason' => 'required|string|max:1000',
         ]);
 
@@ -633,6 +715,10 @@ class VAPFileController extends Controller
             return response()->json([
                 'message' => 'Um documento não pode substituir a si mesmo.',
             ], 422);
+        }
+
+        if (! empty($validated['superseded_by'])) {
+            $this->authorizeRead($request, VAPFile::query()->findOrFail($validated['superseded_by']));
         }
 
         $file->update([
@@ -653,6 +739,7 @@ class VAPFileController extends Controller
 
     public function search(Request $request)
     {
+        $this->laboratory->activeLabId();
         $validated = $request->validate([
             'query' => 'nullable|string|max:255',
         ]);
@@ -690,6 +777,7 @@ class VAPFileController extends Controller
 
     public function getBreadcrumbs(Request $request, $folderId = null)
     {
+        $this->laboratory->activeLabId();
         $breadcrumbs = [];
         $currentId = $folderId;
 
@@ -721,26 +809,36 @@ class VAPFileController extends Controller
             $query->where('name', 'like', '%'.$request->q.'%');
         }
 
-        return response()->json($query->orderBy('name')->get());
+        return response()->json($query->orderBy('name')->get(['id', 'name', 'parent_id', 'type']));
     }
 
     private function authorizeRead(Request $request, VAPFile $file): void
     {
+        $this->authorizeOwnedLaboratory($file);
         abort_unless($file->canBeReadBy($request->user()), 403);
     }
 
     private function authorizeWrite(Request $request, VAPFile $file): void
     {
+        $this->authorizeOwnedLaboratory($file);
         abort_unless($file->canBeWrittenBy($request->user()), 403);
     }
 
     private function authorizeApprove(Request $request, VAPFile $file): void
     {
+        $this->authorizeOwnedLaboratory($file);
         abort_unless($file->canBeApprovedBy($request->user()), 403);
+    }
+
+    private function authorizeOwnedLaboratory(VAPFile $file): void
+    {
+        abort_unless((int) $file->lab_id === $this->laboratory->activeLabId(), 404);
     }
 
     private function scopeAccessibleFiles($query, $user): void
     {
+        $query->where('lab_id', $this->laboratory->activeLabId());
+
         if (! $user) {
             $query->whereRaw('1 = 0');
 
@@ -790,7 +888,12 @@ class VAPFileController extends Controller
             'retention_period_days' => 'nullable|integer|min:1|max:3650',
             'effective_at' => 'nullable|date',
             'review_due_at' => 'nullable|date|after_or_equal:effective_at',
-            'owner_id' => 'nullable|exists:users,id',
+            'owner_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id'),
+                Rule::exists('lab_user', 'user_id')->where('lab_id', $this->laboratory->activeLabId()),
+            ],
             'change_reason' => 'nullable|string|max:1000',
             'meta' => 'nullable|array',
         ];

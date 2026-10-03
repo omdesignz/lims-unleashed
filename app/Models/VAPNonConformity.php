@@ -65,7 +65,7 @@ class VAPNonConformity extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('attachments')
-            ->useDisk('public');
+            ->useDisk('local');
     }
 
     // Relationships
@@ -139,12 +139,13 @@ class VAPNonConformity extends Model implements HasMedia
         return $this->reported_at->diffInDays(now());
     }
 
-    public function generateNcNumber(): string
+    public function generateNcNumber(int $labId): string
     {
         $prefix = 'NC';
         $year = now()->format('Y');
         $month = now()->format('m');
-        $count = self::whereYear('created_at', now()->year)
+        $count = self::where('lab_id', $labId)
+            ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->count() + 1;
 

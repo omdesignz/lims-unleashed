@@ -18,6 +18,9 @@ class ItemCategoryResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
+            'inventory_type' => $this->inventory_type->value,
+            'inventory_type_label' => $this->inventory_type->value === 'equipment' ? 'Equipamento' : 'Material',
+            'type_locked' => $this->typeIsLocked(),
             'parent_id' => $this->parent_id,
             'parent' => ItemCategoryResource::make($this->whenLoaded('parent'))?->name ?? null,
             'description' => $this->description,
@@ -25,12 +28,12 @@ class ItemCategoryResource extends JsonResource
             'links' => [
                 'edit_path' => route('itemcategories.edit', $this->id),
                 'delete_path' => route('itemcategories.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('itemcategories.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

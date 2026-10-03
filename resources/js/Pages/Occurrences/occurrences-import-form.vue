@@ -4,7 +4,7 @@ import { ArrowUpTrayIcon, DocumentArrowUpIcon } from "@heroicons/vue/24/outline"
 import { ref } from "vue";
 
 const fileInput = ref(null);
-const form = useForm("OccurrenceImport", {
+const form = useForm({
   file: null,
 });
 
@@ -13,7 +13,8 @@ function onFileChange(event) {
 }
 
 function submit() {
-  form.post("/occurrences/import", {
+  if (form.processing || !form.file) return;
+  form.post(route('occurrences.import.upload'), {
     forceFormData: true,
     preserveScroll: true,
     onSuccess: () => {
@@ -36,15 +37,17 @@ function submit() {
         </span>
         <div class="min-w-0">
           <h2 class="text-sm font-bold text-[var(--ds-text)]">Importação em lote</h2>
-          <p class="mt-1 text-sm text-[var(--ds-text-muted)]">Carregue um ficheiro CSV validado para adicionar ocorrências ao registo.</p>
+          <p class="mt-1 text-sm text-[var(--ds-text-muted)]">CSV separado por ponto e vírgula; até 500 registos e 2 MB. A importação é integral: qualquer erro impede todos os registos.</p>
+          <a :href="route('occurrences.import.template')" class="ds-button ds-button-secondary mt-2">Descarregar modelo CSV</a>
+          <p class="mt-2 text-xs text-[var(--ds-text-muted)]">Laboratório e números são atribuídos automaticamente. Referências usam IDs existentes; booleanos usam 0 ou 1.</p>
           <p v-if="form.file" class="mt-2 truncate text-xs font-bold text-[var(--ds-text)]">{{ form.file.name }}</p>
-          <p v-if="form.errors.file" class="ds-field-error mt-2">{{ form.errors.file }}</p>
+          <p v-if="form.errors.file" id="occurrence-import-error" role="alert" class="ds-field-error mt-2">{{ form.errors.file }}</p>
         </div>
       </div>
 
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <label class="ds-button ds-button-secondary cursor-pointer">
-          <FileInput ref="fileInput" type="file" accept=".csv,text/csv" class="sr-only" required @change="onFileChange" />
+          <input ref="fileInput" type="file" accept=".csv,text/csv" class="sr-only" :disabled="form.processing" :aria-invalid="!!form.errors.file" :aria-describedby="form.errors.file ? 'occurrence-import-error' : undefined" required @change="onFileChange" />
           Seleccionar CSV
         </label>
         <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.file">

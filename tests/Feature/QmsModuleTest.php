@@ -7,8 +7,10 @@ use App\Models\PersonnelQualification;
 use App\Models\ReportStudioTemplate;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Models\VAPNonConformity;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -18,12 +20,13 @@ class QmsModuleTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $user = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $user->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $user->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
+
+        return $user;
     }
 
     public function test_admin_can_open_qms_and_related_pages(): void
@@ -92,9 +95,10 @@ class QmsModuleTest extends TestCase
     public function test_qms_dashboard_surfaces_competence_follow_up_signals(): void
     {
         $user = $this->verifiedAdmin();
-        $department = Department::query()->firstOrFail();
+        $department = Department::query()->create(['name' => 'QMS competence '.Str::random(8)]);
 
         PersonnelQualification::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'user_id' => $user->id,
             'capability' => 'Verificação de resultados '.Str::upper(Str::random(5)),
             'department_id' => $department->id,
@@ -120,9 +124,10 @@ class QmsModuleTest extends TestCase
     public function test_qms_dashboard_surfaces_receiving_non_conformities(): void
     {
         $user = $this->verifiedAdmin();
-        $department = Department::query()->firstOrFail();
+        $department = Department::query()->create(['name' => 'QMS receiving '.Str::random(8)]);
 
         VAPNonConformity::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'department_id' => $department->id,
             'nc_number' => 'NC-REC-0001',
             'title' => 'Desvio na recepção de reagente',
@@ -153,9 +158,14 @@ class QmsModuleTest extends TestCase
         $targetUser = User::factory()->create([
             'email_verified_at' => now(),
         ]);
-        $department = Department::query()->firstOrFail();
+        DB::table('lab_user')->insert([
+            'lab_id' => DB::table('lab_user')->where('user_id', $admin->id)->value('lab_id'),
+            'user_id' => $targetUser->id,
+        ]);
+        $department = Department::query()->create(['name' => 'QMS user competence '.Str::random(8)]);
 
         PersonnelQualification::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $admin->id)->value('lab_id'),
             'user_id' => $targetUser->id,
             'capability' => 'Leitura cromatográfica',
             'department_id' => $department->id,

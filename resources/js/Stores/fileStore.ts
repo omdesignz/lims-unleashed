@@ -4,6 +4,7 @@ import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { useToast } from 'vue-toastification'
 import axios from 'axios'
+import { usePage } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n';
 
 
@@ -19,8 +20,9 @@ export interface FilePermission {
 
 export interface FileVersion {
   id: string
-  content: ArrayBuffer
   revision_code?: string
+  mime_type?: string
+  size?: number
   createdAt: Date
   createdBy: string
   comment?: string
@@ -29,6 +31,7 @@ export interface FileVersion {
 
 export interface File {
   id: string
+  lab_id?: number
   name: string
   document_number?: string | null
   type: 'file' | 'folder'
@@ -65,9 +68,10 @@ export interface File {
 }
 
 export const useFileStore = defineStore('files', () => {
+  const page = usePage()
   const toast = useToast()
   const files = ref<File[]>([])
-  const currentFolder = ref<string | null>(localStorage.getItem('currentFolder'))
+  const currentFolder = ref<string | null>(null)
   const selectedItems = ref<Set<string>>(new Set())
   const showOverrideDialog = ref(false)
   const pendingFile = ref<{ file: File; action: 'upload' | 'move' } | null>(null)
@@ -75,6 +79,37 @@ export const useFileStore = defineStore('files', () => {
   const searchQuery = ref('')
   const filesLoaded = ref(false)
   const breadcrumbs = ref<Breadcrumb[]>([])
+  const activeLabId = computed<number | null>(() => {
+    const labId = page.props.laboratory?.active_lab?.id
+
+    return labId == null ? null : Number(labId)
+  })
+  const activeContextKey = computed(() => {
+    const userId = page.props.auth?.user?.id
+
+    return userId && activeLabId.value !== null ? `${userId}:${activeLabId.value}` : null
+  })
+  const folderStorageKey = computed(() => activeContextKey.value ? `currentFolder:${activeContextKey.value}` : null)
+
+  function belongsToActiveLab(file: File): boolean {
+    return activeLabId.value !== null && Number(file.lab_id) === activeLabId.value
+  }
+
+  watch(activeContextKey, (nextContext, previousContext) => {
+    if (nextContext === previousContext) {
+      return
+    }
+
+    files.value = []
+    breadcrumbs.value = []
+    selectedItems.value.clear()
+    searchQuery.value = ''
+    filesLoaded.value = false
+    showOverrideDialog.value = false
+    pendingFile.value = null
+    currentFolder.value = folderStorageKey.value ? localStorage.getItem(folderStorageKey.value) : null
+    localStorage.removeItem('currentFolder')
+  }, { immediate: true, flush: 'sync' })
 
   function translatedMessage(key: string, fallback: string): string {
     const message = trans(key)
@@ -129,7 +164,6 @@ export const useFileStore = defineStore('files', () => {
   function normalizeVersions(versions: any[] = []): FileVersion[] {
     return versions.map((version) => ({
       ...version,
-      content: version.content,
       createdAt: new Date(version.created_at ?? version.createdAt ?? Date.now()),
       createdBy: version.creator?.name ?? version.createdBy ?? 'System',
     }))
@@ -155,15 +189,19 @@ export const useFileStore = defineStore('files', () => {
   }
 
   function replaceFileRecord(file: File): void {
+    if (!belongsToActiveLab(file)) {
+      return
+    }
+
     files.value = [...files.value.filter((currentFile) => currentFile.id !== file.id), file]
   }
 
   function replaceFileCollection(collection: any): void {
-    files.value = unwrapCollection(collection).map((file) => mapFileRecord(file))
+    files.value = unwrapCollection(collection).map((file) => mapFileRecord(file)).filter(belongsToActiveLab)
   }
 
   const currentFiles = computed(() => {
-    let filteredFiles = files.value.filter(file => !file.archived)
+    let filteredFiles = files.value.filter(file => !file.archived && belongsToActiveLab(file))
 
     // Apply search filter if there's a query
     if (searchQuery.value.trim()) {
@@ -191,7 +229,9 @@ export const useFileStore = defineStore('files', () => {
     }
 
     try {
+      const context = activeContextKey.value
       const response = await axios.get(`/api/files/breadcrumbs/${folderId}`)
+      if (context !== activeContextKey.value) return
       breadcrumbs.value = response.data
     } catch (error) {
       reportDevError('Error loading breadcrumbs:', error)
@@ -205,10 +245,12 @@ export const useFileStore = defineStore('files', () => {
   async function loadFiles() {
     try {
       isLoading.value = true
+      const context = activeContextKey.value
       const response = await axios.get('/api/files')
+      if (context !== activeContextKey.value) return
       const loadedFiles = unwrapCollection(response.data)
 
-      files.value = loadedFiles.map((file) => mapFileRecord(file))
+      files.value = loadedFiles.map((file) => mapFileRecord(file)).filter(belongsToActiveLab)
       filesLoaded.value = true
 
       // Validate current folder exists
@@ -216,7 +258,7 @@ export const useFileStore = defineStore('files', () => {
         const folderExists = files.value.some(f => f.id === currentFolder.value)
         if (!folderExists) {
           currentFolder.value = null
-          localStorage.removeItem('currentFolder')
+          if (folderStorageKey.value) localStorage.removeItem(folderStorageKey.value)
           breadcrumbs.value = []
         } else {
           // await loadBreadcrumbs(currentFolder.value)
@@ -260,9 +302,11 @@ async function initializeStore() {
 
     try {
       isLoading.value = true
+      const context = activeContextKey.value
       const response = await axios.get('/api/files/search', {
         params: { query }
       })
+      if (context !== activeContextKey.value) return
 
       // Update the files with search results
       const searchResults = unwrapCollection(response.data).map((file) => mapFileRecord(file))
@@ -273,7 +317,7 @@ async function initializeStore() {
         updatedFiles.set(result.id, result)
       })
 
-      files.value = Array.from(updatedFiles.values())
+      files.value = Array.from(updatedFiles.values()).filter(belongsToActiveLab)
     } catch (error) {
       reportDevError('Error searching files:', error)
       toast.error(translatedMessage(
@@ -294,7 +338,9 @@ async function initializeStore() {
   async function fetchFiles() {
     try {
       isLoading.value = true
+      const context = activeContextKey.value
       const response = await axios.get('/api/files')
+      if (context !== activeContextKey.value) return
       replaceFileCollection(response.data)
 
       if (currentFolder.value) {
@@ -314,7 +360,9 @@ async function initializeStore() {
 
   async function initialFileLoad() {
     try {
+        const context = activeContextKey.value
         const response = await axios.get('/api/files') // Fetching all files or base data
+        if (context !== activeContextKey.value) return
         replaceFileCollection(response.data)
         filesLoaded.value = true;
     } catch (error) {
@@ -712,10 +760,10 @@ async function navigateToFolder(folderId: string | null) {
     searchQuery.value = ''
 
     if (folderId) {
-        localStorage.setItem('currentFolder', folderId) // Save the ID
+        if (folderStorageKey.value) localStorage.setItem(folderStorageKey.value, folderId)
         await loadBreadcrumbs(folderId)
     } else {
-        localStorage.removeItem('currentFolder') // Remove on root
+        if (folderStorageKey.value) localStorage.removeItem(folderStorageKey.value)
         breadcrumbs.value = []
     }
     

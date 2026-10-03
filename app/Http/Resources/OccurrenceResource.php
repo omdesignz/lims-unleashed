@@ -30,12 +30,12 @@ class OccurrenceResource extends JsonResource
             'effect_corrective_actions' => $this->effect_corrective_actions,
             'cause_corrective_actions' => $this->cause_corrective_actions,
             'implementation_date' => $this->implementation_date ? $this->implementation_date?->format('Y-m-d') : null,
-            'implementation_date_overdue' => $this->implementation_date ? $this->implementation_date < now()->format('Y-m-d') : false,
+            'implementation_date_overdue' => $this->implementation_date?->lt(today()) && ! $this->date_resolved && ! $this->date_closed,
             'update_risk_matrix' => $this->update_risk_matrix,
-            'client_process_close_notification_date' => $this->client_process_close_notification_date,
+            'client_process_close_notification_date' => $this->client_process_close_notification_date?->format('Y-m-d'),
             'client_acceptance' => $this->client_acceptance,
             'client_acceptance_comments' => $this->client_acceptance_comments,
-            'date_closed' => $this->date_closed ? $this->date_closed?->format('Y-m-d') : null, 
+            'date_closed' => $this->date_closed?->format('Y-m-d'),
             'obs' => $this->obs,
             'was_effective' => $this->was_effective,
             'status_id' => $this->status_id,
@@ -53,12 +53,12 @@ class OccurrenceResource extends JsonResource
             'links' => [
                 'edit_path' => route('occurrences.edit', $this->id),
                 'delete_path' => route('occurrences.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('occurrences.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

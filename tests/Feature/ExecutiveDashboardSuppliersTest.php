@@ -8,8 +8,11 @@ use App\Models\InventoryNeed;
 use App\Models\InventorySupplierAssessment;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Models\VAPNonConformity;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class ExecutiveDashboardSuppliersTest extends TestCase
@@ -18,18 +21,20 @@ class ExecutiveDashboardSuppliersTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $user = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $user->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $user->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
+
+        return $user;
     }
 
-    public function test_dashboard_surfaces_supplier_watchlist_and_kpis(): void
+    public function test_current_workbenches_surface_procurement_and_quality_signals(): void
     {
         $user = $this->verifiedAdmin();
-        $department = Department::query()->firstOrFail();
+        $labId = DB::table('lab_user')->where('user_id', $user->id)->value('lab_id');
+        $department = Department::query()->create(['name' => 'Executive procurement '.Str::random(8)]);
         $supplier = InventoryItemSupplier::query()->create([
             'name' => 'Fornecedor Executivo',
             'address' => 'Luanda',
@@ -37,6 +42,7 @@ class ExecutiveDashboardSuppliersTest extends TestCase
         ]);
 
         InventorySupplierAssessment::query()->create([
+            'lab_id' => $labId,
             'inventory_item_supplier_id' => $supplier->id,
             'assessed_by_user_id' => $user->id,
             'assessment_date' => now()->subDays(5)->toDateString(),
@@ -53,6 +59,7 @@ class ExecutiveDashboardSuppliersTest extends TestCase
         ]);
 
         InventoryNeed::query()->create([
+            'lab_id' => $labId,
             'reference' => 'NEED-EXEC-001',
             'department_id' => $department->id,
             'requested_by_id' => $user->id,
@@ -64,6 +71,7 @@ class ExecutiveDashboardSuppliersTest extends TestCase
         ]);
 
         VAPNonConformity::query()->create([
+            'lab_id' => $labId,
             'department_id' => $department->id,
             'nc_number' => 'NC-EXEC-001',
             'title' => 'Recepção com desvio executivo',
@@ -78,38 +86,20 @@ class ExecutiveDashboardSuppliersTest extends TestCase
             'batch_number' => 'PO-EXEC-001',
         ]);
 
-        $response = $this->actingAs($user)->get(route('dashboard'));
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('LaboratoryWorkbench'));
 
-        $response->assertOk();
+        $qms = $this->get(route('qms.index'));
+        $qms->assertOk();
+        $quality = $qms->viewData('page');
+        $this->assertSame(1, data_get($quality, 'props.summary.suppliers_high_risk'));
+        $this->assertSame(1, data_get($quality, 'props.summary.receiving_non_conformities_open'));
+        $this->assertSame('Fornecedor Executivo', data_get($quality, 'props.dueSupplierAssessments.0.supplier.name'));
+        $this->assertSame('Recepção com desvio executivo', data_get($quality, 'props.receivingNonConformities.0.title'));
 
-        $page = $response->viewData('page');
-
-        $this->assertGreaterThanOrEqual(1, data_get($page, 'props.executive.kpis.4.value'));
-        $this->assertGreaterThanOrEqual(1, data_get($page, 'props.executive.kpis.5.value'));
-        $this->assertGreaterThanOrEqual(1, data_get($page, 'props.executive.kpis.6.value'));
-        $this->assertGreaterThanOrEqual(1, data_get($page, 'props.executive.kpis.7.value'));
-        $this->assertNotEmpty(data_get($page, 'props.executive.charts.throughput.categories'));
-        $this->assertCount(3, data_get($page, 'props.executive.charts.throughput.series'));
-        $this->assertContains('Risco elevado', data_get($page, 'props.executive.charts.supplier_risk.labels', []));
-        $this->assertContains('Compra bloqueada', data_get($page, 'props.executive.charts.procurement_readiness.labels', []));
-        $this->assertContains('Crítica', data_get($page, 'props.executive.charts.receiving_nc_severity.labels', []));
-        $this->assertContains(
-            'Fornecedor Executivo',
-            collect(data_get($page, 'props.executive.supplier_watchlist', []))->pluck('supplier_name')->all()
-        );
-        $this->assertContains(
-            'NEED-EXEC-001',
-            collect(data_get($page, 'props.executive.procurement_queue', []))->pluck('reference')->all()
-        );
-        $queueEntry = collect(data_get($page, 'props.executive.procurement_queue', []))
-            ->firstWhere('reference', 'NEED-EXEC-001');
-
-        $this->assertIsArray($queueEntry);
-        $this->assertArrayHasKey('supplier_readiness', $queueEntry);
-        $this->assertArrayHasKey('supplier_summary', $queueEntry);
-        $this->assertContains(
-            'Recepção com desvio executivo',
-            collect(data_get($page, 'props.executive.receiving_non_conformities', []))->pluck('title')->all()
-        );
+        $procurement = $this->get(route('vap-inventory.needs.index'));
+        $procurement->assertOk();
+        $this->assertSame('NEED-EXEC-001', data_get($procurement->viewData('page'), 'props.procurementQueue.0.reference'));
     }
 }

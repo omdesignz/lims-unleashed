@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 use Spatie\QueryBuilder\AllowedFilter;
 
 class Rating extends Model
@@ -21,6 +22,8 @@ class Rating extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'lab_id',
+        'rating_request_id',
         'user_id',
         'rateable_id',
         'rateable_type',
@@ -40,6 +43,20 @@ class Rating extends Model
         'criteria' => 'array',
         'metadata' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $rating): void {
+            if ($rating->isDirty(['lab_id', 'rating_request_id', 'user_id', 'rateable_type', 'rateable_id', 'rater_type', 'rater_id', 'channel', 'criteria', 'review', 'metadata'])) {
+                throw new LogicException('Submitted survey identity and evidence cannot be changed.');
+            }
+        });
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
+    }
 
     public function user(): BelongsTo
     {

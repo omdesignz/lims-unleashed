@@ -26,7 +26,7 @@
             <ArrowLeftIcon class="h-4 w-4" />
             Itens
           </Link>
-          <Link :href="route('vap-inventory.items.edit', item.id)" class="ds-button ds-button-primary">
+          <Link v-if="canEdit" :href="route('vap-inventory.items.edit', item.id)" class="ds-button ds-button-primary">
             <PencilSquareIcon class="h-4 w-4" />
             Modificar
           </Link>
@@ -350,6 +350,8 @@
             <DocumentTextIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
           </div>
 
+          <p v-if="documentMessage" :role="documentFailed ? 'alert' : 'status'" class="px-5 py-3 text-sm">{{ documentMessage }}</p>
+
           <div v-if="documents.length === 0" class="p-5">
             <div class="ds-empty-state px-5 py-10 text-center">
               <DocumentTextIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
@@ -365,7 +367,7 @@
                   <DocumentTextIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
                 </div>
                 <div class="min-w-0">
-                  <h3 class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ document.name }}</h3>
+                  <h3 class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ document.name }} <span v-if="document.archived" class="text-xs font-normal">· Arquivado</span></h3>
                   <p class="mt-0.5 text-xs text-[color:var(--ds-text-soft)]">{{ (document.extension || document.name.split('.').pop() || 'ficheiro').toUpperCase() }} · {{ readableFileSize(document.size) }}</p>
                 </div>
               </div>
@@ -374,9 +376,13 @@
                   <CloudArrowDownIcon class="h-4 w-4" />
                   Descarregar
                 </button>
-                <button type="button" class="ds-table-action ds-table-action-danger" title="Remover documento" @click="deleteAttachment(item.id, document.id)">
-                  <TrashIcon class="h-4 w-4" />
-                  Remover
+                <button v-if="canEdit && !document.archived" type="button" class="ds-table-action" title="Arquivar documento" :disabled="documentProcessing" @click="deleteAttachment(item.id, document.id)">
+                  <ArchiveBoxIcon class="h-4 w-4" />
+                  Arquivar
+                </button>
+                <button v-if="canEdit && document.archived" type="button" class="ds-table-action" :disabled="documentProcessing" @click="restoreAttachment(document.id)">
+                  <ArrowUturnLeftIcon class="h-4 w-4" />
+                  Restaurar
                 </button>
               </div>
             </article>
@@ -397,7 +403,7 @@
               <ArrowsRightLeftIcon class="h-4 w-4" />
               Transferir existências
             </button>
-            <button v-if="item.is_reagent || isReagent" type="button" class="ds-button ds-button-secondary w-full" @click="consumeReagentModal = true">
+            <button v-if="hasPermission('add_reagent_consumption') && (item.is_reagent || isReagent)" type="button" class="ds-button ds-button-secondary w-full" @click="consumeReagentModal = true">
               <BeakerIcon class="h-4 w-4" />
               Registar consumo
             </button>
@@ -490,6 +496,7 @@
   </div>
 </template>
 <script setup>
+import { useRecordArchive } from '@/composables/useRecordArchive'
 import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import {
@@ -506,16 +513,21 @@ import {
   WrenchScrewdriverIcon,
   ShoppingCartIcon,
   DocumentTextIcon,
-  TrashIcon,
+  ArchiveBoxIcon,
+  ArrowUturnLeftIcon,
   CloudArrowDownIcon,
 } from '@heroicons/vue/24/outline'
 import AdjustStockModal from '@/Components/vap-inventory/AdjustStockModal.vue'
 import TransferStockModal from '@/Components/vap-inventory/TransferStockModal.vue'
 import ConsumeReagentModal from '@/Components/vap-inventory/ConsumeReagentModal.vue'
 import RecordCalibrationModal from '@/Components/vap-inventory/RecordCalibrationModal.vue'
+import { usePermission } from '@/Composables/usePermissions'
+
+const { hasPermission } = usePermission()
 
 const props = defineProps({
   item: Object,
+  canEdit: { type: Boolean, default: false },
   inventory: Array,
   recentTransactions: Array,
   recentOrders: Array,
@@ -539,7 +551,7 @@ const isReagent = computed(() => {
 })
 
 const isEquipment = computed(() => {
-  return (props.item.category?.name || '').toLowerCase().includes('equipamento');
+  return props.item.category?.inventory_type === 'equipment';
 })
 
 const adjustStockModal = ref(false)
@@ -658,7 +670,7 @@ const stockDistributionChartOptions = computed(() => ({
   },
   yaxis: {
     labels: {
-      formatter: (value) => Number(value || 0).toFixed(0),
+      formatter: (value) => Number(value || 0).toLocaleString('pt-AO', { maximumFractionDigits: 4 }),
       style: { colors: chartTextColor.value },
     }
   },
@@ -757,7 +769,7 @@ const recentActivity = computed(() => {
     activities.push({
       id: consumption.id,
       type: 'consumption',
-      description: `Consumiu: ${consumption.quantity_used} unidades`,
+      description: consumption.reversal ? `Consumo revertido: ${consumption.quantity_used} unidades` : `Consumiu: ${consumption.quantity_used} unidades`,
       timestamp: consumption.used_at,
     })
   })
@@ -795,9 +807,9 @@ const formatDateTime = (dateString) => {
   })
 }
 
-const deleteForm = useForm({
-    model_id: null,
-    id: null,
+const { processing: documentProcessing, message: documentMessage, failed: documentFailed, submit: submitDocumentArchive } = useRecordArchive({
+  destroyUrl: ids => route('vap-inventory.items.attachments.delete', { model_id: props.item.id, id: ids[0] }),
+  restoreUrl: ids => route('vap-inventory.items.attachments.restore', { model_id: props.item.id, id: ids[0] }),
 });
 
 const formatTimeAgo = (timestamp) => {
@@ -914,7 +926,7 @@ const getStockStatusClasses = (inventory) => {
 
 const getTransactionTypeClasses = (transaction) => {
   const type = transaction.type?.code
-  if (type === 'stock_in' || type === 'stock_adjustment_add') {
+  if (type === 'stock_in' || type === 'stock_adjustment_add' || type === 'consumption_reversal') {
     return statusChipClasses.success
   } else if (type === 'stock_out' || type === 'consumption') {
     return statusChipClasses.danger
@@ -989,17 +1001,14 @@ const readableFileSize = (size) => {
     return `${size.toFixed(2)} ${units[i]}`;
   };
 
-function deleteAttachment(model_id, id, index) {
-    deleteForm.model_id = model_id;
-    deleteForm.id = id;
+function deleteAttachment(model_id, id) {
+  if (!props.canEdit || model_id !== props.item.id) return;
+  submitDocumentArchive('delete', [id]);
+}
 
-    deleteForm.delete(route('vap-inventory.items.attachments.delete', {model_id: model_id, id: id}), {
-        preserveScroll: true,
-        preserveState: false,
-        onSuccess: () => {
-            
-        },
-    });
+function restoreAttachment(id) {
+  if (!props.canEdit) return;
+  submitDocumentArchive('restore', [id]);
 }
 
 function downloadAttachment(file) {

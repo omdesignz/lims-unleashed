@@ -6,6 +6,7 @@ use App\Http\Requests\RoleRequest;
 use App\Http\Resources\RoleResource;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Services\StaffAccountAccess;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -29,6 +30,7 @@ class RoleController extends Controller
                     ->withQueryString()
             ),
             'slideOverEdit' => false,
+            'manageGlobalAccess' => app(StaffAccountAccess::class)->isSystemAdministrator(request()->user()),
             'fields' => [
                 [
                     'name' => trans('gestlab.general.labels.roles.name'),
@@ -58,6 +60,7 @@ class RoleController extends Controller
      */
     public function create()
     {
+        app(StaffAccountAccess::class)->authorizeSystem(request()->user(), 'add_roles');
         abort_if(! auth()->user()->can('add_roles'), 403, '');
 
         // Get any required data
@@ -72,6 +75,7 @@ class RoleController extends Controller
      */
     public function store(RoleRequest $request)
     {
+        app(StaffAccountAccess::class)->authorizeSystem($request->user(), 'add_roles');
         abort_if(! auth()->user()->can('add_roles'), 403, '');
 
         // Persiste data to DB
@@ -101,6 +105,7 @@ class RoleController extends Controller
      */
     public function edit($id)
     {
+        app(StaffAccountAccess::class)->authorizeSystem(request()->user(), 'edit_roles');
         abort_if(! auth()->user()->can('edit_roles'), 403, '');
 
         // Find the record
@@ -134,6 +139,7 @@ class RoleController extends Controller
      */
     public function update(RoleRequest $request, $id)
     {
+        app(StaffAccountAccess::class)->authorizeSystem($request->user(), 'edit_roles');
         abort_if(! auth()->user()->can('edit_roles'), 403, '');
 
         DB::transaction(function () use ($request, $id): void {
@@ -161,6 +167,7 @@ class RoleController extends Controller
      */
     public function destroy()
     {
+        app(StaffAccountAccess::class)->authorizeSystem(request()->user(), 'delete_roles');
         abort_if(! auth()->user()->can('delete_roles'), 403, '');
 
         request()->validate([
@@ -184,6 +191,7 @@ class RoleController extends Controller
      */
     public function restore()
     {
+        app(StaffAccountAccess::class)->authorizeSystem(request()->user(), 'restore_roles');
         abort_if(! auth()->user()->can('restore_roles'), 403, '');
 
         request()->validate([

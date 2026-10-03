@@ -24,10 +24,7 @@
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
-          <button type="button" class="ds-button ds-button-secondary" @click="exportReport">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar PDF
-          </button>
+          <InventoryReportExportButton report-type="inventory_value" :filters="filters" />
           <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-primary">
             <ArrowLeftIcon class="h-4 w-4" />
             Voltar ao inventário
@@ -92,7 +89,7 @@
           <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Concentração financeira</p>
           <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Distribuição do valor estimado</h2>
         </div>
-        <span class="ds-chip">Base: {{ formatCurrency(valuationUnitPrice) }} / unidade</span>
+        <span class="ds-chip">Base: custo padrão ou último preço de compra</span>
       </div>
 
       <div class="grid divide-y divide-[var(--ds-border)] xl:grid-cols-[1.15fr_0.85fr] xl:divide-x xl:divide-y-0">
@@ -162,12 +159,12 @@
                 <h3 class="mt-1 text-base font-black text-[var(--ds-text)]">{{ position.item?.name || 'Item sem identificação' }}</h3>
                 <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ position.warehouse?.name || 'Sem armazém' }}</p>
               </div>
-              <span class="ds-chip shrink-0">{{ position.qty_available }} un.</span>
+              <span class="ds-chip shrink-0">{{ position.qty_available }} {{ position.item?.unit?.code || 'sem unidade' }}</span>
             </div>
             <dl class="grid grid-cols-2 gap-3">
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
                 <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor unitário</dt>
-                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ formatCurrency(valuationUnitPrice) }}</dd>
+                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ unitCost(position) === null ? 'Não definido' : formatCurrency(unitCost(position)) }}</dd>
               </div>
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
                 <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor da posição</dt>
@@ -210,10 +207,10 @@
                   <p class="font-bold text-[var(--ds-text)]">{{ position.warehouse?.name || 'N/D' }}</p>
                   <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ position.warehouse?.location?.name || 'Sem localização' }}</p>
                 </td>
-                <td class="px-5 py-4 text-right align-top font-mono font-black tabular-nums text-[var(--ds-text)]">{{ position.qty_available }}</td>
+                <td class="px-5 py-4 text-right align-top font-mono font-black tabular-nums text-[var(--ds-text)]">{{ position.qty_available }} {{ position.item?.unit?.code || 'sem unidade' }}</td>
                 <td class="px-5 py-4 text-right align-top">
                   <p class="font-black tabular-nums text-emerald-700 dark:text-emerald-300">{{ positionValue(position) }}</p>
-                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ formatCurrency(valuationUnitPrice) }} / un.</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ unitCost(position) === null ? 'Custo não definido' : `${formatCurrency(unitCost(position))} / ${position.item?.unit?.code || 'unidade'}` }}</p>
                 </td>
                 <td class="px-5 py-4 text-right align-top">
                   <Link :href="route('vap-inventory.items.show', position.item_id)" class="ds-icon-button ml-auto" title="Abrir item">
@@ -245,7 +242,7 @@
               <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Base de cálculo</p>
               <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Estimativa técnica</h2>
               <p class="mt-2 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">
-                O valor actual usa uma referência fixa de {{ formatCurrency(valuationUnitPrice) }} por unidade. Use-o para exposição operacional, não para fecho contabilístico.
+                O valor estimado usa o custo padrão de cada item ou, na sua ausência, o último preço de compra. Itens sem custo registado contribuem com zero; confirme-os antes do fecho contabilístico.
               </p>
             </div>
           </div>
@@ -261,7 +258,7 @@
               <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-xs font-black text-[var(--ds-text-soft)]">{{ index + 1 }}</span>
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-black text-[var(--ds-text)]">{{ category.category_name || 'Sem categoria' }}</p>
-                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ category.unique_items }} itens · {{ category.total_quantity }} un.</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ category.unique_items }} itens</p>
               </div>
               <span class="shrink-0 text-xs font-black tabular-nums text-[var(--ds-text)]">{{ formatCurrency(category.total_value) }}</span>
             </li>
@@ -357,8 +354,8 @@ import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import Pagination from '@/Components/Pagination.vue'
+import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import {
-  ArrowDownTrayIcon,
   ArrowLeftIcon,
   ArrowTrendingUpIcon,
   BanknotesIcon,
@@ -385,7 +382,6 @@ const props = defineProps({
   stats: { type: Object, default: () => ({}) },
 })
 
-const valuationUnitPrice = 100
 const loading = ref(false)
 const isDarkMode = ref(false)
 let themeObserver
@@ -521,8 +517,14 @@ function compactCurrency(value) {
   }).format(Number(value || 0))
 }
 
+function unitCost(position) {
+  const value = position.item?.standard_cost ?? position.item?.last_purchase_price
+  return value === null || value === undefined ? null : Number(value)
+}
+
 function positionValue(position) {
-  return formatCurrency(Number(position.qty_available || 0) * valuationUnitPrice)
+  const cost = unitCost(position)
+  return cost === null ? 'Não valorizado' : formatCurrency(Number(position.qty_available || 0) * cost)
 }
 
 function categoryName(id) {
@@ -540,14 +542,6 @@ function clearFilters() {
     search: '',
     sort_by: 'qty_available',
     sort_direction: 'desc',
-  })
-}
-
-function exportReport() {
-  router.post(route('vap-inventory.reports.export'), {
-    report_type: 'inventory_value',
-    format: 'pdf',
-    filters: { ...filters },
   })
 }
 

@@ -6,6 +6,8 @@ use App\Models\Formula;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class FormulaManagementTest extends TestCase
@@ -14,14 +16,8 @@ class FormulaManagementTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for formula testing.');
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
 
         return $admin;
     }
@@ -95,5 +91,26 @@ class FormulaManagementTest extends TestCase
             ])
             ->assertRedirect(route('formulas.create'))
             ->assertSessionHasErrors(['formula_expression', 'variables']);
+    }
+
+    public function test_legacy_formula_migration_preserves_expressions_without_activating_unconfigured_formulas(): void
+    {
+        $migration = require database_path('migrations/2026_09_27_104701_add_configuration_fields_to_formulas_table.php');
+        $migration->down();
+        $id = DB::table('formulas')->insertGetId(['name' => 'Legacy formula', 'expression' => 'a + b']);
+
+        $migration->up();
+
+        $formula = Formula::query()->findOrFail($id);
+        $this->assertSame('a + b', $formula->expression);
+        $this->assertFalse($formula->is_active);
+        $this->assertFalse((new Formula)->is_active);
+        $this->assertNull($formula->variables);
+        $this->assertNull($formula->code);
+        $this->assertTrue(Schema::hasIndex('formulas', ['code'], 'unique'));
+
+        $migration->down();
+        $this->assertSame('a + b', DB::table('formulas')->where('id', $id)->value('expression'));
+        $migration->up();
     }
 }

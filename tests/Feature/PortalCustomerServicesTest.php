@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Customer;
 use App\Models\CustomerRequest;
 use App\Models\CustomerRequestCategory;
 use App\Models\Profile;
@@ -27,17 +28,14 @@ class PortalCustomerServicesTest extends TestCase
 
     private function portalWarehouse(): Warehouse
     {
-        $warehouse = Warehouse::query()
-            ->whereNotNull('customer_id')
-            ->firstOrFail();
+        $customer = Customer::query()->create(['name' => 'Portal customer '.Str::uuid()]);
 
-        if (! $warehouse->email) {
-            $warehouse->forceFill([
-                'email' => 'portal.'.$warehouse->id.'@lims-unleashed.test',
-            ])->save();
-        }
-
-        return $warehouse;
+        return Warehouse::query()->create([
+            'name' => 'Portal site '.Str::uuid(),
+            'customer_id' => $customer->id,
+            'email' => 'portal.'.Str::uuid().'@lims-unleashed.test',
+            'email_verified_at' => now(),
+        ]);
     }
 
     private function portalCategory(string $name): CustomerRequestCategory
@@ -65,16 +63,17 @@ class PortalCustomerServicesTest extends TestCase
     {
         $warehouse = $this->portalWarehouse();
 
-        $this->actingAs($warehouse, 'portal')
-            ->get(route('portal.home'))
-            ->assertOk()
+        $dashboard = $this->actingAs($warehouse, 'portal')->get(route('portal.home'));
+        $dashboard->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('ClientPortal/Dashboard')
-                ->has('charts.request_trend.categories')
+                ->has('charts.request_trend.categories', 7)
                 ->has('charts.request_trend.series', 3)
                 ->where('charts.request_status.labels.0', 'Pendente')
                 ->where('charts.asset_visibility.labels.0', 'Certificados')
             );
+        $this->assertCount(7, array_unique(data_get($dashboard->viewData('page'), 'props.charts.request_trend.categories')));
+        $this->assertNotNull($warehouse->fresh()->last_activity_at);
 
         $this->actingAs($warehouse, 'portal')
             ->get(route('portal.requests.index'))
@@ -145,6 +144,7 @@ class PortalCustomerServicesTest extends TestCase
 
         $this->assertAuthenticatedAs($warehouse, 'portal');
         $this->assertGuest('web');
+        $this->assertNotNull($warehouse->fresh()->last_login_at);
     }
 
     public function test_portal_security_page_loads_for_authenticated_customer(): void

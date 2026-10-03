@@ -182,7 +182,7 @@ return [
     'defaults' => [
         'supervisor-1' => [
             'connection' => 'redis',
-            'queue' => ['default', 'csv_import'],
+            'queue' => ['default', 'csv_import', 'mail', 'notifications', 'broadcasts'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             'maxProcesses' => 10,
@@ -190,7 +190,7 @@ return [
             'maxJobs' => 0,
             'memory' => 128,
             'tries' => 3,
-            'timeout' => 60,
+            'timeout' => 150,
             'nice' => 0,
         ],
     ],

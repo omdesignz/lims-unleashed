@@ -127,7 +127,7 @@ const actions = [
   { title: 'gestlab.quick_menu.boards.kanban.title', href: safeRoute('boards', undefined, '/boards'), icon: ClipboardIcon, text: 'gestlab.quick_menu.boards.kanban.description' },
   { title: 'gestlab.quick_menu.boards.media.title', href: safeRoute('file-manager', undefined, '/file-manager'), icon: RectangleGroupIcon, text: 'gestlab.quick_menu.boards.media.description' },
   { title: 'gestlab.quick_menu.boards.inventory.title', href: safeRoute('vap-inventory.analytics.index', undefined, '/vap-inventory/analytics'), icon: InboxStackIcon, text: 'gestlab.quick_menu.boards.inventory.description' },
-  { title: 'gestlab.quick_menu.boards.equipments.title', href: safeRoute('vap-inventory.items.index', { category_id: 1 }, '/vap-inventory/items?category_id=1'), icon: BuildingOffice2Icon, text: 'gestlab.quick_menu.boards.equipments.description' },
+  { title: 'gestlab.quick_menu.boards.equipments.title', href: safeRoute('vap-inventory.items.index', { inventory_type: 'equipment' }, '/vap-inventory/items?inventory_type=equipment'), icon: BuildingOffice2Icon, text: 'gestlab.quick_menu.boards.equipments.description' },
   { title: 'gestlab.quick_menu.boards.formulas.title', href: safeRoute('formulas.index', undefined, '/formulas'), icon: VariableIcon, text: 'gestlab.quick_menu.boards.formulas.description' },
   { title: 'gestlab.quick_menu.boards.metrics.title', href: safeRoute('metrics.index', undefined, '/metrics'), icon: ChartBarSquareIcon, text: 'gestlab.quick_menu.boards.metrics.description' },
   { title: 'gestlab.quick_menu.boards.proposals.title', href: safeRoute('vap-proposals.index', undefined, '/vap-proposals'), icon: Square2StackIcon, text: 'gestlab.quick_menu.boards.proposals.description' },

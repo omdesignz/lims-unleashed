@@ -24,12 +24,12 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  can_edit: { type: Boolean, default: false },
 });
 
 const form = useForm({
   name: props.worksheet.name || "",
   worksheets: {
-    ...(props.worksheet.worksheets || {}),
     sheets: Array.isArray(props.worksheet.worksheets?.sheets) && props.worksheet.worksheets.sheets.length
       ? props.worksheet.worksheets.sheets
       : [{ id: "sheet-1", name: "Sheet 1", data: [[""]] }],
@@ -38,7 +38,8 @@ const form = useForm({
 
 const activeSheetIndex = ref(0);
 const activeSheet = computed(() => form.worksheets.sheets[activeSheetIndex.value] || null);
-const scopeControl = computed(() => form.worksheets.scope_control || {});
+const scopeControl = computed(() => props.worksheet.worksheets?.scope_control || {});
+const canMutate = computed(() => props.can_edit && !form.processing);
 const rowCount = computed(() => activeSheet.value?.data?.length || 0);
 const columnCount = computed(() => {
   const rows = activeSheet.value?.data || [];
@@ -53,8 +54,9 @@ const scopeSummary = computed(() => [
 ]);
 
 function addSheet() {
+  if (!canMutate.value) return;
   form.worksheets.sheets.push({
-    id: `sheet-${Date.now()}`,
+    id: `sheet-${crypto.randomUUID()}`,
     name: `Folha ${form.worksheets.sheets.length + 1}`,
     data: [[""]],
   });
@@ -62,7 +64,7 @@ function addSheet() {
 }
 
 function removeActiveSheet() {
-  if (form.worksheets.sheets.length <= 1) {
+  if (!canMutate.value || form.worksheets.sheets.length <= 1) {
     return;
   }
 
@@ -71,16 +73,18 @@ function removeActiveSheet() {
 }
 
 function addRow() {
+  if (!canMutate.value) return;
   activeSheet.value?.data.push(Array.from({ length: columnCount.value }, () => ""));
 }
 
 function removeLastRow() {
-  if (rowCount.value > 1) {
+  if (canMutate.value && rowCount.value > 1) {
     activeSheet.value?.data.pop();
   }
 }
 
 function addColumn() {
+  if (!canMutate.value) return;
   const nextColumnCount = columnCount.value + 1;
 
   activeSheet.value?.data.forEach((row) => {
@@ -91,7 +95,7 @@ function addColumn() {
 }
 
 function removeLastColumn() {
-  if (columnCount.value <= 1) {
+  if (!canMutate.value || columnCount.value <= 1) {
     return;
   }
 
@@ -105,8 +109,10 @@ function removeLastColumn() {
 }
 
 function saveWorksheet() {
+  if (!canMutate.value || !form.isDirty) return;
   form.put(route("worksheets.update", props.worksheet.id), {
     preserveScroll: true,
+    onSuccess: () => form.defaults(),
   });
 }
 
@@ -190,20 +196,20 @@ function formatDate(date) {
         </div>
 
         <div class="flex flex-wrap gap-2 lg:justify-end">
-          <button type="button" class="ds-button ds-button-secondary" @click="addSheet">
+          <button type="button" class="ds-button ds-button-secondary" :disabled="!canMutate" @click="addSheet">
             <PlusIcon class="h-4 w-4" />
             Nova folha
           </button>
           <button
             type="button"
             class="ds-button ds-button-secondary"
-            :disabled="form.worksheets.sheets.length <= 1"
+            :disabled="!canMutate || form.worksheets.sheets.length <= 1"
             @click="removeActiveSheet"
           >
             <TrashIcon class="h-4 w-4" />
             Remover folha
           </button>
-          <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty" @click="saveWorksheet">
+          <button type="button" class="ds-button ds-button-primary" :disabled="!canMutate || !form.isDirty" :aria-busy="form.processing" @click="saveWorksheet">
             <DocumentCheckIcon class="h-4 w-4" />
             {{ form.processing ? "A guardar..." : form.isDirty ? "Guardar alterações" : "Sem alterações" }}
           </button>
@@ -223,6 +229,12 @@ function formatDate(date) {
           <dd class="mt-2 text-lg font-black text-[var(--ds-text)]">{{ item.value }}</dd>
         </div>
       </dl>
+    </section>
+
+    <p v-if="!can_edit" class="ds-copy" role="status">Só leitura. Não tem autorização para alterar esta folha de trabalho.</p>
+    <section v-if="form.hasErrors" class="ds-field-error" role="alert">
+      <p>Não foi possível guardar. Corrija os campos indicados; as alterações continuam nesta página.</p>
+      <ul><li v-for="(error, key) in form.errors" :key="key">{{ error }}</li></ul>
     </section>
 
     <section
@@ -254,7 +266,7 @@ function formatDate(date) {
       <aside class="ds-card self-start p-3 xl:sticky xl:top-24">
         <div class="border-b border-[var(--ds-border)] px-2 pb-4">
           <label for="worksheet-name" class="ds-field-label">Nome da folha de trabalho</label>
-          <BaseInput id="worksheet-name" v-model="form.name" type="text" class="ds-field mt-2 min-h-10" />
+          <BaseInput id="worksheet-name" v-model="form.name" type="text" class="ds-field mt-2 min-h-10" :disabled="!canMutate" :error="form.errors.name" />
           <p class="ds-field-hint mt-2">Identificação visível na fila e nos registos de bancada.</p>
         </div>
 
@@ -289,6 +301,7 @@ function formatDate(date) {
               v-if="activeSheet"
               id="active-sheet-name"
               v-model="activeSheet.name"
+              :disabled="!canMutate"
               type="text"
               class="ds-field mt-2 min-h-10 lg:max-w-md"
             />
@@ -296,7 +309,7 @@ function formatDate(date) {
 
           <div class="flex flex-wrap items-center gap-2">
             <div class="flex items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-1">
-              <button type="button" class="ds-icon-button" title="Adicionar linha" aria-label="Adicionar linha" @click="addRow">
+              <button type="button" class="ds-icon-button" title="Adicionar linha" aria-label="Adicionar linha" :disabled="!canMutate" @click="addRow">
                 <PlusIcon class="h-4 w-4" />
               </button>
               <span class="min-w-16 px-2 text-center text-xs font-bold text-[var(--ds-text-muted)]">{{ rowCount }} linhas</span>
@@ -305,7 +318,7 @@ function formatDate(date) {
                 class="ds-icon-button"
                 title="Remover ultima linha"
                 aria-label="Remover ultima linha"
-                :disabled="rowCount <= 1"
+                :disabled="!canMutate || rowCount <= 1"
                 @click="removeLastRow"
               >
                 <MinusIcon class="h-4 w-4" />
@@ -313,7 +326,7 @@ function formatDate(date) {
             </div>
 
             <div class="flex items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-1">
-              <button type="button" class="ds-icon-button" title="Adicionar coluna" aria-label="Adicionar coluna" @click="addColumn">
+              <button type="button" class="ds-icon-button" title="Adicionar coluna" aria-label="Adicionar coluna" :disabled="!canMutate" @click="addColumn">
                 <PlusIcon class="h-4 w-4" />
               </button>
               <span class="min-w-20 px-2 text-center text-xs font-bold text-[var(--ds-text-muted)]">{{ columnCount }} colunas</span>
@@ -322,7 +335,7 @@ function formatDate(date) {
                 class="ds-icon-button"
                 title="Remover ultima coluna"
                 aria-label="Remover ultima coluna"
-                :disabled="columnCount <= 1"
+                :disabled="!canMutate || columnCount <= 1"
                 @click="removeLastColumn"
               >
                 <MinusIcon class="h-4 w-4" />
@@ -357,6 +370,8 @@ function formatDate(date) {
                 >
                   <BaseInput
                     v-model="activeSheet.data[rowIndex][columnIndex - 1]"
+                    :disabled="!canMutate"
+                    :error="form.errors[`worksheets.sheets.${activeSheetIndex}.data.${rowIndex}.${columnIndex - 1}`]"
                     type="text"
                     class="min-h-10 w-full border-0 bg-transparent px-3 py-2 text-sm font-semibold text-[var(--ds-text)] outline-none transition focus:bg-[rgb(var(--primary-50-rgb)/0.7)] focus:ring-2 focus:ring-inset focus:ring-[rgb(var(--primary-500-rgb)/0.45)] dark:focus:bg-[rgb(var(--primary-400-rgb)/0.08)]"
                     :aria-label="`Linha ${rowIndex + 1}, coluna ${columnLabel(columnIndex - 1)}`"

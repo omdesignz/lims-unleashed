@@ -39,6 +39,16 @@ function lighten(color, ratio) {
   return mixRgb(color, { r: 255, g: 255, b: 255 }, ratio)
 }
 
+export function contrastingText(hex) {
+  const color = hexToRgb(hex)
+  const linear = [color.r, color.g, color.b].map((channel) => {
+    const value = channel / 255
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  })
+  const luminance = linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722
+  return luminance > 0.179 ? '#000000' : '#ffffff'
+}
+
 export function buildBrandingCssVariables(branding = {}) {
   const primaryColor = branding.primary_color || branding.app_primary_color || '#143d37'
   const secondaryColor = branding.secondary_color || branding.app_secondary_color || '#07110f'
@@ -74,6 +84,7 @@ export function buildBrandingCssVariables(branding = {}) {
 
   return {
     '--brand-primary': primaryColor,
+    '--brand-on-primary': contrastingText(primaryColor),
     '--brand-secondary': secondaryColor,
     '--brand-accent': accentColor,
     '--primary-50-rgb': rgbToString(primaryPalette[50]),

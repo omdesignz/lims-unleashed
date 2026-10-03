@@ -2,574 +2,242 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ManageInventoryTransfers;
 use App\Models\Inventory;
 use App\Models\InventoryItem;
 use App\Models\InventoryItemTransfer;
 use App\Models\InventoryItemWarehouse;
-use App\Models\InventoryTransaction;
-use App\Models\InventoryTransactionType;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class VAPInventoryTransferController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+        private readonly ManageInventoryTransfers $transfers,
+    ) {}
+
+    public function index(Request $request): Response
     {
-        $query = InventoryItemTransfer::with([
-            'item.category',
-            'source',
-            'destination',
-            'item',
-        ])
-            ->when($request->search, function ($query, $search) {
-                $query->whereHas('item', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->status, function ($query, $status) {
-                if ($status === 'pending') {
-                    $query->whereNull('received_date');
-                } elseif ($status === 'received') {
+        $labId = $this->authorizeLab($request, 'view_itransfers');
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', Rule::in(['pending', 'sent', 'received'])],
+            'source_id' => ['nullable', 'integer', Rule::exists('i_warehouses', 'id')->where('lab_id', $labId)],
+            'destination_id' => ['nullable', 'integer', Rule::exists('i_warehouses', 'id')->where('lab_id', $labId)],
+            'sort_by' => ['nullable', Rule::in(['created_at', 'sent_date', 'received_date', 'qty'])],
+            'sort_direction' => ['nullable', Rule::in(['asc', 'desc'])],
+            'per_page' => ['nullable', 'integer', 'between:1,100'],
+        ]);
+
+        $query = InventoryItemTransfer::query()->where('lab_id', $labId)
+            ->with(['item.category', 'item.unit', 'source', 'destination'])
+            ->when($filters['search'] ?? null, fn ($query, $search) => $query->whereHas('item',
+                fn ($itemQuery) => $itemQuery->where('name', 'ILIKE', '%'.$search.'%')->orWhere('code', 'ILIKE', '%'.$search.'%')))
+            ->when($filters['status'] ?? null, function ($query, $status): void {
+                if ($status === 'received') {
                     $query->whereNotNull('received_date');
                 } elseif ($status === 'sent') {
                     $query->whereNotNull('sent_date')->whereNull('received_date');
+                } else {
+                    $query->whereNull('received_date');
                 }
             })
-            ->when($request->source_id, function ($query, $sourceId) {
-                $query->where('source_id', $sourceId);
-            })
-            ->when($request->destination_id, function ($query, $destinationId) {
-                $query->where('destination_id', $destinationId);
-            })
-            ->orderBy($request->sort_by ?? 'created_at', $request->sort_direction ?? 'desc');
+            ->when($filters['source_id'] ?? null, fn ($query, $id) => $query->where('source_id', $id))
+            ->when($filters['destination_id'] ?? null, fn ($query, $id) => $query->where('destination_id', $id))
+            ->orderBy($filters['sort_by'] ?? 'created_at', $filters['sort_direction'] ?? 'desc');
+
+        $counts = InventoryItemTransfer::query()->where('lab_id', $labId);
 
         return Inertia::render('VAPInventory/Transfers/Index', [
-            'transfers' => $query->paginate($request->per_page ?? 20)->withQueryString(),
+            'transfers' => $query->paginate($filters['per_page'] ?? 20)->withQueryString(),
             'filters' => $request->only(['search', 'status', 'source_id', 'destination_id', 'sort_by', 'sort_direction']),
-            'warehouses' => InventoryItemWarehouse::with('location')->active()->get(),
+            'warehouses' => InventoryItemWarehouse::query()->where('lab_id', $labId)->with('location')->orderBy('name')->get(),
             'stats' => [
-                'pending_transfers' => InventoryItemTransfer::whereNull('received_date')->count(),
-                'sent_today' => InventoryItemTransfer::whereDate('sent_date', today())->count(),
-                'received_today' => InventoryItemTransfer::whereDate('received_date', today())->count(),
-                'total_transfers' => InventoryItemTransfer::count(),
+                'pending_transfers' => (clone $counts)->whereNull('received_date')->count(),
+                'sent_today' => (clone $counts)->whereDate('sent_date', today())->count(),
+                'received_today' => (clone $counts)->whereDate('received_date', today())->count(),
+                'total_transfers' => $counts->count(),
             ],
         ]);
     }
 
-    // public function create()
-    // {
-    //     return Inertia::render('VAPInventory/Transfers/Create', [
-    //         'items' => InventoryItem::with(['inventory.warehouse'])->active()->get(),
-    //         'warehouses' => InventoryItemWarehouse::with('location')->active()->get(),
-    //         'defaultSource' => request('source_id'),
-    //         'defaultItem' => request('item_id'),
-    //     ]);
-    // }
-
-    public function create()
+    public function create(Request $request): Response
     {
-        $items = InventoryItem::with(['inventory.warehouse'])->active()->get();
-        $warehouses = InventoryItemWarehouse::with('location')->active()->get();
-
-        // Pre-calculate all stock information
-        $stockInfo = [];
-
-        // Get all inventory records for these items and warehouses
-        $inventory = Inventory::whereIn('item_id', $items->pluck('id'))
-            ->whereIn('warehouse_id', $warehouses->pluck('id'))
-            ->get(['item_id', 'warehouse_id', 'qty_available']);
-
-        // Create lookup array
-        foreach ($inventory as $stock) {
-            $key = "{$stock->item_id}_{$stock->warehouse_id}";
-            $stockInfo[$key] = $stock->qty_available;
-        }
-
-        // Set defaults to 0 for missing combinations
-        foreach ($items as $item) {
-            foreach ($warehouses as $warehouse) {
-                $key = "{$item->id}_{$warehouse->id}";
-                if (! isset($stockInfo[$key])) {
-                    $stockInfo[$key] = 0;
-                }
-            }
-        }
+        $labId = $this->authorizeLab($request, 'add_itransfers');
+        $warehouses = InventoryItemWarehouse::query()->where('lab_id', $labId)->with('location')->orderBy('name')->get();
+        $items = InventoryItem::forLaboratory($labId)->active()->orderBy('name')->get();
+        $stockInfo = Inventory::query()->whereIn('warehouse_id', $warehouses->modelKeys())
+            ->get(['item_id', 'warehouse_id', 'qty_available'])
+            ->mapWithKeys(fn (Inventory $stock): array => [$stock->item_id.'_'.$stock->warehouse_id => $stock->qty_available]);
 
         return Inertia::render('VAPInventory/Transfers/Create', [
             'items' => $items,
             'warehouses' => $warehouses,
-            'defaultSource' => request('source_id'),
-            'defaultItem' => request('item_id'),
-            'initialStockInfo' => $stockInfo, // Pass pre-calculated stock
+            'defaultSource' => $request->query('source_id'),
+            'defaultItem' => $request->query('item_id'),
+            'initialStockInfo' => $stockInfo,
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        // dd(request()->all());
+        $labId = $this->authorizeLab($request, 'add_itransfers');
+        $data = $request->validate($this->transferRules($labId));
+        $transfer = $this->transfers->create($labId, $request->user(), $data);
 
-        $validator = Validator::make($request->all(), [
-            'item_id' => 'required|exists:i_items,id',
-            'source_id' => 'required|exists:i_warehouses,id',
-            'destination_id' => 'required|exists:i_warehouses,id|different:source_id',
-            'qty' => 'required|integer|min:1',
-            'sent_date' => 'nullable|date',
-            'expected_date' => 'nullable|date|after_or_equal:today',
-            'obs' => 'nullable|string|max:1000',
-            'batch_id' => 'nullable|exists:i_inventory_batches,id',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        // Check if source has enough stock
-        $sourceInventory = Inventory::where('item_id', $request->item_id)
-            ->where('warehouse_id', $request->source_id)
-            ->first();
-
-        if (! $sourceInventory || $sourceInventory->qty_available < $request->qty) {
-            return redirect()->back()
-                ->with('error', 'Existências insuficientes no armazém de origem.')
-                ->withInput();
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $destination = InventoryItemWarehouse::findOrFail($request->destination_id);
-
-            $transfer = InventoryItemTransfer::create([
-                'item_id' => $request->item_id,
-                'source_id' => $request->source_id,
-                'destination_id' => $request->destination_id,
-                'qty' => $request->qty,
-                'sent_date' => $request->sent_date ?? now(),
-                'expected_date' => $request->expected_date,
-                'obs' => $request->obs,
-                'batch_id' => $request->batch_id ?? null,
-            ]);
-
-            // Update source inventory (reserve stock)
-            $sourceInventory->decrement('qty_available', $request->qty);
-
-            // Create transaction for source (stock out)
-            $outType = $this->transactionType('stock_out');
-            InventoryTransaction::create([
-                'inventory_id' => $sourceInventory->id,
-                'user_id' => auth()->id(),
-                'warehouse_id' => $request->source_id,
-                'item_id' => $request->item_id,
-                'type_id' => $outType->id,
-                'qty' => $request->qty,
-                'reason' => 'Transfer to '.$destination->name,
-                'notes' => $request->obs,
-                'batch_id' => $request->batch_id ?? null,
-            ]);
-
-            DB::commit();
-
-            return redirect()->route('vap-inventory.transfers.show', $transfer)
-                ->with('success', 'Transferência criada com sucesso. As existências ficaram reservadas no armazém de origem.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return redirect()->back()
-                ->with('error', 'Não foi possível criar a transferência.')
-                ->withInput();
-        }
+        return redirect()->route('vap-inventory.transfers.show', $transfer)
+            ->with('success', 'Transferência criada. As existências ficaram reservadas na origem.');
     }
 
-    public function show(InventoryItemTransfer $transfer)
+    public function show(Request $request, InventoryItemTransfer $transfer): Response
     {
-        $transfer->load([
-            'item.category',
-            'source.location',
-            'destination.location',
-            'item.unit',
-        ]);
-
-        // Get stock info for both warehouses
-        $sourceStock = Inventory::where('item_id', $transfer->item_id)
-            ->where('warehouse_id', $transfer->source_id)
-            ->first();
-
-        $destinationStock = Inventory::where('item_id', $transfer->item_id)
-            ->where('warehouse_id', $transfer->destination_id)
-            ->first();
-
-        $daysInTransfer = max((int) $transfer->created_at?->startOfDay()->diffInDays(now()->startOfDay()), 0);
+        $labId = $this->authorizeLab($request, 'view_itransfers');
+        abort_unless($transfer->lab_id === $labId, 404);
+        $transfer->load(['item.category', 'item.unit', 'source.location', 'destination.location']);
+        $sourceStock = Inventory::query()->where('item_id', $transfer->item_id)->where('warehouse_id', $transfer->source_id)->first();
+        $destinationStock = Inventory::query()->where('item_id', $transfer->item_id)->where('warehouse_id', $transfer->destination_id)->first();
+        $daysInTransfer = max((int) $transfer->created_at?->startOfDay()->diffInDays(today()), 0);
         $daysUntilExpected = $transfer->expected_date
-            ? (int) now()->startOfDay()->diffInDays($transfer->expected_date->startOfDay(), false)
-            : 0;
-        $transferGap = max((int) $transfer->qty - (int) ($destinationStock?->qty_available ?? 0), 0);
+            ? (int) today()->diffInDays($transfer->expected_date->startOfDay(), false) : 0;
+        $canReceive = $transfer->received_date === null && $transfer->sent_date !== null;
+        $canCancel = $transfer->received_date === null;
 
         return Inertia::render('VAPInventory/Transfers/Show', [
             'transfer' => $transfer,
             'sourceStock' => $sourceStock,
             'destinationStock' => $destinationStock,
-            'canReceive' => ! $transfer->received_date && $transfer->sent_date,
-            'canCancel' => ! $transfer->received_date,
+            'canReceive' => $canReceive && $request->user()->can('edit_itransfers'),
+            'canCancel' => $canCancel && $request->user()->can('delete_itransfers'),
             'charts' => [
                 'quantity_flow' => [
                     'labels' => ['Quantidade transferida', 'Existências na origem', 'Existências no destino'],
-                    'series' => [
-                        (int) $transfer->qty,
-                        (int) ($sourceStock?->qty_available ?? 0),
-                        (int) ($destinationStock?->qty_available ?? 0),
-                    ],
+                    'series' => [(float) $transfer->qty, (float) ($sourceStock?->qty_available ?? 0), (float) ($destinationStock?->qty_available ?? 0)],
                 ],
                 'timing_pressure' => [
                     'labels' => ['Dias em curso', 'Dias até expectativa', 'Dias em atraso'],
-                    'series' => [
-                        $daysInTransfer,
-                        max($daysUntilExpected, 0),
-                        $transfer->is_overdue ? $transfer->days_overdue : 0,
-                    ],
+                    'series' => [$daysInTransfer, max($daysUntilExpected, 0), $transfer->is_overdue ? $transfer->days_overdue : 0],
                 ],
                 'execution_pulse' => [
                     'labels' => ['Gap destino', 'Pode receber', 'Pode cancelar'],
-                    'series' => [
-                        $transferGap,
-                        ! $transfer->received_date && $transfer->sent_date ? 1 : 0,
-                        ! $transfer->received_date ? 1 : 0,
-                    ],
+                    'series' => [max((float) $transfer->qty - (float) ($destinationStock?->qty_available ?? 0), 0), $canReceive ? 1 : 0, $canCancel ? 1 : 0],
                 ],
             ],
         ]);
     }
 
-    public function receive(Request $request, InventoryItemTransfer $transfer)
+    public function receive(Request $request, InventoryItemTransfer $transfer): RedirectResponse
     {
-        if ($transfer->received_date) {
-            return redirect()->back()
-                ->with('error', 'A transferência já foi recepcionada.');
-        }
-
-        $validator = Validator::make($request->all(), [
-            'actual_qty' => 'required|integer|min:1|max:'.$transfer->qty,
-            'received_date' => 'required|date',
-            'notes' => 'nullable|string|max:1000',
+        $labId = $this->authorizeLab($request, 'edit_itransfers');
+        abort_unless($transfer->lab_id === $labId, 404);
+        $data = $request->validate([
+            'actual_qty' => ['required', 'numeric', 'decimal:0,4', 'min:0.0001', 'max:'.$transfer->qty],
+            'received_date' => ['required', 'date', 'after_or_equal:'.$transfer->sent_date?->toDateString()],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ]);
+        $this->transfers->receive($labId, $request->user(), $transfer, $data['actual_qty'], $data['received_date'], $data['notes'] ?? null);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Update transfer
-            $transfer->update([
-                'received_date' => $request->received_date,
-                'obs' => ($transfer->obs ? $transfer->obs."\n" : '').
-                         'Received: '.$request->notes.
-                         " (Qty: {$request->actual_qty})",
-            ]);
-
-            // Find or create destination inventory
-            $destinationInventory = Inventory::firstOrCreate(
-                [
-                    'item_id' => $transfer->item_id,
-                    'warehouse_id' => $transfer->destination_id,
-                ],
-                [
-                    'qty_available' => 0,
-                    'min_stock_level' => 0,
-                    'reorder_point' => 0,
-                    'category_id' => $transfer->item->category_id,
-                    'status' => 'AVAILABLE',
-                    'name' => 'AVAILABLE',
-                ]
-            );
-
-            // Update destination inventory
-            $destinationInventory->increment('qty_available', $request->actual_qty);
-
-            // Create transaction for destination (stock in)
-            $inType = $this->transactionType('stock_in');
-            InventoryTransaction::create([
-                'inventory_id' => $destinationInventory->id,
-                'user_id' => auth()->id(),
-                'warehouse_id' => $transfer->destination_id,
-                'item_id' => $transfer->item_id,
-                'type_id' => $inType->id,
-                'qty' => $request->actual_qty,
-                'reason' => 'Transfer from '.$transfer->source->name,
-                'notes' => $request->notes,
-                'batch_id' => $request->batch_id ?? null,
-            ]);
-
-            // If actual quantity differs from expected, adjust source inventory
-            if ($request->actual_qty != $transfer->qty) {
-                $difference = $transfer->qty - $request->actual_qty;
-
-                // Return difference to source
-                $sourceInventory = Inventory::where('item_id', $transfer->item_id)
-                    ->where('warehouse_id', $transfer->source_id)
-                    ->first();
-
-                if ($sourceInventory && $difference > 0) {
-                    $sourceInventory->increment('qty_available', $difference);
-
-                    // Create adjustment transaction
-                    $adjType = $this->transactionType('stock_adjustment_add');
-                    InventoryTransaction::create([
-                        'inventory_id' => $sourceInventory->id,
-                        'user_id' => auth()->id(),
-                        'warehouse_id' => $transfer->source_id,
-                        'item_id' => $transfer->item_id,
-                        'type_id' => $adjType->id,
-                        'qty' => $difference,
-                        'reason' => 'Adjustment - Transfer quantity difference',
-                        'notes' => 'Expected: '.$transfer->qty.', Received: '.$request->actual_qty,
-                        'batch_id' => $request->batch_id ?? null,
-                    ]);
-                }
-            }
-
-            DB::commit();
-
-            return redirect()->route('vap-inventory.transfers.show', $transfer)
-                ->with('success', 'Transferência recepcionada com sucesso. As existências foram actualizadas no armazém de destino.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return redirect()->back()
-                ->with('error', 'Não foi possível registar a recepção da transferência.');
-        }
+        return redirect()->route('vap-inventory.transfers.show', $transfer)
+            ->with('success', 'Transferência recepcionada. As existências foram actualizadas.');
     }
 
-    public function cancel(Request $request, InventoryItemTransfer $transfer)
+    public function cancel(Request $request, InventoryItemTransfer $transfer): RedirectResponse
     {
-        if ($transfer->received_date) {
-            return redirect()->back()
-                ->with('error', 'Não é possível cancelar uma transferência já concluída.');
-        }
+        $labId = $this->authorizeLab($request, 'delete_itransfers');
+        abort_unless($transfer->lab_id === $labId, 404);
+        $data = $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
+        $this->transfers->cancel($labId, $request->user(), $transfer, $data['notes'] ?? null);
 
-        try {
-            DB::beginTransaction();
-
-            // Return stock to source
-            $sourceInventory = Inventory::where('item_id', $transfer->item_id)
-                ->where('warehouse_id', $transfer->source_id)
-                ->first();
-
-            if ($sourceInventory) {
-                $sourceInventory->increment('qty_available', $transfer->qty);
-
-                // Create adjustment transaction
-                $adjType = $this->transactionType('stock_adjustment_add');
-                InventoryTransaction::create([
-                    'inventory_id' => $sourceInventory->id,
-                    'user_id' => auth()->id(),
-                    'warehouse_id' => $transfer->source_id,
-                    'item_id' => $transfer->item_id,
-                    'type_id' => $adjType->id,
-                    'qty' => $transfer->qty,
-                    'reason' => 'Transferência cancelada',
-                    'notes' => $request->notes ?? 'Transferência n.º '.$transfer->id.' cancelada',
-                    'batch_id' => $request->batch_id ?? null,
-                ]);
-            }
-
-            // Mark transfer as cancelled
-            $transfer->update([
-                'obs' => ($transfer->obs ? $transfer->obs."\n" : '').
-                         'CANCELADA: '.($request->notes ?? 'Sem motivo indicado'),
-                'deleted_at' => now(),
-            ]);
-
-            DB::commit();
-
-            return redirect()->route('vap-inventory.transfers.index')
-                ->with('success', 'Transferência cancelada com sucesso. As existências foram devolvidas ao armazém de origem.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return redirect()->back()
-                ->with('error', 'Não foi possível cancelar a transferência.');
-        }
+        return redirect()->route('vap-inventory.transfers.index')
+            ->with('success', 'Transferência cancelada. As existências regressaram à origem.');
     }
 
-    public function getItemStock(Request $request)
+    public function bulkTransfer(Request $request): JsonResponse
     {
-        $request->validate([
-            'item_id' => 'required|exists:i_items,id',
-            'warehouse_id' => 'required|exists:i_warehouses,id',
+        $labId = $this->authorizeLab($request, 'add_itransfers');
+        $rules = $this->transferRules($labId);
+        $data = $request->validate([
+            'transfers' => ['required', 'array', 'min:1', 'max:100'],
+            'transfers.*.item_id' => $rules['item_id'],
+            'transfers.*.source_id' => $rules['source_id'],
+            'transfers.*.destination_id' => $rules['destination_id'],
+            'transfers.*.qty' => $rules['qty'],
+            'sent_date' => ['nullable', 'date'],
+            'expected_date' => ['nullable', 'date', 'after_or_equal:sent_date'],
         ]);
 
-        $stock = Inventory::where('item_id', $request->item_id)
-            ->where('warehouse_id', $request->warehouse_id)
-            ->first();
+        $created = $this->transfers->createMany($labId, $request->user(), $data['transfers'],
+            $data['sent_date'] ?? null, $data['expected_date'] ?? null);
+
+        return response()->json(['success' => true, 'message' => count($created).' transferências criadas.', 'transfers' => $created]);
+    }
+
+    public function getItemStock(Request $request): JsonResponse
+    {
+        $labId = $this->authorizeLab($request, 'view_itransfers');
+        $data = $request->validate([
+            'item_id' => ['required', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
+            'warehouse_id' => ['required', 'integer', Rule::exists('i_warehouses', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
+        ]);
+        $stock = Inventory::query()->where('item_id', $data['item_id'])->where('warehouse_id', $data['warehouse_id'])->first();
 
         return response()->json([
-            'available' => $stock ? $stock->qty_available : 0,
-            'item' => InventoryItem::find($request->item_id),
-            'warehouse' => InventoryItemWarehouse::find($request->warehouse_id),
+            'available' => $stock?->qty_available ?? 0,
+            'item' => InventoryItem::forLaboratory($labId)->findOrFail($data['item_id']),
+            'warehouse' => InventoryItemWarehouse::findOrFail($data['warehouse_id']),
         ]);
     }
 
-    public function bulkTransfer(Request $request)
+    public function getAllStockInfo(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'transfers' => 'required|array|min:1',
-            'transfers.*.item_id' => 'required|exists:i_items,id',
-            'transfers.*.source_id' => 'required|exists:i_warehouses,id',
-            'transfers.*.destination_id' => 'required|exists:i_warehouses,id',
-            'transfers.*.qty' => 'required|integer|min:1',
-            'transfers.*.batch_id' => 'nullable|exists:i_inventory_batches,id',
-            'sent_date' => 'nullable|date',
-            'expected_date' => 'nullable|date',
-        ]);
+        $labId = $this->authorizeLab($request, 'view_itransfers');
+        $items = InventoryItem::forLaboratory($labId)->active()->get(['id', 'name', 'code']);
+        $warehouses = InventoryItemWarehouse::query()->where('lab_id', $labId)->get(['id', 'name']);
+        $stockInfo = Inventory::query()->whereIn('warehouse_id', $warehouses->modelKeys())
+            ->get(['item_id', 'warehouse_id', 'qty_available'])
+            ->mapWithKeys(fn (Inventory $stock): array => [$stock->item_id.'_'.$stock->warehouse_id => $stock->qty_available]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $createdTransfers = [];
-            $errors = [];
-
-            foreach ($request->transfers as $index => $transferData) {
-                $item = InventoryItem::findOrFail($transferData['item_id']);
-                $destination = InventoryItemWarehouse::findOrFail($transferData['destination_id']);
-
-                // Check stock availability
-                $sourceInventory = Inventory::where('item_id', $transferData['item_id'])
-                    ->where('warehouse_id', $transferData['source_id'])
-                    ->first();
-
-                if (! $sourceInventory || $sourceInventory->qty_available < $transferData['qty']) {
-                    $errors[] = [
-                        'index' => $index,
-                        'item' => $item->name,
-                        'error' => 'Existências insuficientes',
-                    ];
-
-                    continue;
-                }
-
-                // Create transfer
-                $transfer = InventoryItemTransfer::create([
-                    'item_id' => $transferData['item_id'],
-                    'source_id' => $transferData['source_id'],
-                    'destination_id' => $transferData['destination_id'],
-                    'qty' => $transferData['qty'],
-                    'sent_date' => $request->sent_date ?? now(),
-                    'expected_date' => $request->expected_date,
-                    'obs' => 'Bulk transfer',
-                ]);
-
-                // Update source inventory
-                $sourceInventory->decrement('qty_available', $transferData['qty']);
-
-                // Create transaction
-                $outType = $this->transactionType('stock_out');
-                InventoryTransaction::create([
-                    'inventory_id' => $sourceInventory->id,
-                    'user_id' => auth()->id(),
-                    'warehouse_id' => $transferData['source_id'],
-                    'item_id' => $transferData['item_id'],
-                    'type_id' => $outType->id,
-                    'qty' => $transferData['qty'],
-                    'reason' => 'Bulk transfer',
-                    'notes' => 'Transfer to '.$destination->name,
-                    'batch_id' => $request->batch_id ?? null,
-                ]);
-
-                $createdTransfers[] = $transfer;
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => count($createdTransfers).' transferências criadas com sucesso.',
-                'transfers' => $createdTransfers,
-                'errors' => $errors,
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Não foi possível criar a transferência em massa.',
-            ], 500);
-        }
+        return response()->json(['stock_info' => $stockInfo, 'items' => $items, 'warehouses' => $warehouses]);
     }
 
-    public function getAllStockInfo(Request $request)
+    public function getItemStockAllWarehouses(Request $request): JsonResponse
     {
-        // Get all active items
-        $items = InventoryItem::active()->get(['id', 'name', 'code']);
-        $warehouses = InventoryItemWarehouse::active()->get(['id', 'name']);
-
-        $stockInfo = [];
-
-        // Query all stock at once
-        $inventory = Inventory::whereIn('item_id', $items->pluck('id'))
-            ->whereIn('warehouse_id', $warehouses->pluck('id'))
-            ->get(['item_id', 'warehouse_id', 'qty_available']);
-
-        // Format as item_warehouse => stock
-        foreach ($inventory as $stock) {
-            $key = "{$stock->item_id}_{$stock->warehouse_id}";
-            $stockInfo[$key] = $stock->qty_available;
-        }
+        $labId = $this->authorizeLab($request, 'view_itransfers');
+        $data = $request->validate(['item_id' => ['required', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNull('deleted_at')]]);
+        $warehouses = InventoryItemWarehouse::query()->where('lab_id', $labId)->with('location')->get();
+        $stock = Inventory::query()->where('item_id', $data['item_id'])
+            ->whereIn('warehouse_id', $warehouses->modelKeys())->pluck('qty_available', 'warehouse_id');
 
         return response()->json([
-            'stock_info' => $stockInfo,
-            'items' => $items,
+            'item_id' => $data['item_id'],
+            'stocks' => $warehouses->mapWithKeys(fn (InventoryItemWarehouse $warehouse): array => [$warehouse->id => $stock[$warehouse->id] ?? 0]),
             'warehouses' => $warehouses,
         ]);
     }
 
-    public function getItemStockAllWarehouses(Request $request)
+    private function authorizeLab(Request $request, string $permission): int
     {
-        $request->validate([
-            'item_id' => 'required|exists:i_items,id',
-        ]);
+        abort_unless($request->user()?->can($permission), 403);
 
-        $warehouses = InventoryItemWarehouse::active()->get();
-        $stocks = [];
-
-        foreach ($warehouses as $warehouse) {
-            $stock = Inventory::where('item_id', $request->item_id)
-                ->where('warehouse_id', $warehouse->id)
-                ->first();
-
-            $stocks[$warehouse->id] = $stock ? $stock->qty_available : 0;
-        }
-
-        return response()->json([
-            'item_id' => $request->item_id,
-            'stocks' => $stocks,
-            'warehouses' => $warehouses,
-        ]);
+        return $this->laboratoryAccess->activeLabId();
     }
 
-    private function transactionType(string $code): InventoryTransactionType
+    /** @return array<string, mixed> */
+    private function transferRules(int $labId): array
     {
-        return InventoryTransactionType::firstOrCreate(
-            ['code' => $code],
-            [
-                'name' => ucfirst(str_replace('_', ' ', $code)),
-                'description' => 'Tipo de transacção de inventário registado automaticamente.',
-            ]
-        );
+        return [
+            'item_id' => ['required', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
+            'source_id' => ['required', 'integer', Rule::exists('i_warehouses', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
+            'destination_id' => ['required', 'integer', 'different:source_id', Rule::exists('i_warehouses', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
+            'qty' => ['required', 'numeric', 'decimal:0,4', 'min:0.0001'],
+            'sent_date' => ['nullable', 'date'],
+            'expected_date' => ['nullable', 'date', 'after_or_equal:sent_date'],
+            'obs' => ['nullable', 'string', 'max:1000'],
+        ];
     }
 }

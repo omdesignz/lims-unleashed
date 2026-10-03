@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Http\Resources\LanguageResource;
 use App\Lang\Lang;
+use App\Services\LabNetworkAccess;
+use App\Services\LaboratoryWorkflowOwnership;
 use App\Settings\GeneralSettings;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -60,7 +62,8 @@ class HandleInertiaRequests extends Middleware
                             'signature_url' => $user?->signature_url ?? null,
                             'roles' => method_exists($user, 'getRoleNames') ? $user->getRoleNames() : collect(),
                             'permissions' => method_exists($user, 'getAllPermissions') ? $user->getAllPermissions()->pluck('name') : collect(),
-                            'unread_notifications' => $user->unreadNotifications ?? collect(),
+                            'unread_notifications' => app(LaboratoryWorkflowOwnership::class)
+                                ->scopeStoredNotifications($user->unreadNotifications()->getQuery(), $user)->get(),
                             'last_login_at' => $user->last_login_at ?? null,
                             'last_activity_at' => $user->last_activity_at ?? null,
                             'email_verified_at' => $user->email_verified_at ? true : false,
@@ -81,6 +84,9 @@ class HandleInertiaRequests extends Middleware
                 },
                 'popstate' => false,
                 'settings' => fn (GeneralSettings $settings) => $this->sharedBrandSettings($settings),
+                'laboratory' => fn () => $request->user()
+                    ? app(LabNetworkAccess::class)->context($request->user(), $request->session()->get('active_lab_id'))
+                    : ['labs' => [], 'active_lab' => null],
                 'breadcrumbs' => $this->generateBreadcrumbs($request),
                 'impersonation' => session()->has('impersonate'),
                 'toast' => session('toast'),

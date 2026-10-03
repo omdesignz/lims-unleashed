@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\StaffAccountAccess;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
@@ -14,6 +15,11 @@ class UserPasswordRequest extends FormRequest
      */
     public function authorize(): bool
     {
+        if (! $this->user()) {
+            return false;
+        }
+        app(StaffAccountAccess::class)->authorizeSystem($this->user(), 'reset-password_users');
+
         return true;
     }
 
@@ -27,6 +33,7 @@ class UserPasswordRequest extends FormRequest
         return [
             'password' => [
                 'required',
+                'string',
                 Password::min(8)
                     ->letters()
                     ->mixedCase()
@@ -39,10 +46,8 @@ class UserPasswordRequest extends FormRequest
 
     /**
      * Get custom attributes for validator errors.
-     *
-     * @return array
      */
-    public function attributes()
+    public function attributes(): array
     {
         return [
             'password' => 'palavra-passe',
@@ -60,11 +65,13 @@ class UserPasswordRequest extends FormRequest
         return [];
     }
 
-    /**
-     * Configure the validator instance.
-     *
-     * @param  Validator  $validator
-     * @return void
-     */
-    public function prepareForValidation() {}
+    /** @return list<\Closure> */
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            foreach (array_diff(array_keys($this->all()), ['password', 'password_confirmation', '_token', '_method']) as $field) {
+                $validator->errors()->add($field, 'Este campo não pode ser alterado nesta operação.');
+            }
+        }];
+    }
 }

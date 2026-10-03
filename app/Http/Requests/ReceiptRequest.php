@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class ReceiptRequest extends FormRequest
 {
@@ -11,13 +14,13 @@ class ReceiptRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can($this->isMethod('post') ? 'add_receipts' : 'edit_receipts') ?? false;
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
@@ -26,21 +29,21 @@ class ReceiptRequest extends FormRequest
                 'obs' => 'nullable|string',
                 'description' => 'nullable|string',
                 'user_id' => 'nullable|exists:users,id',
-                'customer_id' => 'nullable|exists:customers,id',
+                'customer_id' => 'required|integer|exists:customers,id',
                 'date' => 'nullable|date_format:Y-m-d',
-                'warehouse_id' => 'nullable|exists:warehouses,id',
+                'warehouse_id' => 'required|integer|exists:warehouses,id',
                 'rec_month' => 'required',
-                'items' => 'required|array|min:1',
-                'items.*.invoice_id' => 'required|exists:invoices,id',
+                'items' => 'required|array|list|min:1|max:100',
+                'items.*.invoice_id' => ['required', 'integer', 'distinct:strict', Rule::exists('invoices', 'id')
+                    ->where('lab_id', $this->attributes->get('proposal_laboratory_id'))->whereNull('deleted_at')],
                 'items.*.payment_id' => 'required|exists:payment_categories,id',
                 'items.*.description' => 'nullable|string',
-                'items.*.paid_amount' => 'required',
-                'items.*.invoice_pending_amount' => 'required',
-                'items.*.pending_amount' => 'required',
+                'items.*.paid_amount' => ['required', 'numeric', 'gt:0', 'regex:/^\d{1,8}(\.\d{1,2})?$/'],
+                'items.*.obs' => 'nullable|string|max:5000',
             ];
         } else {
             $rules = [
-                
+                'obs' => 'nullable|string|max:5000',
             ];
         }
 
@@ -75,12 +78,13 @@ class ReceiptRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
+     * @param  Validator  $validator
      */
-    public function prepareForValidation()
+    public function prepareForValidation(): void
     {
-        // dd(request()->all());
+        if (! $this->isMethod('post')) {
+            return;
+        }
 
         $this->merge([
             'user_id' => auth()->user()->id ?? null,
@@ -88,21 +92,21 @@ class ReceiptRequest extends FormRequest
             'description' => '',
             'is_original' => true,
             'exported_saft' => false,
-            'customer_id' => !is_null(request()->customer_id) ? request()->customer_id['value'] : null,
-            'warehouse_id' => !is_null(request()->warehouse_id) ? request()->warehouse_id['value'] : null,
+            'customer_id' => data_get($this->input('customer_id'), 'value'),
+            'warehouse_id' => data_get($this->input('warehouse_id'), 'value'),
             'rec_month' => now()->format('Y'),
             'date' => now()->format('Y-m-d'),
-            'items' => is_null(request()->formatted_items) ? [] : collect(request()->formatted_items)->map(function($item) {
+            'items' => ! is_array($this->input('formatted_items')) ? [] : collect($this->input('formatted_items'))->map(function ($item): array {
+                $item = is_array($item) ? $item : [];
+
                 return [
                     'invoice_id' => $item['invoice_id'] ?? null,
                     'payment_id' => $item['payment_id'] ?? null,
                     'user_id' => auth()->user()->id ?? null,
-                    'paid_amount' => $item['paid_amount'],
-                    'pending_amount' => $item['pending_amount'],
-                    'invoice_pending_amount' => $item['invoice_pending_amount'],
-                    'obs' => $item['obs'],
+                    'paid_amount' => $item['paid_amount'] ?? null,
+                    'obs' => $item['obs'] ?? null,
                 ];
-            })->toArray()
+            })->toArray(),
         ]);
     }
 }

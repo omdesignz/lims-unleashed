@@ -3,24 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\InventoryBatch;
-use App\Models\InventoryTransaction;
-use App\Models\ReagentConsumption;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\PdfResponse;
-use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Response;
 use Mccarlosen\LaravelMpdf\Facades\LaravelMpdf as PDF;
 
 class InventoryBatchController extends Controller
 {
-    // 1. LOOKUP FOR MOBILE SCANNER
-    public function lookup($id)
-    {
-        // Handle both raw ID or a prefixed string like "BATCH:102"
-        $cleanId = str_replace('BATCH:', '', $id);
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
 
-        $batch = InventoryBatch::with('inventory.item.unit')->findOrFail($cleanId);
+    public function lookup(string $id): JsonResponse
+    {
+        $cleanId = str_starts_with($id, 'BATCH:') ? substr($id, 6) : $id;
+        abort_unless(ctype_digit($cleanId), 404);
+
+        $batch = $this->localBatches()->with('inventory.item.unit')->findOrFail((int) $cleanId);
         $item = $batch->inventory?->item;
 
         return response()->json([
@@ -30,111 +32,47 @@ class InventoryBatchController extends Controller
             'qty_remaining' => $batch->qty_remaining,
             'expiry_date' => $batch->expiry_date?->format('d M Y'),
             'is_expired' => (bool) $batch->expiry_date?->isPast(),
-            'unit' => $item?->unit?->name ?? 'unidades',
+            'unit' => $item?->unit?->code ?? 'unidades',
         ]);
     }
 
-    // 2. HANDLE MOBILE CONSUMPTION/TRANSFER
-    public function handleMobileAction(Request $request)
+    public function printBatchLabels(Request $request): Response
     {
-        return DB::transaction(function () use ($request) {
-            $batch = InventoryBatch::findOrFail($request->batch_id);
+        $ids = collect(explode(',', (string) $request->query('ids')))->filter()->unique()->values();
+        abort_if($ids->isEmpty() || $ids->count() > 100 || $ids->contains(fn (string $id): bool => ! ctype_digit($id)), 422);
 
-            // Log to itransactions (Your main ledger)
-            InventoryTransaction::create([
-                'inventory_id' => $batch->inventory_id,
-                'user_id' => auth()->id(),
-                'item_id' => $batch->inventory->item_id,
-                'batch_id' => $batch->id,
-                'warehouse_id' => $batch->inventory->warehouse_id,
-                'type_id' => ($request->type === 'consumption') ? 1 : 2,
-                'qty' => $request->qty,
-                'reason' => 'Leitura móvel: '.$request->type,
-            ]);
-
-            // If consumption, also log to reagent_consumption
-            if ($request->type === 'consumption') {
-                ReagentConsumption::create([
-                    'date' => now(),
-                    'user_id' => auth()->id(),
-                    'reagent_id' => $batch->inventory->item_id,
-                    'reagent_name' => $batch->inventory->item->name,
-                    'quantity_used' => $request->qty,
-                    'batch_id' => $batch->id,
-                    'warehouse_id' => $batch->inventory->warehouse_id,
-                    'used_at' => now(),
-                ]);
-            }
-
-            $batch->decrement('qty_remaining', $request->qty);
-
-            return response()->json(['status' => 'success']);
-        });
-    }
-
-    // 3. GENERATE PDF LABELS (Using Laravel-mPDF & Endroid)
-    public function printBatchLabels(Request $request)
-    {
-        $ids = explode(',', $request->ids);
-        $batches = InventoryBatch::with('inventory.item')->whereIn('id', $ids)->get();
+        $batches = $this->localBatches()->with('inventory.item')->whereIn('id', $ids)->get();
+        abort_unless($batches->count() === $ids->count(), 404);
 
         foreach ($batches as $batch) {
-            // Generate QR Code as Data URI using Endroid
-            $result = Builder::create()
-                ->writer(new PngWriter)
-                ->data('BATCH:'.$batch->id)
-                ->size(100)
-                ->margin(0)
-                ->build();
-
-            $batch->qr_code = $result->getDataUri();
+            $batch->qr_code = (new PngWriter)->write(new QrCode(
+                data: 'BATCH:'.$batch->id,
+                size: 100,
+                margin: 0,
+            ))->getDataUri();
         }
 
         $pdf = PDF::loadView('reports.labels.batch_sheet', ['batches' => $batches], [], [
-            'format' => [50, 25], // Custom size: 50mm x 25mm
+            'format' => [50, 25],
             'margin_top' => 2, 'margin_bottom' => 2, 'margin_left' => 2, 'margin_right' => 2,
         ]);
 
         return PdfResponse::inline($pdf, 'labels.pdf');
     }
 
-    public function performAudit(Request $request)
+    public function handleMobileAction(): never
     {
-        return DB::transaction(function () use ($request) {
-            $batch = InventoryBatch::findOrFail($request->batch_id);
-            $delta = $request->physical_qty - $request->system_qty;
-
-            if ($delta == 0) {
-                return response()->json(['message' => 'O inventário está correcto. Não é necessária qualquer alteração.']);
-            }
-
-            // 1. Record the adjustment in itransactions
-            InventoryTransaction::create([
-                'inventory_id' => $batch->inventory_id,
-                'user_id' => auth()->id(),
-                'item_id' => $batch->inventory->item_id,
-                'batch_id' => $batch->id,
-                'warehouse_id' => $batch->inventory->warehouse_id,
-                'type_id' => 3, // Assuming '3' is your "Inventory Adjustment" type
-                'qty' => abs($delta),
-                'reason' => $delta > 0 ? 'Auditoria: excedente físico' : 'Auditoria: falta física',
-                'notes' => "Sistema: {$request->system_qty}, físico: {$request->physical_qty}",
-            ]);
-
-            // 2. Update the batch to reflect the truth
-            $batch->update(['qty_remaining' => $request->physical_qty]);
-
-            return response()->json(['status' => 'success', 'delta' => $delta]);
-        });
+        abort(410, 'Use the controlled stock and reagent workflows.');
     }
 
-    public function generateGenealogyReport($batchId)
+    public function performAudit(): never
     {
-        $batch = InventoryBatch::with(['inventory.item', 'transactions.user', 'consumptions'])
-            ->findOrFail($batchId);
+        abort(410, 'Use the controlled stock adjustment workflow.');
+    }
 
-        $pdf = PDF::loadView('reports.batch_genealogy', compact('batch'));
-
-        return $pdf->download("genealogia-lote-{$batch->batch_number}.pdf");
+    private function localBatches(): EloquentBuilder
+    {
+        return InventoryBatch::query()->whereHas('inventory', fn (EloquentBuilder $inventory) => $inventory
+            ->forLaboratory($this->laboratoryAccess->activeLabId()));
     }
 }

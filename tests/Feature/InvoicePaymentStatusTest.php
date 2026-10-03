@@ -6,11 +6,14 @@ use App\Models\Invoice;
 use App\Models\ReportStudioTemplate;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Settings\GeneralSettings;
 use App\Support\ReportStudioDefaultTemplates;
 use App\Support\ReportStudioPdfBuilder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -20,47 +23,43 @@ class InvoicePaymentStatusTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+
+        return $admin;
     }
 
     public function test_invoice_register_filters_paid_and_unpaid_records(): void
     {
-        Invoice::query()->update([
+        $user = $this->verifiedAdmin();
+        $numberPrefix = 'PAYMENT-'.Str::upper(Str::random(8));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $user->id]);
+        $invoiceAttributes = [
+            'user_id' => $user->id,
+            'invoice_month' => now()->format('m/Y'),
+            'date' => now()->toDateString(),
+            'due_date' => now()->addMonth()->toDateString(),
             'status_code' => Invoice::STATUS_CODE_NORMAL,
-            'status' => false,
-            'amount_due' => 100,
-        ]);
-
-        $paidInvoice = Invoice::query()->firstOrFail();
-        $unpaidInvoice = Invoice::query()->whereKeyNot($paidInvoice->getKey())->first();
-
-        if (! $unpaidInvoice) {
-            $unpaidInvoice = $paidInvoice->replicate();
-            $unpaidInvoice->inv_no = 'FT TEST/UNPAID';
-            $unpaidInvoice->saveQuietly();
-        }
-
-        $paidInvoice->forceFill([
+        ];
+        $paidInvoice = new Invoice($invoiceAttributes + [
+            'inv_no' => $numberPrefix.'-PAID',
             'status' => true,
             'amount_due' => 0,
             'paid_date' => now(),
-        ])->saveQuietly();
-
-        $unpaidInvoice->forceFill([
+        ]);
+        $paidInvoice->lab_id = $lab->id;
+        $paidInvoice->saveQuietly();
+        $unpaidInvoice = new Invoice($invoiceAttributes + [
+            'inv_no' => $numberPrefix.'-UNPAID',
             'status' => false,
             'amount_due' => 100,
-            'paid_date' => null,
-        ])->saveQuietly();
-
-        $user = $this->verifiedAdmin();
+        ]);
+        $unpaidInvoice->lab_id = $lab->id;
+        $unpaidInvoice->saveQuietly();
 
         $this->actingAs($user)
-            ->get(route('invoices.index', ['filter' => 'paid']))
+            ->get(route('invoices.index', ['filter' => 'paid', 'search' => $numberPrefix]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Invoices/Index')
@@ -72,17 +71,18 @@ class InvoicePaymentStatusTest extends TestCase
             );
 
         $this->actingAs($user)
-            ->get(route('invoices.index', ['filter' => 'unpaid']))
+            ->get(route('invoices.index', ['filter' => 'unpaid', 'search' => $numberPrefix]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Invoices/Index')
                 ->where('query.filter', 'unpaid')
-                ->where('record.data', function ($rows) use ($paidInvoice): bool {
+                ->where('record.data', function ($rows) use ($paidInvoice, $unpaidInvoice): bool {
                     $invoices = collect($rows);
 
-                    return $invoices->isNotEmpty()
+                    return $invoices->count() === 1
                         && $invoices->every(fn (array $invoice): bool => $invoice['payment_status'] === 'unpaid')
-                        && ! $invoices->contains('id', $paidInvoice->getKey());
+                        && ! $invoices->contains('id', $paidInvoice->getKey())
+                        && $invoices->contains('id', $unpaidInvoice->getKey());
                 })
             );
     }

@@ -4,8 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 use Spatie\QueryBuilder\AllowedFilter;
 
 class RatingRequest extends Model
@@ -20,6 +22,12 @@ class RatingRequest extends Model
 
     //
     protected $fillable = [
+        'lab_id',
+        'issued_by_id',
+        'recipient_customer_id',
+        'invitation',
+        'criteria_snapshot',
+        'expires_at',
         'user_id',
         'rateable_id',
         'rateable_type',
@@ -28,6 +36,25 @@ class RatingRequest extends Model
         'channel',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return ['criteria_snapshot' => 'array', 'expires_at' => 'datetime'];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $invitation): void {
+            if ($invitation->isDirty(['lab_id', 'issued_by_id', 'recipient_customer_id', 'invitation', 'criteria_snapshot', 'expires_at', 'rateable_type', 'rateable_id', 'rater_type', 'rater_id', 'channel', 'user_id'])) {
+                throw new LogicException('Issued survey identity and criteria cannot be changed.');
+            }
+        });
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
+    }
 
     public function rateable(): MorphTo
     {

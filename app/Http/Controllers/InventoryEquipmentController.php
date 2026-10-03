@@ -2,218 +2,89 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\InventoryItemsExport;
-use App\Http\Requests\InventoryEquipmentRequest;
-use App\Http\Resources\InventoryItemResource;
+use App\Actions\SetInventoryDocumentArchived;
+use App\Actions\SetInventoryItemsArchived;
+use App\Enums\InventoryCategoryType;
+use App\Http\Requests\InventoryCatalogueLookupRequest;
+use App\Http\Requests\SetInventoryItemsArchivedRequest;
+use App\Http\Resources\InventoryCatalogueOptionResource;
 use App\Http\Resources\MaintenanceTaskResource;
 use App\Models\InventoryItem;
 use App\Models\MaintenanceTask;
+use App\Services\InventoryCatalogueAccess;
+use App\Services\InventoryCatalogueLookup;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Response;
-use Inertia\Inertia;
-use Maatwebsite\Excel\Facades\Excel;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\Support\MediaStream;
 
 class InventoryEquipmentController extends Controller
 {
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+        private readonly InventoryCatalogueAccess $catalogueAccess,
+    ) {}
+
+    private function ownedItem(int $id, string $ability): InventoryItem
+    {
+        $item = InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())
+            ->whereHas('category', fn ($category) => $category->withTrashed()->where('inventory_type', 'equipment'))->findOrFail($id);
+        $this->catalogueAccess->authorize(request()->user(), $item, $ability);
+
+        return $item;
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): RedirectResponse
     {
-        abort_if(! auth()->user()->can('view_iequipments'), 403, '');
+        abort_unless(request()->user()->can('view_iequipments'), 403);
 
-        return Inertia::render('InventoryEquipment/Index', [
-            'record' => InventoryItemResource::collection(
-                InventoryItem::query()
-                    ->with('category', 'department', 'unit', 'type', 'status', 'packagingType', 'supplier')
-                    ->where('category_id', 1)
-                    ->when(request()->input('search'), function ($query, $search) {
-                        $query->where('name', 'like', "%{$search}%")
-                            ->orWhere('code', 'like', "%{$search}%")
-                            ->orWhere('internal_code', 'like', "%{$search}%");
-                    })
-                    ->when(request()->input('filter'), function ($query, $filter) {
-                        if ($filter === 'trashed') {
-                            $query->withTrashed();
-                        }
-                    })
-                    ->orderBy('internal_code', 'desc')
-                    ->paginate(10)
-                    ->withQueryString()
-            ),
-            'slideOverEdit' => true,
-            'fields' => [
-                [
-                    'name' => trans('gestlab.general.labels.iequipments.category_id'),
-                    'value' => 'category',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.iequipments.internal_code'),
-                    'value' => 'internal_code',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.iequipments.code'),
-                    'value' => 'code',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.iequipments.name'),
-                    'value' => 'name',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.iequipments.description'),
-                    'value' => 'description',
-                ],
-            ],
-            'model' => InventoryItem::MENU_NAME,
-            'abilities' => method_exists(InventoryItem::class, 'getAbilities') ? collect(InventoryItem::ABILITIES)->map(function ($item) {
-                return $item.'_'.InventoryItem::MENU_NAME;
-            }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
-                return $item.'_'.InventoryItem::MENU_NAME;
-            }),
-            'query' => request()->only(['search', 'trashed']),
-        ]);
+        return redirect()->route('vap-inventory.items.index', ['inventory_type' => 'equipment', 'search' => request()->input('search')]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): RedirectResponse
     {
-        abort_if(! auth()->user()->can('add_iequipments'), 403, '');
+        abort_unless(! request()->session()->has('impersonate') && request()->user()->can('add_iequipments'), 403);
 
-        // Get any required data
-
-        // Load form
-
-        return Inertia::render('InventoryEquipment/Create', []);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(InventoryEquipmentRequest $request)
-    {
-        abort_if(! auth()->user()->can('add_iequipments'), 403, '');
-
-        // Persiste data to DB
-        // InventoryItem::create($request->validated());
-
-        DB::transaction(function () use ($request) {
-            $item = InventoryItem::create($request->safe()->except(['documents']));
-
-            // Add Possible Documents
-            if (request()->hasFile('documents')) {
-
-                $fileAdders = $item
-                    ->addMultipleMediaFromRequest(['documents'])
-                    ->each(function ($fileAdder) {
-                        $fileAdder->toMediaCollection('documents');
-                    });
-            }
-        });
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ],
-        ]);
-
+        return redirect()->route('vap-inventory.items.create', ['inventory_type' => 'equipment']);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(int $id): RedirectResponse
     {
-        return Inertia::render('InventoryEquipment/Show', [
-            'record' => InventoryItemResource::make(
-                InventoryItem::query()
-                    ->with('type', 'packagingType', 'department', 'user', 'supplier', 'status', 'unit', 'eq_cat', 'category', 'maintenance_tasks')
-                    ->find($id)
-            ),
-            'maintenanceTasks' => MaintenanceTaskResource::collection(
-                MaintenanceTask::query()
-                    ->with('equipment', 'category', 'supplier')
-                    ->where('equipment_id', $id)
-                    ->latest()
-                    ->paginate(10)
-                    ->withQueryString()
-            ),
-        ]);
+        $item = $this->ownedItem($id, 'view');
+
+        return redirect()->route('vap-inventory.items.show', $item);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(int $id): RedirectResponse
     {
-        abort_if(! auth()->user()->can('edit_iequipments'), 403, '');
+        abort_if(request()->session()->has('impersonate'), 403);
+        $item = $this->ownedItem($id, 'edit');
 
-        // Find the record
-        $record = InventoryItem::findOrFail($id);
-
-        // Return Inertia View with record data
-        return Inertia::render('InventoryEquipment/Edit', [
-            'record' => InventoryItemResource::make($record),
-        ]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(InventoryEquipmentRequest $request, $id)
-    {
-        abort_if(! auth()->user()->can('edit_iequipments'), 403, '');
-
-        // Find the record
-        // $record = InventoryItem::findOrFail($id);
-
-        // $record->update($request->validated());
-
-        // dd($request->all());
-
-        DB::transaction(function () use ($request, $id) {
-            $item = InventoryItem::findOrFail($id);
-
-            $item->update($request->safe()->except(['documents']));
-
-            // Add Possible Documents
-            if ($request->documents) {
-
-                $fileAdders = $item
-                    ->addMultipleMediaFromRequest(['documents'])
-                    ->each(function ($fileAdder) {
-                        $fileAdder->toMediaCollection('documents');
-                    });
-            }
-        });
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ],
-        ]);
+        return redirect()->route('vap-inventory.items.edit', $item);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy()
+    public function destroy(SetInventoryItemsArchivedRequest $request, SetInventoryItemsArchived $archive): RedirectResponse
     {
-        abort_if(! auth()->user()->can('delete_iequipments'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (InventoryItem::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $archive->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $request->validated('recordIds'), true, InventoryCategoryType::EQUIPMENT);
 
         return redirect()->back()->with([
             'toast' => [
@@ -226,17 +97,9 @@ class InventoryEquipmentController extends Controller
     /**
      * restore the specified resource from storage.
      */
-    public function restore()
+    public function restore(SetInventoryItemsArchivedRequest $request, SetInventoryItemsArchived $archive): RedirectResponse
     {
-        abort_if(! auth()->user()->can('restore_iequipments'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (InventoryItem::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $archive->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $request->validated('recordIds'), false, InventoryCategoryType::EQUIPMENT);
 
         return redirect()->back()->with([
             'toast' => [
@@ -246,82 +109,47 @@ class InventoryEquipmentController extends Controller
         ]);
     }
 
-    public function getInventoryItem()
+    public function getInventoryItem(InventoryCatalogueLookupRequest $request, InventoryCatalogueLookup $lookup): JsonResponse
     {
-        $data = [];
+        $items = $lookup->search($this->laboratoryAccess->activeLabId(), $request->user(), $request->validated('q') ?? '', InventoryCategoryType::EQUIPMENT);
 
-        if (request()->has('q')) {
-            $search = request()->q;
-
-            $data = DB::table('i_items')
-                ->select('i_items.*')
-                ->where('name', 'LIKE', "%$search%")
-                ->orWhere('code', 'LIKE', "%$search%")
-                ->get();
-        }
-
-        return response()->json($data);
+        return response()->json(InventoryCatalogueOptionResource::collection($items)->resolve($request));
     }
 
-    public function getReagentInventoryItem()
-    {
-        $data = [];
-
-        if (request()->has('q')) {
-            $search = request()->q;
-
-            $data = DB::table('i_items')
-                ->select('i_items.*')
-                ->where('category_id', 2)
-                ->where('name', 'LIKE', "%$search%")
-                ->get();
-        }
-
-        return response()->json($data);
-    }
-
-    public function downloadallattachments()
+    public function downloadallattachments(): MediaStream
     {
         // Get all Docs
-        $documents = InventoryItem::findOrFail(request()->model_id)->getMedia('documents');
+        $documents = $this->ownedItem(request()->integer('model_id'), 'view')->getMedia('documents');
 
         return MediaStream::create('documents.zip')->addMedia($documents);
     }
 
-    public function downloadsingleattachment()
+    public function downloadsingleattachment(): Media
     {
-        return Media::findOrFail(request()->model_id);
+        $media = Media::findOrFail(request()->integer('model_id'));
+        abort_unless($media->model_type === (new InventoryItem)->getMorphClass() && $media->collection_name === 'documents', 404);
+        $this->ownedItem((int) $media->model_id, 'view');
+
+        return $media;
     }
 
-    public function deleteattachment()
+    public function deleteattachment(SetInventoryDocumentArchived $archiveDocument): RedirectResponse
     {
-        $item = InventoryItem::findOrFail(request()->integer('model_id'));
+        $item = $this->ownedItem(request()->integer('model_id'), 'edit');
+        $archiveDocument->execute($this->laboratoryAccess->activeLabId(), request()->user()->id, $item->id, request()->integer('id'), true);
 
-        // $item->getMedia('documents')->where('id', request()->id)->first()->get();
-
-        Media::query()
-            ->whereKey(request()->integer('id'))
-            ->where('model_id', $item->id)
-            ->firstOrFail()
-            ->delete();
-
-        // dd($media);
-
-        // return response()->json(['message' => 'File Deleted']);
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ],
-        ]);
+        return redirect()->back();
     }
 
-    public function getMaintenanceTasks($id)
+    public function getMaintenanceTasks(int $id): AnonymousResourceCollection
     {
-        MaintenanceTaskResource::collection(
+        $item = InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->findOrFail($id);
+        $this->catalogueAccess->authorize(request()->user(), $item, 'view');
+        abort_unless(request()->user()->can('view_maintenance_tasks'), 403);
+
+        return MaintenanceTaskResource::collection(
             MaintenanceTask::query()
-                ->with('equipment')
+                ->with(['equipment', 'category', 'supplier'])
                 ->where('equipment_id', $id)
                 ->latest()
                 ->paginate(10)
@@ -334,19 +162,11 @@ class InventoryEquipmentController extends Controller
      *
      * @return Response
      */
-    public function exportInventory(Request $request)
+    public function exportInventory(Request $request): RedirectResponse
     {
-        // Validate the date parameters
-        $request->validate([
-            'start' => 'nullable|date',
-            'end' => 'nullable|date|after_or_equal:start',
-        ]);
+        abort_unless($request->user()->can('export_iequipments'), 403);
 
-        $startDate = $request->input('start');
-        $endDate = $request->input('end');
-        $categories = [1];
-
-        // Pass the date range to the export class
-        return Excel::download(new InventoryItemsExport($startDate, $endDate, $categories), 'inventory_items.xlsx');
+        return redirect()->route('vap-inventory.items.export.inventory',
+            $request->only(['start', 'end', 'category_id']) + ['inventory_type' => 'equipment']);
     }
 }

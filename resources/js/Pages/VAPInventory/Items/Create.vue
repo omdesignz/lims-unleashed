@@ -13,6 +13,9 @@
     :status-options="statusOptions"
     :suppliers="suppliers"
     :units="units"
+    :departments="departments"
+    :equipment-categories="equipmentCategories"
+    :packaging-categories="packagingCategories"
     :warehouses="warehouses"
     :warehouse-info="warehouseInfo"
     :warehouse-errors="warehouseErrors"
@@ -24,6 +27,9 @@
     v-model:selected-status="selectedStatus"
     v-model:selected-supplier="selectedSupplier"
     v-model:selected-unit="selectedUnit"
+    v-model:selected-department="selectedDepartment"
+    v-model:selected-equipment-category="selectedEquipmentCategory"
+    v-model:selected-packaging-category="selectedPackagingCategory"
     @submit="submit"
     @add-warehouse="addWarehouse"
     @remove-warehouse="removeWarehouse"
@@ -42,6 +48,9 @@ const props = defineProps({
   allStatuses: Array,
   suppliers: Array,
   units: Array,
+  departments: Array,
+  equipmentCategories: Array,
+  packagingCategories: Array,
   warehouses: Array,
   errors: Object,
 })
@@ -51,6 +60,10 @@ const filteredStatuses = ref([])
 
 const form = useForm({
   name: '',
+  location: '',
+  department_id: null,
+  eq_cat_id: null,
+  packaging_type_id: null,
   code: '',
   category_id: '',
   type_id: '',
@@ -104,6 +117,9 @@ const selectedType = ref(null)
 const selectedStatus = ref(null)
 const selectedSupplier = ref(null)
 const selectedUnit = ref(null)
+const selectedDepartment = ref(null)
+const selectedEquipmentCategory = ref(null)
+const selectedPackagingCategory = ref(null)
 
 // Function to update filtered statuses
 const updateFilteredStatuses = (categoryId = null) => {
@@ -171,6 +187,9 @@ watch(selectedType, (newVal) => form.type_id = newVal?.value || '')
 watch(selectedStatus, (newVal) => form.status_id = newVal?.value || '')
 watch(selectedSupplier, (newVal) => form.supplier_id = newVal?.value || '')
 watch(selectedUnit, (newVal) => form.unit_id = newVal?.value || '')
+watch(selectedDepartment, (selection) => form.department_id = selection?.value ?? null)
+watch(selectedEquipmentCategory, (selection) => form.eq_cat_id = selection?.value ?? null)
+watch(selectedPackagingCategory, (selection) => form.packaging_type_id = selection?.value ?? null)
 
 const isReagent = computed(() => {
   if (!selectedCategory.value) return false
@@ -181,7 +200,7 @@ const isReagent = computed(() => {
 const isEquipment = computed(() => {
   if (!selectedCategory.value) return false
   const category = props.categories.find(c => c.id === selectedCategory.value.value)
-  return category?.name?.toLowerCase().includes('equipamento') || false
+  return category?.inventory_type === 'equipment'
 })
 
 const totalInitialStock = computed(() => {

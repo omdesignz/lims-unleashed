@@ -5,7 +5,7 @@ import SelectInput from "@/Components/select-input.vue";
 import VapTable from "@/Components/vap-table/table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import { computed, ref } from "vue";
-import { Link, router, usePage } from "@inertiajs/vue3";
+import { Link, router, useForm, usePage } from "@inertiajs/vue3";
 import {
   ArchiveBoxIcon,
   ArrowPathRoundedSquareIcon,
@@ -91,8 +91,8 @@ const showConfirmation = ref(false);
 const pendingAction = ref(null);
 const pendingActionType = ref(null);
 const pendingRecord = ref(null);
-const pendingUrl = ref(null);
 const selectedIDs = ref([]);
+const archivalForm = useForm({ recordIds: [] });
 
 const resultActions = [
   {
@@ -265,11 +265,15 @@ function openAnalysis(row) {
   router.get(row.links.edit_path);
 }
 
-function requestConfirmation(actionName, actionType, row = null, url = null) {
+function requestConfirmation(actionName, actionType, row = null) {
+  if (archivalForm.processing || !["delete", "restore"].includes(actionName)) {
+    return;
+  }
+
+  archivalForm.clearErrors();
   pendingAction.value = actionName;
   pendingActionType.value = actionType;
   pendingRecord.value = row;
-  pendingUrl.value = url;
   showConfirmation.value = true;
 }
 
@@ -278,10 +282,13 @@ function resetConfirmation() {
   pendingAction.value = null;
   pendingActionType.value = null;
   pendingRecord.value = null;
-  pendingUrl.value = null;
 }
 
 function confirmAction() {
+  if (archivalForm.processing || !["delete", "restore"].includes(pendingAction.value)) {
+    return;
+  }
+
   const isBulk = pendingActionType.value === "bulk";
   const recordIds = isBulk ? selectedIDs.value : [pendingRecord.value?.id].filter(Boolean);
 
@@ -290,19 +297,12 @@ function confirmAction() {
     return;
   }
 
-  const destination = isBulk
-    ? route(pendingAction.value === "restore" ? "analysis.restore" : "analysis.destroy")
-    : pendingUrl.value;
-
-  router.get(
-    destination,
-    { recordIds },
-    {
-      preserveState: false,
-      preserveScroll: true,
-      onFinish: resetConfirmation,
-    },
-  );
+  archivalForm.recordIds = [...recordIds];
+  archivalForm.post(route(pendingAction.value === "restore" ? "analysis.restore" : "analysis.destroy"), {
+    preserveState: "errors",
+    preserveScroll: true,
+    onFinish: resetConfirmation,
+  });
 }
 
 function handleBulkAction(event) {
@@ -393,13 +393,16 @@ function handleBulkAction(event) {
             {{ selectedResultAction.description }} no departamento {{ selectedDepartmentLabel }}.
           </p>
         </div>
-        <span class="ds-chip">
+        <span class="ds-chip" role="status">
           <BeakerIcon class="h-4 w-4" />
-          {{ props.record?.meta?.total ?? props.record?.data?.length ?? 0 }} registos
+          {{ archivalForm.processing ? "A actualizar o arquivo..." : `${props.record?.meta?.total ?? props.record?.data?.length ?? 0} registos` }}
         </span>
       </div>
 
       <div class="min-w-0">
+        <div v-if="archivalForm.hasErrors" role="alert" class="px-5 py-4">
+          <p v-for="(message, field) in archivalForm.errors" :key="field" class="ds-field-error">{{ message }}</p>
+        </div>
         <VapTable
           :model="model"
           :abilities="abilities"
@@ -415,6 +418,7 @@ function handleBulkAction(event) {
           :slide-over-edit="slideOverEdit"
           :pagination="record.meta"
           :actions="actions"
+          :action-processing="archivalForm.processing"
           @create-record="handleCreateAnalysis"
           @update-selected-ids="selectedIDs = $event"
           @execute-bulk-action="handleBulkAction"
@@ -460,7 +464,8 @@ function handleBulkAction(event) {
                 type="button"
                 class="ds-icon-button"
                 :title="$t('actions.restore')"
-                @click="requestConfirmation('restore', 'single', row, row.links.restore_path)"
+                :disabled="archivalForm.processing"
+                @click="requestConfirmation('restore', 'single', row)"
               >
                 <ArrowPathRoundedSquareIcon class="h-4 w-4" />
                 <span class="sr-only">{{ $t("actions.restore") }}</span>
@@ -482,7 +487,8 @@ function handleBulkAction(event) {
                 type="button"
                 class="ds-icon-button text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10"
                 :title="$t('actions.delete')"
-                @click="requestConfirmation('delete', 'single', row, row.links.delete_path)"
+                :disabled="archivalForm.processing"
+                @click="requestConfirmation('delete', 'single', row)"
               >
                 <TrashIcon class="h-4 w-4" />
                 <span class="sr-only">{{ $t("actions.delete") }}</span>

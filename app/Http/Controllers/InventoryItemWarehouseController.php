@@ -2,24 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SaveInventoryWarehouse;
+use App\Actions\SetInventoryWarehousesArchived;
 use App\Http\Requests\InventoryItemWarehouseRequest;
+use App\Http\Requests\SetInventoryWarehousesArchivedRequest;
 use App\Http\Resources\InventoryItemWarehouseResource;
 use App\Models\InventoryItemWarehouse;
-use Illuminate\Support\Facades\DB;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class InventoryItemWarehouseController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         abort_if(! auth()->user()->can('view_iwarehouses'), 403, '');
+        $labId = $this->laboratoryAccess->activeLabId();
 
         return Inertia::render('InventoryItemWarehouses/Index', [
             'record' => InventoryItemWarehouseResource::collection(
                 InventoryItemWarehouse::query()
+                    ->where('lab_id', $labId)
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('name', 'like', "%{$search}%");
                     })
@@ -67,6 +76,7 @@ class InventoryItemWarehouseController extends Controller
     public function create()
     {
         abort_if(! auth()->user()->can('add_iwarehouses'), 403, '');
+        $this->laboratoryAccess->activeLabId();
 
         // Get any required data
 
@@ -78,12 +88,9 @@ class InventoryItemWarehouseController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(InventoryItemWarehouseRequest $request)
+    public function store(InventoryItemWarehouseRequest $request, SaveInventoryWarehouse $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('add_iwarehouses'), 403, '');
-
-        // Persiste data to DB
-        InventoryItemWarehouse::create($request->validated());
+        $action->execute($this->laboratoryAccess->activeLabId(), $request->user()->id, $request->validated());
 
         return redirect()->back()->with([
             'toast' => [
@@ -110,7 +117,8 @@ class InventoryItemWarehouseController extends Controller
         abort_if(! auth()->user()->can('edit_iwarehouses'), 403, '');
 
         // Find the record
-        $record = InventoryItemWarehouse::findOrFail($id);
+        $record = InventoryItemWarehouse::query()
+            ->where('lab_id', $this->laboratoryAccess->activeLabId())->findOrFail($id);
 
         // Return Inertia View with record data
         return Inertia::render('InventoryItemWarehouses/Edit', [
@@ -121,14 +129,9 @@ class InventoryItemWarehouseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(InventoryItemWarehouseRequest $request, $id)
+    public function update(InventoryItemWarehouseRequest $request, int $id, SaveInventoryWarehouse $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('edit_iwarehouses'), 403, '');
-
-        // Find the record
-        $record = InventoryItemWarehouse::findOrFail($id);
-
-        $record->update($request->validated());
+        $action->execute($this->laboratoryAccess->activeLabId(), $request->user()->id, $request->validated(), $id);
 
         return redirect()->back()->with([
             'toast' => [
@@ -141,17 +144,9 @@ class InventoryItemWarehouseController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy()
+    public function destroy(SetInventoryWarehousesArchivedRequest $request, SetInventoryWarehousesArchived $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('delete_iwarehouses'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (InventoryItemWarehouse::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $action->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $request->validated('recordIds'), true);
 
         return redirect()->back()->with([
             'toast' => [
@@ -164,17 +159,9 @@ class InventoryItemWarehouseController extends Controller
     /**
      * restore the specified resource from storage.
      */
-    public function restore()
+    public function restore(SetInventoryWarehousesArchivedRequest $request, SetInventoryWarehousesArchived $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('restore_iwarehouses'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (InventoryItemWarehouse::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $action->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $request->validated('recordIds'), false);
 
         return redirect()->back()->with([
             'toast' => [
@@ -184,18 +171,14 @@ class InventoryItemWarehouseController extends Controller
         ]);
     }
 
-    public function getInventoryItemWarehouse()
+    public function getInventoryItemWarehouse(Request $request)
     {
-        $data = [];
-
-        if (request()->has('q')) {
-            $search = request()->q;
-
-            $data = DB::table('i_warehouses')
-                ->select('i_warehouses.*')
-                ->where('name', 'LIKE', "%$search%")
-                ->get();
-        }
+        abort_unless($request->user()?->can('view_iwarehouses'), 403);
+        $search = $request->string('q')->toString();
+        $data = InventoryItemWarehouse::query()
+            ->where('lab_id', $this->laboratoryAccess->activeLabId())
+            ->when($search !== '', fn ($query) => $query->where('name', 'ILIKE', '%'.$search.'%'))
+            ->orderBy('name')->limit(50)->get();
 
         return response()->json($data);
     }

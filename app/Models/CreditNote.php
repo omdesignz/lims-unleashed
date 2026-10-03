@@ -2,21 +2,25 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToFinancialLaboratory;
 use App\Models\Concerns\HasDocumentRevisions;
-use HighSolutions\EloquentSequence\Sequence;
+use App\Services\FinancialDocumentAssembly;
+use App\Traits\HasScopedSequence;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 
 class CreditNote extends Model
 {
-    use HasFactory, SoftDeletes, Sequence, HasDocumentRevisions;
+    use BelongsToFinancialLaboratory, HasDocumentRevisions, HasFactory, HasScopedSequence, SoftDeletes;
 
     public const MENU_NAME = 'credit_notes';
 
     public const REASON_RECTIFICATION = 'R';
+
     public const REASON_CANCELATION = 'A';
 
     /**
@@ -53,6 +57,7 @@ class CreditNote extends Model
     ];
 
     protected $table = 'credit_notes';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at', 'date'];
 
     /**
@@ -69,14 +74,13 @@ class CreditNote extends Model
         'extra_data' => AsCollection::class,
     ];
 
-    public function sequence()
+    public function sequence(): array
     {
         return [
             'group' => 'note_month',
             'fieldName' => 'seq',
         ];
     }
-
 
     /**
      * Quote Items
@@ -138,14 +142,13 @@ class CreditNote extends Model
         return $this->belongsTo(DiscountCategory::class, 'discount_type');
     }
 
-
     public static function boot()
     {
         parent::boot();
 
         static::creating(function ($note) {
 
-            $note->note_no = 'NC ' . $note->note_month . '/' . $note->seq;
+            $note->note_no = 'NC '.$note->note_month.'/'.$note->seq;
         });
 
         static::created(function ($note) {
@@ -153,13 +156,13 @@ class CreditNote extends Model
             // dd($note);
             Artisan::call('app:sign-credit-note-with-hash', ['credit_note' => $note->id]);
 
-            if (!is_null($note->invoice_id)) {
+            if (! is_null($note->invoice_id)) {
                 $invoice = Invoice::findOrFail($note->invoice_id);
 
                 // Subtract Credit Note Total from invoice Due Amount
-                $invoice->update([
-                    'amount_due' => $invoice->amount_due - $note->total
-                ]);
+                DB::transaction(fn () => app(FinancialDocumentAssembly::class)->withInvoiceState($invoice, ['amount_due'], fn (): bool => $invoice->update([
+                    'amount_due' => $invoice->amount_due - $note->total,
+                ])));
             }
         });
     }

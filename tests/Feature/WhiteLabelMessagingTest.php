@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Notifications\GlobalNotification;
 use App\Settings\GeneralSettings;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -16,14 +19,11 @@ class WhiteLabelMessagingTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for white-label messaging testing.');
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $admin->givePermissionTo(Permission::findOrCreate('edit_settings', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
 
         return $admin;
     }
@@ -155,7 +155,7 @@ class WhiteLabelMessagingTest extends TestCase
     public function test_global_notification_uses_white_label_defaults_for_mail_and_database_payloads(): void
     {
         $recipient = $this->verifiedAdmin();
-        $sender = User::query()->whereKeyNot($recipient->id)->firstOrFail();
+        $sender = User::factory()->create();
         $settings = app(GeneralSettings::class);
         $original = $this->messageSettingSnapshot($settings);
 

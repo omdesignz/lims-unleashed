@@ -62,6 +62,16 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  actionMethods: {
+    type: Object,
+    default: () => ({}),
+  },
+  actionProcessing: Boolean,
+  archiveHandler: Function,
+  actionConfirmation: {
+    type: Object,
+    default: () => ({}),
+  },
 });
 
 const emit = defineEmits(["execute-action", "slideover-on", "create-record"]);
@@ -77,13 +87,14 @@ const actionId = ref(null);
 const recordId = ref(null);
 const recordUrl = ref(null);
 const showDeleteConfirmation = ref(false);
+const isProcessingAction = ref(false);
 
 const confirmationDialogTitle = computed(() => {
-  return trans("gestlab.actions.confirmation_dialog_title." + actionId.value);
+  return props.actionConfirmation[actionId.value]?.title ?? trans("gestlab.actions.confirmation_dialog_title." + actionId.value);
 });
 
 const confirmationDialogDescription = computed(() => {
-  return trans(
+  return props.actionConfirmation[actionId.value]?.description ?? trans(
     "gestlab.actions.confirmation_dialog_description." + actionId.value,
   );
 });
@@ -196,43 +207,28 @@ function confirmAction() {
 }
 
 function processAction(currentActionId) {
-  switch (currentActionId) {
-    case "delete":
-      router.get(
-        recordUrl.value,
-        { recordIds: [recordId.value] },
-        {
-          preserveState: false,
-          preserveScroll: true,
-          onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId.value = null;
-            recordId.value = null;
-            recordUrl.value = null;
-          },
-        },
-      );
-      showDeleteConfirmation.value = false;
-      break;
+  if (props.actionProcessing || isProcessingAction.value || !["delete", "restore"].includes(currentActionId)) return;
 
-    case "restore":
-      router.get(
-        recordUrl.value,
-        { recordIds: [recordId.value] },
-        {
-          preserveState: false,
-          preserveScroll: true,
-          onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId.value = null;
-            recordId.value = null;
-            recordUrl.value = null;
-          },
-        },
-      );
-      showDeleteConfirmation.value = false;
-      break;
+  if (props.archiveHandler) {
+    props.archiveHandler(currentActionId, [recordId.value]);
+    showDeleteConfirmation.value = false;
+    return;
   }
+
+  isProcessingAction.value = true;
+  router.visit(recordUrl.value, {
+    method: props.actionMethods[currentActionId] ?? "get",
+    data: { recordIds: [recordId.value] },
+    preserveState: false,
+    preserveScroll: true,
+    onSuccess: () => {
+      actionId.value = null;
+      recordId.value = null;
+      recordUrl.value = null;
+    },
+    onFinish: () => { isProcessingAction.value = false; },
+  });
+  showDeleteConfirmation.value = false;
 }
 
 const masks = ref({
@@ -331,6 +327,7 @@ const masks = ref({
             <select-action
               :record-ids="selectedRecordIds"
               :actions="actions"
+              :processing="actionProcessing || isProcessingAction"
               @execute="executeAction"
             />
           </div>
@@ -404,8 +401,9 @@ const masks = ref({
 
             <div class="flex flex-wrap items-center gap-2 border-t border-[var(--ds-border)] pt-3 text-sm font-medium">
               <button
-                v-if="item.deleted && hasPermission('restore_' + props.model)"
+                v-if="item.action_capabilities?.restore !== false && item.deleted && hasPermission('restore_' + props.model)"
                 type="button"
+                :disabled="actionProcessing || isProcessingAction"
                 class="ds-table-action"
                 @click="() => { recordId = item.id; actionId = 'restore'; recordUrl = item.links.restore_path; showDeleteConfirmation = true; }"
               >
@@ -413,7 +411,7 @@ const masks = ref({
               </button>
 
               <button
-                v-if="!item.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
+                v-if="item.action_capabilities?.edit !== false && !item.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
                 type="button"
                 class="ds-table-action"
                 @click="editRecord(item)"
@@ -422,7 +420,7 @@ const masks = ref({
               </button>
 
               <button
-                v-if="!item.deleted && props.slideOverEdit && hasPermission('edit_' + props.model)"
+                v-if="item.action_capabilities?.edit !== false && !item.deleted && props.slideOverEdit && hasPermission('edit_' + props.model)"
                 type="button"
                 class="ds-table-action"
                 @click="editRecord(item)"
@@ -442,8 +440,9 @@ const masks = ref({
               </Link>
 
               <button
-                v-if="!item.deleted && hasPermission('delete_' + props.model)"
+                v-if="item.action_capabilities?.delete !== false && !item.deleted && hasPermission('delete_' + props.model)"
                 type="button"
+                :disabled="actionProcessing || isProcessingAction"
                 class="ds-table-action ds-table-action-danger"
                 @click="() => { recordId = item.id; actionId = 'delete'; recordUrl = item.links.delete_path; showDeleteConfirmation = true; }"
               >
@@ -529,8 +528,9 @@ const masks = ref({
                 <td class="px-7 py-5">
                   <div class="flex items-center justify-end gap-1 text-sm font-medium">
                     <button
-                      v-if="row.deleted && hasPermission('restore_' + props.model)"
+                      v-if="row.action_capabilities?.restore !== false && row.deleted && hasPermission('restore_' + props.model)"
                       type="button"
+                      :disabled="actionProcessing || isProcessingAction"
                       class="ds-table-action"
                       @click="() => { recordId = row.id; actionId = 'restore'; recordUrl = row.links.restore_path; showDeleteConfirmation = true; }"
                     >
@@ -538,7 +538,7 @@ const masks = ref({
                     </button>
 
                     <button
-                      v-if="!row.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
+                      v-if="row.action_capabilities?.edit !== false && !row.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
                       type="button"
                       class="ds-table-action"
                       @click="editRecord(row)"
@@ -547,7 +547,7 @@ const masks = ref({
                     </button>
 
                     <button
-                      v-if="!row.deleted && props.slideOverEdit && hasPermission('edit_' + props.model)"
+                      v-if="row.action_capabilities?.edit !== false && !row.deleted && props.slideOverEdit && hasPermission('edit_' + props.model)"
                       type="button"
                       class="ds-table-action"
                       @click="editRecord(row)"
@@ -567,8 +567,9 @@ const masks = ref({
                     </Link>
 
                     <button
-                      v-if="!row.deleted && hasPermission('delete_' + props.model)"
+                      v-if="row.action_capabilities?.delete !== false && !row.deleted && hasPermission('delete_' + props.model)"
                       type="button"
+                      :disabled="actionProcessing || isProcessingAction"
                       class="ds-table-action ds-table-action-danger"
                       @click="() => { recordId = row.id; actionId = 'delete'; recordUrl = row.links.delete_path; showDeleteConfirmation = true; }"
                     >

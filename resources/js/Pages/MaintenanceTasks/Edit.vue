@@ -781,6 +781,7 @@
 </template>
 
 <script setup>
+import { useInventoryCatalogueOptions } from '@/Composables/useInventoryCatalogueOptions'
 import { ref, reactive } from 'vue'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { router, useForm } from '@inertiajs/vue3'
@@ -902,18 +903,5 @@ function loadSuppliers(query, setOptions) {
     });
 }
 
-function loadEquipment(query, setOptions) {
-  fetch("/iitems/getInventoryItem?q=" + query)
-    .then((response) => response.json())
-    .then((results) => {
-      setOptions(
-        results.map((result) => {
-          return {
-            value: result.id,
-            label: result.name,
-          };
-        }),
-      );
-    });
-}
+const loadEquipment = useInventoryCatalogueOptions({ inventoryType: 'equipment' })
 </script>

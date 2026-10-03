@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 class EnvironmentalCondition extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'lab_id',
         'area',
         'location',
         'recorded_at',
@@ -30,6 +32,7 @@ class EnvironmentalCondition extends Model
     protected function casts(): array
     {
         return [
+            'lab_id' => 'integer',
             'recorded_at' => 'datetime',
             'temperature_c' => 'decimal:2',
             'humidity_percent' => 'decimal:2',
@@ -40,6 +43,20 @@ class EnvironmentalCondition extends Model
             'humidity_min_percent' => 'decimal:2',
             'humidity_max_percent' => 'decimal:2',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $condition): void {
+            if ($condition->isDirty('lab_id')) {
+                throw new LogicException('An environmental condition cannot change its owning laboratory.');
+            }
+        });
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
     }
 
     public function recordedBy(): BelongsTo

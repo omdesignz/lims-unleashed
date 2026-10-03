@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPrivateProposal;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProposalItem extends Model
 {
+    use BelongsToPrivateProposal;
+
     //
     protected $table = 'proposal_items';
 
@@ -18,8 +21,8 @@ class ProposalItem extends Model
         'unit_id',
         'standard_id',
         'exemption_id',
-        'exemption_code', # Added
-        'discount_id', # Added
+        'exemption_code', // Added
+        'discount_id', // Added
         'item_id',
         'item_description',
         'qty',
@@ -27,7 +30,7 @@ class ProposalItem extends Model
         'total',
         'discount_percentage',
         'discount_amount',
-        'tax_id', # Added
+        'tax_id', // Added
         'tax_amount',
         'tax_percentage',
         'obs',
@@ -38,7 +41,7 @@ class ProposalItem extends Model
         'global_discount_portion_percentage',
     ];
 
-        /**
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
@@ -64,9 +67,8 @@ class ProposalItem extends Model
         return $this->belongsTo(Unit::class, 'unit_id');
     }
 
-
     /**
-     * Tax Exemption 
+     * Tax Exemption
      *
      * @return Relationship
      */
@@ -75,11 +77,10 @@ class ProposalItem extends Model
         return $this->belongsTo(TaxExemption::class, 'exemption_id');
     }
 
-    public function standard():BelongsTo
+    public function standard(): BelongsTo
     {
         return $this->belongsTo(Standard::class, 'standard_id');
     }
-
 
     public function itemable()
     {

@@ -28,20 +28,26 @@ class signQuoteWithHash extends Command
     public function handle(DocumentSignature $documentSignature): void
     {
         $quote = Quote::findOrFail($this->argument('quote'));
+        if (filled($quote->unique_hash)) {
+            return;
+        }
 
-        if (Quote::whereQuoteMonth(now()->format('Y'))->count() !== 1) {
-            $prev_hash = Quote::where('id', '<', $quote->id)->orderBy('id', 'desc')->first()->unique_hash;
+        if (Quote::withoutGlobalScope('financial_laboratory')->whereQuoteMonth(now()->format('Y'))->count() !== 1) {
+            $prev_hash = Quote::withoutGlobalScope('financial_laboratory')->where('id', '<', $quote->id)->orderBy('id', 'desc')->first()?->unique_hash ?? '';
             $data = $quote->date.';'.$quote->created_at->toDateTimeLocalString().';'.$quote->quote_no.';'.$quote->total.';'.$prev_hash;
 
             $quote->unique_hash = $documentSignature->sign($data);
         }
 
-        if (Quote::whereQuoteMonth(now()->format('Y'))->count() == 1) {
+        if (Quote::withoutGlobalScope('financial_laboratory')->whereQuoteMonth(now()->format('Y'))->count() == 1) {
             $data = $quote->date.';'.$quote->created_at->toDateTimeLocalString().';'.$quote->quote_no.';'.$quote->total.';';
 
             $quote->unique_hash = $documentSignature->sign($data);
         }
 
-        $quote->save();
+        $intendedHash = $quote->unique_hash;
+        if (! $quote->save() || $quote->fresh()->unique_hash !== $intendedHash) {
+            throw new \LogicException('The quote signature was not persisted.');
+        }
     }
 }

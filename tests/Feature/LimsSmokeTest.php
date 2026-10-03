@@ -82,21 +82,27 @@ use App\Models\VAPSampleEntry;
 use App\Models\Variable;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
+use RuntimeException;
 use Tests\TestCase;
+use Throwable;
 
 class LimsSmokeTest extends TestCase
 {
+    use DatabaseTransactions;
+
+    private VAPLab $lab;
+
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for smoke testing.');
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
+        $this->lab = $lab;
 
         return $admin;
     }
@@ -131,7 +137,11 @@ class LimsSmokeTest extends TestCase
         $failures = [];
 
         foreach ($routes as $route) {
-            $response = $this->actingAs($user)->get(route($route));
+            try {
+                $response = $this->actingAs($user)->get(route($route));
+            } catch (Throwable $exception) {
+                throw new RuntimeException("Smoke route [{$route}] raised an exception.", previous: $exception);
+            }
 
             if (! $response->isSuccessful() && ! $response->isRedirection()) {
                 $failures[] = sprintf(
@@ -139,6 +149,8 @@ class LimsSmokeTest extends TestCase
                     $route,
                     $response->getStatusCode()
                 );
+
+                break;
             }
         }
 
@@ -487,14 +499,20 @@ class LimsSmokeTest extends TestCase
     public function test_verified_admin_can_open_iso_17025_audit_and_record_pages(): void
     {
         $user = $this->verifiedAdmin();
-        $certificate = QualityCertificate::query()->first();
-        $occurrence = Occurrence::query()->first();
-        $vapNonConformity = VAPNonConformity::query()->first();
+        $certificate = QualityCertificate::query()->create([
+            'user_id' => $user->id,
+            'code' => 'QC-SMOKE-'.fake()->unique()->numerify('######'),
+        ]);
+        $occurrence = Occurrence::query()->create([
+            'lab_id' => $this->lab->id,
+            'occurrence_year' => (string) now()->year,
+            'date_reported' => now()->toDateString(),
+            'issue_description' => 'Smoke-test quality occurrence.',
+            'user_id' => $user->id,
+        ]);
+        $vapNonConformity = VAPNonConformity::query()->where('lab_id', $this->lab->id)->first();
         $importCertificate = ImportCertificate::query()->first();
         $exportCertificate = ExportCertificate::query()->first();
-
-        $this->assertNotNull($certificate, 'Expected at least one quality certificate for ISO smoke testing.');
-        $this->assertNotNull($occurrence, 'Expected at least one occurrence for smoke testing.');
 
         $checks = [
             route('qualitycertificates.show', $certificate),
@@ -505,7 +523,6 @@ class LimsSmokeTest extends TestCase
             route('vap_samples.reports'),
             route('vap_samples.samples.stats'),
             route('vap_samples.discards.stats'),
-            route('dashboard.export'),
         ];
 
         if ($vapNonConformity) {
@@ -540,9 +557,7 @@ class LimsSmokeTest extends TestCase
     public function test_verified_admin_can_open_recent_customer_settings_backup_and_inventory_analytics_pages(): void
     {
         $user = $this->verifiedAdmin();
-        $customer = Customer::query()->first();
-
-        $this->assertNotNull($customer, 'Expected at least one customer for admin smoke testing.');
+        $customer = Customer::query()->create(['name' => 'Smoke customer '.fake()->uuid()]);
 
         $checks = [
             route('customers.show', $customer),
@@ -651,21 +666,18 @@ class LimsSmokeTest extends TestCase
     public function test_vap_samples_and_labs_breadcrumbs_use_user_facing_labels(): void
     {
         $user = $this->verifiedAdmin();
-        $sampleEntry = VAPSampleEntry::query()->first();
-        $lab = VAPLab::query()->first();
-
-        $this->assertNotNull($sampleEntry, 'Expected at least one VAP sample entry for breadcrumb smoke testing.');
-        $this->assertNotNull($lab, 'Expected at least one VAP lab for breadcrumb smoke testing.');
+        $sampleEntry = VAPSampleEntry::factory()->create(['lab_id' => $this->lab->id]);
+        $lab = $this->lab;
 
         $sampleIndex = $this->actingAs($user)->get(route('vap_samples.index'));
         $sampleIndex->assertOk();
-        $this->assertSame('Sample Entry', data_get($sampleIndex->viewData('page'), 'props.breadcrumbs.0.title'));
+        $this->assertSame('Entrada de amostra', data_get($sampleIndex->viewData('page'), 'props.breadcrumbs.0.title'));
         $this->assertTrue(data_get($sampleIndex->viewData('page'), 'props.breadcrumbs.0.current'));
 
         $sampleShow = $this->actingAs($user)->get(route('vap_samples.show', $sampleEntry));
         $sampleShow->assertOk();
-        $this->assertSame('Sample Entry', data_get($sampleShow->viewData('page'), 'props.breadcrumbs.0.title'));
-        $this->assertSame('Show', data_get($sampleShow->viewData('page'), 'props.breadcrumbs.1.title'));
+        $this->assertSame('Entrada de amostra', data_get($sampleShow->viewData('page'), 'props.breadcrumbs.0.title'));
+        $this->assertSame('Detalhes', data_get($sampleShow->viewData('page'), 'props.breadcrumbs.1.title'));
         $this->assertTrue(data_get($sampleShow->viewData('page'), 'props.breadcrumbs.1.current'));
 
         $labIndex = $this->actingAs($user)->get(route('vap-labs.labs.index'));
@@ -683,25 +695,19 @@ class LimsSmokeTest extends TestCase
     public function test_verified_user_can_persist_theme_from_web_session(): void
     {
         $user = $this->verifiedAdmin();
-        $originalTheme = $user->theme;
 
-        try {
-            $this->actingAs($user)
-                ->patchJson(route('user.theme.update'), ['theme' => 'dark'])
-                ->assertOk()
-                ->assertJson(['theme' => 'dark']);
+        $this->actingAs($user)
+            ->patchJson(route('user.theme.update'), ['theme' => 'dark'])
+            ->assertOk()
+            ->assertJson(['theme' => 'dark']);
 
-            $this->assertSame('dark', $user->refresh()->theme);
-        } finally {
-            $user->forceFill(['theme' => $originalTheme])->save();
-        }
+        $this->assertSame('dark', $user->refresh()->theme);
     }
 
     public function test_proposal_qr_accessor_returns_svg_data_uri(): void
     {
-        $proposal = Proposal::query()->first();
+        $proposal = new Proposal(['proposal_no' => 'QR-REGRESSION']);
 
-        $this->assertNotNull($proposal, 'Expected at least one proposal for QR smoke testing.');
         $this->assertStringStartsWith('data:image/svg+xml', $proposal->qr);
     }
 }

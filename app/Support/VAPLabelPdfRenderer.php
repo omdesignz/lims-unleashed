@@ -19,6 +19,8 @@ use Throwable;
 
 class VAPLabelPdfRenderer
 {
+    public function __construct(private readonly LabelStudioLogoSource $logoSource) {}
+
     /**
      * @return array{chrome: array{available: bool, binary_path: ?string, configured: bool, executable: bool, description: string}, fallback: array{available: bool, description: string}}
      */
@@ -54,7 +56,8 @@ class VAPLabelPdfRenderer
     {
         $sourcePreview = $resolver->resolve(
             data_get($label->template_data, 'source_type'),
-            data_get($label->template_data, 'source_id')
+            data_get($label->template_data, 'source_id'),
+            (int) $label->lab_id
         );
         $sampleQr = data_get($sourcePreview, 'qr_content', 'LAB-'.strtoupper(Str::random(8)));
         $sampleBarcode = data_get($sourcePreview, 'barcode_content', 'BAR-'.strtoupper(Str::random(6)));
@@ -96,7 +99,8 @@ class VAPLabelPdfRenderer
     {
         $sourcePreview = $resolver->resolve(
             data_get($label->template_data, 'source_type'),
-            data_get($label->template_data, 'source_id')
+            data_get($label->template_data, 'source_id'),
+            (int) $label->lab_id
         );
         $items = collect($data)
             ->map(function (array $item) use ($label, $resolver, $sourcePreview): array {
@@ -213,7 +217,7 @@ class VAPLabelPdfRenderer
                 'label' => $label,
                 'items' => $items,
                 'options' => $options,
-                'logoSrc' => $this->resolveAssetSource($label->logo_path),
+                'logoSrc' => $this->logoSource->resolve($label->logo_path),
             ])
                 ->driver('chrome')
                 ->paperSize((float) $options['paper_width'], (float) $options['paper_height'], 'mm')
@@ -326,21 +330,6 @@ class VAPLabelPdfRenderer
         };
     }
 
-    private function resolveAssetSource(?string $path): ?string
-    {
-        if (! filled($path)) {
-            return null;
-        }
-
-        if (filter_var($path, FILTER_VALIDATE_URL) || str_starts_with($path, 'data:')) {
-            return $path;
-        }
-
-        $publicPath = public_path(ltrim($path, '/'));
-
-        return is_file($publicPath) ? 'file://'.$publicPath : $path;
-    }
-
     /**
      * @param  array<string, mixed>  $item
      */
@@ -366,7 +355,7 @@ class VAPLabelPdfRenderer
             'qr_code_image' => $item['qr_code_image'],
             'sample_barcode' => $item['barcode_content'],
             'barcode_image' => $item['barcode_image'],
-            'logo_src' => $this->resolveAssetSource($label->logo_path),
+            'logo_src' => $this->logoSource->resolve($label->logo_path),
         ])->render());
 
         return $mpdf->Output('', 'S');
@@ -401,7 +390,7 @@ class VAPLabelPdfRenderer
                 'qr_code_image' => $item['qr_code_image'],
                 'barcode_content' => $item['barcode_content'],
                 'barcode_image' => $item['barcode_image'],
-                'logo_src' => $this->resolveAssetSource($label->logo_path),
+                'logo_src' => $this->logoSource->resolve($label->logo_path),
                 'include_cutouts' => (bool) data_get($options, 'include_cutouts', true),
                 'item_index' => $index,
                 'labels_per_page' => $labelsPerPage,
@@ -442,7 +431,7 @@ class VAPLabelPdfRenderer
             'rows' => max(1, min(50, (int) data_get($options, 'rows', 4))),
             'spacing' => (float) data_get($options, 'spacing', 5),
             'include_cutouts' => (bool) data_get($options, 'include_cutouts', true),
-            'logo_src' => $this->resolveAssetSource($label->logo_path),
+            'logo_src' => $this->logoSource->resolve($label->logo_path),
         ])->render());
 
         return $mpdf->Output('', 'S');

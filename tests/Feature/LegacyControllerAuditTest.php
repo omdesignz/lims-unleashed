@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\InventoryItem;
+use App\Models\ItemCategory;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class LegacyControllerAuditTest extends TestCase
@@ -14,14 +17,11 @@ class LegacyControllerAuditTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for the legacy controller audit.');
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
 
         return $admin;
     }
@@ -75,7 +75,13 @@ class LegacyControllerAuditTest extends TestCase
     public function test_missing_inventory_attachment_deletes_return_not_found_instead_of_server_errors(): void
     {
         $user = $this->verifiedAdmin();
-        $item = InventoryItem::query()->firstOrFail();
+        $category = ItemCategory::query()->create(['name' => 'Attachment audit '.fake()->uuid()]);
+        $item = InventoryItem::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
+            'name' => 'Attachment audit item',
+            'code' => fake()->unique()->bothify('ATT-#######'),
+            'category_id' => $category->id,
+        ]);
         $missingMediaId = 999999999;
 
         foreach ([

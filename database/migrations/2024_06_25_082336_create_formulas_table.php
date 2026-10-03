@@ -17,6 +17,10 @@ return new class extends Migration
             $table->text('expression'); // Stores the formula expression
             $table->timestamps();
         });
+
+        Schema::table('parameter_profile', function (Blueprint $table): void {
+            $table->foreign('formula_id')->references('id')->on('formulas');
+        });
     }
 
     /**
@@ -24,6 +28,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('parameter_profile', function (Blueprint $table): void {
+            $table->dropForeign(['formula_id']);
+        });
+
         Schema::dropIfExists('formulas');
     }
 };

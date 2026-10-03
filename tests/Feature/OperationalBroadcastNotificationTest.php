@@ -20,6 +20,7 @@ use App\Models\InventoryOrder;
 use App\Models\LabCode;
 use App\Models\Result;
 use App\Models\User;
+use App\Notifications\LaboratoryBroadcastChannel;
 use App\Notifications\OperationalNotification;
 use App\Notifications\PortalPasswordResetNotification;
 use App\Notifications\PortalVerifyEmailNotification;
@@ -49,7 +50,7 @@ class OperationalBroadcastNotificationTest extends TestCase
         ];
         $notification = new OperationalNotification($payload);
 
-        $this->assertSame(['database', 'broadcast'], $notification->via(new \stdClass));
+        $this->assertSame(['database', LaboratoryBroadcastChannel::class], $notification->via(new \stdClass));
         $this->assertSame('lab.analysis.approved', $notification->toDatabase(new \stdClass)['key']);
 
         $broadcast = $notification->toBroadcast(new \stdClass);

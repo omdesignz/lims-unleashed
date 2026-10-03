@@ -1,6 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { Link } from "@inertiajs/vue3";
+import { Link, useForm } from "@inertiajs/vue3";
 import {
   ArrowRightIcon,
   CheckBadgeIcon,
@@ -20,10 +20,22 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  trashed: { type: String, default: "" },
+  can_restore: { type: Boolean, default: false },
 });
 
 const searchTerm = ref("");
 const statusFilter = ref("all");
+const restoreForm = useForm({ recordIds: [] });
+
+function restoreWorksheet(worksheet) {
+  if (!props.can_restore || restoreForm.processing || !worksheet?.deleted_at || !worksheet.id) return;
+  restoreForm.recordIds = [worksheet.id];
+  restoreForm.post(route("worksheets.restore"), {
+    preserveScroll: true,
+    onSuccess: () => restoreForm.reset("recordIds"),
+  });
+}
 
 const worksheetRows = computed(() =>
   (props.worksheets || []).map((worksheet) => {
@@ -152,6 +164,17 @@ function formatDate(date) {
     </section>
 
     <section class="ds-table-shell">
+      <nav class="flex flex-wrap gap-2 border-b border-[var(--ds-border)] px-4 py-3" aria-label="Arquivo das folhas de trabalho">
+        <Link :href="route('worksheets.index')" preserve-scroll preserve-state class="ds-button ds-button-secondary" :aria-current="!trashed ? 'page' : undefined">
+          Activas
+        </Link>
+        <Link :href="route('worksheets.index', { trashed: 'only' })" preserve-scroll preserve-state class="ds-button ds-button-secondary" :aria-current="trashed === 'only' ? 'page' : undefined">
+          Arquivo
+        </Link>
+      </nav>
+      <div v-if="restoreForm.hasErrors" class="ds-field-error px-4 py-3" role="alert">
+        <p v-for="(message, field) in restoreForm.errors" :key="field">{{ message }}</p>
+      </div>
       <div class="ds-table-summary flex-col items-stretch px-4 py-4 lg:flex-row lg:items-center">
         <div>
           <p class="ds-kicker">Fila de worksheets</p>
@@ -207,6 +230,7 @@ function formatDate(date) {
                 <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
                   #{{ worksheet.id }}<template v-if="worksheet.analysisId"> · Análise #{{ worksheet.analysisId }}</template>
                 </p>
+                <p v-if="worksheet.deleted_at" class="ds-copy mt-1 text-xs">Arquivada</p>
               </td>
               <td class="px-4 py-4">
                 <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold" :class="statusClasses(worksheet.status)">
@@ -228,10 +252,21 @@ function formatDate(date) {
                 </span>
               </td>
               <td class="px-4 py-4 text-right">
-                <Link :href="route('worksheets.show', worksheet.id)" class="ds-table-action whitespace-nowrap">
+                <Link v-if="!worksheet.deleted_at" :href="route('worksheets.show', worksheet.id)" class="ds-table-action whitespace-nowrap">
                   Abrir
                   <ArrowRightIcon class="h-3.5 w-3.5" />
                 </Link>
+                <button
+                  v-else-if="can_restore"
+                  type="button"
+                  class="ds-button ds-button-secondary whitespace-nowrap"
+                  :disabled="restoreForm.processing"
+                  :aria-busy="restoreForm.processing && restoreForm.recordIds.includes(worksheet.id)"
+                  :aria-label="`Restaurar ${worksheet.name || 'folha de trabalho'}`"
+                  @click="restoreWorksheet(worksheet)"
+                >
+                  {{ restoreForm.processing && restoreForm.recordIds.includes(worksheet.id) ? 'A restaurar...' : 'Restaurar' }}
+                </button>
               </td>
             </tr>
           </tbody>
@@ -242,7 +277,7 @@ function formatDate(date) {
         <DocumentTextIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
         <h3 class="ds-heading mt-3 text-sm">Nenhuma folha de trabalho encontrada</h3>
         <p class="ds-copy mt-1 text-sm">
-          Ajuste a pesquisa ou o filtro de estado para voltar a ver a fila operacional.
+          {{ trashed === 'only' ? 'Não há folhas arquivadas que correspondam aos filtros.' : 'Ajuste a pesquisa ou o filtro de estado para voltar a ver a fila operacional.' }}
         </p>
       </div>
     </section>

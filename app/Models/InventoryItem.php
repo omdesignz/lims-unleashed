@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
-use HighSolutions\EloquentSequence\Sequence;
+use App\Enums\InventoryCategoryType;
+use App\Traits\HasScopedSequence;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-
 class InventoryItem extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia, Sequence;
+    use HasFactory, HasScopedSequence, InteractsWithMedia, SoftDeletes;
 
     public const MENU_NAME = 'iitems';
 
@@ -22,6 +24,7 @@ class InventoryItem extends Model implements HasMedia
      * @var array<int, string>
      */
     protected $fillable = [
+        'lab_id',
         'name',
         'description',
         'code',
@@ -53,7 +56,7 @@ class InventoryItem extends Model implements HasMedia
         'packed_depth',
         'packed_depth_unit',
         'refrigerated',
-        'status_id', 
+        'status_id',
         'has_safety_documentation',
         'packaging_type_id',
         'category_id',
@@ -75,8 +78,8 @@ class InventoryItem extends Model implements HasMedia
     ];
 
     protected $table = 'i_items';
-    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
+    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
      * The attributes that should be cast.
@@ -101,12 +104,34 @@ class InventoryItem extends Model implements HasMedia
         'metrological_uncertainty_value' => 'decimal:4',
     ];
 
-    public function sequence()
+    public function sequence(): array
     {
         return [
-            'group' => ['category_id', 'seq'],
+            'group' => ['lab_id', 'category_id'],
             'fieldName' => 'seq',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $item): void {
+            if ($item->isDirty('lab_id')) {
+                throw new LogicException('Inventory item ownership cannot be reassigned.');
+            }
+            if ($item->isDirty('unit_id') && $item->getOriginal('unit_id') !== null && $item->inventory()->withTrashed()->exists()) {
+                throw new LogicException('Inventory item unit cannot change after stock has been issued.');
+            }
+        });
+    }
+
+    public function scopeForLaboratory(Builder $query, int $labId): Builder
+    {
+        return $query->where('lab_id', $labId);
+    }
+
+    public function lab()
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
     }
 
     /**
@@ -139,7 +164,6 @@ class InventoryItem extends Model implements HasMedia
         return $this->belongsTo(InventoryItemType::class, 'type_id');
     }
 
-
     /**
      * Item Supplier
      *
@@ -160,14 +184,12 @@ class InventoryItem extends Model implements HasMedia
         return $this->belongsTo(ItemStatus::class, 'status_id');
     }
 
-
     public function warehouses()
     {
         return $this->belongsToMany(InventoryItemWarehouse::class, 'inventory', 'item_id', 'warehouse_id')
             ->withPivot('qty_available', 'min_stock_level', 'reorder_point', 'status')
             ->withTimestamps();
     }
-
 
     public function inventory()
     {
@@ -201,17 +223,16 @@ class InventoryItem extends Model implements HasMedia
         return $this->hasMany(ReagentConsumption::class, 'reagent_id');
     }
 
-    public function scopeEquipment($query)
+    public function scopeEquipment(Builder $query): Builder
     {
-        return $query->whereHas('category', function ($q) {
-            $q->where('name', 'like', '%equipamentos%');
-        });
+        return $query->whereHas('category', fn (Builder $category): Builder => $category->withTrashed()
+            ->where('inventory_type', InventoryCategoryType::EQUIPMENT->value));
     }
 
     public function scopeReagents($query)
     {
         return $query->whereHas('category', function ($q) {
-            $q->where('name', 'like', '%reagentes%');
+            $q->whereRaw('LOWER(name) LIKE ?', ['%reagentes%']);
         });
     }
 
@@ -234,40 +255,39 @@ class InventoryItem extends Model implements HasMedia
 
     public function getIsExpiredAttribute()
     {
-        if (!$this->is_reagent || !$this->reagent_expiry_date) {
+        if (! $this->is_reagent || ! $this->reagent_expiry_date) {
             return false;
         }
-        
+
         return now()->gt($this->reagent_expiry_date);
     }
 
     public function getDaysToExpiryAttribute()
     {
-        if (!$this->is_reagent || !$this->reagent_expiry_date) {
+        if (! $this->is_reagent || ! $this->reagent_expiry_date) {
             return null;
         }
-        
+
         return now()->diffInDays($this->reagent_expiry_date, false);
     }
 
     public function getNeedsCalibrationAttribute()
     {
-        if (!$this->next_calibration_date) {
+        if (! $this->next_calibration_date) {
             return false;
         }
-        
+
         return now()->gt($this->next_calibration_date);
     }
 
-
     public function getCalibrationStatusAttribute()
     {
-        if (!$this->next_calibration_date) {
+        if (! $this->next_calibration_date) {
             return 'not_required';
         }
-        
+
         $daysRemaining = now()->diffInDays($this->next_calibration_date, false);
-        
+
         if ($daysRemaining < 0) {
             return 'overdue';
         } elseif ($daysRemaining <= 30) {
@@ -325,7 +345,7 @@ class InventoryItem extends Model implements HasMedia
     public function eq_cat()
     {
         return $this->belongsTo(EquipmentCategory::class, 'eq_cat_id');
-    } 
+    }
 
     public function department()
     {
@@ -367,22 +387,41 @@ class InventoryItem extends Model implements HasMedia
             //         'application/vnd.ms-excel',
             //         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             //     ])
-            ->useDisk('public');
+            ->useDisk('local');
     }
 
-    public function getInventoryItemDocuments() {
-        return $this?->getMedia('documents') ?? [];
+    public function getInventoryItemDocuments(bool $withArchived = false)
+    {
+        return $withArchived
+            ? InventoryItemDocumentMedia::withTrashed()->where('model_type', $this->getMorphClass())->where('model_id', $this->id)->where('collection_name', 'documents')->orderBy('order_column')->get()
+            : $this->getMedia('documents');
+    }
+
+    public function getMediaModel(): string
+    {
+        return InventoryItemDocumentMedia::class;
+    }
+
+    public function generatedInternalCode(int $sequence): string
+    {
+        $prefix = $this->category?->code
+            ?: (self::mapInventoryItemCategory()[$this->category_id] ?? 'ITEM-C'.$this->category_id);
+
+        return strtoupper($prefix).'-'.str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
     }
 
     public static function boot()
     {
         parent::boot();
 
-            static::creating(function($item) {
+        static::creating(function ($item) {
+            if (filled($item->internal_code)) {
+                return;
+            }
 
-                $item->internal_code = self::mapInventoryItemCategory()[$item->category_id] . '-' . str_pad ($item->seq, 3, '0', STR_PAD_LEFT);
-        
-            });
+            $item->internal_code = $item->generatedInternalCode((int) $item->seq);
+
+        });
 
     }
 
@@ -395,5 +434,4 @@ class InventoryItem extends Model implements HasMedia
             '4' => 'LCLDV',
         ];
     }
-    
 }

@@ -87,9 +87,9 @@
                   v-model="form.quantity_used"
                   type="number"
                   label="Quantidade usada"
-                  :min="0.01"
+                  :min="0.0001"
                   :max="maxQuantity"
-                  :step="0.01"
+                  :step="0.0001"
                   :error="form.errors.quantity_used"
                   placeholder="Digite a quantidade"
                   required
@@ -254,7 +254,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   reagents: {
@@ -269,17 +269,21 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  backUrl: {
+    type: String,
+    default: '',
+  },
 })
 
 const quantityFormatter = new Intl.NumberFormat('pt-PT', {
-  maximumFractionDigits: 2,
+  maximumFractionDigits: 4,
 })
 
 const form = useForm({
   reagent_id: '',
   warehouse_id: '',
-  quantity_used: 0.01,
-  used_by: '',
+  quantity_used: '0.0001',
+  used_by: props.users[0]?.name ?? '',
   date: new Date().toISOString().split('T')[0],
   remarks: '',
 })
@@ -461,10 +465,6 @@ function formatDate(dateString) {
 function onReagentChange() {
   form.warehouse_id = ''
   form.quantity_used = 0.01
-
-  if (form.reagent_id && props.users.length > 0) {
-    form.used_by = props.users[0].name
-  }
 }
 
 function onWarehouseChange() {
@@ -488,20 +488,11 @@ function confirmSubmit() {
     preserveScroll: true,
     onSuccess: () => {
       form.reset()
-      router.visit(route('vap-inventory.reagents.consumption.index'), {
-        preserveScroll: true,
-      })
     },
   })
 }
 
 function goBack() {
-  router.visit(route('vap-inventory.reagents.consumption.index'))
+  router.visit(props.backUrl || route('dashboard'))
 }
-
-onMounted(() => {
-  if (props.users.length > 0) {
-    form.used_by = props.users[0].name
-  }
-})
 </script>

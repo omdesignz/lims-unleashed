@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProposalComplianceAgreementRequest;
+use App\Actions\SetProposalComplianceAgreementArchived;
+use App\Http\Requests\SetProposalRecordsArchivedRequest;
 use App\Http\Resources\ProposalComplianceAgreementResource;
+use App\Models\Proposal;
 use App\Models\ProposalComplianceAgreement;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -18,7 +20,7 @@ class ProposalComplianceAgreementController extends Controller
         // abort_if( !auth()->user()->can('view_maintenance_categories'), 403, '');
 
         $records = QueryBuilder::for(ProposalComplianceAgreement::class)
-            ->with('proposal')
+            ->with(['proposal' => fn ($query) => $query->withTrashed()])
             ->allowedFilters(ProposalComplianceAgreement::getAllowedFilters())
             ->allowedSorts(ProposalComplianceAgreement::getAllowedSorts())
             ->paginate(request()->query('per_page', 10));
@@ -31,74 +33,18 @@ class ProposalComplianceAgreementController extends Controller
             'initialIncludes' => request()->query('includes', []),
             'initialGlobalFilter' => request()->query('globalFilter', ''),
             'per_page' => request()->query('per_page', 2),
-            'slideOverEdit' => true,
             'trashedFilter' => true,
-            'trashedOptions' => ProposalComplianceAgreement::getTrashedOptions(),
+            'trashedOptions' => Proposal::getTrashedOptions(),
             'fields' => ProposalComplianceAgreement::getColumns(),
-            'model' => ProposalComplianceAgreement::MENU_NAME,
-            'abilities' => method_exists(ProposalComplianceAgreement::class, 'getAbilities') ? collect(ProposalComplianceAgreement::ABILITIES)->map(function ($item) {
-                return $item.'_'.ProposalComplianceAgreement::MENU_NAME;
-            }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
-                return $item.'_'.ProposalComplianceAgreement::MENU_NAME;
-            }),
+            'model' => Proposal::MENU_NAME,
+            'abilities' => collect(['view', 'delete', 'restore'])->map(fn (string $ability): string => $ability.'_'.Proposal::MENU_NAME),
             'query' => request()->only(['search', 'trashed', 'date', 'orderBy']),
         ]);
     }
 
-    public function create()
+    public function destroy(SetProposalRecordsArchivedRequest $request, SetProposalComplianceAgreementArchived $archive): RedirectResponse
     {
-
-        // abort_if( !auth()->user()->can('add_maintenance_categories'), 403, '');
-
-        return [];
-    }
-
-    public function store(ProposalComplianceAgreementRequest $request)
-    {
-        // abort_if( !auth()->user()->can('add_maintenance_categories'), 403, '');
-
-        // Persiste data to DB
-        ProposalComplianceAgreement::create($request->validated());
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ],
-        ]);
-    }
-
-    public function edit($id)
-    {
-        return [];
-    }
-
-    public function update(ProposalComplianceAgreementRequest $request, $id)
-    {
-        // Find the record
-        $record = ProposalComplianceAgreement::findOrFail($id);
-
-        $record->update($request->validated());
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ],
-        ]);
-    }
-
-    public function destroy()
-    {
-        // abort_if( !auth()->user()->can('delete_maintenance_categories'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (ProposalComplianceAgreement::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $archive->execute((int) $request->attributes->get('proposal_laboratory_id'), $request->user()->id, $request->validated('recordIds'), true);
 
         return redirect()->back()->with([
             'toast' => [
@@ -108,17 +54,9 @@ class ProposalComplianceAgreementController extends Controller
         ]);
     }
 
-    public function restore()
+    public function restore(SetProposalRecordsArchivedRequest $request, SetProposalComplianceAgreementArchived $archive): RedirectResponse
     {
-        // abort_if( !auth()->user()->can('restore_maintenance_categories'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (ProposalComplianceAgreement::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $archive->execute((int) $request->attributes->get('proposal_laboratory_id'), $request->user()->id, $request->validated('recordIds'), false);
 
         return redirect()->back()->with([
             'toast' => [
@@ -135,9 +73,9 @@ class ProposalComplianceAgreementController extends Controller
         if (request()->has('q')) {
             $search = request()->q;
 
-            $data = DB::table('proposal_compliance_agreements')
-                ->select('proposal_compliance_agreements.*')
-                ->where('proposal_id', 'LIKE', "%$search%")
+            $data = ProposalComplianceAgreement::query()
+                ->whereRaw('CAST(proposal_id AS TEXT) LIKE ?', ["%$search%"])
+                ->limit(50)
                 ->get();
         }
 

@@ -2,189 +2,114 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\MediaStudioUploadRequest;
 use App\Http\Resources\GestlabMediaResource;
 use App\Models\GestlabMedia;
+use App\Models\User;
+use App\Services\StaffAccountAccess;
 use App\Support\ReportStudioAssetLibrary;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Inertia\Response;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class MediaController extends Controller
 {
-    //
-
-    public function index()
+    private function administrator(): User
     {
-        $media = GestlabMediaResource::collection(
-            GestlabMedia::with('author')
-                ->type(request('fileType'))
-                ->month(request('month'))
-                ->search(request('term'))
-                ->paginate(10)
-        );
+        $actor = User::query()->find(auth()->id());
+        abort_unless($actor && app(StaffAccountAccess::class)->isSystemAdministrator($actor), 403);
 
-        $fileTypes = GestlabMedia::selectRaw('distinct mime_type')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'value' => $item->file_type,
-                    'label' => trans('gestlab.general.labels.files.types.'.$item->file_type),
-                ];
-            })->unique('value')->values();
+        return $actor;
+    }
 
-        $months = DB::table('media')
-            ->selectRaw('distinct DATE_FORMAT(created_at, "01-%m-%Y") as value, DATE_FORMAT(created_at, "%M %Y") as label')
-            ->orderByDesc('value')
-            ->get();
+    public function index(): Response
+    {
+        $this->administrator();
 
         return Inertia::render('Media/Index', [
-            'fields' => [
-                [
-                    'name' => trans('gestlab.general.labels.files.file'),
-                    'value' => 'name',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.files.author_id'),
-                    'value' => 'author_id',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.files.created_at'),
-                    'value' => 'created_at',
-                ],
-            ],
-            'model' => GestlabMedia::MENU_NAME,
-            'record' => $media,
-            'fileTypes' => $fileTypes,
-            'months' => $months,
-            'query' => request()->all(['fileType', 'month', 'term']),
+            'record' => GestlabMediaResource::collection(GestlabMedia::with('author')->type(request('fileType'))
+                ->month(request('month'))->search(request('term'))->latest('id')->paginate(10)),
+            'fields' => [], 'model' => GestlabMedia::MENU_NAME,
+            'fileTypes' => GestlabMedia::select('mime_type')->distinct()->get()->map(fn (GestlabMedia $media): array => [
+                'value' => $media->file_type, 'label' => trans('gestlab.general.labels.files.types.'.$media->file_type),
+            ])->unique('value')->values(),
+            'months' => GestlabMedia::selectRaw("distinct to_char(created_at, '01-MM-YYYY') as value, to_char(created_at, 'Month YYYY') as label")->get(),
+            'query' => request()->only(['fileType', 'month', 'term']),
         ]);
     }
 
-    public function create()
+    public function create(): Response
     {
-        return Inertia::render('Media/Create', []);
+        $this->administrator();
+
+        return Inertia::render('Media/Create');
     }
 
-    public function edit(GestlabMedia $media): RedirectResponse
+    public function store(MediaStudioUploadRequest $request, ReportStudioAssetLibrary $assetLibrary): JsonResponse
     {
-        return redirect()
-            ->route('media.index')
-            ->with([
-                'toast' => [
-                    'title' => trans('gestlab.toasts.notification'),
-                    'message' => trans('gestlab.general.labels.files.page_title'),
-                ],
-            ]);
-    }
-
-    public function store(Request $request, ReportStudioAssetLibrary $assetLibrary): JsonResponse
-    {
-        $fileRules = ['required', 'file', 'max:512000'];
-
-        if ($request->filled('studio_asset_context')) {
-            $fileRules[] = 'mimetypes:image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/avif';
-        }
-
-        $validated = $request->validate([
-            'file' => $fileRules,
-            'studio_asset_context' => ['nullable', 'string', Rule::in(['report_studio', 'proposal_studio'])],
-            'studio_asset_kind' => ['nullable', 'string', Rule::in(ReportStudioAssetLibrary::studioUploadKinds())],
-        ], [
-            'file.required' => 'Seleccione um ficheiro para carregar.',
-            'file.file' => 'O conteúdo carregado tem de ser um ficheiro válido.',
-            'file.max' => 'O ficheiro não pode ter mais de 512 MB.',
-            'file.mimetypes' => 'Use SVG, PNG, JPEG, WebP, GIF ou AVIF para media de estúdio.',
-            'studio_asset_context.in' => 'O contexto de media do estúdio não é suportado.',
-            'studio_asset_kind.in' => 'O tipo de media do estúdio não é suportado.',
-        ]);
-
+        $actor = $this->administrator();
+        $validated = $request->validated();
         $file = $validated['file'];
-        $isStudioUpload = filled($validated['studio_asset_context'] ?? null);
-        $studioAssetKind = $isStudioUpload
-            ? ($validated['studio_asset_kind'] ?? ReportStudioAssetLibrary::DEFAULT_STUDIO_UPLOAD_KIND)
-            : null;
-        $studioAssetSource = $studioAssetKind ? ReportStudioAssetLibrary::sourceForKind($studioAssetKind) : null;
+        $kind = filled($validated['studio_asset_context'] ?? null)
+            ? ($validated['studio_asset_kind'] ?? ReportStudioAssetLibrary::DEFAULT_STUDIO_UPLOAD_KIND) : null;
+        $path = null;
+        try {
+            $media = DB::transaction(function () use ($file, $kind, $actor, &$path): GestlabMedia {
+                $media = GestlabMedia::query()->create([
+                    'name' => $file->getClientOriginalName(), 'file_name' => Str::uuid().'.'.($file->extension() ?: 'image'),
+                    'mime_type' => $file->getMimeType(), 'size' => $file->getSize(), 'author_id' => $actor->id,
+                    'disk' => 'local', 'studio_asset_kind' => $kind,
+                    'studio_asset_source' => $kind ? ReportStudioAssetLibrary::sourceForKind($kind) : null,
+                ]);
+                abort_unless($media->exists && $media->id, 409);
+                $path = $media->path;
+                abort_unless($file->storeAs(dirname($path), $media->file_name, 'local') === $path, 409);
+                abort_unless(hash_file('sha256', $file->getRealPath()) === hash_file('sha256', Storage::disk('local')->path($path)), 409);
+                $this->administrator();
 
-        $media = GestlabMedia::create([
-            'name' => $file->getClientOriginalName(),
-            'file_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
-            'author_id' => auth()->id(),
-            'studio_asset_kind' => $studioAssetKind,
-            'studio_asset_source' => $studioAssetSource,
-        ]);
-
-        $directory = "media/{$media->created_at->format('Y/m/d')}/{$media->id}";
-        $file->storeAs($directory, $media->file_name, 'public');
+                return $media;
+            });
+        } catch (Throwable $exception) {
+            if ($path !== null) {
+                Storage::disk('local')->delete($path);
+            }
+            throw $exception;
+        }
 
         return response()->json([
-            'id' => $media->id,
-            'preview_url' => $media->preview_url,
+            'id' => $media->id, 'preview_url' => $media->preview_url,
             'media' => [
-                'id' => $media->id,
-                'name' => $media->name,
-                'mime_type' => $media->mime_type,
-                'file_type' => $media->file_type,
-                'size' => $media->size,
-                'path' => $media->path,
-                'studio_asset_kind' => $media->studio_asset_kind,
-                'studio_asset_source' => $media->studio_asset_source,
+                'id' => $media->id, 'name' => $media->name, 'mime_type' => $media->mime_type, 'file_type' => $media->file_type,
+                'size' => $media->size, 'path' => $media->path,
+                'studio_asset_kind' => $media->studio_asset_kind, 'studio_asset_source' => $media->studio_asset_source,
             ],
-            'asset' => $assetLibrary->assetForMedia(
-                $media,
-                $studioAssetKind ?: 'gallery_image',
-                $studioAssetSource ?: 'Upload do studio'
-            ),
+            'asset' => $assetLibrary->assetForMedia($media, $kind ?: 'gallery_image', $media->studio_asset_source ?: 'Upload do studio'),
         ]);
     }
 
-    public function destroy()
+    public function download(int $id): StreamedResponse
     {
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
+        $this->administrator();
+        $media = GestlabMedia::withTrashed()->findOrFail($id);
 
-        foreach (GestlabMedia::find(request('recordIds')) as $media) {
-            $media->delete();
-            Storage::disk('public')->delete($media->path);
-        }
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ],
-        ]);
+        return Storage::disk($media->disk)->download($media->path, $media->file_name, ['X-Content-Type-Options' => 'nosniff']);
     }
 
-    public function update(Request $request, GestlabMedia $media): RedirectResponse
+    public function personal(int $id): Media
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-        ]);
+        $actor = User::query()->find(auth()->id());
+        abort_unless($actor && $actor->is_active && $actor->hasVerifiedEmail() && ! request()->session()->has('impersonate'), 403);
+        $media = Media::findOrFail($id);
+        abort_unless($media->model_type === (new User)->getMorphClass() && in_array($media->collection_name, ['signature', 'exports'], true), 404);
+        abort_unless(($media->collection_name === 'signature' && (int) $media->model_id === $actor->id)
+            || app(StaffAccountAccess::class)->isSystemAdministrator($actor), 403);
 
-        $media->update($validated);
-
-        return redirect()->route('media.index')->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ],
-        ]);
-    }
-
-    public function restore(): RedirectResponse
-    {
-        return redirect()->route('media.index')->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ],
-        ]);
+        return $media;
     }
 }

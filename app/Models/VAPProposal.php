@@ -2,19 +2,22 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToProposalLaboratory;
+use App\Traits\HasScopedSequence;
 use Carbon\Carbon;
-use HighSolutions\EloquentSequence\Sequence;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Query\Builder;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class VAPProposal extends Model
 {
-    use LogsActivity, Sequence, SoftDeletes;
+    use BelongsToProposalLaboratory;
+    use HasScopedSequence, LogsActivity, SoftDeletes;
 
     protected $table = 'proposals';
 
@@ -65,7 +68,7 @@ class VAPProposal extends Model
 
     protected $appends = ['proposal_number', 'status_badge', 'days_until_expiry', 'tax', 'discount'];
 
-    public function sequence()
+    public function sequence(): array
     {
         return [
             'group' => 'proposal_year',
@@ -194,7 +197,12 @@ class VAPProposal extends Model
 
     public function sampleEntries(): HasMany
     {
-        return $this->hasMany(VAPSampleEntry::class, 'proposal_id');
+        return $this->hasMany(VAPSampleEntry::class, 'proposal_id')
+            ->whereExists(function (Builder $query): void {
+                $query->selectRaw('1')->from('proposals as sample_owner')
+                    ->whereColumn('sample_owner.id', 'sample_entries.proposal_id')
+                    ->whereColumn('sample_owner.lab_id', 'sample_entries.lab_id');
+            });
     }
 
     public function complianceAgreement(): HasOne

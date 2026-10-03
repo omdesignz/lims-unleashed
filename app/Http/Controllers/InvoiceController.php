@@ -2,18 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\RecordInvoicePayment;
+use App\Actions\SetBillingDocumentsArchived;
+use App\Actions\UpdateFinancialDocumentObservation;
+use App\Http\Requests\FinancialDocumentObservationRequest;
 use App\Http\Requests\InvoiceRequest;
+use App\Http\Requests\RecordInvoicePaymentRequest;
+use App\Http\Requests\SetBillingDocumentsArchivedRequest;
+use App\Http\Resources\FinancialObservationResource;
 use App\Http\Resources\InvoiceResource;
 use App\Models\CollectionProduct;
 use App\Models\DiscountCategory;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\InvoiceReceipt;
 use App\Models\LabCode;
-use App\Models\Receipt;
+use App\Services\FinancialDocumentAssembly;
 use App\Settings\GeneralSettings;
 use App\Support\ReportStudioPdfBuilder;
 use App\Support\ReportStudioPdfRenderer;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -135,7 +142,7 @@ class InvoiceController extends Controller
                 $obj->itemable_type = $item['itemable_type'];
                 $obj->obs = $item['obs'];
 
-                $obj->save();
+                abort_unless(app(FinancialDocumentAssembly::class)->withLines($invoice, fn (): bool => $obj->save()), 409);
 
                 if (! is_null($obj->itemable_id) && $obj->itemable_type === 'collectionproduct') {
                     CollectionProduct::query()->whereKey($obj->itemable_id)->update([
@@ -169,53 +176,11 @@ class InvoiceController extends Controller
 
     }
 
-    public function changeStatusToPaid(Request $request)
+    public function changeStatusToPaid(RecordInvoicePaymentRequest $request, RecordInvoicePayment $recordPayment)
     {
-        // dd($request->payment_method['label'] ?? null);
-        DB::transaction(function () use ($request): void {
-
-            $record = tap(Invoice::findOrFail($request->id), function ($record) use ($request) {
-
-                $amount_due = $record->amount_due;
-
-                $record->update([
-                    'status' => true,
-                    'paid_date' => now(),
-                    'payment_method' => $request->payment_method ? $request->payment_method['label'] : null,
-                    'amount_due' => 0,
-
-                ]);
-
-                $receipt = new Receipt;
-
-                $receipt->rec_no = '';
-                $receipt->customer_id = $record->customer_id;
-                $receipt->warehouse_id = $record->warehouse_id;
-                $receipt->invoice_id = $record->id;
-                $receipt->payment_type = $request->payment_method['value'] ?? null;
-                $receipt->rec_month = now()->format('Y');
-                $receipt->description = '';
-                $receipt->date = now()->format('Y-m-d');
-                $receipt->obs = '';
-                $receipt->user_id = auth()->user()->id;
-                $receipt->save();
-
-                // Add Invoice to Receipt
-                $obj = new InvoiceReceipt;
-
-                $obj->receipt_id = $receipt->id;
-                $obj->invoice_id = $record->id;
-                $obj->paid_amount = $amount_due;
-                $obj->invoice_pending_amount = $amount_due;
-                $obj->user_id = auth()->user()->id;
-                $obj->payment_id = $request->payment_method['value'] ?? null;
-                $obj->pending_amount = 0;
-
-                $obj->save();
-
-            });
-
-        });
+        $recordPayment->execute((int) $request->user()->id,
+            (int) $request->attributes->get('proposal_laboratory_id'),
+            (int) $request->validated('id'), (int) $request->validated('payment_method.value'));
 
         return redirect()->back()->with([
             'toast' => [
@@ -240,108 +205,21 @@ class InvoiceController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(int $id): Response
     {
-        abort_if(! auth()->user()->can('edit_invoices'), 403, '');
+        abort_unless(auth()->user()->can('edit_invoices'), 403);
 
-        // Find the record
-        $record = Invoice::with('items.itemable.code', 'customer', 'warehouse', 'user', 'invoice_category')->findOrFail($id);
-
-        // Return Inertia View with record data
         return Inertia::render('Invoices/Edit', [
-
-            'record' => [
-                'id' => $record->id,
-                'date' => $record->date,
-                'internal_ref' => $record->internal_ref,
-                'inv_no' => $record->inv_no,
-                'obs' => $record->obs,
-                'status' => $record->status,
-                'use_matrix_price' => $record->use_matrix_price,
-                'is_service' => $record->is_service,
-                'is_original' => $record->is_original,
-                'exported_saft' => $record->exported_saft,
-                'type_id' => [
-                    'value' => $record->type_id,
-                    'label' => $record->invoice_category->code,
-                ],
-                'customer_id' => [
-                    'value' => $record->customer_id,
-                    'label' => $record->customer->name,
-                ],
-                'user_id' => [
-                    'value' => $record->user_id,
-                    'label' => $record->user->name,
-                ],
-                'warehouse_id' => [
-                    'value' => $record?->warehouse?->id,
-                    'label' => $record?->warehouse?->address,
-                ],
-                'items' => collect($record->items)->map(function ($item) {
-                    return [
-                        'id' => $item->id ?? null,
-                        'invoice_id' => $item->invoice_id ?? null,
-                        'unit_id' => [
-                            'value' => $item->unit_id,
-                            'label' => $item->unit->code,
-                        ],
-                        'exemption_id' => $item->exemption_id ?? null,
-                        'exemption_code' => $item->exemption_code ?? null,
-                        'discount_id' => $item->discount_id,
-                        'item_id' => [
-                            'value' => $item->item_id,
-                            'label' => $item->item_description,
-                            'price' => $item->unit_price + $item->discount_amount,
-                            'tax_id' => $item->tax_id,
-                            'charge_tax' => $item->charge_tax,
-                            'tax_percentage' => $item->tax_percentage,
-                            'exemption_id' => $item->exemption_id,
-                            'exemption_code' => $item->exemption_code,
-                        ],
-                        'item_description' => $item->item_description,
-                        'itemable_id' => [
-                            'value' => $item->itemable_id ?? '',
-                            'label' => $item->itemable?->code?->code ?? '',
-                        ],
-                        'itemable_type' => $item->itemable_type,
-                        'qty' => $item->qty ?? 1,
-                        'unit_price' => $item->unit_price,
-                        'tax_id' => $item->tax_id,
-                        'total' => $item->total,
-                        'discount_percentage' => $item->discount_percentage,
-                        'discount_amount' => $item->discount_id == 1 ? $item->discount_percentage : $item->discount_amount,
-                        'tax_percentage' => $item->tax_percentage,
-                        'tax_amount' => $item->tax_amount,
-                        'obs' => $item->obs,
-                        'charge_tax' => $item->charge_tax,
-                    ];
-                }),
-            ],
-            'discount_categories' => collect(DiscountCategory::all())->map(function ($item) {
-                return [
-                    'value' => $item->id,
-                    'label' => $item->symbol,
-                ];
-            }),
+            'record' => FinancialObservationResource::make(Invoice::query()->findOrFail($id)),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(InvoiceRequest $request, $id)
+    public function update(FinancialDocumentObservationRequest $request, int $id, UpdateFinancialDocumentObservation $correctObservation): RedirectResponse
     {
-        abort_if(! auth()->user()->can('edit_invoices'), 403, '');
-
-        DB::transaction(function () use ($request, $id): void {
-
-            tap(Invoice::findOrFail($id), function ($record) use ($request) {
-
-                $record->update($request->validated());
-
-            });
-
-        });
+        $correctObservation->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'), Invoice::class, $id, $request->validated('obs'));
 
         return redirect()->back()->with([
             'toast' => [
@@ -354,17 +232,10 @@ class InvoiceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy()
+    public function destroy(SetBillingDocumentsArchivedRequest $request, SetBillingDocumentsArchived $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('delete_invoices'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (Invoice::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $action->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'),
+            Invoice::class, $request->validated('recordIds'), true);
 
         return redirect()->back()->with([
             'toast' => [
@@ -377,17 +248,10 @@ class InvoiceController extends Controller
     /**
      * restore the specified resource from storage.
      */
-    public function restore()
+    public function restore(SetBillingDocumentsArchivedRequest $request, SetBillingDocumentsArchived $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('restore_invoices'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (Invoice::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $action->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'),
+            Invoice::class, $request->validated('recordIds'), false);
 
         return redirect()->back()->with([
             'toast' => [
@@ -404,9 +268,10 @@ class InvoiceController extends Controller
         if (request()->has('q')) {
             $search = request()->q;
 
-            $data = DB::table('invoices')
-                ->select('invoices.*')
+            $data = Invoice::query()
+                ->select(['id', 'inv_no', 'amount_due', 'customer_id', 'warehouse_id'])
                 ->where('inv_no', 'LIKE', "%$search%")
+                ->orderBy('inv_no')->limit(50)
                 ->get();
         }
 
@@ -426,7 +291,7 @@ class InvoiceController extends Controller
         $renderedPdf = app(ReportStudioPdfRenderer::class)->renderDocument('invoice', $payload, $filename);
 
         if (request()->q) {
-            activity()->log('baixou o Factura Nº '.$model->inv_no);
+            activity()->performedOn($model)->log('baixou o Factura Nº '.$model->inv_no);
 
             return response($renderedPdf['content'], 200, [
                 'Content-Type' => 'application/pdf',
@@ -437,6 +302,7 @@ class InvoiceController extends Controller
 
         if (! request()->q) {
             activity()
+                ->performedOn($model)
                 ->causedBy(auth()->user()->id)
                 ->log('visualizou o Factura Nº '.$model->inv_no);
 

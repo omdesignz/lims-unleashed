@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToFinancialLaboratory;
+use App\Traits\HasTradeCertificateNumber;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ImportCertificate extends Model
 {
-    use HasFactory, SoftDeletes;
+    use BelongsToFinancialLaboratory;
+    use HasFactory, HasTradeCertificateNumber, SoftDeletes;
 
     public const MENU_NAME = 'import_certificates';
 
@@ -25,7 +28,7 @@ class ImportCertificate extends Model
         'importer_warehouse_id',
         'user_id',
         'exporter_id',
-        'exporter_warehouse_id',        
+        'exporter_warehouse_id',
         'cert_no',
         'trans_type_id',
         'port_exit',
@@ -38,20 +41,19 @@ class ImportCertificate extends Model
         'date',
         'obs',
         'file',
-        'invoiced',
-        'invoice_id',
     ];
 
     protected $table = 'import_certificates';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
-     /**
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
      */
     protected $casts = [
-        
+
     ];
 
     public function importer()
@@ -102,17 +104,5 @@ class ImportCertificate extends Model
     public function items()
     {
         return $this->hasMany(ImportCertificateItem::class, 'certificate_id');
-    }
-
-    public static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($importCertificate) {
-           
-            $importCertificate->cert_no = now()->format('YmHis');
-            
-        });
-
     }
 }

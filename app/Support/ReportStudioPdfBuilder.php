@@ -2538,7 +2538,7 @@ HTML;
             ],
             collect($quote->items ?? [])
                 ->map(fn ($item): array => [
-                    $item->description ?? $item->itemable?->description ?? $item->itemable?->name ?? 'Serviço',
+                    $item->item_description ?? $item->description ?? $item->itemable?->description ?? $item->itemable?->name ?? 'Serviço',
                     (string) ($item->qty ?? 1),
                     number_format((float) ($item->total ?? $item->price ?? 0), 2, ',', '.'),
                 ])
@@ -2587,7 +2587,7 @@ HTML;
             ],
             collect($invoice->items ?? [])
                 ->map(fn ($item): array => [
-                    $item->description ?? $item->itemable?->description ?? $item->itemable?->name ?? 'Serviço',
+                    $item->item_description ?? $item->description ?? $item->itemable?->description ?? $item->itemable?->name ?? 'Serviço',
                     (string) ($item->qty ?? 1),
                     number_format((float) ($item->total ?? $item->price ?? 0), 2, ',', '.'),
                 ])
@@ -4082,7 +4082,7 @@ HTML;
 
         foreach (['canvas_blocks', 'sections', 'variable_catalog'] as $replaceableListKey) {
             if (array_key_exists($replaceableListKey, $override)) {
-                $layout[$replaceableListKey] = $override[$replaceableListKey];
+                $layout[$replaceableListKey] = $override[$replaceableListKey] ?? [];
             }
         }
 

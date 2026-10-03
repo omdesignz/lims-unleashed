@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ItemCategoryRequest;
+use App\Actions\SaveInventoryCategory;
+use App\Http\Requests\InventoryCategoryRequest;
 use App\Http\Resources\ItemCategoryResource;
 use App\Models\ItemCategory;
 use Illuminate\Support\Facades\DB;
@@ -15,11 +16,16 @@ class ItemCategoryController extends Controller
      */
     public function index()
     {
-        abort_if(! auth()->user()->can('view_item_categories'), 403, '');
+        $canView = auth()->user()->can('view_item_categories');
+        abort_unless($canView
+            || (request()->boolean('create') && auth()->user()->can('add_item_categories'))
+            || (request()->filled('edit') && auth()->user()->can('edit_item_categories')), 403);
 
         return Inertia::render('ItemCategories/Index', [
             'record' => ItemCategoryResource::collection(
                 ItemCategory::query()
+                    ->withTypeLock()
+                    ->when(! $canView, fn ($query) => $query->whereRaw('false'))
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('name', 'like', "%{$search}%");
                     })
@@ -33,7 +39,14 @@ class ItemCategoryController extends Controller
                     ->withQueryString()
             ),
             'slideOverEdit' => true,
+            'openCreate' => request()->boolean('create') && auth()->user()->can('add_item_categories'),
+            'initialRecord' => request()->filled('edit') && auth()->user()->can('edit_item_categories')
+                ? ItemCategoryResource::make(ItemCategory::query()->withTypeLock()->findOrFail(request()->integer('edit'))) : null,
             'fields' => [
+                [
+                    'name' => 'Tipo de inventário',
+                    'value' => 'inventory_type_label',
+                ],
                 [
                     'name' => trans('gestlab.general.labels.item_categories.name'),
                     'value' => 'name',
@@ -64,18 +77,18 @@ class ItemCategoryController extends Controller
 
         // Load form
 
-        return Inertia::render('ItemCategories/Create', []);
+        return redirect()->route('itemcategories.index', ['create' => 1]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ItemCategoryRequest $request)
+    public function store(InventoryCategoryRequest $request, SaveInventoryCategory $saveCategory)
     {
         abort_if(! auth()->user()->can('add_item_categories'), 403, '');
 
         // Persiste data to DB
-        ItemCategory::create($request->validated());
+        $saveCategory->execute($request->user()->id, $request->validated());
 
         return redirect()->back()->with([
             'toast' => [
@@ -105,22 +118,18 @@ class ItemCategoryController extends Controller
         $record = ItemCategory::findOrFail($id);
 
         // Return Inertia View with record data
-        return Inertia::render('ItemCategories/Edit', [
-            'record' => ItemCategoryResource::make($record),
-        ]);
+        return redirect()->route('itemcategories.index', ['edit' => $record->id]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(ItemCategoryRequest $request, $id)
+    public function update(InventoryCategoryRequest $request, int $id, SaveInventoryCategory $saveCategory)
     {
         abort_if(! auth()->user()->can('edit_item_categories'), 403, '');
 
         // Find the record
-        $record = ItemCategory::findOrFail($id);
-
-        $record->update($request->validated());
+        $saveCategory->execute($request->user()->id, $request->validated(), $id);
 
         return redirect()->back()->with([
             'toast' => [

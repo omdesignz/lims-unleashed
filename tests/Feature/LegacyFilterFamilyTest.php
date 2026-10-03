@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
@@ -14,14 +16,11 @@ class LegacyFilterFamilyTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for legacy filter auditing.');
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
 
         return $admin;
     }
@@ -75,10 +74,17 @@ class LegacyFilterFamilyTest extends TestCase
             $checks[] = route($routeName, ['filter' => 'trashed']);
         }
 
+        $canonicalItemList = route('vap-inventory.items.index', ['inventory_type' => 'material']);
+        $retiredItemLists = [route('iitems.index'), route('iitems.index', ['filter' => 'trashed'])];
         $failures = [];
 
         foreach ($checks as $url) {
             $response = $this->actingAs($user)->get($url);
+
+            if (in_array($url, $retiredItemLists, true)) {
+                $response->assertRedirect($canonicalItemList);
+                $response = $this->get($canonicalItemList);
+            }
 
             if (! $response->isSuccessful()) {
                 $failures[] = sprintf(

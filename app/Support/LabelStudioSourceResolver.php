@@ -5,29 +5,29 @@ namespace App\Support;
 use App\Models\CollectionProduct;
 use App\Models\InventoryItem;
 use App\Models\VAPSampleEntry;
-use InvalidArgumentException;
+use Illuminate\Database\Eloquent\Builder;
 
 class LabelStudioSourceResolver
 {
-    public function resolve(?string $sourceType, mixed $sourceId): ?array
+    public function resolve(?string $sourceType, mixed $sourceId, int $labId): ?array
     {
-        if (! $sourceType || ! $sourceId) {
+        if (! $sourceType || ! $sourceId || $labId <= 0) {
             return null;
         }
 
         return match ($sourceType) {
-            'sample', 'sample_entry' => $this->resolveSample((int) $sourceId),
-            'equipment' => $this->resolveInventoryItem((int) $sourceId, false),
-            'reagent' => $this->resolveInventoryItem((int) $sourceId, true),
-            'collection_product' => $this->resolveCollectionProduct((int) $sourceId),
-            default => throw new InvalidArgumentException("Unsupported label source [{$sourceType}]."),
+            'sample', 'sample_entry' => $this->resolveSample((int) $sourceId, $labId),
+            'equipment' => $this->resolveInventoryItem((int) $sourceId, false, $labId),
+            'reagent' => $this->resolveInventoryItem((int) $sourceId, true, $labId),
+            'collection_product' => $this->resolveCollectionProduct((int) $sourceId, $labId),
+            default => null,
         };
     }
 
     public function renderContent(string $content, array $payload): string
     {
         $replacements = collect($payload)
-            ->mapWithKeys(fn ($value, $key) => ['{' . $key . '}' => (string) ($value ?? '')])
+            ->mapWithKeys(fn ($value, $key) => ['{'.$key.'}' => (string) ($value ?? '')])
             ->all();
 
         return strtr($content, $replacements);
@@ -50,9 +50,10 @@ class LabelStudioSourceResolver
         ];
     }
 
-    private function resolveSample(int $sampleEntryId): ?array
+    private function resolveSample(int $sampleEntryId, int $labId): ?array
     {
         $sample = VAPSampleEntry::query()
+            ->where('lab_id', $labId)
             ->with(['customer:id,name', 'department:id,name', 'warehouse:id,name'])
             ->find($sampleEntryId);
 
@@ -73,14 +74,16 @@ class LabelStudioSourceResolver
             'expiry_date' => $sample->discard_scheduled_at?->format('Y-m-d'),
             'received_at' => $sample->received_at?->format('Y-m-d H:i'),
             'date' => now()->format('Y-m-d'),
-            'qr_content' => $sample->code ?: ('sample-entry:' . $sample->id),
-            'barcode_content' => $sample->code ?: ('sample-entry:' . $sample->id),
+            'qr_content' => $sample->code ?: ('sample-entry:'.$sample->id),
+            'barcode_content' => $sample->code ?: ('sample-entry:'.$sample->id),
         ];
     }
 
-    private function resolveInventoryItem(int $itemId, bool $reagentMode): ?array
+    private function resolveInventoryItem(int $itemId, bool $reagentMode, int $labId): ?array
     {
-        $item = InventoryItem::query()
+        $item = InventoryItem::forLaboratory($labId)
+            ->whereHas('inventory', fn (Builder $query): Builder => $query
+                ->whereHas('warehouse', fn (Builder $warehouse): Builder => $warehouse->where('lab_id', $labId)))
             ->with(['category:id,name', 'supplier:id,name'])
             ->find($itemId);
 
@@ -102,14 +105,15 @@ class LabelStudioSourceResolver
             'expiry_date' => optional($item->reagent_expiry_date)->format('Y-m-d'),
             'received_at' => optional($item->created_at)->format('Y-m-d'),
             'date' => now()->format('Y-m-d'),
-            'qr_content' => $item->barcode ?: ($item->code ?: ('inventory-item:' . $item->id)),
-            'barcode_content' => $item->barcode ?: ($item->code ?: ('inventory-item:' . $item->id)),
+            'qr_content' => $item->barcode ?: ($item->code ?: ('inventory-item:'.$item->id)),
+            'barcode_content' => $item->barcode ?: ($item->code ?: ('inventory-item:'.$item->id)),
         ];
     }
 
-    private function resolveCollectionProduct(int $collectionProductId): ?array
+    private function resolveCollectionProduct(int $collectionProductId, int $labId): ?array
     {
         $collectionProduct = CollectionProduct::query()
+            ->whereHas('sampleEntry', fn (Builder $query): Builder => $query->where('lab_id', $labId))
             ->with(['product:id,name', 'customer:id,name', 'warehouse:id,name'])
             ->find($collectionProductId);
 
@@ -130,8 +134,8 @@ class LabelStudioSourceResolver
             'expiry_date' => optional($collectionProduct->expiry_date)->format('Y-m-d'),
             'received_at' => optional($collectionProduct->collection_date)->format('Y-m-d'),
             'date' => now()->format('Y-m-d'),
-            'qr_content' => $collectionProduct->code?->code ?: ('collection-product:' . $collectionProduct->id),
-            'barcode_content' => $collectionProduct->code?->code ?: ('collection-product:' . $collectionProduct->id),
+            'qr_content' => $collectionProduct->code?->code ?: ('collection-product:'.$collectionProduct->id),
+            'barcode_content' => $collectionProduct->code?->code ?: ('collection-product:'.$collectionProduct->id),
         ];
     }
 }

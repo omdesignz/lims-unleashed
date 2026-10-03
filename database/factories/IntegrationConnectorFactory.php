@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\IntegrationConnector;
+use App\Models\VAPLab;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -19,6 +20,7 @@ class IntegrationConnectorFactory extends Factory
     public function definition(): array
     {
         return [
+            'lab_id' => VAPLab::factory(),
             'uuid' => (string) Str::uuid(),
             'name' => fake()->company().' analyzer',
             'key' => fake()->unique()->slug(2),

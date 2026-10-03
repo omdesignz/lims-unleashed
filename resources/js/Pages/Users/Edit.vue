@@ -29,7 +29,7 @@
             <component :is="formStatus.icon" class="h-3.5 w-3.5" />
             {{ formStatus.label }}
           </span>
-          <button type="button" class="ds-button ds-button-secondary" @click="toggleEditMode">
+          <button v-if="accountCapabilities.qualifications || accountCapabilities.profile" type="button" class="ds-button ds-button-secondary" :disabled="isSaving" @click="toggleEditMode">
             <XMarkIcon v-if="editUserInfo" class="h-4 w-4" />
             <PencilSquareIcon v-else class="h-4 w-4" />
             {{ editUserInfo ? 'Cancelar edição' : 'Editar dossier' }}
@@ -55,6 +55,7 @@
           <div>
             <h2 class="ds-heading text-base">Identificação e contacto</h2>
             <p class="ds-copy mt-1 text-sm">Dados usados na atribuição de trabalho, emissão de evidência e contacto interno.</p>
+            <p v-if="!accountCapabilities.profile" class="ds-copy mt-2 text-sm">Conta partilhada: dados pessoais e acessos globais são geridos pelo titular ou pelo administrador do sistema. Aqui pode gerir as qualificações deste laboratório.</p>
           </div>
         </div>
       </header>
@@ -62,21 +63,21 @@
       <div class="grid gap-x-6 gap-y-5 px-5 py-5 sm:grid-cols-2 sm:px-6 xl:grid-cols-3">
         <div class="ds-field-group">
           <label for="user-username" class="ds-field-label">Nome de utilizador</label>
-          <BaseInput v-if="editUserInfo" id="user-username" v-model="form.username" type="text" class="ds-field" autocomplete="username" :aria-invalid="Boolean(form.errors.username)" />
+          <BaseInput v-if="editUserInfo && accountCapabilities.profile" id="user-username" v-model="form.username" type="text" class="ds-field" autocomplete="username" :aria-invalid="Boolean(form.errors.username)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.username) }}</p>
           <p v-if="form.errors.username" class="ds-field-error">{{ form.errors.username }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="user-name" class="ds-field-label">Nome completo</label>
-          <BaseInput v-if="editUserInfo" id="user-name" v-model="form.name" type="text" class="ds-field" autocomplete="name" :aria-invalid="Boolean(form.errors.name)" />
+          <BaseInput v-if="editUserInfo && accountCapabilities.profile" id="user-name" v-model="form.name" type="text" class="ds-field" autocomplete="name" :aria-invalid="Boolean(form.errors.name)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.name) }}</p>
           <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="user-gender" class="ds-field-label">Género</label>
-          <BaseSelect v-if="editUserInfo" id="user-gender" v-model="form.gender" class="ds-field" :aria-invalid="Boolean(form.errors.gender)">
+          <BaseSelect v-if="editUserInfo && accountCapabilities.profile" id="user-gender" v-model="form.gender" class="ds-field" :aria-invalid="Boolean(form.errors.gender)">
             <option v-for="option in genderOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </BaseSelect>
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ genderLabel }}</p>
@@ -85,35 +86,35 @@
 
         <div class="ds-field-group">
           <label for="user-email" class="ds-field-label">Correio electrónico</label>
-          <BaseInput v-if="editUserInfo" id="user-email" v-model="form.email" type="email" class="ds-field" autocomplete="email" :aria-invalid="Boolean(form.errors.email)" />
+          <BaseInput v-if="editUserInfo && accountCapabilities.profile" id="user-email" v-model="form.email" type="email" class="ds-field" autocomplete="email" :aria-invalid="Boolean(form.errors.email)" />
           <p v-else class="min-h-10 break-all rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.email) }}</p>
           <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="user-id-number" class="ds-field-label">Documento de identificação</label>
-          <BaseInput v-if="editUserInfo" id="user-id-number" v-model="form.id_number" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.id_number)" />
+          <BaseInput v-if="editUserInfo && accountCapabilities.profile" id="user-id-number" v-model="form.id_number" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.id_number)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 font-mono text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.id_number) }}</p>
           <p v-if="form.errors.id_number" class="ds-field-error">{{ form.errors.id_number }}</p>
         </div>
 
         <div class="ds-field-group">
           <label class="ds-field-label">Data de nascimento</label>
-          <DatePickerEnhanced v-if="editUserInfo" v-model.string="form.dob" mode="date" locale="pt" :masks="dateMasks" :has-error="Boolean(form.errors.dob)" />
+          <DatePickerEnhanced v-if="editUserInfo && accountCapabilities.profile" v-model.string="form.dob" mode="date" locale="pt" :masks="dateMasks" :has-error="Boolean(form.errors.dob)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ formatDate(form.dob) }}</p>
           <p v-if="form.errors.dob" class="ds-field-error">{{ form.errors.dob }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="user-primary-phone" class="ds-field-label">Telefone principal</label>
-          <BaseInput v-if="editUserInfo" id="user-primary-phone" v-model="form.primary_phone" type="tel" class="ds-field" autocomplete="tel" :aria-invalid="Boolean(form.errors.primary_phone)" />
+          <BaseInput v-if="editUserInfo && accountCapabilities.profile" id="user-primary-phone" v-model="form.primary_phone" type="tel" class="ds-field" autocomplete="tel" :aria-invalid="Boolean(form.errors.primary_phone)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.primary_phone) }}</p>
           <p v-if="form.errors.primary_phone" class="ds-field-error">{{ form.errors.primary_phone }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="user-secondary-phone" class="ds-field-label">Telefone alternativo</label>
-          <BaseInput v-if="editUserInfo" id="user-secondary-phone" v-model="form.secondary_phone" type="tel" class="ds-field" :aria-invalid="Boolean(form.errors.secondary_phone)" />
+          <BaseInput v-if="editUserInfo && accountCapabilities.profile" id="user-secondary-phone" v-model="form.secondary_phone" type="tel" class="ds-field" :aria-invalid="Boolean(form.errors.secondary_phone)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.secondary_phone) }}</p>
           <p v-if="form.errors.secondary_phone" class="ds-field-error">{{ form.errors.secondary_phone }}</p>
         </div>
@@ -138,7 +139,7 @@
             <p class="ds-copy mt-1 text-xs">Unidades onde o colaborador pode operar.</p>
           </div>
           <div>
-            <ComboboxMultipleEnhanced v-if="editUserInfo" v-model="form.departments" :load-options="loadDepartments" multiple placeholder="Seleccionar departamentos" />
+            <ComboboxMultipleEnhanced v-if="editUserInfo && accountCapabilities.departments" v-model="form.departments" :load-options="loadDepartments" multiple placeholder="Seleccionar departamentos" />
             <div v-else class="flex min-h-10 flex-wrap items-center gap-2">
               <span v-for="department in form.departments" :key="department.value" class="ds-badge ds-badge-neutral">{{ department.label }}</span>
               <span v-if="form.departments.length === 0" class="text-sm font-semibold text-[var(--ds-text-soft)]">Sem departamento atribuído</span>
@@ -153,7 +154,7 @@
             <p class="ds-copy mt-1 text-xs">Perfis de acesso e responsabilidade.</p>
           </div>
           <div>
-            <ComboboxMultipleEnhanced v-if="editUserInfo" v-model="form.roles" :load-options="loadRoles" multiple placeholder="Seleccionar funções" />
+            <ComboboxMultipleEnhanced v-if="editUserInfo && canEditRoles" v-model="form.roles" :load-options="loadRoles" multiple placeholder="Seleccionar funções" />
             <div v-else class="flex min-h-10 flex-wrap items-center gap-2">
               <span v-for="role in form.roles" :key="role.value" class="ds-badge ds-badge-success">{{ role.label }}</span>
               <span v-if="form.roles.length === 0" class="text-sm font-semibold text-[var(--ds-text-soft)]">Sem função atribuída</span>
@@ -347,6 +348,7 @@
     </section>
 
     <div v-if="editUserInfo" class="ds-command-surface sticky bottom-4 z-20 flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p v-if="form.hasErrors || passwordForm.hasErrors" role="alert" class="ds-field-error">{{ Object.values(form.errors)[0] || Object.values(passwordForm.errors)[0] }}</p>
       <p class="text-xs font-semibold text-[var(--ds-text-muted)]">
         {{ hasUnsavedChanges ? 'Existem alterações por guardar neste dossier.' : 'Nenhuma alteração pendente.' }}
       </p>
@@ -415,6 +417,7 @@ import DatePickerEnhanced from '@/Components/date-picker-enhanced.vue'
 import SignaturePad from '@/Components/signature-pad.vue'
 import ToggleField from '@/Components/base/ToggleField.vue'
 import { usePermission } from '@/Composables/usePermissions'
+import { staffAccountPayload } from '@/Composables/useStaffAccountPayload'
 import Layout from '@/Shared/Layouts/Layout.vue'
 
 defineOptions({ layout: Layout })
@@ -425,6 +428,7 @@ const props = defineProps({
   roles: { type: Array, default: () => [] },
   auth: { type: Object, default: () => ({}) },
   competenceSummary: { type: Object, default: () => ({}) },
+  accountCapabilities: { type: Object, default: () => ({}) },
 })
 
 const { hasPermission } = usePermission()
@@ -492,8 +496,9 @@ const initials = computed(() => props.record.name
   .toUpperCase())
 
 const genderLabel = computed(() => genderOptions.find((option) => option.value === form.gender)?.label || 'Não definido')
-const canEditPassword = computed(() => hasPermission('reset-password_users') || form.id === props.auth?.user?.id)
-const canEditPermissions = computed(() => hasPermission('edit_permissions'))
+const canEditPassword = computed(() => props.accountCapabilities.password === true)
+const canEditRoles = computed(() => props.accountCapabilities.roles === true)
+const canEditPermissions = computed(() => props.accountCapabilities.permissions === true)
 const isCurrentUser = computed(() => form.id === props.auth?.user?.id)
 const hasUnsavedChanges = computed(() => form.isDirty || passwordForm.isDirty)
 
@@ -628,6 +633,7 @@ function removeQualification(qualification) {
 }
 
 function toggleEditMode() {
+  if (isSaving.value) return
   if (!editUserInfo.value) {
     editUserInfo.value = true
     return
@@ -642,6 +648,7 @@ function toggleEditMode() {
 }
 
 function requestSave() {
+  if (isSaving.value) return
   if (hasUnsavedChanges.value) confirmationAction.value = 'save'
 }
 
@@ -662,10 +669,11 @@ function performConfirmedAction() {
 }
 
 function saveDossier() {
+  if (isSaving.value || form.processing || passwordForm.processing) return
   isSaving.value = true
 
   if (form.isDirty) {
-    form.put(route('users.update', { user: form.id }), {
+    form.transform((data) => staffAccountPayload(data, props.accountCapabilities)).put(route('users.update', { user: form.id }), {
       preserveScroll: true,
       onSuccess: () => {
         if (passwordForm.isDirty) {
@@ -678,6 +686,9 @@ function saveDossier() {
       onError: () => {
         isSaving.value = false
       },
+      onNetworkError: () => form.setError('request', 'Ligação interrompida. As alterações foram preservadas.'),
+      onHttpException: () => form.setError('request', 'Não foi possível guardar. As alterações foram preservadas.'),
+      onFinish: () => { if (!passwordForm.processing) isSaving.value = false },
     })
     return
   }
@@ -686,12 +697,16 @@ function saveDossier() {
 }
 
 function savePassword() {
+  if (!canEditPassword.value || !passwordForm.isDirty) { finishSaving(); return }
   passwordForm.put(route('users.setpass', { user: form.id }), {
     preserveScroll: true,
     onSuccess: finishSaving,
     onError: () => {
       isSaving.value = false
     },
+    onNetworkError: () => passwordForm.setError('request', 'Ligação interrompida. A alteração não foi confirmada.'),
+    onHttpException: () => passwordForm.setError('request', 'Não foi possível alterar a palavra-passe.'),
+    onFinish: () => { isSaving.value = false },
   })
 }
 
@@ -708,6 +723,6 @@ function saveSignature(signature) {
 }
 
 function deleteSignature() {
-  useForm({}).get(route('users.unsetsignature'), { preserveScroll: true })
+  useForm({}).delete(route('users.unsetsignature'), { preserveScroll: true })
 }
 </script>

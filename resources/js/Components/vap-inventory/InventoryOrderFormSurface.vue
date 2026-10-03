@@ -194,9 +194,10 @@
                   <div>
                     <label class="ds-field-label">Quantidade <span class="text-rose-600">*</span></label>
                     <BaseInput
-                      v-model.number="item.qty"
+                      v-model="item.qty"
                       type="number"
-                      :min="Math.max(1, Number(item.received_qty || 0))"
+                      :min="Math.max(0.0001, Number(item.received_qty || 0))"
+                      step="0.0001"
                       class="ds-field"
                       :disabled="!canEditItems"
                       placeholder="1"
@@ -488,7 +489,6 @@ const canEditSupplier = computed(() => props.mode === 'create' || ['PENDING', 'A
 const canEditStatus = computed(() => props.mode === 'create' || ['PENDING', 'APPROVED'].includes(normalizeStatus(props.order?.status)))
 const canEditItems = computed(() => props.mode === 'create' || ['PENDING', 'APPROVED'].includes(normalizeStatus(props.order?.status)))
 
-const totalQuantity = computed(() => form.order_items.reduce((total, item) => total + Number(item.qty || 0), 0))
 const totalAmount = computed(() => form.order_items.reduce((total, item) => total + lineTotal(item), 0))
 
 const earliestExpectedDate = computed(() => {
@@ -517,9 +517,9 @@ const summaryCards = computed(() => [
     valueClass: 'text-[color:var(--ds-text)]',
   },
   {
-    label: 'Quantidade',
-    value: formatQuantity(totalQuantity.value),
-    caption: 'Unidades totais',
+    label: 'Quantidades',
+    value: `${form.order_items.filter((item) => isValidQuantity(item.qty)).length}/${form.order_items.length}`,
+    caption: 'Linhas com quantidade válida',
     dotClass: 'lims-status-dot-hold',
     valueClass: 'text-[color:var(--ds-text)]',
   },
@@ -572,7 +572,7 @@ const sidebarSummary = computed(() => [
   {
     label: 'Valor estimado',
     value: formatCurrency(totalAmount.value),
-    caption: `${formatQuantity(totalQuantity.value)} unidade(s) em ${formatQuantity(form.order_items.length)} linha(s)`,
+    caption: `${formatQuantity(form.order_items.length)} linha(s) de compra`,
   },
 ])
 
@@ -582,7 +582,7 @@ const isFormValid = computed(() => (
   && form.order_items.length > 0
   && form.order_items.every((item) => (
     item.item_id
-    && Number(item.qty || 0) > 0
+    && isValidQuantity(item.qty)
     && item.warehouse_id
     && Number(item.qty || 0) >= Number(item.received_qty || 0)
     && Number(item.unit_price || 0) >= 0
@@ -670,7 +670,7 @@ function formatQuantity(value) {
     return '0'
   }
 
-  return new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 2 }).format(numericValue)
+  return new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 4 }).format(numericValue)
 }
 
 function formatDate(dateString) {
@@ -693,6 +693,10 @@ function formatDate(dateString) {
 
 function lineTotal(item) {
   return Number(item.unit_price || 0) * Number(item.qty || 0)
+}
+
+function isValidQuantity(value) {
+  return /^(?:0|[1-9]\d*)(?:\.\d{1,4})?$/.test(String(value)) && Number(value) >= 0.0001
 }
 
 function getSelectedItemDetails(itemId) {
@@ -760,8 +764,8 @@ function validateItemQuantity(index) {
     errors.item_id = 'Seleccione o item.'
   }
 
-  if (!orderItem.qty || Number(orderItem.qty) <= 0) {
-    errors.qty = 'Quantidade deve ser maior que 0.'
+  if (!isValidQuantity(orderItem.qty)) {
+    errors.qty = 'Introduza uma quantidade positiva com até quatro casas decimais.'
   } else if (Number(orderItem.qty) < Number(orderItem.received_qty || 0)) {
     errors.qty = `Quantidade não pode ser menor que a já recebida (${orderItem.received_qty}).`
   }

@@ -3,11 +3,15 @@
 namespace App\Support;
 
 use App\Models\VAPProposal;
+use App\Services\ProposalNotificationOwnership;
 use Illuminate\Support\Collection;
 
 class ProposalWorkflowNotifier
 {
-    public function __construct(private readonly NotificationTemplateService $templates) {}
+    public function __construct(
+        private readonly NotificationTemplateService $templates,
+        private readonly ProposalNotificationOwnership $ownership
+    ) {}
 
     public function notifySent(VAPProposal $proposal): void
     {
@@ -15,6 +19,7 @@ class ProposalWorkflowNotifier
 
         if ($proposal->warehouse) {
             $this->templates->notify([$proposal->warehouse], 'commercial.proposal.sent_customer', [
+                ...$this->ownership->context($proposal),
                 'document_number' => $proposal->proposal_number,
                 'document_url' => route('vap-proposals.public.show', $proposal->unique_hash),
             ]);
@@ -75,6 +80,7 @@ class ProposalWorkflowNotifier
     private function notifyInternalUsers(VAPProposal $proposal, string $status, string $detail): void
     {
         $this->templates->notify($this->internalRecipients($proposal), 'commercial.proposal.updated', [
+            ...$this->ownership->context($proposal),
             'document_number' => $proposal->proposal_number,
             'status' => $status,
             'detail' => $detail,
@@ -96,6 +102,7 @@ class ProposalWorkflowNotifier
     private function notifyPortalCustomer(VAPProposal $proposal, string $status, string $detail): void
     {
         $this->templates->notify([$proposal->warehouse], 'commercial.proposal.updated', [
+            ...$this->ownership->context($proposal),
             'document_number' => $proposal->proposal_number,
             'status' => $status,
             'detail' => $detail,

@@ -49,6 +49,8 @@ class SendOperationalEventNotification
         $code = $event->code ?? null;
 
         return [
+            'lab_code_id' => $code?->id,
+            'collection_product_id' => $event->collectionProductId ?? null,
             'sample_code' => $code?->code ?? $event->customer?->code ?? $event->customer?->name ?? 'Amostra',
             'sample_url' => url('/analysis'),
             'results_url' => url('/analysis'),
@@ -60,6 +62,7 @@ class SendOperationalEventNotification
     private function validationContext(AnalysisResultsValidated $event): array
     {
         return [
+            'result_id' => $event->result->id,
             'document_number' => $event->result->code_label ?: ('Resultado #'.$event->result->id),
             'document_url' => url('/analysis'),
         ];

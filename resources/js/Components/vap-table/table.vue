@@ -341,6 +341,7 @@
           </h2>
           <BulkActions 
             :actions="props.actions"
+            :processing="props.actionProcessing"
             @bulk-action="handleBulkAction"
             class="text-sm self-start sm:self-auto"
           />
@@ -357,7 +358,7 @@
             :class="isRowSelected(row.id) ? 'bg-[rgb(var(--primary-50-rgb)/0.6)] dark:bg-[rgb(var(--primary-500-rgb)/0.12)]' : 'bg-[var(--ds-panel)]'"
           >
             <div class="flex items-start justify-between gap-3">
-              <label class="flex items-center gap-3">
+              <label class="flex min-w-0 items-center gap-3">
                 <CheckboxInput
                   type="checkbox"
                   :value="row.id"
@@ -365,9 +366,9 @@
                   class="ds-checkbox"
                   @change="toggleSelectRow"
                 />
-                <div>
-                  <p class="text-sm font-semibold text-[var(--ds-text)]">
-                    {{ row[visibleColumns[0]?.field] ?? `#${row.id}` }}
+                <div class="min-w-0">
+                  <p class="break-words text-sm font-semibold text-[var(--ds-text)]">
+                    {{ recordTitle(row, visibleColumns, props.rowTitleField) }}
                   </p>
                   <p class="text-xs font-medium text-[var(--ds-text-soft)]">ID {{ row.id }}</p>
                 </div>
@@ -489,6 +490,7 @@ import TableBody from "@/Components/vap-table/table-body.vue";
 import Pagination from "@/Components/pagination.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import { loadSelectOptions } from "@/Utils/selectOptions";
+import { recordTitle } from "@/Utils/recordTitle";
 import { DatePicker } from 'v-calendar'
 import combobox from '@/Components/vap-table/combobox.vue';
 import comboboxMultiple from '@/Components/vap-table/combobox-multiple.vue';
@@ -507,10 +509,15 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  rowTitleField: {
+    type: String,
+    default: "",
+  },
   actions: {
     type: Array,
     default: () => [],
   },
+  actionProcessing: Boolean,
   query: Object,
   filters: Array,
   trashedFilter: Boolean,

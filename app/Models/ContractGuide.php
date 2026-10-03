@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use HighSolutions\EloquentSequence\Sequence;
+use App\Traits\HasScopedSequence;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContractGuide extends Model
 {
-    use HasFactory, SoftDeletes, Sequence;
+    use HasFactory, HasScopedSequence, SoftDeletes;
 
     public const MENU_NAME = 'contract_guides';
 
@@ -42,6 +42,7 @@ class ContractGuide extends Model
     ];
 
     protected $table = 'contract_guides';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at', 'date'];
 
     /**
@@ -50,11 +51,10 @@ class ContractGuide extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'extra_data' => AsCollection::class
+        'extra_data' => AsCollection::class,
     ];
 
-
-    public function sequence()
+    public function sequence(): array
     {
         return [
             'group' => 'guide_month',
@@ -118,7 +118,7 @@ class ContractGuide extends Model
 
         static::created(function ($guide) {
 
-            $guide->guide_no = 'GC ' . $guide->guide_month . '/' . str_pad($guide->seq, 4, '0', STR_PAD_LEFT);
+            $guide->guide_no = 'GC '.$guide->guide_month.'/'.str_pad($guide->seq, 4, '0', STR_PAD_LEFT);
             $guide->save();
         });
     }

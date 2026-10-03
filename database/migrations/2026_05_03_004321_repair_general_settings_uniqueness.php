@@ -9,14 +9,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement('
-            DELETE duplicate_settings
-            FROM settings AS duplicate_settings
-            INNER JOIN settings AS newest_settings
-                ON duplicate_settings.`group` = newest_settings.`group`
-                AND duplicate_settings.`name` = newest_settings.`name`
-                AND duplicate_settings.id < newest_settings.id
-        ');
+        $duplicateIds = DB::table('settings as duplicate_settings')
+            ->join('settings as newest_settings', function ($join): void {
+                $join->on('duplicate_settings.group', '=', 'newest_settings.group')
+                    ->on('duplicate_settings.name', '=', 'newest_settings.name')
+                    ->on('duplicate_settings.id', '<', 'newest_settings.id');
+            })
+            ->distinct()
+            ->pluck('duplicate_settings.id');
+
+        DB::table('settings')->whereIn('id', $duplicateIds)->delete();
 
         DB::table('settings')
             ->where('group', 'general')

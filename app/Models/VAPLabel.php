@@ -2,15 +2,30 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Casts\AsArrayObject;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 class VAPLabel extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $label): void {
+            if ($label->lab_id === null) {
+                throw new LogicException('A laboratory is required for a label.');
+            }
+        });
+
+        static::updating(function (self $label): void {
+            if ($label->isDirty('lab_id')) {
+                throw new LogicException('Label laboratory ownership cannot be reassigned.');
+            }
+        });
+    }
 
     protected $table = 'labels';
 
@@ -102,7 +117,7 @@ class VAPLabel extends Model
             get: fn () => [
                 'width' => $this->width,
                 'height' => $this->height,
-                'unit' => 'mm'
+                'unit' => 'mm',
             ]
         );
     }

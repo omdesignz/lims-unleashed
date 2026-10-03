@@ -10,6 +10,7 @@ use App\Models\InventoryOrder;
 use App\Models\InventoryOrderDetail;
 use App\Models\ItemCategory;
 use App\Models\ReagentConsumption;
+use App\Services\SampleLaboratoryAccess;
 use App\Settings\GeneralSettings;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -22,10 +23,13 @@ use PDF;
 
 class VAPInventoryAnalyticsController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     public function index(Request $request)
     {
         $categories = ItemCategory::active()->get();
-        $warehouses = InventoryItemWarehouse::with('location')->active()->get();
+        $warehouses = InventoryItemWarehouse::with('location')
+            ->where('lab_id', $this->laboratoryAccess->activeLabId())->active()->get();
 
         // Call the internal logic method instead of the Request-bound one
         $initialData = $this->fetchAnalyticsData([
@@ -113,7 +117,7 @@ class VAPInventoryAnalyticsController extends Controller
 
     private function getConsumptionTrendData($dateRange, $categoryId = null, $warehouseId = null)
     {
-        $query = ReagentConsumption::with(['item', 'warehouse'])
+        $query = ReagentConsumption::forLaboratory($this->laboratoryAccess->activeLabId())->unreversed()->with(['item', 'warehouse'])
             ->whereBetween('date', [$dateRange['start'], $dateRange['end']])
             ->when($categoryId, function ($query) use ($categoryId) {
                 $query->whereHas('item', function ($q) use ($categoryId) {
@@ -143,12 +147,14 @@ class VAPInventoryAnalyticsController extends Controller
     private function getStockDistributionData($categoryId = null, $warehouseId = null)
     {
         return Inventory::query()
+            ->where('inventory.lab_id', $this->laboratoryAccess->activeLabId())
             // Join with categories to get the names for the chart labels
-            ->leftJoin('item_categories', 'inventory.category_id', '=', 'item_categories.id')
+            ->leftJoin('i_items', 'inventory.item_id', '=', 'i_items.id')
+            ->leftJoin('item_categories', 'i_items.category_id', '=', 'item_categories.id')
 
             // Filter by parameters
             ->when($categoryId, function ($query) use ($categoryId) {
-                $query->where('inventory.category_id', $categoryId);
+                $query->where('i_items.category_id', $categoryId);
             })
             ->when($warehouseId, function ($query) use ($warehouseId) {
                 $query->where('inventory.warehouse_id', $warehouseId);
@@ -177,7 +183,7 @@ class VAPInventoryAnalyticsController extends Controller
         $currentYear = $dateRange['end']->year;
         $previousYear = $currentYear - 1;
 
-        $query = ReagentConsumption::query()
+        $query = ReagentConsumption::forLaboratory($this->laboratoryAccess->activeLabId())->unreversed()
             ->when($categoryId, function ($query) use ($categoryId) {
                 $query->whereHas('item', function ($q) use ($categoryId) {
                     $q->where('category_id', $categoryId);
@@ -188,10 +194,10 @@ class VAPInventoryAnalyticsController extends Controller
         $currentYearData = $query->clone()
             ->whereYear('date', $currentYear)
             ->select(
-                DB::raw('MONTH(date) as month'),
+                DB::raw('EXTRACT(MONTH FROM date) as month'),
                 DB::raw('SUM(quantity_used) as total')
             )
-            ->groupBy(DB::raw('MONTH(date)'))
+            ->groupBy(DB::raw('EXTRACT(MONTH FROM date)'))
             ->orderBy('month')
             ->get()
             ->keyBy('month');
@@ -200,10 +206,10 @@ class VAPInventoryAnalyticsController extends Controller
         $previousYearData = $query->clone()
             ->whereYear('date', $previousYear)
             ->select(
-                DB::raw('MONTH(date) as month'),
+                DB::raw('EXTRACT(MONTH FROM date) as month'),
                 DB::raw('SUM(quantity_used) as total')
             )
-            ->groupBy(DB::raw('MONTH(date)'))
+            ->groupBy(DB::raw('EXTRACT(MONTH FROM date)'))
             ->orderBy('month')
             ->get()
             ->keyBy('month');
@@ -226,7 +232,7 @@ class VAPInventoryAnalyticsController extends Controller
 
     private function getTopReagentsData($dateRange, $warehouseId = null)
     {
-        $query = ReagentConsumption::with(['item'])
+        $query = ReagentConsumption::forLaboratory($this->laboratoryAccess->activeLabId())->unreversed()->with(['item'])
             ->whereBetween('date', [$dateRange['start'], $dateRange['end']])
             ->when($warehouseId, function ($query) use ($warehouseId) {
                 $query->where('warehouse_id', $warehouseId);
@@ -252,7 +258,7 @@ class VAPInventoryAnalyticsController extends Controller
 
     private function getConsumptionHistory($dateRange, $categoryId = null, $warehouseId = null)
     {
-        return ReagentConsumption::with(['item.inventory', 'warehouse'])
+        return ReagentConsumption::forLaboratory($this->laboratoryAccess->activeLabId())->unreversed()->with(['item.inventory', 'warehouse'])
             ->whereBetween('date', [$dateRange['start'], $dateRange['end']])
             ->when($categoryId, function ($query) use ($categoryId) {
                 $query->whereHas('item', function ($q) use ($categoryId) {
@@ -270,7 +276,8 @@ class VAPInventoryAnalyticsController extends Controller
                     ->where('warehouse_id', $item->warehouse_id)
                     ->first();
 
-                $sparklineData = ReagentConsumption::where('reagent_id', $item->reagent_id)
+                $sparklineData = ReagentConsumption::forLaboratory($this->laboratoryAccess->activeLabId())->unreversed()
+                    ->where('reagent_id', $item->reagent_id)
                     ->whereBetween('date', [now()->subDays(7), now()])
                     ->orderBy('date')
                     ->get()
@@ -279,7 +286,8 @@ class VAPInventoryAnalyticsController extends Controller
                     ->values()
                     ->toArray();
 
-                $sevenDayTotal = ReagentConsumption::where('reagent_id', $item->reagent_id)
+                $sevenDayTotal = ReagentConsumption::forLaboratory($this->laboratoryAccess->activeLabId())->unreversed()
+                    ->where('reagent_id', $item->reagent_id)
                     ->whereBetween('date', [now()->subDays(7), now()])
                     ->sum('quantity_used');
 
@@ -313,12 +321,13 @@ class VAPInventoryAnalyticsController extends Controller
     {
         // 1. BASE QUERY
         $inventoryBase = Inventory::query()
+            ->where('inventory.lab_id', $this->laboratoryAccess->activeLabId())
             ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
-            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId));
+            ->when($categoryId, fn ($q) => $q->whereHas('item', fn ($item) => $item->where('category_id', $categoryId)));
 
         // 2. REORDER ALERTS (Low Stock)
         $reorderItems = (clone $inventoryBase)
-            ->whereRaw('qty_available <= min_stock_level')
+            ->whereRaw('qty_available <= reorder_point')
             ->where('qty_available', '>', 0)
             ->with('item')
             ->get();
@@ -346,7 +355,8 @@ class VAPInventoryAnalyticsController extends Controller
             ->get();
 
         // 5. CONSUMPTION TRENDS
-        $currentConsumption = ReagentConsumption::whereBetween('date', [$dateRange['start'], $dateRange['end']])
+        $currentConsumption = ReagentConsumption::forLaboratory($this->laboratoryAccess->activeLabId())->unreversed()
+            ->whereBetween('date', [$dateRange['start'], $dateRange['end']])
             ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
             ->sum('quantity_used');
 
@@ -354,7 +364,8 @@ class VAPInventoryAnalyticsController extends Controller
         $prevStart = (clone $dateRange['start'])->subDays($daysDiff);
         $prevEnd = (clone $dateRange['start'])->subDay();
 
-        $previousConsumption = ReagentConsumption::whereBetween('date', [$prevStart, $prevEnd])
+        $previousConsumption = ReagentConsumption::forLaboratory($this->laboratoryAccess->activeLabId())->unreversed()
+            ->whereBetween('date', [$prevStart, $prevEnd])
             ->sum('quantity_used');
 
         $usageChange = $previousConsumption > 0
@@ -364,11 +375,12 @@ class VAPInventoryAnalyticsController extends Controller
         // 6. FINANCIAL VALUE
         $totalValue = (clone $inventoryBase)
             ->join('i_items', 'inventory.item_id', '=', 'i_items.id')
-            ->value(DB::raw('SUM(inventory.qty_available * i_items.unit_cost)')) ?? 0;
+            ->sum(DB::raw('inventory.qty_available * COALESCE(i_items.standard_cost, i_items.last_purchase_price, 0)'));
 
         return [
             'totalConsumption' => (float) $currentConsumption,
-            'monthlyConsumption' => (float) ReagentConsumption::whereMonth('date', now()->month)->sum('quantity_used'),
+            'monthlyConsumption' => (float) ReagentConsumption::forLaboratory($this->laboratoryAccess->activeLabId())->unreversed()
+                ->whereMonth('date', now()->month)->sum('quantity_used'),
             'dailyAverage' => $daysDiff > 0 ? round($currentConsumption / $daysDiff, 2) : $currentConsumption,
             'usageChange' => round($usageChange, 1),
 
@@ -381,7 +393,7 @@ class VAPInventoryAnalyticsController extends Controller
             'reagentsValue' => (float) $totalValue,
 
             'equipmentValue' => (float) $totalValue,
-            'itemsNeedingCalibration' => InventoryItem::query()
+            'itemsNeedingCalibration' => InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())
                 ->whereNotNull('next_calibration_date')
                 ->where('next_calibration_date', '<=', now())
                 ->count(),
@@ -392,7 +404,7 @@ class VAPInventoryAnalyticsController extends Controller
                 'critical' => $criticalItems->map(fn ($i) => $i->item->name)->take(5),
             ],
 
-            'total_items' => Inventory::count(),
+            'total_items' => Inventory::where('lab_id', $this->laboratoryAccess->activeLabId())->count(),
 
             'supplierPerformance' => collect($this->getSupplierPerformanceData())->map(function ($item) {
                 return [
@@ -595,13 +607,13 @@ class VAPInventoryAnalyticsController extends Controller
     private function getCalibrationReportData(): array
     {
         return [
-            'due' => InventoryItem::whereNotNull('next_calibration_date')
+            'due' => InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->whereNotNull('next_calibration_date')
                 ->where('next_calibration_date', '<', now())
                 ->get(),
-            'dueSoon' => InventoryItem::whereNotNull('next_calibration_date')
+            'dueSoon' => InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->whereNotNull('next_calibration_date')
                 ->whereBetween('next_calibration_date', [now(), now()->addDays(30)])
                 ->get(),
-            'scheduled' => InventoryItem::whereNotNull('next_calibration_date')
+            'scheduled' => InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->whereNotNull('next_calibration_date')
                 ->orderBy('next_calibration_date')
                 ->limit(100)
                 ->get(),
@@ -714,18 +726,20 @@ class VAPInventoryAnalyticsController extends Controller
         return [
             'distribution' => $this->getStockDistributionData($categoryId, $warehouseId),
             'lowStock' => Inventory::with(['item', 'warehouse'])
+                ->where('lab_id', $this->laboratoryAccess->activeLabId())
                 ->lowStock()
                 ->when($categoryId, function ($query) use ($categoryId) {
-                    $query->where('category_id', $categoryId);
+                    $query->whereHas('item', fn ($item) => $item->where('category_id', $categoryId));
                 })
                 ->when($warehouseId, function ($query) use ($warehouseId) {
                     $query->where('warehouse_id', $warehouseId);
                 })
                 ->get(),
             'outOfStock' => Inventory::with(['item', 'warehouse'])
+                ->where('lab_id', $this->laboratoryAccess->activeLabId())
                 ->outOfStock()
                 ->when($categoryId, function ($query) use ($categoryId) {
-                    $query->where('category_id', $categoryId);
+                    $query->whereHas('item', fn ($item) => $item->where('category_id', $categoryId));
                 })
                 ->when($warehouseId, function ($query) use ($warehouseId) {
                     $query->where('warehouse_id', $warehouseId);
@@ -737,17 +751,17 @@ class VAPInventoryAnalyticsController extends Controller
     private function getExpiryReportData()
     {
         return [
-            'expired' => InventoryItem::reagents()
+            'expired' => InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->reagents()
                 ->whereNotNull('reagent_expiry_date')
                 ->where('reagent_expiry_date', '<', Carbon::now())
                 ->with(['category', 'inventory.warehouse'])
                 ->get(),
-            'expiringSoon' => InventoryItem::reagents()
+            'expiringSoon' => InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->reagents()
                 ->whereNotNull('reagent_expiry_date')
                 ->whereBetween('reagent_expiry_date', [Carbon::now(), Carbon::now()->addDays(60)])
                 ->with(['category', 'inventory.warehouse'])
                 ->get(),
-            'expiringNextMonth' => InventoryItem::reagents()
+            'expiringNextMonth' => InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->reagents()
                 ->whereNotNull('reagent_expiry_date')
                 ->whereBetween('reagent_expiry_date', [Carbon::now()->addDays(61), Carbon::now()->addDays(90)])
                 ->with(['category', 'inventory.warehouse'])
@@ -758,7 +772,9 @@ class VAPInventoryAnalyticsController extends Controller
     public function createProcurementDraft(Request $request)
     {
         // 1. Get all items currently below or at min_stock_level
+        $labId = $this->laboratoryAccess->activeLabId();
         $lowStockInventory = Inventory::with('item.supplier')
+            ->where('lab_id', $labId)
             ->whereRaw('qty_available <= min_stock_level')
             ->get();
 
@@ -769,10 +785,11 @@ class VAPInventoryAnalyticsController extends Controller
         // 2. Group by Supplier to create separate orders
         $groupedBySupplier = $lowStockInventory->groupBy(fn ($inv) => $inv->item->supplier_id);
 
-        DB::transaction(function () use ($groupedBySupplier) {
+        DB::transaction(function () use ($groupedBySupplier, $labId) {
             foreach ($groupedBySupplier as $supplierId => $items) {
                 // Create the Order Header
                 $order = InventoryOrder::create([
+                    'lab_id' => $labId,
                     'date' => now(),
                     'user_id' => auth()->id(),
                     'supplier_id' => $supplierId,
@@ -806,6 +823,7 @@ class VAPInventoryAnalyticsController extends Controller
         return DB::table('i_order_details as od')
             ->join('i_orders as o', 'od.order_id', '=', 'o.id')
             ->join('i_suppliers as s', 'o.supplier_id', '=', 's.id')
+            ->where('o.lab_id', $this->laboratoryAccess->activeLabId())
             ->whereNotNull('od.actual_date')
             ->whereNotNull('od.expected_date')
             ->select(
@@ -814,7 +832,7 @@ class VAPInventoryAnalyticsController extends Controller
                 // Calculate percentage of items received on or before expected date
                 DB::raw('SUM(CASE WHEN od.actual_date <= od.expected_date THEN 1 ELSE 0 END) * 100.0 / COUNT(od.id) as on_time_rate'),
                 // Calculate average days of delay
-                DB::raw('AVG(DATEDIFF(od.actual_date, od.expected_date)) as avg_delay')
+                DB::raw('AVG(od.actual_date - od.expected_date) as avg_delay')
             )
             ->groupBy('s.id', 's.name')
             ->orderBy('on_time_rate', 'desc')
@@ -824,17 +842,20 @@ class VAPInventoryAnalyticsController extends Controller
     public function getDashboardSummary()
     {
         // Items physically out of stock or expired
-        $critical = Inventory::where('qty_available', 0)
-            ->orWhereHas('item', fn ($q) => $q->where('reagent_expiry_date', '<=', now()))
+        $critical = Inventory::where('lab_id', $this->laboratoryAccess->activeLabId())
+            ->where(fn ($query) => $query->where('qty_available', 0)
+                ->orWhereHas('item', fn ($item) => $item->where('reagent_expiry_date', '<=', now())))
             ->count();
 
         // Items below reorder point
-        $toOrder = Inventory::whereRaw('qty_available <= min_stock_level')
+        $toOrder = Inventory::where('lab_id', $this->laboratoryAccess->activeLabId())
+            ->whereRaw('qty_available <= reorder_point')
             ->where('qty_available', '>', 0)
             ->count();
 
         // Active orders that are past their expected_date
-        $delayedOrders = InventoryOrderDetail::where('status', '!=', 'RECEIVED')
+        $delayedOrders = InventoryOrderDetail::where('lab_id', $this->laboratoryAccess->activeLabId())
+            ->where('status', '!=', 'RECEIVED')
             ->where('expected_date', '<', now())
             ->whereNull('actual_date')
             ->count();

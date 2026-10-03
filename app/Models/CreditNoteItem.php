@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToFinancialLaboratory;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CreditNoteItem extends Model
 {
-    use HasFactory, SoftDeletes;
+    use BelongsToFinancialLaboratory, HasFactory, SoftDeletes;
 
     public const MENU_NAME = null;
 
@@ -51,7 +52,6 @@ class CreditNoteItem extends Model
         'extra_data' => AsCollection::class,
     ];
 
-
     /**
      * Credit Note
      *
@@ -62,7 +62,6 @@ class CreditNoteItem extends Model
         return $this->belongsTo(CreditNote::class, 'note_id');
     }
 
-
     /**
      * Unit
      *
@@ -72,7 +71,6 @@ class CreditNoteItem extends Model
     {
         return $this->belongsTo(Unit::class, 'unit_id');
     }
-
 
     /**
      * Tax Exemption

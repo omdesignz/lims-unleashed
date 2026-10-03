@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPrivateProposal;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,6 +10,7 @@ use Spatie\QueryBuilder\AllowedFilter;
 
 class ProposalComplianceAgreement extends Model
 {
+    use BelongsToPrivateProposal;
     use HasFactory, SoftDeletes;
 
     //

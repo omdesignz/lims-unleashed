@@ -2,101 +2,117 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\InventoryOperationalReportRequest;
+use App\Http\Resources\InventoryOperationalReportResource;
 use App\Models\Inventory;
 use App\Models\InventoryItem;
 use App\Models\InventoryItemTransfer;
 use App\Models\InventoryItemWarehouse;
-use App\Models\InventoryOrder;
 use App\Models\InventoryTransaction;
-use App\Models\ItemCategory;
 use App\Models\ReagentConsumption;
 use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
+use App\Models\VAPLab;
+use App\Services\InventoryCatalogueAccess;
+use App\Services\InventoryCatalogueRead;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 use PDF;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class VAPInventoryReportController extends Controller
 {
-    public function stockMovement(Request $request)
+    /** @var array<string,mixed> */
+    private array $reportFilters = [];
+
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+        private readonly InventoryCatalogueRead $catalogueRead,
+        private readonly InventoryCatalogueAccess $catalogueAccess,
+    ) {}
+
+    /** @return Builder<InventoryItem> */
+    private function items(int $labId): Builder
     {
-        $query = InventoryTransaction::with([
-            'item.category',
-            'warehouse.location',
-            'type',
-            'user',
+        return $this->catalogueRead->items($labId, request()->user());
+    }
+
+    /** @return Builder<Inventory> */
+    private function stock(int $labId): Builder
+    {
+        $query = $this->catalogueRead->filter($this->catalogueRead->stock($labId, request()->user()), $this->filters(), 'stock');
+        if (request()->routeIs('vap-inventory.reports.inventory-value') || (request()->routeIs('vap-inventory.reports.export') && request()->input('report_type') === 'inventory_value')) {
+            $query->where('qty_available', '>', 0);
+        }
+
+        return $query;
+    }
+
+    /** @return Builder<InventoryTransaction> */
+    private function transactions(int $labId): Builder
+    {
+        return $this->catalogueRead->filter($this->catalogueRead->transactions($labId, request()->user()), $this->filters(), 'transaction');
+    }
+
+    /** @return Builder<ReagentConsumption> */
+    private function consumptions(int $labId): Builder
+    {
+        return $this->catalogueRead->filter($this->catalogueRead->consumptions($labId, request()->user()), $this->filters(), 'consumption');
+    }
+
+    /** @return array<string,mixed> */
+    private function filters(): array
+    {
+        return $this->reportFilters;
+    }
+
+    private function useFilters(InventoryOperationalReportRequest $request): void
+    {
+        $this->reportFilters = $request->routeIs('vap-inventory.reports.export')
+            ? ($request->validated('filters') ?? []) : $request->validated();
+    }
+
+    public function stockMovement(InventoryOperationalReportRequest $request): InertiaResponse
+    {
+        $this->useFilters($request);
+        $labId = $this->laboratoryAccess->activeLabId();
+        $query = $this->transactions($labId)->with([
+            'item' => fn ($items) => $items->withTrashed(),
+            'item.category' => fn ($categories) => $categories->withTrashed()->select('id', 'name'),
+            'warehouse' => fn ($warehouses) => $warehouses->withTrashed(),
+            'warehouse.location:id,name',
+            'type' => fn ($types) => $types->withTrashed(),
+            'user' => fn ($users) => $users->withTrashed()->select('id', 'name'),
         ])
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('created_at', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('created_at', '<=', $dateTo);
-            })
-            ->when($request->item_id, function ($query, $itemId) {
-                $query->where('item_id', $itemId);
-            })
-            ->when($request->warehouse_id, function ($query, $warehouseId) {
-                $query->where('warehouse_id', $warehouseId);
-            })
-            ->when($request->type_id, function ($query, $typeId) {
-                $query->where('type_id', $typeId);
-            })
-            ->when($request->search, function ($query, $search) {
-                $query->whereHas('item', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                })
-                    ->orWhereHas('user', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-            })
             ->orderBy($request->sort_by ?? 'created_at', $request->sort_direction ?? 'desc');
 
-        $movementTrend = InventoryTransaction::select(
+        $movementTrend = $this->transactions($labId)->select(
             DB::raw('DATE(created_at) as date'),
             DB::raw('COUNT(*) as total_transactions'),
-            DB::raw('SUM(CASE WHEN type_id IN (SELECT id FROM itransaction_types WHERE code IN ("stock_in", "stock_adjustment_add")) THEN CAST(qty AS SIGNED) ELSE 0 END) as total_in'),
-            DB::raw('SUM(CASE WHEN type_id IN (SELECT id FROM itransaction_types WHERE code IN ("stock_out", "stock_adjustment_remove", "consumption")) THEN CAST(qty AS SIGNED) ELSE 0 END) as total_out')
+            DB::raw("SUM(CASE WHEN type_id IN (SELECT id FROM itransaction_types WHERE code IN ('stock_in', 'stock_adjustment_add', 'consumption_reversal')) THEN ABS(CAST(qty AS NUMERIC)) ELSE 0 END) as total_in"),
+            DB::raw("SUM(CASE WHEN type_id IN (SELECT id FROM itransaction_types WHERE code IN ('stock_out', 'stock_adjustment_remove', 'consumption')) THEN ABS(CAST(qty AS NUMERIC)) ELSE 0 END) as total_out")
         )
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('created_at', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('created_at', '<=', $dateTo);
-            })
             ->groupBy(DB::raw('DATE(created_at)'))
             ->orderBy('date')
             ->get();
 
         $summary = $request->view === 'summary' ? $movementTrend->sortByDesc('date')->values() : null;
 
-        $movementStats = $this->getMovementStats($request);
+        $movementStats = $this->getMovementStats();
 
-        $typeMix = InventoryTransaction::query()
+        $typeMix = $this->transactions($labId)
             ->select('itransaction_types.code', DB::raw('COUNT(*) as total'))
             ->join('itransaction_types', 'itransactions.type_id', '=', 'itransaction_types.id')
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('itransactions.created_at', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('itransactions.created_at', '<=', $dateTo);
-            })
-            ->when($request->item_id, function ($query, $itemId) {
-                $query->where('itransactions.item_id', $itemId);
-            })
-            ->when($request->warehouse_id, function ($query, $warehouseId) {
-                $query->where('itransactions.warehouse_id', $warehouseId);
-            })
-            ->when($request->type_id, function ($query, $typeId) {
-                $query->where('itransactions.type_id', $typeId);
-            })
             ->groupBy('itransaction_types.code')
             ->pluck('total', 'itransaction_types.code');
 
         return Inertia::render('VAPInventory/Reports/StockMovement', [
-            'transactions' => $query->paginate($request->per_page ?? 50)->withQueryString(),
+            'transactions' => $query->paginate($request->validated('per_page') ?? 50)->withQueryString()
+                ->through(fn ($row): array => (new InventoryOperationalReportResource($row))->resolve($request)),
             'summary' => $summary,
             'charts' => [
                 'direction_breakdown' => [
@@ -115,7 +131,7 @@ class VAPInventoryReportController extends Controller
                 'type_mix' => [
                     'labels' => ['Entradas', 'Saídas', 'Consumo', 'Transferências'],
                     'series' => [
-                        (int) ($typeMix['stock_in'] ?? 0) + (int) ($typeMix['stock_adjustment_add'] ?? 0),
+                        (int) ($typeMix['stock_in'] ?? 0) + (int) ($typeMix['stock_adjustment_add'] ?? 0) + (int) ($typeMix['consumption_reversal'] ?? 0),
                         (int) ($typeMix['stock_out'] ?? 0) + (int) ($typeMix['stock_adjustment_remove'] ?? 0),
                         (int) ($typeMix['consumption'] ?? 0),
                         (int) ($typeMix['transfer'] ?? 0),
@@ -140,181 +156,125 @@ class VAPInventoryReportController extends Controller
                 ],
             ],
             'filters' => $request->only(['date_from', 'date_to', 'item_id', 'warehouse_id', 'type_id', 'search', 'view', 'sort_by', 'sort_direction']),
-            'items' => InventoryItem::active()->get(['id', 'name', 'code']),
-            'warehouses' => InventoryItemWarehouse::active()->get(['id', 'name']),
-            'categories' => ItemCategory::active()->get(),
+            'items' => $this->items($labId)->active()->get(['id', 'name', 'code']),
+            'warehouses' => InventoryItemWarehouse::where('lab_id', $labId)->active()->get(['id', 'name']),
+            'categories' => $this->catalogueAccess->categories($request->user(), 'view')->get(['id', 'name']),
             'stats' => $movementStats,
         ]);
     }
 
-    private function getMovementStats($request)
+    /** @return array<string,mixed> */
+    private function getMovementStats(): array
     {
-        $query = InventoryTransaction::query()
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('created_at', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('created_at', '<=', $dateTo);
-            });
+        $query = $this->transactions($this->laboratoryAccess->activeLabId());
 
         $totalIn = (clone $query)->whereHas('type', function ($q) {
-            $q->whereIn('code', ['stock_in', 'stock_adjustment_add']);
-        })->sum(DB::raw('CAST(qty AS SIGNED)'));
+            $q->withTrashed()->whereIn('code', ['stock_in', 'stock_adjustment_add', 'consumption_reversal']);
+        })->sum(DB::raw('ABS(CAST(qty AS NUMERIC))'));
 
         $totalOut = (clone $query)->whereHas('type', function ($q) {
-            $q->whereIn('code', ['stock_out', 'stock_adjustment_remove', 'consumption']);
-        })->sum(DB::raw('CAST(qty AS SIGNED)'));
+            $q->withTrashed()->whereIn('code', ['stock_out', 'stock_adjustment_remove', 'consumption']);
+        })->sum(DB::raw('ABS(CAST(qty AS NUMERIC))'));
 
         $netMovement = $totalIn - $totalOut;
 
         return [
             'total_transactions' => $query->count(),
-            'total_in' => $totalIn,
-            'total_out' => $totalOut,
-            'net_movement' => $netMovement,
-            'avg_daily_transactions' => $this->getAvgDailyTransactions($request),
-            'most_active_item' => $this->getMostActiveItem($request),
-            'most_active_user' => $this->getMostActiveUser($request),
+            'total_in' => (float) $totalIn,
+            'total_out' => (float) $totalOut,
+            'net_movement' => (float) $netMovement,
+            'avg_daily_transactions' => $this->getAvgDailyTransactions(),
+            'most_active_item' => $this->getMostActiveItem(),
+            'most_active_user' => $this->getMostActiveUser(),
         ];
     }
 
-    private function getAvgDailyTransactions($request)
+    private function getAvgDailyTransactions(): float
     {
-        $dateFrom = $request->date_from ? Carbon::parse($request->date_from) : Carbon::now()->subMonth();
-        $dateTo = $request->date_to ? Carbon::parse($request->date_to) : Carbon::now();
+        $query = $this->transactions($this->laboratoryAccess->activeLabId());
 
-        $days = $dateFrom->diffInDays($dateTo) ?: 1;
-
-        $total = InventoryTransaction::query()
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('created_at', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('created_at', '<=', $dateTo);
-            })
-            ->count();
-
-        return round($total / $days, 2);
+        return $this->catalogueRead->dailyAverage($query, $this->filters(), 'created_at', precision: 2);
     }
 
-    private function getMostActiveItem($request)
+    private function getMostActiveItem(): ?InventoryTransaction
     {
-        return InventoryTransaction::select(
+        return $this->transactions($this->laboratoryAccess->activeLabId())->select(
             'item_id',
             DB::raw('COUNT(*) as transaction_count')
         )
-            ->with('item:id,name')
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('created_at', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('created_at', '<=', $dateTo);
-            })
+            ->with(['item' => fn ($items) => $items->withTrashed()->select('id', 'name')])
             ->groupBy('item_id')
             ->orderByDesc('transaction_count')
             ->first();
     }
 
-    private function getMostActiveUser($request)
+    /** @return array{user_id: int|null, transaction_count: int, user: array{id: int, name: string}|null}|null */
+    private function getMostActiveUser(): ?array
     {
-        return InventoryTransaction::select(
+        $activity = $this->transactions($this->laboratoryAccess->activeLabId())->select(
             'user_id',
             DB::raw('COUNT(*) as transaction_count')
         )
-            ->with('user:id,name')
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('created_at', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('created_at', '<=', $dateTo);
-            })
+            ->with(['user' => fn ($users) => $users->withTrashed()->select('id', 'name')])
             ->groupBy('user_id')
             ->orderByDesc('transaction_count')
             ->first();
+
+        return $activity === null ? null : [
+            'user_id' => $activity->user_id,
+            'transaction_count' => (int) $activity->transaction_count,
+            'user' => $activity->user === null ? null : ['id' => $activity->user->id, 'name' => $activity->user->name],
+        ];
     }
 
-    public function consumptionReport(Request $request)
+    public function consumptionReport(InventoryOperationalReportRequest $request): InertiaResponse
     {
-        $query = ReagentConsumption::with([
-            'item.category',
-            'warehouse',
-            'user',
+        $this->useFilters($request);
+        $labId = $this->laboratoryAccess->activeLabId();
+        $query = $this->consumptions($labId)->unreversed()->with([
+            'item' => fn ($items) => $items->withTrashed(),
+            'item.category' => fn ($categories) => $categories->withTrashed()->select('id', 'name'),
+            'warehouse' => fn ($warehouses) => $warehouses->withTrashed()->select('id', 'name'),
+            'user' => fn ($users) => $users->withTrashed()->select('id', 'name'),
         ])
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('date', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('date', '<=', $dateTo);
-            })
-            ->when($request->item_id, function ($query, $itemId) {
-                $query->where('reagent_id', $itemId);
-            })
-            ->when($request->warehouse_id, function ($query, $warehouseId) {
-                $query->where('warehouse_id', $warehouseId);
-            })
-            ->when($request->user_id, function ($query, $userId) {
-                $query->where('user_id', $userId);
-            })
-            ->when($request->search, function ($query, $search) {
-                $query->where('reagent_name', 'like', "%{$search}%")
-                    ->orWhere('used_by', 'like', "%{$search}%")
-                    ->orWhere('remarks', 'like', "%{$search}%");
-            })
             ->orderBy($request->sort_by ?? 'date', $request->sort_direction ?? 'desc');
 
         // Summary by item
-        $summaryByItem = ReagentConsumption::select(
+        $summaryByItem = $this->consumptions($labId)->unreversed()->select(
             'reagent_id',
             'reagent_name',
             DB::raw('SUM(quantity_used) as total_consumption'),
             DB::raw('COUNT(*) as usage_count'),
             DB::raw('AVG(quantity_used) as avg_per_use')
         )
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('date', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('date', '<=', $dateTo);
-            })
             ->groupBy('reagent_id', 'reagent_name')
             ->orderByDesc('total_consumption')
             ->get();
 
         // Summary by date
-        $summaryByDate = ReagentConsumption::select(
+        $summaryByDate = $this->consumptions($labId)->unreversed()->select(
             DB::raw('DATE(date) as date'),
             DB::raw('SUM(quantity_used) as total_consumption'),
             DB::raw('COUNT(*) as usage_count')
         )
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('date', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('date', '<=', $dateTo);
-            })
             ->groupBy(DB::raw('DATE(date)'))
             ->orderByDesc('date')
             ->get();
 
         // Summary by user
-        $summaryByUser = ReagentConsumption::select(
+        $summaryByUser = $this->consumptions($labId)->unreversed()->select(
             'used_by',
             DB::raw('SUM(quantity_used) as total_consumption'),
             DB::raw('COUNT(*) as usage_count')
         )
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('date', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('date', '<=', $dateTo);
-            })
             ->whereNotNull('used_by')
             ->groupBy('used_by')
             ->orderByDesc('total_consumption')
             ->get();
 
         return Inertia::render('VAPInventory/Reports/Consumption', [
-            'consumptions' => $query->paginate($request->per_page ?? 50)->withQueryString(),
+            'consumptions' => $query->paginate($request->validated('per_page') ?? 50)->withQueryString()
+                ->through(fn ($row): array => (new InventoryOperationalReportResource($row))->resolve($request)),
             'summaryByItem' => $summaryByItem,
             'summaryByDate' => $summaryByDate,
             'summaryByUser' => $summaryByUser,
@@ -373,13 +333,14 @@ class VAPInventoryReportController extends Controller
                 ],
             ],
             'filters' => $request->only(['date_from', 'date_to', 'item_id', 'warehouse_id', 'user_id', 'search', 'sort_by', 'sort_direction']),
-            'items' => InventoryItem::reagents()->active()->get(['id', 'name', 'code']),
-            'warehouses' => InventoryItemWarehouse::active()->get(['id', 'name']),
-            'users' => User::whereHas('reagentConsumptions')->get(['id', 'name']),
+            'items' => $this->items($labId)->reagents()->active()->get(['id', 'name', 'code']),
+            'warehouses' => InventoryItemWarehouse::where('lab_id', $labId)->active()->get(['id', 'name']),
+            'users' => User::withTrashed()->whereIn('id', $this->consumptions($labId)->select('user_id'))->get(['id', 'name'])
+                ->map(fn (User $user): array => ['id' => $user->id, 'name' => $user->name]),
             'stats' => [
                 'total_consumption' => $summaryByItem->sum('total_consumption'),
                 'total_uses' => $summaryByItem->sum('usage_count'),
-                'avg_daily_consumption' => $this->getAvgDailyConsumption($request),
+                'avg_daily_consumption' => $this->getAvgDailyConsumption(),
                 'most_consumed_item' => $summaryByItem->first(),
                 'most_active_user' => $summaryByUser->first(),
                 'peak_consumption_day' => $summaryByDate->sortByDesc('total_consumption')->first(),
@@ -387,93 +348,59 @@ class VAPInventoryReportController extends Controller
         ]);
     }
 
-    private function getAvgDailyConsumption($request)
+    private function getAvgDailyConsumption(): float
     {
-        $dateFrom = $request->date_from ? Carbon::parse($request->date_from) : Carbon::now()->subMonth();
-        $dateTo = $request->date_to ? Carbon::parse($request->date_to) : Carbon::now();
+        $query = $this->consumptions($this->laboratoryAccess->activeLabId())->unreversed();
 
-        $days = $dateFrom->diffInDays($dateTo) ?: 1;
-
-        $total = ReagentConsumption::query()
-            ->when($request->date_from, function ($query, $dateFrom) {
-                $query->whereDate('date', '>=', $dateFrom);
-            })
-            ->when($request->date_to, function ($query, $dateTo) {
-                $query->whereDate('date', '<=', $dateTo);
-            })
-            ->sum('quantity_used');
-
-        return round($total / $days, 2);
+        return $this->catalogueRead->dailyAverage($query, $this->filters(), 'date', 'quantity_used');
     }
 
-    public function inventoryValue(Request $request)
+    public function inventoryValue(InventoryOperationalReportRequest $request): InertiaResponse
     {
-        // Note: This requires adding a 'unit_price' field to inventory_items
-        // For now, we'll use a placeholder value
-
-        $query = Inventory::with([
-            'item.category',
-            'warehouse.location',
-            'item',
+        $this->useFilters($request);
+        $labId = $this->laboratoryAccess->activeLabId();
+        $query = $this->stock($labId)->with([
+            'item' => fn ($items) => $items->withTrashed(),
+            'item.category' => fn ($categories) => $categories->withTrashed()->select('id', 'name'),
+            'item.unit',
+            'warehouse' => fn ($warehouses) => $warehouses->withTrashed(),
+            'warehouse.location:id,name',
         ])
-            ->when($request->category_id, function ($query, $categoryId) {
-                $query->where('category_id', $categoryId);
-            })
-            ->when($request->warehouse_id, function ($query, $warehouseId) {
-                $query->where('warehouse_id', $warehouseId);
-            })
-            ->when($request->search, function ($query, $search) {
-                $query->whereHas('item', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                });
-            })
             ->where('qty_available', '>', 0)
             ->orderBy($request->sort_by ?? 'qty_available', $request->sort_direction ?? 'desc');
 
         // Summary by category
-        $summaryByCategory = Inventory::select(
+        $summaryByCategory = $this->stock($labId)->select(
             'item_categories.name as category_name',
-            DB::raw('SUM(qty_available) as total_quantity'),
             DB::raw('COUNT(DISTINCT item_id) as unique_items'),
-            DB::raw('SUM(qty_available * 100) as total_value') // Placeholder: $100 per unit
+            DB::raw('SUM(inventory.qty_available * COALESCE(i_items.standard_cost, i_items.last_purchase_price, 0)) as total_value')
         )
-            ->leftJoin('item_categories', 'inventory.category_id', '=', 'item_categories.id')
-            ->when($request->warehouse_id, function ($query, $warehouseId) {
-                $query->where('warehouse_id', $warehouseId);
-            })
+            ->leftJoin('i_items', 'inventory.item_id', '=', 'i_items.id')
+            ->leftJoin('item_categories', 'i_items.category_id', '=', 'item_categories.id')
             ->groupBy('item_categories.name', 'item_categories.id')
             ->orderByDesc('total_value')
             ->get();
 
         // Summary by warehouse
-        $summaryByWarehouse = Inventory::select(
+        $summaryByWarehouse = $this->stock($labId)->select(
             'i_warehouses.name as warehouse_name',
-            DB::raw('SUM(qty_available) as total_quantity'),
             DB::raw('COUNT(DISTINCT item_id) as unique_items'),
-            DB::raw('SUM(qty_available * 100) as total_value') // Placeholder: $100 per unit
+            DB::raw('SUM(inventory.qty_available * COALESCE(i_items.standard_cost, i_items.last_purchase_price, 0)) as total_value')
         )
             ->leftJoin('i_warehouses', 'inventory.warehouse_id', '=', 'i_warehouses.id')
-            ->when($request->category_id, function ($query, $categoryId) {
-                $query->where('category_id', $categoryId);
-            })
+            ->leftJoin('i_items', 'inventory.item_id', '=', 'i_items.id')
             ->groupBy('i_warehouses.name', 'i_warehouses.id')
             ->orderByDesc('total_value')
             ->get();
 
         // Top valuable items
-        $topValuableItems = Inventory::select(
+        $topValuableItems = $this->stock($labId)->select(
             'item_id',
             DB::raw('SUM(qty_available) as total_quantity'),
-            DB::raw('SUM(qty_available * 100) as total_value') // Placeholder: $100 per unit
+            DB::raw('SUM(inventory.qty_available * COALESCE(i_items.standard_cost, i_items.last_purchase_price, 0)) as total_value')
         )
-            ->with('item:id,name,code')
-            ->when($request->category_id, function ($query, $categoryId) {
-                $query->where('category_id', $categoryId);
-            })
-            ->when($request->warehouse_id, function ($query, $warehouseId) {
-                $query->where('warehouse_id', $warehouseId);
-            })
+            ->with(['item' => fn ($items) => $items->withTrashed()->select('id', 'name', 'code')])
+            ->leftJoin('i_items', 'inventory.item_id', '=', 'i_items.id')
             ->groupBy('item_id')
             ->orderByDesc('total_value')
             ->limit(10)
@@ -482,7 +409,8 @@ class VAPInventoryReportController extends Controller
         $totalInventoryValue = $summaryByCategory->sum('total_value');
 
         return Inertia::render('VAPInventory/Reports/InventoryValue', [
-            'inventory' => $query->paginate($request->per_page ?? 50)->withQueryString(),
+            'inventory' => $query->paginate($request->validated('per_page') ?? 50)->withQueryString()
+                ->through(fn ($row): array => (new InventoryOperationalReportResource($row))->resolve($request)),
             'summaryByCategory' => $summaryByCategory,
             'summaryByWarehouse' => $summaryByWarehouse,
             'topValuableItems' => $topValuableItems,
@@ -534,28 +462,23 @@ class VAPInventoryReportController extends Controller
                 ],
             ],
             'filters' => $request->only(['category_id', 'warehouse_id', 'search', 'sort_by', 'sort_direction']),
-            'categories' => ItemCategory::active()->get(),
-            'warehouses' => InventoryItemWarehouse::active()->get(),
+            'categories' => $this->catalogueAccess->categories($request->user(), 'view')->get(['id', 'name']),
+            'warehouses' => InventoryItemWarehouse::where('lab_id', $labId)->active()->get(['id', 'name']),
             'stats' => [
                 'total_value' => $totalInventoryValue,
-                'total_items' => Inventory::sum('qty_available'),
-                'unique_items' => Inventory::distinct('item_id')->count('item_id'),
-                'avg_item_value' => $totalInventoryValue / max(1, Inventory::distinct('item_id')->count('item_id')),
+                'stock_positions' => $this->stock($labId)->count(),
+                'unique_items' => $this->stock($labId)->distinct('item_id')->count('item_id'),
+                'avg_item_value' => $totalInventoryValue / max(1, $this->stock($labId)->distinct('item_id')->count('item_id')),
                 'highest_value_category' => $summaryByCategory->first(),
                 'highest_value_warehouse' => $summaryByWarehouse->first(),
             ],
         ]);
     }
 
-    public function exportReport(Request $request)
+    public function exportReport(InventoryOperationalReportRequest $request): HttpResponse
     {
-        $request->validate([
-            'report_type' => 'required|in:stock_movement,consumption,inventory_value,low_stock',
-            'format' => 'required|in:pdf,csv,excel',
-            'filters' => 'nullable|array',
-        ]);
-
-        $filters = $request->filters ?? [];
+        $this->useFilters($request);
+        $filters = $request->validated('filters') ?? [];
         $reportLabels = [
             'stock_movement' => 'movimentos_de_existencias',
             'consumption' => 'consumo',
@@ -566,30 +489,27 @@ class VAPInventoryReportController extends Controller
 
         switch ($request->report_type) {
             case 'stock_movement':
-                $data = $this->getStockMovementData($filters);
-                $view = 'reports.stock-movement';
+                $data = $this->getStockMovementData();
                 break;
 
             case 'consumption':
-                $data = $this->getConsumptionReportData($filters);
-                $view = 'reports.consumption';
+                $data = $this->getConsumptionReportData();
                 break;
 
             case 'inventory_value':
                 $data = $this->getInventoryValueData($filters);
-                $view = 'reports.inventory-value';
                 break;
 
             case 'low_stock':
                 $data = $this->getLowStockData($filters);
-                $view = 'reports.low-stock';
                 break;
         }
 
+        $rows = $this->reportRows($data, $request->report_type);
         if ($request->format === 'pdf') {
-            $pdf = PDF::loadView($view, [
-                'data' => $data,
-                'filters' => $filters,
+            $pdf = PDF::loadView('reports.inventory-export', [
+                'columns' => $rows[0],
+                'rows' => array_slice($rows, 1),
                 'title' => match ($request->report_type) {
                     'stock_movement' => 'Relatório de movimentos de existências',
                     'consumption' => 'Relatório de consumo',
@@ -598,13 +518,16 @@ class VAPInventoryReportController extends Controller
                 },
                 'generated_at' => now()->format('Y-m-d H:i:s'),
                 'generated_by' => auth()->user()->name,
-            ])->setPaper('a4', 'landscape');
+                'lab_name' => VAPLab::query()->whereKey($this->laboratoryAccess->activeLabId())->value('name'),
+            ], [], ['format' => 'A4', 'orientation' => 'L']);
 
-            return $pdf->download($fileName.'.pdf');
+            return Response::make($pdf->output())
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="'.$fileName.'.pdf"');
         }
 
         if ($request->format === 'csv') {
-            $csvData = $this->convertToCsv($data, $request->report_type);
+            $csvData = $this->convertToCsv($rows, $request->report_type);
 
             return Response::make($csvData)
                 ->header('Content-Type', 'text/csv')
@@ -615,54 +538,34 @@ class VAPInventoryReportController extends Controller
         return response()->json(['message' => 'A exportação para Excel requer configuração adicional.'], 501);
     }
 
-    private function getStockMovementData($filters)
+    /** @return array<string,mixed> */
+    private function getStockMovementData(): array
     {
-        $query = InventoryTransaction::with([
-            'item.category',
-            'warehouse',
-            'type',
-            'user',
+        $query = $this->transactions($this->laboratoryAccess->activeLabId())->with([
+            'item' => fn ($items) => $items->withTrashed(),
+            'item.category' => fn ($categories) => $categories->withTrashed()->select('id', 'name'),
+            'item.unit',
+            'warehouse' => fn ($warehouses) => $warehouses->withTrashed()->select('id', 'name'),
+            'type' => fn ($types) => $types->withTrashed(),
+            'user' => fn ($users) => $users->withTrashed()->select('id', 'name'),
         ]);
-
-        if (isset($filters['date_from'])) {
-            $query->whereDate('created_at', '>=', $filters['date_from']);
-        }
-        if (isset($filters['date_to'])) {
-            $query->whereDate('created_at', '<=', $filters['date_to']);
-        }
-        if (isset($filters['item_id'])) {
-            $query->where('item_id', $filters['item_id']);
-        }
-        if (isset($filters['warehouse_id'])) {
-            $query->where('warehouse_id', $filters['warehouse_id']);
-        }
 
         return [
             'transactions' => $query->orderBy('created_at', 'desc')->get(),
-            'summary' => $this->getMovementStats((object) $filters),
+            'summary' => $this->getMovementStats(),
         ];
     }
 
-    private function getConsumptionReportData($filters)
+    /** @return array<string,mixed> */
+    private function getConsumptionReportData(): array
     {
-        $query = ReagentConsumption::with([
-            'item.category',
-            'warehouse',
-            'user',
+        $query = $this->consumptions($this->laboratoryAccess->activeLabId())->unreversed()->with([
+            'item' => fn ($items) => $items->withTrashed(),
+            'item.category' => fn ($categories) => $categories->withTrashed()->select('id', 'name'),
+            'item.unit',
+            'warehouse' => fn ($warehouses) => $warehouses->withTrashed()->select('id', 'name'),
+            'user' => fn ($users) => $users->withTrashed()->select('id', 'name'),
         ]);
-
-        if (isset($filters['date_from'])) {
-            $query->whereDate('date', '>=', $filters['date_from']);
-        }
-        if (isset($filters['date_to'])) {
-            $query->whereDate('date', '<=', $filters['date_to']);
-        }
-        if (isset($filters['item_id'])) {
-            $query->where('reagent_id', $filters['item_id']);
-        }
-        if (isset($filters['warehouse_id'])) {
-            $query->where('warehouse_id', $filters['warehouse_id']);
-        }
 
         $consumptions = $query->orderBy('date', 'desc')->get();
 
@@ -682,86 +585,80 @@ class VAPInventoryReportController extends Controller
         ];
     }
 
-    private function getInventoryValueData($filters)
+    /** @param array<string,mixed> $filters @return array<string,mixed> */
+    private function getInventoryValueData(array $filters): array
     {
-        $query = Inventory::with([
-            'item.category',
-            'warehouse.location',
-            'item',
+        $query = $this->stock($this->laboratoryAccess->activeLabId())->with([
+            'item' => fn ($items) => $items->withTrashed(),
+            'item.category' => fn ($categories) => $categories->withTrashed()->select('id', 'name'),
+            'item.unit',
+            'warehouse' => fn ($warehouses) => $warehouses->withTrashed(),
+            'warehouse.location:id,name',
         ])
             ->where('qty_available', '>', 0);
 
-        if (isset($filters['category_id'])) {
-            $query->where('category_id', $filters['category_id']);
-        }
-        if (isset($filters['warehouse_id'])) {
-            $query->where('warehouse_id', $filters['warehouse_id']);
-        }
+        $inventory = $query->orderBy('qty_available', ($filters['sort_direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc')->get();
 
-        $inventory = $query->orderBy('qty_available', 'desc')->get();
-
-        $summaryByCategory = $inventory->groupBy('category.name')->map(function ($group) {
+        $summaryByCategory = $inventory->groupBy('item.category.name')->map(function ($group) {
             return [
-                'total_quantity' => $group->sum('qty_available'),
                 'unique_items' => $group->unique('item_id')->count(),
-                'total_value' => $group->sum('qty_available') * 100, // Placeholder
+                'total_value' => $group->sum(fn (Inventory $item): float => $item->qty_available * (float) ($item->item?->standard_cost ?? $item->item?->last_purchase_price ?? 0)),
             ];
         })->sortByDesc('total_value');
 
         return [
             'inventory' => $inventory,
             'summaryByCategory' => $summaryByCategory,
-            'total_value' => $inventory->sum('qty_available') * 100,
-            'total_items' => $inventory->sum('qty_available'),
+            'total_value' => $inventory->sum(fn (Inventory $item): float => $item->qty_available * (float) ($item->item?->standard_cost ?? $item->item?->last_purchase_price ?? 0)),
+            'stock_positions' => $inventory->count(),
             'unique_items' => $inventory->unique('item_id')->count(),
         ];
     }
 
-    private function getLowStockData($filters)
+    /** @param array<string,mixed> $filters @return array<string,mixed> */
+    private function getLowStockData(array $filters): array
     {
-        $query = Inventory::with([
-            'item.category',
-            'warehouse.location',
-            'item',
+        $query = $this->stock($this->laboratoryAccess->activeLabId())->with([
+            'item' => fn ($items) => $items->withTrashed(),
+            'item.category' => fn ($categories) => $categories->withTrashed()->select('id', 'name'),
+            'item.unit',
+            'warehouse' => fn ($warehouses) => $warehouses->withTrashed(),
+            'warehouse.location:id,name',
         ])
             ->whereColumn('qty_available', '<=', 'reorder_point')
-            ->where('qty_available', '>', 0);
-
-        if (isset($filters['warehouse_id'])) {
-            $query->where('warehouse_id', $filters['warehouse_id']);
-        }
-        if (isset($filters['category_id'])) {
-            $query->where('category_id', $filters['category_id']);
-        }
+            ->where('qty_available', '>', 0)
+            ->when(($filters['severity'] ?? null) === 'critical', fn (Builder $query): Builder => $query->whereColumn('qty_available', '<=', 'min_stock_level'))
+            ->when(($filters['severity'] ?? null) === 'low', fn (Builder $query): Builder => $query->whereColumn('qty_available', '>', 'min_stock_level'));
 
         $lowStock = $query->orderByRaw('qty_available / NULLIF(reorder_point, 0)')->get();
 
-        $criticalStock = $lowStock->where('qty_available', '<=', DB::raw('min_stock_level'))->count();
+        $criticalStock = $lowStock->filter(fn (Inventory $item): bool => $item->qty_available <= $item->min_stock_level)->count();
 
         return [
             'lowStock' => $lowStock,
             'criticalCount' => $criticalStock,
             'totalLowStock' => $lowStock->count(),
-            'totalValueAtRisk' => $lowStock->sum('qty_available') * 100, // Placeholder
+            'totalValueAtRisk' => $lowStock->sum(fn (Inventory $item): float => $item->qty_available * (float) ($item->item?->standard_cost ?? $item->item?->last_purchase_price ?? 0)),
         ];
     }
 
-    private function convertToCsv($data, $reportType)
+    private function reportRows(array $data, string $reportType): array
     {
         $rows = [];
 
         switch ($reportType) {
             case 'stock_movement':
-                $rows[] = ['Data', 'Artigo', 'Categoria', 'Armazém', 'Tipo', 'Quantidade', 'Utilizador', 'Motivo', 'Notas'];
+                $rows[] = ['Data', 'Artigo', 'Categoria', 'Armazém', 'Tipo', 'Quantidade', 'Unidade', 'Utilizador', 'Motivo', 'Notas'];
                 foreach ($data['transactions'] as $transaction) {
                     $rows[] = [
                         $transaction->created_at->format('Y-m-d H:i'),
                         $transaction->item->name,
                         $transaction->item->category->name ?? 'N/D',
                         $transaction->warehouse->name,
-                        $transaction->type->name,
+                        $transaction->type?->name,
                         $transaction->qty,
-                        $transaction->user->name,
+                        $transaction->item?->unit?->code ?? 'N/D',
+                        $transaction->user?->name,
                         $transaction->reason,
                         $transaction->notes,
                     ];
@@ -769,12 +666,13 @@ class VAPInventoryReportController extends Controller
                 break;
 
             case 'consumption':
-                $rows[] = ['Data', 'Reagente', 'Quantidade utilizada', 'Utilizado por', 'Armazém', 'Observações'];
+                $rows[] = ['Data', 'Reagente', 'Quantidade utilizada', 'Unidade', 'Utilizado por', 'Armazém', 'Observações'];
                 foreach ($data['consumptions'] as $consumption) {
                     $rows[] = [
                         $consumption->date,
                         $consumption->reagent_name,
                         $consumption->quantity_used,
+                        $consumption->item?->unit?->code ?? 'N/D',
                         $consumption->used_by,
                         $consumption->warehouse->name ?? 'N/D',
                         $consumption->remarks,
@@ -783,14 +681,15 @@ class VAPInventoryReportController extends Controller
                 break;
 
             case 'inventory_value':
-                $rows[] = ['Artigo', 'Categoria', 'Armazém', 'Quantidade', 'Valor unitário', 'Valor total'];
+                $rows[] = ['Artigo', 'Categoria', 'Armazém', 'Quantidade', 'Unidade', 'Valor unitário', 'Valor total'];
                 foreach ($data['inventory'] as $item) {
-                    $unitValue = 100; // Placeholder
+                    $unitValue = (float) ($item->item?->standard_cost ?? $item->item?->last_purchase_price ?? 0);
                     $rows[] = [
                         $item->item->name,
                         $item->item->category->name ?? 'N/D',
                         $item->warehouse->name,
                         $item->qty_available,
+                        $item->item?->unit?->code ?? 'N/D',
                         $unitValue,
                         $item->qty_available * $unitValue,
                     ];
@@ -798,7 +697,7 @@ class VAPInventoryReportController extends Controller
                 break;
 
             case 'low_stock':
-                $rows[] = ['Artigo', 'Categoria', 'Armazém', 'Existências actuais', 'Ponto de reposição', 'Existências mínimas', 'Estado'];
+                $rows[] = ['Artigo', 'Categoria', 'Armazém', 'Existências actuais', 'Unidade', 'Ponto de reposição', 'Existências mínimas', 'Estado'];
                 foreach ($data['lowStock'] as $item) {
                     $status = $item->qty_available <= $item->min_stock_level ? 'CRÍTICO' : 'BAIXO';
                     $rows[] = [
@@ -806,6 +705,7 @@ class VAPInventoryReportController extends Controller
                         $item->item->category->name ?? 'N/D',
                         $item->warehouse->name,
                         $item->qty_available,
+                        $item->item?->unit?->code ?? 'N/D',
                         $item->reorder_point,
                         $item->min_stock_level,
                         $status,
@@ -814,9 +714,25 @@ class VAPInventoryReportController extends Controller
                 break;
         }
 
+        return $rows;
+    }
+
+    private function convertToCsv(array $rows, string $reportType): string
+    {
+        $numericColumns = match ($reportType) {
+            'stock_movement' => [5],
+            'consumption' => [2],
+            'inventory_value' => [3, 5, 6],
+            'low_stock' => [3, 5, 6],
+        };
         $output = fopen('php://temp', 'w');
-        foreach ($rows as $row) {
-            fputcsv($output, $row);
+        foreach ($rows as $index => $row) {
+            foreach ($row as $column => $value) {
+                if ($index > 0 && ! in_array($column, $numericColumns, true) && is_string($value) && preg_match('/^[\x00-\x20]*[=+@-]/', $value) === 1) {
+                    $row[$column] = "'".$value;
+                }
+            }
+            fputcsv($output, $row, ',', '"', '');
         }
         rewind($output);
         $csv = stream_get_contents($output);
@@ -825,26 +741,32 @@ class VAPInventoryReportController extends Controller
         return $csv;
     }
 
-    public function dashboardStats()
+    public function dashboardStats(InventoryOperationalReportRequest $request): JsonResponse
     {
+        $this->useFilters($request);
+        $labId = $this->laboratoryAccess->activeLabId();
         $today = today();
         $thirtyDaysAgo = today()->subDays(30);
 
         return response()->json([
             'stats' => [
-                'total_items' => InventoryItem::count(),
-                'total_stock_value' => Inventory::sum('qty_available') * 100, // Placeholder
-                'low_stock_items' => Inventory::lowStock()->count(),
-                'expiring_reagents' => InventoryItem::reagents()
+                'total_items' => $this->items($labId)->count(),
+                'total_stock_value' => (float) $this->stock($labId)
+                    ->join('i_items', 'inventory.item_id', '=', 'i_items.id')
+                    ->sum(DB::raw('inventory.qty_available * COALESCE(i_items.standard_cost, i_items.last_purchase_price, 0)')),
+                'low_stock_items' => $this->stock($labId)->lowStock()->count(),
+                'expiring_reagents' => $this->items($labId)->reagents()
                     ->whereNotNull('reagent_expiry_date')
-                    ->where('reagent_expiry_date', '<=', $today->addDays(60))
+                    ->where('reagent_expiry_date', '<=', $today->copy()->addDays(60))
                     ->count(),
-                'today_consumption' => ReagentConsumption::whereDate('date', $today)->sum('quantity_used'),
-                'monthly_consumption' => ReagentConsumption::whereBetween('date', [$thirtyDaysAgo, $today])->sum('quantity_used'),
-                'pending_transfers' => InventoryItemTransfer::whereNull('received_date')->count(),
-                'pending_orders' => InventoryOrder::where('status', 'pending')->count(),
+                'today_consumption' => (float) $this->consumptions($labId)->unreversed()->whereDate('date', $today)->sum('quantity_used'),
+                'monthly_consumption' => (float) $this->consumptions($labId)->unreversed()->whereBetween('date', [$thirtyDaysAgo, $today])->sum('quantity_used'),
+                'pending_transfers' => $request->user()->can('view_itransfers') ? InventoryItemTransfer::where('lab_id', $labId)
+                    ->whereHas('item', fn (Builder $items): Builder => $this->catalogueRead->constrainItems($items->withTrashed(), $labId, $request->user()))
+                    ->whereNull('received_date')->count() : null,
+                'pending_orders' => null,
             ],
-            'recent_activity' => InventoryTransaction::with('item', 'user')
+            'recent_activity' => $request->user()->can('view_itransactions') ? $this->transactions($labId)->with(['item' => fn ($items) => $items->withTrashed()->select('id', 'name'), 'user' => fn ($users) => $users->withTrashed()->select('id', 'name'), 'type' => fn ($types) => $types->withTrashed()->select('id', 'name')])
                 ->latest()
                 ->limit(10)
                 ->get()
@@ -852,13 +774,13 @@ class VAPInventoryReportController extends Controller
                     return [
                         'id' => $transaction->id,
                         'item' => $transaction->item->name,
-                        'type' => $transaction->type->name,
+                        'type' => $transaction->type?->name,
                         'quantity' => $transaction->qty,
-                        'user' => $transaction->user->name,
+                        'user' => $transaction->user?->name,
                         'time' => $transaction->created_at->diffForHumans(),
                     ];
-                }),
-            'top_consumed' => ReagentConsumption::select(
+                }) : [],
+            'top_consumed' => $this->consumptions($labId)->unreversed()->select(
                 'reagent_name',
                 DB::raw('SUM(quantity_used) as total')
             )

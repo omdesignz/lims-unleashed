@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\StaffAccountAccess;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,15 +21,16 @@ class RoleResource extends JsonResource
             'label' => $this->label,
             'guard_name' => $this->guard_name,
             'deleted' => $this->deleted_at ? true : false,
+            'action_capabilities' => array_fill_keys(['edit', 'delete', 'restore'], app(StaffAccountAccess::class)->isSystemAdministrator($request->user())),
             'links' => [
                 'edit_path' => route('roles.edit', $this->id),
                 'delete_path' => route('roles.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('roles.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

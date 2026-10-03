@@ -443,7 +443,7 @@
                 <BaseInput
                   v-model="form.logo_path"
                   :label="$t('gestlab.general.labels.vap_labels.logo_file')"
-                  placeholder="/storage/media/logo.svg"
+                  placeholder="/storage/media/logo.png"
                 />
                 <BaseInput
                   v-model="form.logo_size"
@@ -537,21 +537,12 @@
             {{ $t('gestlab.general.labels.vap_labels.assignment') }}
           </p>
           <div class="mt-4 space-y-4">
-            <BaseSelect
-              v-model="form.lab_id"
-              :label="$t('gestlab.general.labels.vap_labels.lab')"
-            >
-              <option value="">
-                {{ $t('gestlab.general.labels.vap_labels.select_lab') }}
-              </option>
-              <option
-                v-for="lab in labsList"
-                :key="lab.id"
-                :value="lab.id"
-              >
-                {{ lab.name }}
-              </option>
-            </BaseSelect>
+            <div>
+              <p class="ds-field-label">{{ $t('gestlab.general.labels.vap_labels.lab') }}</p>
+              <p class="mt-2 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3 text-sm font-semibold text-[var(--ds-text)]">
+                {{ labsList[0]?.name || 'Laboratório indisponível' }}
+              </p>
+            </div>
 
             <BaseSelect
               v-model="form.department_id"
@@ -770,7 +761,6 @@ const form = useForm({
   border_width: props.label?.border_width || props.defaultSettings?.border_width || 1,
   border_color: props.label?.border_color || props.label?.template_data?.border_color || '#000000',
   text_alignment: props.label?.text_alignment || 'center',
-  lab_id: props.label?.lab_id || null,
   department_id: props.label?.department_id || null,
   logo_path: props.label?.logo_path || null,
   logo_size: props.label?.logo_size || null,

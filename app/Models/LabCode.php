@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\HasScopedSequence;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use HighSolutions\EloquentSequence\Sequence;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 class LabCode extends Model
 {
-    use HasFactory, Sequence, SoftDeletes;
+    use HasFactory, HasScopedSequence, SoftDeletes;
 
-    public CONST MENU_NAME = null;
+    public const MENU_NAME = null;
 
     /**
      * The attributes that are mass assignable.
@@ -28,12 +30,12 @@ class LabCode extends Model
     ];
 
     protected $table = 'lab_codes';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     public const STATUS_CODE_NORMAL = 'N';
 
-
-    public function sequence()
+    public function sequence(): array
     {
         return [
             'group' => ['cl_month', 'codeable_type'],
@@ -46,6 +48,30 @@ class LabCode extends Model
         return $this->belongsTo(CollectionProduct::class, 'collection_id');
     }
 
+    /**
+     * Require live local ownership; archived conflicting links still make ownership ambiguous.
+     */
+    public function scopeForLaboratory(Builder $query, int $labId): Builder
+    {
+        if ($labId <= 0) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereHas('collection')
+            ->whereExists(function (QueryBuilder $samples) use ($labId): void {
+                $samples->selectRaw('1')->from('sample_entries')
+                    ->whereColumn('sample_entries.collection_product_id', 'lab_codes.collection_id')
+                    ->where('sample_entries.lab_id', $labId)
+                    ->whereNull('sample_entries.deleted_at');
+            })
+            ->whereNotExists(function (QueryBuilder $samples) use ($labId): void {
+                $samples->selectRaw('1')->from('sample_entries')
+                    ->whereColumn('sample_entries.collection_product_id', 'lab_codes.collection_id')
+                    ->where(function (QueryBuilder $ownership) use ($labId): void {
+                        $ownership->whereNull('sample_entries.lab_id')->orWhere('sample_entries.lab_id', '!=', $labId);
+                    });
+            });
+    }
 
     public function samples()
     {
@@ -92,25 +118,23 @@ class LabCode extends Model
         return $this->hasManyThrough(Result::class, Sample::class, 'cl_id', 'sample_id', 'id')->whereNotNull('approved_date')->latest() ?? [];
     }
 
-    public function quality_certificate() {
+    public function quality_certificate()
+    {
         return $this->hasManyThrough(QualityCertificate::class, CollectionProduct::class, 'collection_id', 'collection_id', 'id');
     }
 
     public function codeable()
     {
-      return $this->morphTo();
+        return $this->morphTo();
     }
 
-    public static function boot()
+    public static function boot(): void
     {
         parent::boot();
 
-            static::creating(function($cl) {
-
-                $cl->seq += 1;
-                $cl->code = $cl->cl_month . '/' . str_pad ($cl->seq, 4, '0', STR_PAD_LEFT);
-        
-            });
+        static::creating(function (LabCode $labCode): void {
+            $labCode->code = $labCode->cl_month.'/'.str_pad((string) $labCode->seq, 4, '0', STR_PAD_LEFT);
+        });
 
     }
 }

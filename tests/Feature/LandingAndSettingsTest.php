@@ -5,21 +5,18 @@ namespace Tests\Feature;
 use App\Models\Role;
 use App\Models\User;
 use App\Settings\GeneralSettings;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class LandingAndSettingsTest extends TestCase
 {
+    use DatabaseTransactions;
+
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for settings testing.');
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
 
         return $admin;
     }

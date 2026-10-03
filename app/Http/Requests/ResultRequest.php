@@ -2,10 +2,19 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Result;
 use App\Models\Sample;
+use App\Services\IssuedAnalyticalScope;
+use App\Services\LaboratoryResultStageIntegrity;
+use App\Services\LaboratoryWorkflowOwnership;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Validator;
 
 class ResultRequest extends FormRequest
@@ -31,10 +40,12 @@ class ResultRequest extends FormRequest
      */
     public function rules(): array
     {
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
+
         if ($this->isMethod('post')) {
 
             $rules = [
-                'action' => 'nullable',
+                'action' => ['required', Rule::in(['analyze', 'verify', 'approve'])],
                 'sample_id' => 'required|exists:samples,id',
                 'results' => 'required|array|min:1',
                 'results.*.result_id' => 'nullable|exists:results,id',
@@ -57,7 +68,7 @@ class ResultRequest extends FormRequest
                 'results.*.sample_id' => 'required|exists:samples,id',
                 'results.*.matrix_id' => 'required|exists:matrixes,id',
                 'results.*.collection_id' => 'required|exists:collection_product,id',
-                'results.*.equipment_id' => 'nullable|exists:i_items,id',
+                'results.*.equipment_id' => ['nullable', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
                 'results.*.inserted_by_id' => 'nullable|exists:users,id',
                 'results.*.verified_by_id' => 'nullable|exists:users,id',
                 'results.*.approved_by_id' => 'nullable|exists:users,id',
@@ -105,7 +116,7 @@ class ResultRequest extends FormRequest
             ];
         } else {
             $rules = [
-                'action' => 'nullable',
+                'action' => ['required', Rule::in(['analyze', 'verify', 'approve'])],
                 'sample_id' => 'required|exists:samples,id',
                 'results' => 'required|array|min:1',
                 'results.*.result_id' => 'required|exists:results,id',
@@ -128,7 +139,7 @@ class ResultRequest extends FormRequest
                 'results.*.sample_id' => 'required|exists:samples,id',
                 'results.*.matrix_id' => 'required|exists:matrixes,id',
                 'results.*.collection_id' => 'required|exists:collection_product,id',
-                'results.*.equipment_id' => 'nullable|exists:i_items,id',
+                'results.*.equipment_id' => ['nullable', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
                 'results.*.inserted_by_id' => 'nullable|exists:users,id',
                 'results.*.verified_by_id' => 'nullable|exists:users,id',
                 'results.*.approved_by_id' => 'nullable|exists:users,id',
@@ -175,6 +186,14 @@ class ResultRequest extends FormRequest
                 'signature' => 'nullable|string',
 
             ];
+        }
+
+        $rules['sample_id'] = ['required', 'integer', Rule::exists('samples', 'id')
+            ->where(fn (Builder $query): Builder => $query->whereIn('samples.id',
+                $this->samplesForRequest()->select('samples.id')))];
+        $rules['results.*.result_id'] = [$this->input('action') === 'analyze' ? 'nullable' : 'required', 'integer', 'exists:results,id'];
+        if ($this->routeIs('results.store.individual')) {
+            $rules['results'] = ['required', 'array', 'size:1'];
         }
 
         return $rules;
@@ -242,223 +261,46 @@ class ResultRequest extends FormRequest
      * Configure the validator instance.
      *
      * @param  Validator  $validator
-     * @return void
      */
-    public function prepareForValidation()
+    protected function prepareForValidation(): void
     {
-        // dd(request()->all());
-
-        if (request()->action == 'analyze') {
-            // code...
-
-            $this->merge([
-                'sample_id' => ! is_null(request()->sample_id) ? request()->sample_id['value'] : null,
-                'results' => is_null(request()->results) ? [] : collect(request()->results)->map(function ($item) {
-                    return [
-                        'approved_by' => $item['approved_by'],
-                        'approved_by_id' => $item['approved_by_id'],
-                        'verified_by_id' => $item['verified_by_id'],
-                        'approved_date' => $item['approved_date'],
-                        'verified_date' => $item['verified_date'],
-                        'approved_value' => $item['approved_value'],
-                        'approval_notes' => $item['approval_notes'],
-                        'collection_id' => $item['collection_id'],
-                        'count' => $item['count'],
-                        'inserted_by' => $item['inserted_by'],
-                        'inserted_by_id' => $item['inserted_by_id'],
-                        'inserted_date' => now(),
-                        'inserted_value' => $item['inserted_value'],
-                        'insertion_notes' => $item['insertion_notes'],
-                        'verified_value' => $item['verified_value'],
-                        'verification_notes' => $item['verification_notes'],
-                        'matrix_id' => $item['matrix_id'],
-                        'max_ref_value' => $item['max_ref_value'],
-                        'min_ref_value' => $item['min_ref_value'],
-                        'parameter_id' => $item['parameter_id']['value'],
-                        'parameter_label' => $item['parameter_id']['label'],
-                        'product_id' => $item['product_id']['value'],
-                        'product_label' => $item['product_id']['label'],
-                        'protocol_id' => $item['protocol_id']['value'],
-                        'protocol_label' => $item['protocol_id']['label'],
-                        'profile_id' => $item['profile_id'],
-                        'unit_id' => $item['unit_id']['value'],
-                        'unit_label' => $item['unit_id']['label'],
-                        'standard_id' => $item['standard_id']['value'],
-                        'standard_label' => $item['standard_id']['label'],
-                        'code_id' => $item['code_id']['value'],
-                        'code_label' => $item['code_id']['label'],
-                        'nwp_id' => $item['nwp_id']['value'],
-                        'nwp_label' => $item['nwp_id']['label'],
-                        'requested_counter_analysis' => $item['requested_counter_analysis'],
-                        'sample_id' => $item['sample_id'],
-                        'status' => $item['status'],
-                        'type_id' => $item['type_id']['value'],
-                        'category_label' => $item['type_id']['label'],
-                        'result_is_qualitative' => $this->resultIsQualitativePayload($item),
-                        'result_options' => $this->resultOptionsFromPayload($item),
-                        'uncertainty_value' => $item['uncertainty_value'] ?? null,
-                        'sumC' => $item['sumC'],
-                        'volume' => $item['volume'],
-                        'n1' => $item['n1'] ?? 0,
-                        'n2' => $item['n2'] ?? 0,
-                        'dilution' => $item['dilution'],
-                        'd1' => $item['d1'] ?? 0,
-                        'd2' => $item['d2'] ?? 0,
-                        'cfu1' => $item['cfu1'] ?? 0,
-                        'cfu2' => $item['cfu2'] ?? 0,
-                        'is_calculated' => $item['is_calculated'] ?? false,
-                        'is_override' => $item['is_override'] ?? false,
-                        'calculation_metadata' => $item['calculation_metadata'] ?? null,
-                        'extra_data' => $this->prepareResultExtraData($item),
-                        'display_format' => $this->displayFormatFromResult($item),
-                    ];
-                })->toArray(),
-            ]);
+        $sample = $this->input('sample_id');
+        $sampleId = is_array($sample) ? data_get($sample, 'value') : $sample;
+        $rows = $this->input('results', []);
+        if ($this->routeIs('results.store.individual') && ! $this->has('results')) {
+            $rows = [array_replace($this->except(['action', 'signature', 'sample_id']), ['sample_id' => $sampleId])];
         }
+        if (is_array($rows)) {
+            $rows = array_map(function (mixed $row): mixed {
+                if (! is_array($row)) {
+                    return $row;
+                }
+                $row['result_is_qualitative'] = $this->resultIsQualitativePayload($row);
+                $row['result_options'] = $this->resultOptionsFromPayload($row);
+                $row['extra_data'] = $this->prepareResultExtraData($row);
+                $row['display_format'] = $this->displayFormatFromResult($row);
+                $row['equipment_id'] = data_get($row, 'equipment_id.value',
+                    data_get($row, 'equipment_id', data_get($row, 'extra_data.equipment.equipment_id')));
+                foreach (['parameter', 'product', 'protocol', 'unit', 'standard', 'code', 'nwp', 'type'] as $reference) {
+                    $value = $row[$reference.'_id'] ?? null;
+                    if (is_array($value)) {
+                        $row[$reference === 'type' ? 'category_label' : $reference.'_label'] = data_get($value, 'label');
+                        $row[$reference.'_id'] = data_get($value, 'value');
+                    }
+                }
 
-        if (request()->action == 'verify') {
-            // code...
-
-            $this->merge([
-                'sample_id' => ! is_null(request()->sample_id) ? request()->sample_id['value'] : null,
-                'results' => is_null(request()->results) ? [] : collect(request()->results)->map(function ($item) {
-                    return [
-                        'approved_by' => $item['approved_by'],
-                        'result_id' => $item['result_id'],
-                        'approved_by_id' => $item['approved_by_id'],
-                        'verified_by_id' => $item['verified_by_id'],
-                        'approved_date' => $item['approved_date'],
-                        'verified_date' => now(),
-                        'approved_value' => $item['approved_value'],
-                        'approval_notes' => $item['approval_notes'] ?? null,
-                        'collection_id' => $item['collection_id'],
-                        'count' => $item['count'],
-                        'inserted_by' => $item['inserted_by'],
-                        'inserted_by_id' => $item['inserted_by_id'],
-                        'inserted_date' => $item['inserted_date'],
-                        'inserted_value' => $item['inserted_value'],
-                        'insertion_notes' => $item['insertion_notes'],
-                        'verified_by' => $item['verified_by'],
-                        'verified_value' => $item['verified_value'],
-                        'verification_status' => $item['verification_status'],
-                        'verification_notes' => $item['verification_notes'] ?? null,
-                        'matrix_id' => $item['matrix_id'],
-                        'max_ref_value' => $item['max_ref_value'],
-                        'min_ref_value' => $item['min_ref_value'],
-                        'parameter_id' => $item['parameter_id']['value'],
-                        'parameter_label' => $item['parameter_id']['label'],
-                        'product_id' => $item['product_id']['value'],
-                        'product_label' => $item['product_id']['label'],
-                        'protocol_id' => $item['protocol_id']['value'],
-                        'protocol_label' => $item['protocol_id']['label'],
-                        'profile_id' => $item['profile_id'],
-                        'unit_id' => $item['unit_id']['value'],
-                        'unit_label' => $item['unit_id']['label'],
-                        'standard_id' => $item['standard_id']['value'],
-                        'standard_label' => $item['standard_id']['label'],
-                        'code_id' => $item['code_id']['value'],
-                        'code_label' => $item['code_id']['label'],
-                        'nwp_id' => $item['nwp_id']['value'],
-                        'nwp_label' => $item['nwp_id']['label'],
-                        'requested_counter_analysis' => $item['requested_counter_analysis'],
-                        'sample_id' => $item['sample_id'],
-                        'status' => $item['status'],
-                        'type_id' => $item['type_id']['value'],
-                        'category_label' => $item['type_id']['label'],
-                        'result_is_qualitative' => $this->resultIsQualitativePayload($item),
-                        'result_options' => $this->resultOptionsFromPayload($item),
-                        'uncertainty_value' => $item['uncertainty_value'] ?? null,
-                        'sumC' => $item['sumC'],
-                        'volume' => $item['volume'],
-                        'n1' => $item['n1'],
-                        'n2' => $item['n2'],
-                        'dilution' => $item['dilution'],
-                        'd1' => $item['d1'],
-                        'd2' => $item['d2'],
-                        'cfu1' => $item['cfu1'],
-                        'cfu2' => $item['cfu2'],
-                        'is_calculated' => $item['is_calculated'] ?? false,
-                        'is_override' => $item['is_override'] ?? false,
-                        'calculation_metadata' => $item['calculation_metadata'] ?? null,
-                        'extra_data' => $this->prepareResultExtraData($item),
-                        'display_format' => $this->displayFormatFromResult($item),
-                    ];
-                })->toArray(),
-            ]);
+                return $row;
+            }, array_values($rows));
         }
-
-        if (request()->action == 'approve') {
-            // code...
-
-            $this->merge([
-                'sample_id' => ! is_null(request()->sample_id) ? request()->sample_id['value'] : null,
-                'results' => is_null(request()->results) ? [] : collect(request()->results)->map(function ($item) {
-                    return [
-                        'approved_by' => $item['approved_by'],
-                        'approved_by_id' => $item['approved_by_id'],
-                        'verified_by_id' => $item['verified_by_id'],
-                        'approved_date' => now(),
-                        'verified_date' => $item['verified_date'],
-                        'approved_value' => $item['approved_value'],
-                        'collection_id' => $item['collection_id'],
-                        'count' => $item['count'],
-                        'result_id' => $item['result_id'],
-                        'inserted_by' => $item['inserted_by'],
-                        'inserted_by_id' => $item['inserted_by_id'],
-                        'inserted_date' => $item['inserted_date'],
-                        'inserted_value' => $item['inserted_value'],
-                        'verified_by' => $item['verified_by'],
-                        'verified_value' => $item['verified_value'],
-                        'matrix_id' => $item['matrix_id'],
-                        'max_ref_value' => $item['max_ref_value'],
-                        'min_ref_value' => $item['min_ref_value'],
-                        'parameter_id' => $item['parameter_id']['value'],
-                        'parameter_label' => $item['parameter_id']['label'],
-                        'product_id' => $item['product_id']['value'],
-                        'product_label' => $item['product_id']['label'],
-                        'protocol_id' => $item['protocol_id']['value'],
-                        'protocol_label' => $item['protocol_id']['label'],
-                        'profile_id' => $item['profile_id'],
-                        'unit_id' => $item['unit_id']['value'],
-                        'unit_label' => $item['unit_id']['label'],
-                        'standard_id' => $item['standard_id']['value'],
-                        'standard_label' => $item['standard_id']['label'],
-                        'code_id' => $item['code_id']['value'],
-                        'code_label' => $item['code_id']['label'],
-                        'nwp_id' => $item['nwp_id']['value'],
-                        'nwp_label' => $item['nwp_id']['label'],
-                        'requested_counter_analysis' => $item['requested_counter_analysis'],
-                        'sample_id' => $item['sample_id'],
-                        'status' => $item['status'],
-                        'type_id' => $item['type_id']['value'],
-                        'category_label' => $item['type_id']['label'],
-                        'result_is_qualitative' => $this->resultIsQualitativePayload($item),
-                        'result_options' => $this->resultOptionsFromPayload($item),
-                        'uncertainty_value' => $item['uncertainty_value'] ?? null,
-                        'sumC' => $item['sumC'],
-                        'volume' => $item['volume'],
-                        'n1' => $item['n1'],
-                        'n2' => $item['n2'],
-                        'dilution' => $item['dilution'],
-                        'd1' => $item['d1'],
-                        'd2' => $item['d2'],
-                        'cfu1' => $item['cfu1'],
-                        'cfu2' => $item['cfu2'],
-                        'is_calculated' => $item['is_calculated'] ?? false,
-                        'is_override' => $item['is_override'] ?? false,
-                        'calculation_metadata' => $item['calculation_metadata'] ?? null,
-                        'extra_data' => $this->prepareResultExtraData($item),
-                        'display_format' => $this->displayFormatFromResult($item),
-                    ];
-                })->toArray(),
-            ]);
-        }
-
+        $this->merge(['sample_id' => $sampleId, 'results' => $rows]);
     }
 
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
             $action = (string) $this->input('action');
             $results = collect($this->input('results', []));
             $sampleId = $this->input('sample_id');
@@ -466,11 +308,11 @@ class ResultRequest extends FormRequest
                 ? 'counteranalysis'
                 : 'analysis';
             $sample = $sampleId
-                ? Sample::query()
+                ? $this->samplesForRequest()
                     ->with([
-                        "{$workflowRelation}.profile.parameters:id,result_is_qualitative",
-                        'collection:id,collection_id',
-                        'results:id,sample_id,parameter_id',
+                        $workflowRelation,
+                        'collection.collection.sampleEntry',
+                        'results:id,sample_id,parameter_id,profile_id,code_id,resultable_type,resultable_id,inserted_value,inserted_date,verified_value,verified_date',
                     ])
                     ->find($sampleId)
                 : null;
@@ -488,7 +330,15 @@ class ResultRequest extends FormRequest
                     return;
                 }
 
-                $expectedParameters = collect($sample->{$workflowRelation}?->profile?->parameters ?? []);
+                $collectionProduct = $sample->collection?->collection;
+                if (! $collectionProduct) {
+                    $validator->errors()->add('sample_id', 'A amostra não tem uma entrada analítica válida.');
+
+                    return;
+                }
+
+                $expectedParameters = app(IssuedAnalyticalScope::class)
+                    ->parametersFor($sample->{$workflowRelation}, $collectionProduct);
                 $expectedParameterIds = $expectedParameters
                     ->pluck('id')
                     ->filter()
@@ -533,6 +383,7 @@ class ResultRequest extends FormRequest
 
                 if (
                     in_array($action, ['analyze', 'verify', 'approve'], true)
+                    && ! $this->routeIs('results.store.individual')
                     && $expectedParameterIds->isNotEmpty()
                     && $expectedParameterIds->diff($submittedParameterIds)->isNotEmpty()
                 ) {
@@ -545,7 +396,13 @@ class ResultRequest extends FormRequest
                 }
 
                 if (in_array($action, ['verify', 'approve'], true)) {
-                    $existingResultIds = $sample->results->pluck('id')->filter()->map(fn ($id) => (int) $id)->values();
+                    $root = $sample->{$workflowRelation};
+                    $existingResultIds = $sample->results
+                        ->where('profile_id', $root->profile_id)
+                        ->where('code_id', $root->cl_id)
+                        ->where('resultable_type', $root->getMorphClass())
+                        ->where('resultable_id', $root->id)
+                        ->pluck('id')->filter()->map(fn ($id) => (int) $id)->values();
                     $submittedResultIds = $results
                         ->map(fn (array $result) => (int) data_get($result, 'result_id'))
                         ->filter()
@@ -558,6 +415,20 @@ class ResultRequest extends FormRequest
                         );
                     }
                 }
+                $results->each(function (array $row, int $index) use ($validator, $action, $sample): void {
+                    $result = $action === 'analyze'
+                        ? $sample->results->firstWhere('parameter_id', (int) data_get($row, 'parameter_id'))
+                        : $sample->results->firstWhere('id', (int) data_get($row, 'result_id'));
+                    try {
+                        app(LaboratoryResultStageIntegrity::class)->ensure($result ?? new Result, $action, $row, $index);
+                    } catch (ValidationException $exception) {
+                        foreach ($exception->errors() as $field => $messages) {
+                            foreach ($messages as $message) {
+                                $validator->errors()->add($field, $message);
+                            }
+                        }
+                    }
+                });
             }
 
             if (in_array($action, ['verify', 'approve'], true) && blank($this->input('signature')) && blank(optional($this->user())->signature_url)) {
@@ -579,6 +450,8 @@ class ResultRequest extends FormRequest
                 $isQualitative = $qualitativeParameterIds->has($parameterId);
 
                 if (blank($value)) {
+                    $validator->errors()->add("results.$index.$valueKey", 'É obrigatório indicar um resultado não vazio.');
+
                     return;
                 }
 
@@ -610,6 +483,18 @@ class ResultRequest extends FormRequest
                 }
             });
         });
+    }
+
+    /** @return EloquentBuilder<Sample> */
+    private function samplesForRequest(): EloquentBuilder
+    {
+        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
+        $ownership = app(LaboratoryWorkflowOwnership::class);
+        $workflowSamples = $this->routeIs('results.storeCounterAnalysisResults')
+            ? $ownership->counterAnalysesForLaboratory($labId)->select('counter_analysis.sample_id')
+            : $ownership->analysesForLaboratory($labId)->select('analysis.sample_id');
+
+        return $ownership->samplesForLaboratory($labId)->whereIn('samples.id', $workflowSamples);
     }
 
     /**

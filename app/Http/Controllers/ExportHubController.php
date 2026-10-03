@@ -7,14 +7,20 @@ use App\Exports\ConfiguredQueryExport;
 use App\Exports\CustomersExport;
 use App\Exports\ProductsExport;
 use App\Http\Requests\ExportHubRequest;
+use App\Models\MaintenanceTask;
 use App\Models\User;
+use App\Models\VAPSampleEntry;
+use App\Services\InventoryCatalogueRead;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\ExportHubCatalog;
 use App\Support\ExportHubQuery;
 use App\Support\LaboratoryDataExportQuery;
 use App\Support\SpreadsheetDownloadResponder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\Activitylog\Models\Activity;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ExportHubController extends Controller
@@ -22,7 +28,9 @@ class ExportHubController extends Controller
     public function __construct(
         private readonly ExportHubQuery $exportHubQuery,
         private readonly ExportHubCatalog $exportHubCatalog,
-        private readonly LaboratoryDataExportQuery $laboratoryDataExportQuery
+        private readonly LaboratoryDataExportQuery $laboratoryDataExportQuery,
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+        private readonly InventoryCatalogueRead $catalogueRead
     ) {}
 
     public function index(ExportHubRequest $request): Response
@@ -75,13 +83,21 @@ class ExportHubController extends Controller
                 continue;
             }
 
+            $summaryQuery = $key === 'activity_log'
+                ? Activity::query()->toBase()
+                : DB::table($definition['table']);
+
+            if (in_array($key, ['occurrences', 'invoices', 'credit_notes', 'receipts', 'quotes', 'import_certificates', 'export_certificates'], true)) {
+                $summaryQuery->where('lab_id', $this->laboratoryAccess->activeLabId());
+            }
+
             $datasets[] = $this->dataset(
                 key: $key,
                 title: $definition['title'],
                 description: $definition['description'],
                 category: $definition['category'],
-                count: DB::table($definition['table'])->count(),
-                updatedAt: DB::table($definition['table'])->max('updated_at'),
+                count: (clone $summaryQuery)->count(),
+                updatedAt: (clone $summaryQuery)->max('updated_at'),
                 filterGroup: $definition['filterGroup'],
                 dateLabel: $definition['dateLabel']
             );
@@ -114,19 +130,21 @@ class ExportHubController extends Controller
         }
 
         if ($user->can('view_samples')) {
-            $datasets[] = $this->workspaceDataset('sample_register', 'Registo de amostras', 'Ciclo de recepção, retenção e estado das amostras com exportação própria.', 'Laboratório', DB::table('sample_entries')->count(), route('vap_samples.index'));
+            $datasets[] = $this->workspaceDataset('sample_register', 'Registo de amostras', 'Ciclo de recepção, retenção e estado das amostras com exportação própria.', 'Laboratório', VAPSampleEntry::query()->where('lab_id', $this->laboratoryAccess->activeLabId())->count(), route('vap_samples.index'));
         }
 
-        if ($user->can('view_inventory')) {
-            $datasets[] = $this->workspaceDataset('inventory_register', 'Inventário e metrologia', 'Equipamentos, reagentes, stock, calibração e dados metrológicos.', 'Inventário', DB::table('i_items')->count(), route('vap-inventory.items.index'));
+        if ($this->catalogueRead->allowedTypes($user) !== []) {
+            $datasets[] = $this->workspaceDataset('inventory_register', 'Inventário e metrologia', 'Equipamentos, reagentes, stock, calibração e dados metrológicos.', 'Inventário', $this->catalogueRead->items($this->laboratoryAccess->activeLabId(), $user)->count(), route('vap-inventory.items.index'));
         }
 
-        if ($user->can('view_maintenance_tasks')) {
-            $datasets[] = $this->workspaceDataset('maintenance_register', 'Manutenção', 'Plano e histórico de tarefas, equipamentos, prazos e execução.', 'Inventário', DB::table('maintenance_tasks')->count(), route('vap-maintenance.tasks'));
+        if ($user->can('view_maintenance_tasks') && in_array('equipment', $this->catalogueRead->allowedTypes($user), true)) {
+            $tasks = MaintenanceTask::forLaboratory($this->laboratoryAccess->activeLabId())
+                ->whereHas('equipment', fn (Builder $items): Builder => $this->catalogueRead->constrainItems($items, $this->laboratoryAccess->activeLabId(), $user));
+            $datasets[] = $this->workspaceDataset('maintenance_register', 'Manutenção', 'Plano e histórico de tarefas, equipamentos, prazos e execução.', 'Inventário', $tasks->count(), route('vap-maintenance.tasks'));
         }
 
-        if ($user->can('view_occurrences') || $user->can('view_activity_log')) {
-            $datasets[] = $this->workspaceDataset('nonconformity_register', 'Não conformidades laboratoriais', 'Registo CAPA detalhado com acções, evidências e exportação própria.', 'Qualidade', DB::table('v_non_conformities')->count(), route('vap_non_conformities.index'));
+        if ($user->can('view_occurrences')) {
+            $datasets[] = $this->workspaceDataset('nonconformity_register', 'Não conformidades laboratoriais', 'Registo CAPA detalhado com acções, evidências e exportação própria.', 'Qualidade', DB::table('v_non_conformities')->where('lab_id', $this->laboratoryAccess->activeLabId())->count(), route('vap_non_conformities.index'));
         }
 
         return $datasets;

@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CreateStaffAccount;
+use App\Actions\ManageStaffAccountLifecycle;
+use App\Actions\UpdateStaffAccount;
+use App\Http\Requests\StaffAccountLifecycleRequest;
 use App\Http\Requests\UserPasswordRequest;
 use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
@@ -9,24 +13,33 @@ use App\Models\Permission;
 use App\Models\PersonnelQualification;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\SampleLaboratoryAccess;
+use App\Services\StaffAccountAccess;
 use App\Settings\GeneralSettings;
 use App\Support\PdfResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Inertia\Response;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use PDF;
 
 class UserController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess, private readonly StaffAccountAccess $accounts) {}
+
     /**
      * @return array<string, mixed>
      */
     private function indexPayload(bool $openCreate = false): array
     {
+        $labId = $this->laboratoryAccess->activeLabId();
         $users = User::query()
-            ->with(['personnelQualifications'])
+            ->whereIn('users.id', DB::table('lab_user')->where('lab_id', $labId)->select('user_id'))
+            ->with(['personnelQualifications' => fn ($query) => $query->where('lab_id', $labId)])
             ->when(request()->input('search'), function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })
@@ -45,6 +58,7 @@ class UserController extends Controller
             'record' => UserResource::collection($users),
             'slideOverEdit' => false,
             'openCreate' => $openCreate,
+            'accountCapabilities' => $this->accounts->capabilities(request()->user()),
             'fields' => [
                 [
                     'name' => trans('gestlab.general.labels.users.name'),
@@ -68,10 +82,10 @@ class UserController extends Controller
             'query' => request()->only(['search', 'trashed']),
             'competenceSummary' => [
                 'tracked_users' => $userCollection->filter(fn (User $user) => $user->personnelQualifications->isNotEmpty())->count(),
-                'expired_qualifications' => $userCollection->sum(fn (User $user) => collect($user->competenceSummary()['qualifications'])->where('status', 'expired')->count()),
-                'expiring_soon' => $userCollection->sum(fn (User $user) => collect($user->competenceSummary()['qualifications'])->whereIn('status', ['expiring_critical', 'expiring_soon'])->count()),
-                'ready_for_renewal' => $userCollection->sum(fn (User $user) => collect($user->competenceSummary()['qualifications'])->where('renewal_readiness', 'ready_for_review')->count()),
-                'missing_evidence' => $userCollection->sum(fn (User $user) => collect($user->competenceSummary()['qualifications'])->where('renewal_readiness', 'missing_evidence')->count()),
+                'expired_qualifications' => $userCollection->sum(fn (User $user) => collect($user->competenceSummary($labId)['qualifications'])->where('status', 'expired')->count()),
+                'expiring_soon' => $userCollection->sum(fn (User $user) => collect($user->competenceSummary($labId)['qualifications'])->whereIn('status', ['expiring_critical', 'expiring_soon'])->count()),
+                'ready_for_renewal' => $userCollection->sum(fn (User $user) => collect($user->competenceSummary($labId)['qualifications'])->where('renewal_readiness', 'ready_for_review')->count()),
+                'missing_evidence' => $userCollection->sum(fn (User $user) => collect($user->competenceSummary($labId)['qualifications'])->where('renewal_readiness', 'missing_evidence')->count()),
             ],
         ];
     }
@@ -79,7 +93,7 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): Response
     {
         abort_if(! auth()->user()->can('view_users'), 403, '');
 
@@ -89,9 +103,9 @@ class UserController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): Response
     {
-        abort_if(! auth()->user()->can('add_users'), 403, '');
+        $this->accounts->authorizeSystem(request()->user(), 'add_users');
 
         return Inertia::render('Users/Index', $this->indexPayload(true));
     }
@@ -99,20 +113,9 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(UserRequest $request)
+    public function store(UserRequest $request, CreateStaffAccount $createStaffAccount): RedirectResponse
     {
-        abort_if(! auth()->user()->can('add_users'), 403, '');
-
-        // dd($request->all());
-
-        DB::transaction(function () use ($request): void {
-
-            // Persiste data to DB
-            $user = User::create($request->safe()->except(['departments']));
-
-            $user->departments()->sync(collect($request->departments)->pluck('department_id')->unique()->toArray());
-
-        });
+        $createStaffAccount->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $request->validated());
 
         return redirect()->back()->with([
             'toast' => [
@@ -134,12 +137,15 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit($id): Response
     {
         abort_if(! auth()->user()->can('edit_users'), 403, '');
+        $labId = $this->laboratoryAccess->activeLabId();
 
         // Find the record
-        $record = User::with(['departments', 'permissions', 'roles', 'personnelQualifications.department', 'personnelQualifications.qualifiedBy:id,name'])->findOrFail($id);
+        $record = User::with(['departments', 'permissions', 'roles',
+            'personnelQualifications' => fn ($query) => $query->where('lab_id', $labId)->with(['department', 'qualifiedBy:id,name']),
+        ])->whereIn('users.id', DB::table('lab_user')->where('lab_id', $labId)->select('user_id'))->findOrFail($id);
 
         $qualifications = $record->personnelQualifications
             ->sortBy([
@@ -203,7 +209,8 @@ class UserController extends Controller
                     ];
                 })->values()->toArray(),
             ],
-            'competenceSummary' => $record->competenceSummary(),
+            'competenceSummary' => $record->competenceSummary($labId),
+            'accountCapabilities' => $this->accounts->capabilities(request()->user(), $record),
             'permissions' => collect(Permission::all())->map(function ($item) {
                 return [
                     'value' => $item['id'],
@@ -222,38 +229,9 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UserRequest $request, $id)
+    public function update(UserRequest $request, int $id, UpdateStaffAccount $updateStaffAccount): RedirectResponse
     {
-        abort_if(! auth()->user()->can('edit_users'), 403, '');
-
-        // dd(collect($request->departments)->pluck('department_id')->unique()->toArray());
-
-        DB::transaction(function () use ($request, $id): void {
-
-            tap(User::findOrFail($id), function ($record) use ($request) {
-
-                $record->update($request->safe()->except(['departments']));
-
-                $record->departments()->sync(collect($request->departments)->pluck('department_id')->unique()->toArray());
-
-                // $record->syncRoles(Role::find($request->roles));
-
-                // $record->syncPermissions(Permission::find($request->roles));
-
-                $record->syncPermissions(collect($request->permissions)->unique()->toArray());
-                $record->syncRoles(collect($request->roles)->unique()->toArray());
-
-                $record->personnelQualifications()->delete();
-
-                foreach ($request->input('personnel_qualifications', []) as $qualification) {
-                    $record->personnelQualifications()->create(array_merge($qualification, [
-                        'qualified_by_id' => auth()->id(),
-                    ]));
-                }
-
-            });
-
-        });
+        $updateStaffAccount->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $id, $request->validated());
 
         return redirect()->back()->with([
             'toast' => [
@@ -266,16 +244,9 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function setPass(UserPasswordRequest $request, $id)
+    public function setPass(UserPasswordRequest $request, int $id, ManageStaffAccountLifecycle $lifecycle): RedirectResponse
     {
-
-        DB::transaction(function () use ($request, $id): void {
-
-            User::findOrFail($id)->forceFill([
-                'password' => Hash::make($request->password),
-            ])->save();
-
-        });
+        $lifecycle->resetPassword($request->user()->id, $this->laboratoryAccess->activeLabId(), $id, $request->validated('password'));
 
         return redirect()->back()->with([
             'toast' => [
@@ -332,7 +303,7 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function unsetSignature()
+    public function unsetSignature(): RedirectResponse
     {
 
         // dd(request()->all());
@@ -350,17 +321,9 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy()
+    public function destroy(StaffAccountLifecycleRequest $request, ManageStaffAccountLifecycle $lifecycle): RedirectResponse
     {
-        abort_if(! auth()->user()->can('delete_users'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (User::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $lifecycle->archive($request->user()->id, $this->laboratoryAccess->activeLabId(), $request->validated('recordIds'), true);
 
         return redirect()->back()->with([
             'toast' => [
@@ -373,17 +336,9 @@ class UserController extends Controller
     /**
      * restore the specified resource from storage.
      */
-    public function restore()
+    public function restore(StaffAccountLifecycleRequest $request, ManageStaffAccountLifecycle $lifecycle): RedirectResponse
     {
-        abort_if(! auth()->user()->can('restore_users'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (User::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $lifecycle->archive($request->user()->id, $this->laboratoryAccess->activeLabId(), $request->validated('recordIds'), false);
 
         return redirect()->back()->with([
             'toast' => [
@@ -393,43 +348,15 @@ class UserController extends Controller
         ]);
     }
 
-    public function toggleActiveStatus(Request $request, $id)
+    public function setActiveStatus(StaffAccountLifecycleRequest $request, int $id, ManageStaffAccountLifecycle $lifecycle): RedirectResponse
     {
-        $user = User::findOrFail($id);
+        $active = (bool) $request->validated('is_active');
+        $lifecycle->setStatus($request->user()->id, $this->laboratoryAccess->activeLabId(), $id, $active);
 
-        $user->update([
-            'is_active' => ! $user->is_active,
-        ]);
-
-        if ($user->is_active) {
-            activity()
-                ->performedOn($user)
-                ->causedBy(auth()->user())
-                ->log('Activou o utilizador '.$user->name);
-
-            return redirect()->back()->with([
-                'toast' => [
-                    'title' => trans('gestlab.toasts.notification'),
-                    'message' => trans('gestlab.toasts.record_successfully_activated'),
-                ],
-            ]);
-
-        } else {
-            activity()
-                ->performedOn($user)
-                ->causedBy(auth()->user())
-                ->log('Desactivou o utilizador '.$user->full_name);
-
-            return redirect()->back()->with([
-                'toast' => [
-                    'title' => trans('gestlab.toasts.notification'),
-                    'message' => trans('gestlab.toasts.record_successfully_deactivated'),
-                ],
-            ]);
-
-        }
-
-        return back();
+        return redirect()->back()->with(['toast' => [
+            'title' => trans('gestlab.toasts.notification'),
+            'message' => trans($active ? 'gestlab.toasts.record_successfully_activated' : 'gestlab.toasts.record_successfully_deactivated'),
+        ]]);
     }
 
     /**
@@ -572,18 +499,18 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function impersonate()
+    public function impersonate(Request $request): RedirectResponse
     {
-        abort_if(! auth()->user()->can('impersonate_users'), 403, '');
+        $this->accounts->authorizeSystem($request->user(), 'impersonate_users');
+        abort_if($request->session()->has('impersonate'), 403);
+        $validated = $request->validate(['id' => ['required', 'integer']]);
+        $labId = $this->laboratoryAccess->activeLabId();
+        $target = User::query()->whereIn('users.id', DB::table('lab_user')->where('lab_id', $labId)->select('user_id'))->findOrFail($validated['id']);
+        abort_if($target->is($request->user()) || ! $target->is_active, 403);
 
-        // dd(collect(request()->id)->first()['id']);
-        // dd(request()->id);
-
-        $originalId = auth()->user()->id;
-
-        session()->put('impersonate', $originalId);
-
-        auth()->loginUsingId(request()->id);
+        $request->session()->put('impersonate', $request->user()->id);
+        auth()->login($target);
+        $request->session()->regenerate();
 
         return to_route('dashboard');
     }
@@ -591,34 +518,37 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function leave()
+    public function leave(Request $request): RedirectResponse
     {
-
-        if (! session()->has('impersonate')) {
+        if (! $request->session()->has('impersonate')) {
             abort(403);
         }
 
-        auth()->loginUsingId(session('impersonate'));
+        auth()->loginUsingId($request->session()->get('impersonate'));
 
-        session()->forget('impersonate');
+        $request->session()->forget('impersonate');
+        $request->session()->regenerate();
 
         return to_route('dashboard');
     }
 
-    public function getUser()
+    public function getUser(): JsonResponse
     {
-        $data = [];
-
-        if (request()->has('q')) {
-            $search = request()->q;
-
-            $data = DB::table('users')
-                ->select('users.*')
-                ->where('name', 'LIKE', "%$search%")
-                ->orWhere('email', 'LIKE', "%$search%")
-                ->get();
+        request()->validate(['q' => ['nullable', 'string', 'max:100']]);
+        $search = trim((string) request()->input('q', ''));
+        if ($search === '') {
+            return response()->json([]);
         }
 
-        return response()->json($data);
+        $labId = $this->laboratoryAccess->activeLabId();
+        $users = User::query()
+            ->whereIn('users.id', DB::table('lab_user')->where('lab_id', $labId)->select('user_id'))
+            ->where(fn ($query) => $query->where('name', 'ilike', '%'.$search.'%')->orWhere('email', 'ilike', '%'.$search.'%'))
+            ->orderBy('name')
+            ->limit(50)
+            ->get(['id', 'name'])
+            ->map(fn (User $user): array => ['id' => $user->id, 'name' => $user->name]);
+
+        return response()->json($users);
     }
 }

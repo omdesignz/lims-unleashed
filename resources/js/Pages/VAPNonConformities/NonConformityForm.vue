@@ -75,10 +75,10 @@
               </option>
             </BaseSelect>
 
-            <BaseSelect v-model="form.lab_id" label="Laboratório" :error="form.errors.lab_id">
-              <option value="">Sem laboratório associado</option>
-              <option v-for="lab in labs" :key="lab.id" :value="lab.id">{{ lab.name }}</option>
-            </BaseSelect>
+            <div class="ds-field-group">
+              <span class="ds-field-label">Laboratório responsável</span>
+              <p class="ds-field flex min-h-11 items-center">{{ labs[0]?.name || 'Laboratório activo' }}</p>
+            </div>
 
             <BaseSelect v-model="form.department_id" label="Departamento" :error="form.errors.department_id">
               <option value="">Sem departamento associado</option>
@@ -454,9 +454,8 @@ const props = defineProps({
 })
 
 const form = useForm({
-  lab_id: props.nonConformity?.lab_id || '',
   department_id: props.nonConformity?.department_id || '',
-  nc_number: props.nonConformity?.nc_number || generateNcNumber(),
+  nc_number: props.nonConformity?.nc_number || '',
   title: props.nonConformity?.title || '',
   description: props.nonConformity?.description || '',
   status: props.nonConformity?.status || 'opened',
@@ -467,7 +466,6 @@ const form = useForm({
   equipment_id: props.nonConformity?.equipment_id || '',
   batch_number: props.nonConformity?.batch_number || '',
   reported_by: props.nonConformity?.reported_by || '',
-  reported_by_id: props.nonConformity?.reported_by_id || '',
   assigned_to: props.nonConformity?.assigned_to || '',
   assigned_to_id: props.nonConformity?.assigned_to_id || '',
   reported_at: formatDateForInput(props.nonConformity?.reported_at) || formatDateForInput(new Date()),
@@ -566,15 +564,6 @@ function cloneInitialActions() {
 
 function labelFor(options, value) {
   return options.find(option => option.value === value)?.label || value || '--'
-}
-
-function generateNcNumber() {
-  const date = new Date()
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
-
-  return `NC-${year}${month}-${random}`
 }
 
 function addAction() {

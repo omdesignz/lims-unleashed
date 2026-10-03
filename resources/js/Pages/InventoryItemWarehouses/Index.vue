@@ -1,6 +1,9 @@
 <script setup>
 import Combobox from "@/Components/combobox.vue";
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import ArchiveMutationFeedback from "@/Components/archive-mutation-feedback.vue";
+import { useRecordArchive } from "@/Composables/useRecordArchive";
+import { usePermission } from "@/Composables/usePermissions";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
@@ -29,6 +32,18 @@ const props = defineProps({
 const actionId = ref(null);
 const isDrawerOpen = ref(false);
 const showActionConfirmation = ref(false);
+const pendingIDs = ref([]);
+const { hasPermission } = usePermission();
+const archive = useRecordArchive({
+  destroyUrl: () => route("iwarehouses.destroy"),
+  restoreUrl: () => route("iwarehouses.restore"),
+  onSuccess: () => {
+    showActionConfirmation.value = false;
+    pendingIDs.value = [];
+    actionId.value = null;
+    props.record.data.forEach(record => { record.selected = false; });
+  },
+});
 const totalRecords = computed(() => props.record.meta?.total ?? props.record.data.length);
 const drawerTitle = computed(() => form.id ? "Editar armazém" : "Novo armazém");
 const drawerDescription = computed(() => form.id
@@ -116,28 +131,30 @@ async function loadLocations(query, setOptions) {
 }
 
 function requestBulkAction(selectedActionId) {
+  if (archive.processing.value || showActionConfirmation.value || !["delete", "restore"].includes(selectedActionId)
+    || !hasPermission((selectedActionId === "delete" ? "delete_" : "restore_") + "iwarehouses")) return;
+  const ids = props.record.data.filter(record => record.selected).map(record => record.id);
+  if (!ids.length) return;
+  pendingIDs.value = [...ids];
   actionId.value = selectedActionId;
   showActionConfirmation.value = true;
 }
 
+function archiveRecord(operation, ids) {
+  if (!hasPermission((operation === "delete" ? "delete_" : "restore_") + "iwarehouses")) return;
+  archive.submit(operation, ids);
+}
+
 function confirmAction() {
-  const recordIds = props.record.data.filter((record) => record.selected).map((record) => record.id);
+  if (archive.processing.value) return;
+  archiveRecord(actionId.value, pendingIDs.value);
+}
 
-  if (!recordIds.length || !actionId.value) {
-    showActionConfirmation.value = false;
-    return;
-  }
-
-  const routeName = actionId.value === "restore" ? "iwarehouses.restore" : "iwarehouses.destroy";
-
-  router.get(route(routeName), { recordIds }, {
-    preserveState: false,
-    preserveScroll: true,
-    onFinish: () => {
-      showActionConfirmation.value = false;
-      actionId.value = null;
-    },
-  });
+function cancelAction() {
+  if (archive.processing.value) return;
+  showActionConfirmation.value = false;
+  pendingIDs.value = [];
+  actionId.value = null;
 }
 </script>
 
@@ -164,6 +181,8 @@ function confirmAction() {
     </section>
 
     <RecordsTable
+      :archive-handler="archiveRecord"
+      :action-processing="archive.processing.value"
       :record="record"
       :model="model"
       :abilities="abilities"
@@ -234,9 +253,14 @@ function confirmAction() {
       :description="confirmationDialogDescription"
       confirm="Confirmar"
       cancel="Cancelar"
-      @canceled="showActionConfirmation = false"
-      @close="showActionConfirmation = false"
+      :variant="actionId === 'restore' ? 'info' : 'danger'"
+      :disabled="archive.processing.value"
+      keep-open-on-confirm
+      @canceled="cancelAction"
       @confirmed="confirmAction"
-    />
+    >
+      <ArchiveMutationFeedback :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="router.reload()" />
+    </ConfirmDialog>
+    <ArchiveMutationFeedback v-if="!showActionConfirmation" :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="router.reload()" />
   </div>
 </template>

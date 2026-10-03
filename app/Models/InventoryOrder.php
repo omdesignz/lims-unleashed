@@ -3,17 +3,18 @@
 namespace App\Models;
 
 use App\Enums\Orders\InventoryOrderTrackingStatus;
-use HighSolutions\EloquentSequence\Sequence;
+use App\Traits\HasScopedSequence;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use LogicException;
 
 class InventoryOrder extends Model
 {
-    use HasFactory, SoftDeletes, Sequence;
+    use HasFactory, HasScopedSequence, SoftDeletes;
 
-    public CONST MENU_NAME = 'iorders';
+    public const MENU_NAME = 'iorders';
 
     /**
      * The attributes that are mass assignable.
@@ -21,6 +22,7 @@ class InventoryOrder extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'lab_id',
         'date',
         'supplier_id',
         'user_id',
@@ -34,8 +36,12 @@ class InventoryOrder extends Model
     ];
 
     protected $table = 'i_orders';
+
+    protected $attributes = [
+        'total_amount' => 0,
+    ];
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
-    
 
     /**
      * The attributes that should be cast.
@@ -44,14 +50,20 @@ class InventoryOrder extends Model
      */
     protected $casts = [
         'status' => InventoryOrderTrackingStatus::class,
+        'total_amount' => 'decimal:4',
     ];
 
-    public function sequence()
+    public function sequence(): array
     {
         return [
-            'group' => ['order_year', 'seq'],
+            'group' => ['order_year'],
             'fieldName' => 'seq',
         ];
+    }
+
+    public function scopeForLaboratory(Builder $query, int $labId): Builder
+    {
+        return $query->where('lab_id', $labId);
     }
 
     /**
@@ -59,7 +71,8 @@ class InventoryOrder extends Model
      *
      * @return Relationship
      */
-    public function supplier() {
+    public function supplier()
+    {
         return $this->belongsTo(InventoryItemSupplier::class, 'supplier_id');
     }
 
@@ -68,11 +81,12 @@ class InventoryOrder extends Model
      *
      * @return Relationship
      */
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-     /**
+    /**
      * Items
      *
      * @return Relationship
@@ -124,12 +138,17 @@ class InventoryOrder extends Model
     {
         parent::boot();
 
-            static::creating(function($order) {
+        static::creating(function ($order) {
 
-                $order->reference = 'PO-' . $order->order_year . '/' . str_pad ($order->seq, 4, '0', STR_PAD_LEFT);
-        
-            });
+            $order->reference = 'PO-'.$order->order_year.'/'.str_pad($order->seq, 4, '0', STR_PAD_LEFT);
+
+        });
+
+        static::updating(function (InventoryOrder $order): void {
+            if ($order->isDirty('lab_id')) {
+                throw new LogicException('A purchase order cannot change its owning laboratory.');
+            }
+        });
 
     }
-
 }

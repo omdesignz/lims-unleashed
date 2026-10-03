@@ -11,9 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::disableForeignKeyConstraints();
-
-        // Countries
         Schema::create('countries', function (Blueprint $table) {
             $table->id();
             $table->string('code');
@@ -24,7 +21,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Departments
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -39,7 +35,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Department & User Pivot
         Schema::create('department_user', function (Blueprint $table) {
             $table->id();
             $table->foreignId('department_id')->nullable()->constrained('departments');
@@ -50,7 +45,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Customer Categories
         Schema::create('customer_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -61,7 +55,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Customers
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -74,7 +67,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Warehouses
         Schema::create('warehouses', function (Blueprint $table) {
             $table->id();
             $table->string('email')->nullable();
@@ -101,14 +93,12 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Warehouses Password Reset Tokens
         Schema::create('warehouse_password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
 
-        // Contact Categories
         Schema::create('contact_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -119,7 +109,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Complementary Contacts
         Schema::create('complementary_contacts', function (Blueprint $table) {
             $table->id();
             $table->string('contact');
@@ -133,7 +122,291 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Parameters
+        Schema::create('units', function (Blueprint $table) {
+            $table->id();
+            $table->string('code')->unique();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'code']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('nwps', function (Blueprint $table) {
+            $table->id();
+            $table->string('code')->unique();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'code']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('collection_collaborations', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('collection_end_results', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('trans_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('faq_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('faqs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('category_id')->nullable()->constrained('faq_categories');
+            $table->string('description')->nullable();
+            $table->json('extra_data')->nullable();
+
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('faq_answers', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('faq_id')->nullable()->constrained('faqs');
+            $table->longText('description')->nullable();
+            $table->json('extra_data')->nullable();
+
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('customer_request_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('customer_requests', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('category_id')->nullable()->constrained('customer_request_categories');
+            $table->foreignId('customer_id')->nullable()->constrained('customers');
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses');
+            $table->longText('description')->nullable();
+            $table->boolean('answered')->default(false);
+            $table->string('contact')->nullable();
+            $table->string('email')->nullable();
+            $table->json('extra_data')->nullable();
+
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('vehicles', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('category_id')->nullable()->constrained('trans_categories');
+            $table->foreignId('department_id')->nullable()->constrained('departments');
+            $table->string('number_plate')->unique()->nullable();
+            $table->string('description')->nullable();
+            $table->json('extra_data')->nullable();
+
+            $table->index(['id', 'number_plate']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('standards', function (Blueprint $table) {
+            $table->id();
+            $table->string('code')->unique();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'code']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('protocols', function (Blueprint $table) {
+            $table->id();
+            $table->string('code')->unique();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'code']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('analysis_categories', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('department_id')->nullable()->constrained('departments');
+            $table->string('name')->unique();
+            $table->string('code')->nullable();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('packaging_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('temperatures', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('code')->nullable();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('profiles', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('code')->unique()->nullable();
+            $table->longText('description')->nullable();
+            $table->decimal('price', 10, 2)->default(0);
+            $table->foreignId('category_id')->nullable()->constrained('analysis_categories');
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('result_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->longText('description')->nullable();
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('invoice_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('code');
+            $table->longText('description')->nullable();
+
+            $table->index(['id', 'code']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('collection_reasons', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('department_id')->nullable()->constrained('departments');
+            $table->string('name')->unique();
+            $table->string('code')->nullable();
+            $table->string('description')->nullable();
+
+            $table->index(['id', 'name']);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('collections', function (Blueprint $table) {
+            $table->id();
+            $table->nullableMorphs('collectionable');
+            $table->foreignId('customer_id')->nullable()->constrained('customers');
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses');
+            $table->boolean('processed')->default(false);
+            $table->boolean('recollection')->default(false);
+
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('discount_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('description')->nullable();
+            $table->string('symbol')->unique()->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->softDeletes('deleted_at', 0);
+            $table->timestamps();
+        });
+
+        Schema::create('tax_types', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->decimal('percent', 5, 2);
+            $table->boolean('compound_tax')->default(false);
+            $table->boolean('collective_tax')->default(false);
+            $table->text('description')->nullable();
+            $table->foreignId('user_id')->nullable();
+
+            $table->softDeletes('deleted_at', 0);
+            $table->timestamps();
+        });
+
+        Schema::create('currencies', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('code');
+            $table->string('symbol')->nullable();
+            $table->string('thousand_separator')->nullable();
+            $table->string('decimal_separator')->nullable();
+            $table->boolean('swap_currency_symbol')->default(false);
+
+            $table->softDeletes('deleted_at', 0);
+            $table->timestamps();
+        });
+
+        Schema::create('payment_categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('code')->unique()->nullable();
+            $table->string('description')->nullable();
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
+        Schema::create('tax_exemptions', function (Blueprint $table) {
+            $table->id();
+            $table->string('code')->nullable();
+            $table->string('reason')->nullable();
+            $table->string('law')->nullable();
+            $table->longText('description')->nullable();
+            $table->foreignId('user_id')->nullable('users');
+
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
         Schema::create('parameters', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -154,7 +427,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Matrixes
         Schema::create('matrixes', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique()->nullable();
@@ -173,7 +445,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Products
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -188,7 +459,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Inspection Products
         Schema::create('inspection_products', function (Blueprint $table) {
             $table->id();
             $table->date('entry_date')->nullable();
@@ -209,208 +479,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Units
-        Schema::create('units', function (Blueprint $table) {
-            $table->id();
-            $table->string('code')->unique();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'code']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Normative Work Procedures
-        Schema::create('nwps', function (Blueprint $table) {
-            $table->id();
-            $table->string('code')->unique();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'code']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Collection Colaborations
-        Schema::create('collection_collaborations', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Collection End Results
-        Schema::create('collection_end_results', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Transport Categories
-        Schema::create('trans_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // FAQ Categories
-        Schema::create('faq_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // FAQs
-        Schema::create('faqs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('category_id')->nullable()->constrained('faq_categories');
-            $table->string('description')->nullable();
-            $table->json('extra_data')->nullable();
-
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // FAQ Answers
-        Schema::create('faq_answers', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('faq_id')->nullable()->constrained('faq');
-            $table->longText('description')->nullable();
-            $table->json('extra_data')->nullable();
-
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Customer Request Categories
-        Schema::create('customer_request_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Customer Requests
-        Schema::create('customer_requests', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('category_id')->nullable()->constrained('customer_request_categories');
-            $table->foreignId('customer_id')->nullable()->constrained('customer_id');
-            $table->foreignId('warehouse_id')->nullable()->constrained('warehouse_id');
-            $table->longText('description')->nullable();
-            $table->boolean('answered')->default(false);
-            $table->string('contact')->nullable();
-            $table->string('email')->nullable();
-            $table->json('extra_data')->nullable();
-
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Vehicles
-        Schema::create('vehicles', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('category_id')->nullable()->constrained('trans_categories');
-            $table->foreignId('department_id')->nullable()->constrained('departments');
-            $table->string('number_plate')->unique()->nullable();
-            $table->string('description')->nullable();
-            $table->json('extra_data')->nullable();
-
-            $table->index(['id', 'number_plate']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Standards
-        Schema::create('standards', function (Blueprint $table) {
-            $table->id();
-            $table->string('code')->unique();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'code']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Protocols
-        Schema::create('protocols', function (Blueprint $table) {
-            $table->id();
-            $table->string('code')->unique();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'code']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Analysis Categories
-        Schema::create('analysis_categories', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('department_id')->nullable()->constrained('departments');
-            $table->string('name')->unique();
-            $table->string('code')->nullable();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Packaging Categories
-        Schema::create('packaging_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Temperatures
-        Schema::create('temperatures', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('code')->nullable();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Profiles
-        Schema::create('profiles', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('code')->unique()->nullable();
-            $table->longText('description')->nullable();
-            $table->decimal('price', 10, 2)->default(0);
-            $table->foreignId('category_id')->nullable()->constrained('analysis_categories');
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Matrix & Profile Pivot
         Schema::create('matrix_profile', function (Blueprint $table) {
             $table->id();
             $table->foreignId('profile_id')->nullable()->constrained('profiles');
@@ -423,18 +491,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Result Categories
-        Schema::create('result_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->longText('description')->nullable();
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Parameter & Profile Pivot
         Schema::create('parameter_profile', function (Blueprint $table) {
             $table->id();
             $table->string('unit')->nullable();
@@ -449,7 +505,7 @@ return new class extends Migration
             $table->foreignId('parameter_id')->nullable()->constrained('parameters');
             $table->foreignId('profile_id')->nullable()->constrained('profiles');
             $table->foreignId('category_id')->nullable()->constrained('result_categories');
-            $table->foreignId('formula_id')->nullable()->constrained('formulas');
+            $table->foreignId('formula_id')->nullable();
             $table->foreignId('unit_id')->nullable()->constrained('units');
             $table->foreignId('protocol_id')->nullable()->constrained('protocols');
             $table->foreignId('standard_id')->nullable()->constrained('standards');
@@ -460,106 +516,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Invoice Categories
-        Schema::create('invoice_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('code');
-            $table->longText('description')->nullable();
-
-            $table->index(['id', 'code']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Collection Reasons
-        Schema::create('collection_reasons', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('department_id')->nullable()->constrained('departments');
-            $table->string('name')->unique();
-            $table->string('code')->nullable();
-            $table->string('description')->nullable();
-
-            $table->index(['id', 'name']);
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Collections
-        Schema::create('collections', function (Blueprint $table) {
-            $table->id();
-            $table->nullableMorphs('collectionable');
-            $table->foreignId('customer_id')->nullable()->constrained('customers');
-            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses');
-            $table->boolean('processed')->default(false);
-            $table->boolean('recollection')->default(false);
-
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Discount Categories
-        Schema::create('discount_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('description')->nullable();
-            $table->string('symbol')->unique()->nullable();
-            $table->foreignId('user_id')->nullable();
-            $table->softDeletes('deleted_at', 0);
-            $table->timestamps();
-        });
-
-        // Invoice Tax Types
-        Schema::create('tax_types', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->decimal('percent', 5, 2);
-            $table->boolean('compound_tax')->default(false);
-            $table->boolean('collective_tax')->default(false);
-            $table->text('description')->nullable();
-            $table->foreignId('user_id')->nullable();
-
-            $table->softDeletes('deleted_at', 0);
-            $table->timestamps();
-        });
-
-        // Currencies
-        Schema::create('currencies', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('code');
-            $table->string('symbol')->nullable();
-            $table->string('thousand_separator')->nullable();
-            $table->string('decimal_separator')->nullable();
-            $table->boolean('swap_currency_symbol')->default(false);
-
-            $table->softDeletes('deleted_at', 0);
-            $table->timestamps();
-        });
-
-        // Payment Categories
-        Schema::create('payment_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('code')->unique()->nullable();
-            $table->string('description')->nullable();
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Invoice Tax Exemptions
-        Schema::create('tax_exemptions', function (Blueprint $table) {
-            $table->id();
-            $table->string('code')->nullable();
-            $table->string('reason')->nullable();
-            $table->string('law')->nullable();
-            $table->longText('description')->nullable();
-            $table->foreignId('user_id')->nullable('users');
-
-            $table->softDeletes();
-            $table->timestamps();
-        });
-
-        // Invoices
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('type_id')->nullable()->constrained('invoice_categories');
@@ -601,7 +557,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Collection Product Pivot
         Schema::create('collection_product', function (Blueprint $table) {
             $table->id();
             $table->foreignId('collection_id')->nullable()->constrained('collections');
@@ -644,7 +599,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Invoice Items
         Schema::create('invoice_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('invoice_id')->nullable()->constrained('invoices');
@@ -674,7 +628,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Quotes
         Schema::create('quotes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users');
@@ -712,7 +665,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Quote Items
         Schema::create('quote_items', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('item_id')->nullable();
@@ -742,7 +694,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Receipts
         Schema::create('receipts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users');
@@ -767,7 +718,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Invoice & Receipt Pivot
         Schema::create('invoice_receipt', function (Blueprint $table) {
             $table->id();
             $table->foreignId('invoice_id')->nullable()->constrained('invoices');
@@ -785,7 +735,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Contract Guides
         Schema::create('contract_guides', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users');
@@ -813,7 +762,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Contract Guide Items
         Schema::create('contract_guide_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('guide_id')->nullable()->constrained('contract_guides');
@@ -833,7 +781,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Credit Notes
         Schema::create('credit_notes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users');
@@ -871,7 +818,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Credit Note Items
         Schema::create('credit_note_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('note_id')->nullable()->constrained('credit_notes');
@@ -903,7 +849,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Collection Collaboration Pivot
         Schema::create('col_collab', function (Blueprint $table) {
             $table->id();
             $table->foreignId('collection_id')->nullable()->constrained('collections');
@@ -914,7 +859,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Collection Reason Pivot
         Schema::create('col_reason', function (Blueprint $table) {
             $table->id();
             $table->foreignId('collection_id')->nullable()->constrained('collections');
@@ -925,7 +869,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Collection Laboratory Codes
         Schema::create('lab_codes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('collection_id')->nullable()->constrained('collection_product');
@@ -939,7 +882,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Programmed Collections
         Schema::create('programmed_collections', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users');
@@ -958,7 +900,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Direct Collections
         Schema::create('direct_collections', function (Blueprint $table) {
             $table->id();
             $table->string('description')->nullable();
@@ -969,7 +910,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Samples
         Schema::create('samples', function (Blueprint $table) {
             $table->id();
             $table->foreignId('cl_id')->nullable()->constrained('lab_codes');
@@ -982,7 +922,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Recollections
         Schema::create('recollections', function (Blueprint $table) {
             $table->id();
             $table->foreignId('collection_id')->nullable()->constrained('collection_product');
@@ -999,7 +938,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Analysis
         Schema::create('analysis', function (Blueprint $table) {
             $table->id();
             $table->foreignId('cl_id')->nullable()->constrained('lab_codes');
@@ -1018,7 +956,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Results
         Schema::create('results', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sample_id')->nullable()->constrained('samples');
@@ -1065,7 +1002,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Counter Analysis
         Schema::create('counter_analysis', function (Blueprint $table) {
             $table->id();
             $table->foreignId('result_id')->nullable()->constrained('results');
@@ -1089,7 +1025,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Quality Certificates
         Schema::create('quality_certificates', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users');
@@ -1109,7 +1044,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Import Certificates
         Schema::create('import_certificates', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users');
@@ -1138,7 +1072,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Import Certificate Items
         Schema::create('importcert_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('certificate_id')->nullable()->constrained('import_certificates');
@@ -1155,7 +1088,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Export Certificates
         Schema::create('export_certificates', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users');
@@ -1183,7 +1115,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Export Certificate Items
         Schema::create('exportcert_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('certificate_id')->nullable()->constrained('export_certificates');
@@ -1196,7 +1127,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::enableForeignKeyConstraints();
     }
 
     /**

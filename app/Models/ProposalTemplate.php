@@ -6,6 +6,7 @@ use App\Filters\GlobalFilter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\QueryBuilder\AllowedFilter;
 
@@ -33,6 +34,11 @@ class ProposalTemplate extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function proposals(): HasMany
+    {
+        return $this->hasMany(VAPProposal::class, 'template_id')->withoutGlobalScope('proposal_laboratory')->withTrashed();
     }
 
     public static function getAllowedFilters(): array

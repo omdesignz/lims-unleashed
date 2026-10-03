@@ -6,9 +6,10 @@ defineOptions({ layout: Layout });
 
 defineProps({
   record: { type: Object, required: true },
+  ownerOptions: { type: Array, default: () => [] },
 });
 </script>
 
 <template>
-  <CollectionAccessionForm kind="programmed" :record="record" />
+  <CollectionAccessionForm kind="programmed" :record="record" :owner-options="ownerOptions" />
 </template>

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f0e01dcb0e4d078de658a1d204fd0b26",
+    "content-hash": "79ae0a921ea5408a5db00c8b9a98efa0",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -2053,72 +2053,6 @@
                 }
             ],
             "time": "2026-07-08T16:19:22+00:00"
-        },
-        {
-            "name": "highsolutions/eloquent-sequence",
-            "version": "3.13.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/highsolutions/eloquent-sequence.git",
-                "reference": "f292e386777cb43ddd7c88b5e172b9a9d42f2b81"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/highsolutions/eloquent-sequence/zipball/f292e386777cb43ddd7c88b5e172b9a9d42f2b81",
-                "reference": "f292e386777cb43ddd7c88b5e172b9a9d42f2b81",
-                "shasum": ""
-            },
-            "require": {
-                "illuminate/support": "5.*|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0|^13.0",
-                "php": "^7.1.3|^7.3|^8.0.2"
-            },
-            "require-dev": {
-                "mockery/mockery": "^1.0",
-                "orchestra/testbench": "3.*|4.*|5.*|6.*|7.*|8.*|9.*|10.*|11.*",
-                "phpunit/phpunit": "6.*|7.*|8.*|9.*|10.*|11.*|12.*|13.*"
-            },
-            "type": "library",
-            "extra": {
-                "component": "package",
-                "frameworks": [
-                    "Laravel 5.x",
-                    "Laravel 6.x",
-                    "Laravel 7.x",
-                    "Laravel 8.x",
-                    "Laravel 9.x",
-                    "Laravel 10.x",
-                    "Laravel 11.x",
-                    "Laravel 12.x"
-                ]
-            },
-            "autoload": {
-                "psr-4": {
-                    "HighSolutions\\EloquentSequence\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "HighSolutions",
-                    "email": "adam@highsolutions.pl"
-                }
-            ],
-            "description": "A Laravel package for easy creation and management sequence support for Eloquent models with elastic configuration.",
-            "keywords": [
-                "eloquent",
-                "laravel",
-                "model",
-                "order",
-                "sequence"
-            ],
-            "support": {
-                "issues": "https://github.com/highsolutions/eloquent-sequence/issues",
-                "source": "https://github.com/highsolutions/eloquent-sequence/tree/3.13.0"
-            },
-            "time": "2026-03-18T12:57:53+00:00"
         },
         {
             "name": "inertiajs/inertia-laravel",

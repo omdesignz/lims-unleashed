@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use LogicException;
 
 class Complaint extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'lab_id',
         'reference',
         'title',
         'description',
@@ -33,10 +35,25 @@ class Complaint extends Model
     ];
 
     protected $casts = [
+        'lab_id' => 'integer',
         'received_at' => 'datetime',
         'acknowledged_at' => 'datetime',
         'resolved_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $complaint): void {
+            if ($complaint->isDirty('lab_id')) {
+                throw new LogicException('A complaint cannot change its owning laboratory.');
+            }
+        });
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
+    }
 
     public function customer(): BelongsTo
     {

@@ -45,13 +45,10 @@ const form = useForm({
   recipient_type: 'all',
   recipients: [],
   group: 'all',
-  schedule_send: false,
-  scheduled_at: '',
-  expires_at: '',
 })
 
 const recipientOptions = [
-  { value: 'all', label: 'Todos', description: 'Todos os utilizadores registados', icon: UsersIcon },
+  { value: 'all', label: 'Todos', description: 'Utilizadores deste laboratório', icon: UsersIcon },
   { value: 'group', label: 'Grupo', description: 'Segmento operacional predefinido', icon: UserGroupIcon },
   { value: 'specific', label: 'Especificos', description: 'Selecção individual de utilizadores', icon: UserIcon },
 ]
@@ -158,12 +155,6 @@ const submit = () => {
                   <option value="low">Baixa</option><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option>
                 </BaseSelect>
                 <p v-if="form.errors.priority" class="ds-field-error">{{ form.errors.priority }}</p>
-              </div>
-              <div class="ds-field-group sm:col-span-2">
-                <label for="notification-expiry" class="ds-field-label">Expira em <span class="font-normal text-[var(--ds-text-soft)]">(opcional)</span></label>
-                <DateTimePicker id="notification-expiry" v-model="form.expires_at" type="datetime-local" class="ds-field" />
-                <p class="ds-field-help">A mensagem deixa de ser relevante depois desta data.</p>
-                <p v-if="form.errors.expires_at" class="ds-field-error">{{ form.errors.expires_at }}</p>
               </div>
             </div>
           </div>

@@ -6,7 +6,7 @@ import InsertResultComponent from "@/Components/results/InsertResultComponent.vu
 import VerifyResultComponent from "@/Components/results/VerifyResultComponent.vue";
 import { ResultsDataService } from "@/Services/ResultsDataService.js";
 import { computed, onMounted, ref } from "vue";
-import { Link, router, useForm } from "@inertiajs/vue3";
+import { Link, useForm } from "@inertiajs/vue3";
 import {
   ArrowTopRightOnSquareIcon,
   BeakerIcon,
@@ -80,7 +80,7 @@ const props = defineProps({
   },
   allow_worksheet_draft: {
     type: Boolean,
-    default: true,
+    default: false,
   },
 });
 
@@ -89,6 +89,7 @@ const calculationParameters = ref([]);
 const existingCalculationData = ref({});
 const resultsLoadError = ref("");
 const workflowNotice = ref("");
+const worksheetForm = useForm({});
 
 const form = useForm({
   action: props.action,
@@ -118,7 +119,7 @@ const workflowActionIndex = {
 };
 
 const CurrentComponent = computed(() => {
-  return workflowComponents[props.action] || InsertResultComponent;
+  return workflowComponents[props.action] || null;
 });
 
 const workflowTitle = computed(() => {
@@ -301,6 +302,15 @@ const executionControlCards = computed(() => [
 onMounted(loadResultParameters);
 
 async function loadResultParameters() {
+  if (!CurrentComponent.value) {
+    resultsLoadError.value = "";
+    form.results = [];
+    workflowNotice.value = props.action === "completed"
+      ? "Os resultados estão aprovados. Esta consulta não modifica a análise."
+      : "A etapa desta análise não permite alterações de resultados.";
+    return;
+  }
+
   try {
     resultsLoadError.value = "";
     workflowNotice.value = "";
@@ -349,7 +359,8 @@ async function loadResultParameters() {
 }
 
 function createWorksheetDraft() {
-  router.post(route("analysis.worksheet-draft", props.record?.id), {}, {
+  if (!props.allow_worksheet_draft || worksheetForm.processing || !props.record?.id) return;
+  worksheetForm.post(route("analysis.worksheet-draft", props.record.id), {
     preserveScroll: true,
   });
 }
@@ -380,7 +391,7 @@ function handleCalculatedResults(calculationPayload) {
 }
 
 function submitResults() {
-  if (form.processing) {
+  if (form.processing || !CurrentComponent.value) {
     return;
   }
 
@@ -623,6 +634,7 @@ defineExpose({
         </section>
 
         <component
+          v-if="CurrentComponent"
           :is="CurrentComponent"
           :form="form"
           :record="record"
@@ -789,15 +801,22 @@ defineExpose({
               <button
                 v-if="allow_worksheet_draft"
                 type="button"
+                :disabled="worksheetForm.processing"
+                :aria-busy="worksheetForm.processing"
                 class="ds-button ds-button-secondary mt-4 w-full"
                 @click="createWorksheetDraft"
               >
                 <DocumentTextIcon class="h-4 w-4" />
-                Criar folha de trabalho
+                {{ worksheetForm.processing ? "A preparar..." : "Criar folha de trabalho" }}
               </button>
             </template>
           </div>
         </section>
+
+        <p v-if="worksheetForm.errors.worksheet" class="ds-field-error" role="alert">{{ worksheetForm.errors.worksheet }}</p>
+        <Link v-if="worksheetForm.errors.worksheet" :href="route('worksheets.index', { trashed: 'only' })" class="ds-table-action mt-2">
+          Consultar o arquivo de folhas de trabalho
+        </Link>
 
         <section class="ds-command-surface overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-4 py-3">

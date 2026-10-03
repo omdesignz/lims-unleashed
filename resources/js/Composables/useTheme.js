@@ -10,12 +10,12 @@ function getSystemPreference() {
 
 function readStorage() {
     if (typeof window === 'undefined') return null
-    return window.localStorage.getItem(STORAGE_KEY)
+    try { return window.localStorage.getItem(STORAGE_KEY) } catch { return null }
 }
 
 function writeStorage(value) {
     if (typeof window === 'undefined') return
-    window.localStorage.setItem(STORAGE_KEY, value)
+    try { window.localStorage.setItem(STORAGE_KEY, value) } catch { /* Theme still works without storage. */ }
 }
 
 export function useTheme(userTheme = null, persistToServer = false) {
@@ -29,11 +29,16 @@ export function useTheme(userTheme = null, persistToServer = false) {
 
     function applyTheme() {
         if (typeof document === 'undefined') return
+        const style = document.createElement('style')
+        style.textContent = '*,*::before,*::after{transition:none !important}'
+        document.head.append(style)
         if (isDark.value) {
             document.documentElement.classList.add(DARK_CLASS)
         } else {
             document.documentElement.classList.remove(DARK_CLASS)
         }
+        void document.body.offsetHeight
+        requestAnimationFrame(() => requestAnimationFrame(() => style.remove()))
     }
 
     function toggle() {

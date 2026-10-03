@@ -22,7 +22,7 @@
             <ArrowDownTrayIcon class="h-4 w-4" />
             Exportar
           </button>
-          <Link :href="route('vap-inventory.reagents.consumption.create')" class="ds-button ds-button-primary">
+          <Link v-if="hasPermission('add_reagent_consumption')" :href="route('vap-inventory.reagents.consumption.create')" class="ds-button ds-button-primary">
             <PlusIcon class="h-4 w-4" />
             Registrar consumo
           </Link>
@@ -156,7 +156,7 @@
             <div>
               <h2 class="ds-heading text-base">Registos de consumo</h2>
               <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-                {{ consumptions.total || 0 }} registos com impacto directo no existências.
+                {{ consumptions.total || 0 }} registos de consumo e reposições preservados.
               </p>
             </div>
           </div>
@@ -208,6 +208,7 @@
                   <div class="min-w-0">
                     <p class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ consumption.reagent_name }}</p>
                     <p class="mt-1 font-mono text-xs text-[color:var(--ds-text-soft)]">{{ consumption.item?.code || 'N/A' }}</p>
+                    <span v-if="consumption.reversal" class="ds-chip mt-1">Revertido</span>
                   </div>
                 </div>
               </td>
@@ -237,8 +238,8 @@
                   <Link :href="route('vap-inventory.reagents.consumption.show', consumption.id)" class="ds-table-action">
                     Visualizar
                   </Link>
-                  <button type="button" class="ds-table-action ds-table-action-danger" @click="openDeleteConsumption(consumption)">
-                    Eliminar
+                  <button v-if="hasPermission('delete_reagent_consumption') && !consumption.reversal" type="button" class="ds-table-action ds-table-action-danger" :disabled="reversal.processing.value" @click="reversal.open(consumption)">
+                    Reverter consumo
                   </button>
                 </div>
               </td>
@@ -339,23 +340,26 @@
     </section>
 
     <confirm-dialog
-      v-if="consumptionPendingDeletion"
-      title="Eliminar registo de consumo"
-      description="Esta acção restaura as existências associadas ao registo e deve ser usada apenas quando a saída foi lançada por engano."
-      confirm="Eliminar registo"
+      v-if="reversal.pending.value"
+      title="Reverter consumo"
+      description="Esta acção repõe as existências uma única vez. O consumo original e o movimento de reposição ficam preservados."
+      :confirm="reversal.processing.value ? 'A reverter…' : 'Reverter consumo'"
       cancel="Manter registo"
       variant="danger"
-      @confirmed="confirmDeleteConsumption"
-      @canceled="clearDeleteConsumption"
+      keep-open-on-confirm
+      :disabled="reversal.processing.value"
+      @confirmed="reversal.confirm"
+      @canceled="reversal.close"
     >
       <div class="mt-4 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] p-4 text-left">
         <p class="text-sm font-bold text-[color:var(--ds-text)]">
-          {{ consumptionPendingDeletion.reagent_name }}
+          {{ reversal.pending.value.reagent_name }}
         </p>
         <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-          {{ formatQuantity(consumptionPendingDeletion.quantity_used) }} em {{ consumptionPendingDeletion.warehouse?.name || 'armazém não definido' }}
+          {{ formatQuantity(reversal.pending.value.quantity_used) }} em {{ reversal.pending.value.warehouse?.name || 'armazém não definido' }}
         </p>
       </div>
+      <p v-if="reversal.error.value" role="alert" class="mt-3 text-sm text-red-700 dark:text-red-300">{{ reversal.error.value }}</p>
     </confirm-dialog>
   </div>
 </template>
@@ -364,6 +368,8 @@
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import { useConsumptionReversal } from '@/Composables/useConsumptionReversal'
+import { usePermission } from '@/Composables/usePermissions'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import {
   ArrowDownTrayIcon,
@@ -416,9 +422,13 @@ const props = defineProps({
 })
 
 const loading = ref(false)
-const consumptionPendingDeletion = ref(null)
+const { hasPermission } = usePermission()
+const reversal = useConsumptionReversal({
+  canReverse: () => hasPermission('delete_reagent_consumption'),
+  reverseUrl: id => route('vap-inventory.reagents.consumption.reverse', id),
+})
 const quantityFormatter = new Intl.NumberFormat('pt-PT', {
-  maximumFractionDigits: 2,
+  maximumFractionDigits: 4,
 })
 
 const filters = useForm({
@@ -569,34 +579,6 @@ function exportReport() {
     report_type: 'consumption',
     format: 'pdf',
     filters: filters.data(),
-  })
-}
-
-function openDeleteConsumption(consumption) {
-  consumptionPendingDeletion.value = consumption
-}
-
-function clearDeleteConsumption() {
-  consumptionPendingDeletion.value = null
-}
-
-function confirmDeleteConsumption() {
-  if (!consumptionPendingDeletion.value) {
-    return
-  }
-
-  const consumptionId = consumptionPendingDeletion.value.id
-  consumptionPendingDeletion.value = null
-
-  router.delete(route('vap-inventory.reagents.consumption.destroy', consumptionId), {
-    preserveScroll: true,
-    preserveState: true,
-    onStart: () => {
-      loading.value = true
-    },
-    onFinish: () => {
-      loading.value = false
-    },
   })
 }
 

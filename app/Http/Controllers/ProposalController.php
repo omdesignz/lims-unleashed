@@ -2,26 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Proposals\ProposalTrackingStatus;
-use App\Http\Requests\ProposalRequest;
+use App\Actions\DownloadStaffProposalPdf;
+use App\Actions\SetProposalArchived;
+use App\Http\Requests\SetProposalRecordsArchivedRequest;
 use App\Http\Resources\ProposalResource;
-use App\Models\CollectionProduct;
-use App\Models\DiscountCategory;
-use App\Models\LabCode;
 use App\Models\Proposal;
-use App\Models\ProposalComplianceAgreement;
-use App\Models\ProposalComplianceAgreementLog;
-use App\Models\ProposalItem;
-use App\Models\ProposalTemplate;
 use App\Models\VAPProposal;
-use App\Models\VAPProposalTemplate;
-use App\Settings\GeneralSettings;
-use App\Support\NotificationTemplateService;
-use App\Support\ReportStudioPdfBuilder;
-use App\Support\ReportStudioPdfRenderer;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -61,84 +50,9 @@ class ProposalController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(): RedirectResponse
     {
-        // abort_if( !auth()->user()->can('add_proposals'), 403, '');
-
-        return Inertia::render('Proposals/Create', [
-            'templates' => ProposalTemplate::select('id', 'name', 'content')->get(),
-            'discount_categories' => collect(DiscountCategory::all())->map(function ($item) {
-                return [
-                    'value' => $item->id,
-                    'label' => $item->symbol,
-                ];
-            }),
-        ]);
-    }
-
-    //
-    public function store(ProposalRequest $request, NotificationTemplateService $templates)
-    {
-        // Send proposal via email
-        // $proposal->warehouse->notify(new ProposalSentNotification($proposal));
-
-        DB::transaction(function () use ($request, $templates): void {
-            $proposal = Proposal::create($request->safe()->except(['items']));
-
-            foreach (collect($request->safe()->only(['items']))->first() as $item) {
-
-                $obj = new ProposalItem;
-
-                $obj->proposal_id = $proposal->id;
-                $obj->item_id = $item['item_id'];
-                $obj->item_description = $item['item_description'];
-                $obj->exemption_id = $item['exemption_id'];
-                $obj->exemption_code = $item['exemption_code'];
-                $obj->discount_id = $item['discount_id'];
-                $obj->unit_id = $item['unit_id'];
-                $obj->standard_id = $item['standard_id'];
-                $obj->tax_id = $item['tax_id'];
-                $obj->qty = $item['qty'];
-                $obj->unit_price = $item['unit_price'];
-                $obj->total = $item['total'];
-                $obj->charge_tax = $item['charge_tax'];
-                $obj->withhold_tax = $item['withhold_tax'];
-                $obj->global_discount_portion_percentage = $item['global_discount_portion_percentage'];
-                $obj->global_discount_amount = $item['global_discount_amount'];
-                $obj->tax_amount = $item['tax_amount'];
-                $obj->tax_percentage = $item['tax_percentage'];
-                $obj->discount_amount = $item['discount_amount'];
-                $obj->discount_percentage = $item['discount_percentage'];
-                $obj->obs = $item['obs'];
-
-                $obj->save();
-
-            }
-
-            $proposal->complianceAgreement()->create([
-                'confidentiality' => $request->confidentiality ?? false,
-                'impartiality' => $request->impartiality ?? false,
-                'nondisclosure' => $request->nondisclosure ?? false,
-                'acknowledged_at' => null,
-                'client_ip' => null,
-            ]);
-
-            $templates->notify([$proposal->warehouse], 'commercial.proposal.sent_customer', [
-                'document_number' => $proposal->proposal_number,
-                'document_url' => route('vap-proposals.public.show', $proposal->unique_hash),
-            ]);
-
-        });
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ],
-        ]);
+        return redirect()->route('vap-proposals.create');
     }
 
     /**
@@ -150,7 +64,7 @@ class ProposalController extends Controller
             ->with('complianceAgreement', 'customer', 'warehouse', 'template', 'items', 'user', 'discount_category', 'department')
             ->withCount('activities as revision_count')
             ->withMax('activities as last_revision_at', 'created_at')
-            ->find($id);
+            ->findOrFail($id);
 
         $items = collect($proposal?->items ?? []);
         $taxableItems = $items->filter(fn ($item) => (float) ($item->tax_amount ?? 0) > 0)->count();
@@ -198,185 +112,16 @@ class ProposalController extends Controller
         ]);
     }
 
-    public function edit($id)
+    public function edit(int $id): RedirectResponse
     {
-        // abort_if( !auth()->user()->can('edit_proposals'), 403, '');
+        $proposal = VAPProposal::query()->findOrFail($id);
 
-        // Find the record
-        $record = Proposal::with('complianceAgreement', 'customer', 'warehouse', 'template', 'items', 'user', 'discount_category', 'department')->findOrFail($id);
-
-        // Return Inertia View with record data
-        return Inertia::render('Proposals/Edit', [
-            'record' => [
-                'id' => $record->id,
-                'proposal_no' => $record->proposal_no,
-                'service_location' => $record->service_location,
-                'customer_id' => [
-                    'value' => $record->customer_id,
-                    'label' => $record->customer->name,
-                ],
-                'warehouse_id' => [
-                    'value' => $record->warehouse_id,
-                    'label' => $record->warehouse->address,
-                ],
-                'department_id' => [
-                    'value' => $record->department_id,
-                    'label' => $record->department->name,
-                ],
-                'template_id' => [
-                    'value' => $record->template_id,
-                    'label' => $record->template->name,
-                ],
-                'discount_type' => [
-                    'value' => $record->discount_type,
-                    'label' => $record->discount_category?->name,
-                ],
-                'status' => $record->status,
-                'details' => json_decode($record->details),
-                'expiry_date' => $record->expiry_date,
-                'is_original' => $record->is_original,
-                'discount_type' => $record->discount_type,
-                'file_path' => $record->file_path,
-                'sub_total' => $record->sub_total,
-                'total' => $record->total,
-                'unique_hash' => $record->unique_hash,
-                'use_matrix_price' => $record->use_matrix_price,
-                'withholding_tax_amount' => $record->withholding_tax_amount,
-                'withholding_tax_percentage' => $record->withholding_tax_percentage,
-                'global_discount_amount' => $record->global_discount_amount,
-                'global_discount_percentage' => $record->global_discount_percentage,
-                'withhold_tax' => $record->withhold_tax,
-                'converted_to_invoice' => $record->converted_to_invoice,
-                'obs' => $record->obs,
-                'tolerance_days' => $record->tolerance_days,
-                'items' => collect($record->items)->map(function ($item) {
-                    return [
-                        'id' => $item->id ?? null,
-                        'proposal_id' => $item->proposal_id ?? null,
-                        'unit_id' => [
-                            'value' => $item->unit_id,
-                            'label' => $item->unit->code,
-                        ],
-                        'standard_id' => [
-                            'value' => $item->standard_id,
-                            'label' => $item->standard->code,
-                        ],
-                        'exemption_id' => $item->exemption_id ?? null,
-                        'exemption_code' => $item->exemption_code ?? null,
-                        'discount_id' => $item->discount_id,
-                        'item_id' => [
-                            'value' => $item->item_id,
-                            'label' => $item->item_description,
-                            'price' => $item->unit_price + $item->discount_amount,
-                            'tax_id' => $item->tax_id,
-                            'charge_tax' => $item->charge_tax,
-                            'tax_percentage' => $item->tax_percentage,
-                            'exemption_id' => $item->exemption_id,
-                            'exemption_code' => $item->exemption_code,
-                        ],
-                        'item_description' => $item->item_description,
-                        'itemable_id' => [
-                            'value' => $item->itemable_id ?? '',
-                            'label' => $item->itemable_type,
-                        ],
-                        'itemable_type' => $item->itemable_type,
-                        'qty' => $item->qty ?? 1,
-                        'unit_price' => $item->unit_price,
-                        'tax_id' => $item->tax_id,
-                        'total' => $item->total,
-                        'discount_percentage' => $item->discount_percentage,
-                        'discount_amount' => $item->discount_amount,
-                        'tax_percentage' => $item->tax_percentage,
-                        'tax_amount' => $item->tax_amount,
-                        'charge_tax' => $item->charge_tax,
-                        'withhold_tax' => $item->withhold_tax,
-                        'global_discount_portion_percentage' => $item->global_discount_portion_percentage,
-                        'global_discount_amount' => $item->global_discount_amount,
-                        'obs' => $item->obs,
-                    ];
-                }),
-            ],
-            'templates' => ProposalTemplate::select('id', 'name', 'content')->get(),
-            'discount_categories' => collect(DiscountCategory::all())->map(function ($item) {
-                return [
-                    'value' => $item->id,
-                    'label' => $item->symbol,
-                ];
-            }),
-        ]);
+        return redirect()->route('vap-proposals.edit', $proposal->id);
     }
 
-    public function update(ProposalRequest $request, $id)
+    public function destroy(SetProposalRecordsArchivedRequest $request, SetProposalArchived $archive): RedirectResponse
     {
-        abort_if(! auth()->user()->can('edit_proposals'), 403, '');
-
-        DB::transaction(function () use ($request, $id): void {
-
-            tap(Proposal::findOrFail($id), function ($record) use ($request) {
-
-                $record->update($request->validated());
-
-                ProposalItem::where('proposal_id', $record->id)->forcedelete();
-
-                foreach (collect($request->safe()->only(['items']))->first() as $item) {
-
-                    $obj = new ProposalItem;
-
-                    $obj->proposal_id = $record->id;
-                    $obj->item_id = $item['item_id'];
-                    $obj->item_description = $item['item_description'];
-                    $obj->exemption_id = $item['exemption_id'];
-                    $obj->exemption_code = $item['exemption_code'];
-                    $obj->discount_id = $item['discount_id'];
-                    $obj->unit_id = $item['unit_id'];
-                    $obj->tax_id = $item['tax_id'];
-                    $obj->qty = $item['qty'];
-                    $obj->unit_price = $item['unit_price'];
-                    $obj->standard_id = $item['standard_id'];
-                    $obj->total = $item['total'];
-                    $obj->charge_tax = $item['charge_tax'];
-                    $obj->tax_amount = $item['tax_amount'];
-                    $obj->tax_percentage = $item['tax_percentage'];
-                    $obj->discount_amount = $item['discount_amount'];
-                    $obj->discount_percentage = $item['discount_percentage'];
-                    $obj->withhold_tax = $item['withhold_tax'];
-                    $obj->global_discount_portion_percentage = $item['global_discount_portion_percentage'];
-                    $obj->global_discount_amount = $item['global_discount_amount'];
-                    $obj->obs = $item['obs'];
-
-                    $obj->save();
-
-                    if ($record->itemable_id) {
-
-                        CollectionProduct::findOrFail(LabCode::findOrFail($record->itemable_id)->collection_id)->proposal_item()->save($record);
-
-                    }
-
-                }
-
-            });
-
-        });
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ],
-        ]);
-    }
-
-    public function destroy()
-    {
-        // abort_if( !auth()->user()->can('delete_proposals'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (Proposal::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $archive->execute((int) $request->attributes->get('proposal_laboratory_id'), $request->user()->id, $request->validated('recordIds'), true);
 
         return redirect()->back()->with([
             'toast' => [
@@ -386,111 +131,14 @@ class ProposalController extends Controller
         ]);
     }
 
-    public function restore()
+    public function restore(SetProposalRecordsArchivedRequest $request, SetProposalArchived $archive): RedirectResponse
     {
-        // abort_if( !auth()->user()->can('restore_proposals'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (Proposal::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $archive->execute((int) $request->attributes->get('proposal_laboratory_id'), $request->user()->id, $request->validated('recordIds'), false);
 
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ],
-        ]);
-    }
-
-    public function accept(Request $request, Proposal $proposal, NotificationTemplateService $templates)
-    {
-        // Validate acknowledgment
-        $request->validate([
-            'confidentiality' => 'required|boolean',
-            'impartiality' => 'required|boolean',
-            'nondisclosure' => 'required|boolean',
-        ]);
-
-        $complianceData = [
-            'confidentiality' => $request->confidentiality,
-            'impartiality' => $request->impartiality,
-            'nondisclosure' => $request->nondisclosure,
-            'acknowledged_at' => now(),
-            'client_ip' => $request->ip(),
-        ];
-
-        // Log the current agreement to the logs table
-        ProposalComplianceAgreementLog::create(array_merge($complianceData, [
-            'proposal_id' => $proposal->id,
-        ]));
-
-        // Update or create the current agreement
-        ProposalComplianceAgreement::updateOrCreate(
-            ['proposal_id' => $proposal->id],
-            $complianceData
-        );
-
-        // Update proposal status
-        $proposal->update([
-            'status' => ProposalTrackingStatus::ACCEPTED,
-        ]);
-
-        if ($proposal->warehouse) {
-            $templates->notify([$proposal->warehouse], 'commercial.proposal.compliance_acknowledged', [
-                'document_number' => $proposal->proposal_number,
-                'document_url' => route('vap-proposals.public.show', $proposal->unique_hash),
-            ]);
-        }
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ],
-        ]);
-    }
-
-    public function reject(Request $request, Proposal $proposal)
-    {
-        // Validate acknowledgment
-        $request->validate([
-            'confidentiality' => 'required|boolean',
-            'impartiality' => 'required|boolean',
-            'nondisclosure' => 'required|boolean',
-        ]);
-
-        $complianceData = [
-            'confidentiality' => $request->confidentiality,
-            'impartiality' => $request->impartiality,
-            'nondisclosure' => $request->nondisclosure,
-            'acknowledged_at' => now(),
-            'client_ip' => $request->ip(),
-        ];
-
-        // Log the current agreement to the logs table
-        ProposalComplianceAgreementLog::create(array_merge($complianceData, [
-            'proposal_id' => $proposal->id,
-        ]));
-
-        // Update or create the current agreement
-        ProposalComplianceAgreement::updateOrCreate(
-            ['proposal_id' => $proposal->id],
-            $complianceData
-        );
-
-        // Update proposal status
-        $proposal->update([
-            'status' => ProposalTrackingStatus::REJECTED,
-        ]);
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
             ],
         ]);
     }
@@ -502,60 +150,29 @@ class ProposalController extends Controller
         if (request()->has('q')) {
             $search = request()->q;
 
-            $data = DB::table('proposals')
-                ->select('proposals.*')
-                ->where('proposal_no', 'LIKE', "%$search%")
-                ->orWhere('service_location', 'LIKE', "%$search%")
+            $data = Proposal::query()
+                ->where(fn ($query) => $query->where('proposal_no', 'LIKE', "%$search%")
+                    ->orWhere('service_location', 'LIKE', "%$search%"))
+                ->limit(50)
                 ->get();
         }
 
         return response()->json($data);
     }
 
-    public function getPDF(
-        ReportStudioPdfBuilder $reportStudioPdfBuilder,
-        ReportStudioPdfRenderer $reportStudioPdfRenderer,
-        GeneralSettings $settings
-    ): Response {
-        abort_if(! auth()->user()->can('view_proposals'), 403, '');
+    public function getPDF(Request $request, DownloadStaffProposalPdf $download): Response
+    {
+        $proposal = VAPProposal::query()->findOrFail($request->integer('id'));
+        $rendered = $download->execute((int) $request->attributes->get('proposal_laboratory_id'), $request->user()->id, $proposal);
+        $attachment = $request->boolean('q');
+        activity()->causedBy($request->user())->performedOn($proposal)
+            ->log(($attachment ? 'baixou' : 'visualizou').' a Proposta Nº '.$proposal->proposal_number);
 
-        $model = VAPProposal::query()->with([
-            'items.unit',
-            'items.standard',
-            'user',
-            'customer',
-            'warehouse',
-            'department',
-            'template',
-            'complianceAgreement',
-        ])->findOrFail(request()->integer('id'));
-
-        $parsedContent = $model->template?->content
-            ? VAPProposalTemplate::parseContent($model->template->content, $model, $settings)
-            : '<p>Sem conteúdo configurado para esta proposta.</p>';
-
-        $payload = $reportStudioPdfBuilder->buildProposalPayload($model, $parsedContent, $settings);
-        $filename = str($model->proposal_number)->slug('-')->prepend('Proposta-')->append('.pdf')->value();
-        $renderedPdf = $reportStudioPdfRenderer->renderDocument('proposal', $payload, $filename);
-
-        if (request()->q) {
-            activity()->log('baixou a Proposta Nº '.$model->proposal_number);
-
-            return response($renderedPdf['content'], 200, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-                'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
-            ]);
-        }
-
-        activity()
-            ->causedBy(auth()->user())
-            ->log('visualizou a Proposta Nº '.$model->proposal_number);
-
-        return response($renderedPdf['content'], 200, [
+        return response($rendered['content'], 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="'.$filename.'"',
-            'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
+            'Content-Disposition' => ($attachment ? 'attachment' : 'inline').'; filename="'.$rendered['filename'].'"',
+            'X-Report-Studio-Renderer' => $rendered['renderer'],
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 }

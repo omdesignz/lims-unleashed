@@ -47,6 +47,7 @@ const pendingAction = ref(null);
 const pendingActionType = ref("bulk");
 const pendingRow = ref(null);
 const showActionConfirmation = ref(false);
+const isSubmitting = ref(false);
 const activeCategory = computed(() => props.query?.category ?? "pending");
 const rows = computed(() => props.record?.data ?? []);
 const selectedCount = computed(() => selectedIds.value.length);
@@ -97,8 +98,10 @@ const conditioningLabels = {
   restricted: "Aceite com restrições",
   rejected: "Rejeitado",
 };
-const confirmationTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${pendingAction.value}`));
-const confirmationDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${pendingAction.value}`));
+const confirmationTitle = computed(() => pendingAction.value === "restore" ? "Restaurar colheita?" : "Arquivar colheita?");
+const confirmationDescription = computed(() => pendingAction.value === "restore"
+  ? "A colheita e a entrada de amostra voltarão à fila. Os dados analíticos serão mantidos."
+  : "A colheita e a entrada de amostra sairão da fila. Poderá restaurá-las; análises, resultados e assinaturas serão preservados.");
 
 function changeCategory(category) {
   router.get(route("directcollections.index"), { ...props.query, category }, {
@@ -119,6 +122,7 @@ function exportSelectedAnalysisSheet() {
 }
 
 function requestBulkAction(event) {
+  if (isSubmitting.value) return;
   pendingAction.value = event.action;
   pendingActionType.value = "bulk";
   pendingRow.value = null;
@@ -126,6 +130,7 @@ function requestBulkAction(event) {
 }
 
 function requestRowAction(action, row) {
+  if (isSubmitting.value) return;
   pendingAction.value = action;
   pendingActionType.value = "single";
   pendingRow.value = row;
@@ -139,6 +144,7 @@ function closeActionConfirmation() {
 }
 
 function executeAction() {
+  if (isSubmitting.value) return;
   const recordIds = pendingActionType.value === "single" ? [pendingRow.value?.id] : selectedIds.value;
 
   if (!recordIds.filter(Boolean).length || !["delete", "restore"].includes(pendingAction.value)) {
@@ -146,9 +152,14 @@ function executeAction() {
     return;
   }
 
-  router.get(route(`directcollections.${pendingAction.value}`), { recordIds: recordIds.filter(Boolean) }, {
+  isSubmitting.value = true;
+  const endpoint = pendingAction.value === "delete" ? "destroy" : "restore";
+  router.post(route(`directcollections.${endpoint}`), { recordIds: recordIds.filter(Boolean) }, {
     preserveScroll: true,
-    onFinish: closeActionConfirmation,
+    onFinish: () => {
+      isSubmitting.value = false;
+      closeActionConfirmation();
+    },
   });
 }
 </script>
@@ -239,6 +250,7 @@ function executeAction() {
     <section class="ds-panel overflow-hidden p-4 sm:p-5">
       <VapTable
         has-qr
+        row-title-field="cl"
         :model="model"
         :abilities="abilities"
         :data="record.data"
@@ -269,12 +281,14 @@ function executeAction() {
             <a v-if="!row.deleted && hasPermission(`view_${model}`) && row.links?.pdf_collection_term" :href="row.links.pdf_collection_term" target="_blank" class="ds-icon-button" title="Termo de colheita" aria-label="Termo de colheita"><ClipboardDocumentCheckIcon class="h-4 w-4" /></a>
             <a v-if="!row.deleted && hasPermission(`view_${model}`) && row.links?.pdf_collection_labels" :href="row.links.pdf_collection_labels" target="_blank" class="ds-icon-button" title="Etiquetas" aria-label="Etiquetas"><TagIcon class="h-4 w-4" /></a>
             <Link v-if="!row.deleted && hasPermission(`edit_${model}`)" :href="row.links.edit_path" class="ds-icon-button" title="Editar colheita" aria-label="Editar colheita"><PencilIcon class="h-4 w-4" /></Link>
-            <button v-if="row.deleted && hasPermission(`restore_${model}`)" type="button" class="ds-icon-button" title="Restaurar colheita" aria-label="Restaurar colheita" @click="requestRowAction('restore', row)"><ArrowPathRoundedSquareIcon class="h-4 w-4" /></button>
-            <button v-if="!row.deleted && hasPermission(`delete_${model}`)" type="button" class="ds-icon-button text-red-600" title="Arquivar colheita" aria-label="Arquivar colheita" @click="requestRowAction('delete', row)"><TrashIcon class="h-4 w-4" /></button>
+            <button v-if="row.deleted && hasPermission(`restore_${model}`)" type="button" class="ds-icon-button" :disabled="isSubmitting" title="Restaurar colheita" aria-label="Restaurar colheita" @click="requestRowAction('restore', row)"><ArrowPathRoundedSquareIcon class="h-4 w-4" /></button>
+            <button v-if="!row.deleted && hasPermission(`delete_${model}`)" type="button" class="ds-icon-button text-red-600" :disabled="isSubmitting" title="Arquivar colheita" aria-label="Arquivar colheita" @click="requestRowAction('delete', row)"><TrashIcon class="h-4 w-4" /></button>
           </div>
         </template>
       </VapTable>
     </section>
+
+    <p v-if="isSubmitting" role="status" class="ds-copy text-sm">A actualizar o arquivo...</p>
 
     <ConfirmDialog
       v-if="showActionConfirmation"

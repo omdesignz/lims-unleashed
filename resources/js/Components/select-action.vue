@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-wrap items-center gap-2.5">
     <Listbox
-      :disabled="!recordIds.length"
+      :disabled="processing || !recordIds.length"
       :model-value="actionId"
       as="div"
       class="relative min-w-60"
@@ -9,7 +9,7 @@
     >
       <ListboxButton
         class="ds-combobox-control group inline-flex w-full items-center justify-between gap-3 px-3.5 py-2 text-left text-sm font-semibold"
-        :data-disabled="!recordIds.length"
+        :data-disabled="processing || !recordIds.length"
       >
         <span class="inline-flex min-w-0 items-center gap-2">
           <span
@@ -69,7 +69,8 @@
     </Listbox>
 
     <button
-      :disabled="!actionId || !recordIds.length"
+      :disabled="processing || !actionId || !recordIds.length"
+      :aria-busy="processing"
       class="ds-button ds-button-primary"
       @click="executeSelectedAction"
     >
@@ -93,6 +94,7 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  processing: Boolean,
 })
 
 const emit = defineEmits(['execute'])
@@ -116,7 +118,7 @@ function selectAction(value) {
 }
 
 function executeSelectedAction() {
-  if (!actionId.value || !props.recordIds.length) {
+  if (props.processing || !actionId.value || !props.recordIds.length) {
     return
   }
 

@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\InventoryItemSupplier;
 use App\Models\InventorySupplierAssessment;
 use App\Models\User;
+use App\Services\SampleLaboratoryAccess;
 use App\Support\SupplierAssessmentNotifier;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -14,11 +15,14 @@ use Inertia\Response;
 
 class SupplierAssessmentController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     public function index(): Response
     {
         abort_if(! auth()->user()->can('view_isuppliers'), 403, '');
 
         $assessments = InventorySupplierAssessment::query()
+            ->where('lab_id', $this->laboratoryAccess->activeLabId())
             ->with([
                 'supplier:id,name,address',
                 'department:id,name',
@@ -47,7 +51,7 @@ class SupplierAssessmentController extends Controller
         abort_if(! auth()->user()->can('add_isuppliers'), 403, '');
 
         $assessment = InventorySupplierAssessment::query()->create(
-            $this->payload($request)
+            array_merge($this->payload($request), ['lab_id' => $this->laboratoryAccess->activeLabId()])
         );
 
         $assessment->load('supplier');
@@ -59,6 +63,7 @@ class SupplierAssessmentController extends Controller
     public function update(SupplierAssessmentRequest $request, InventorySupplierAssessment $supplierAssessment, SupplierAssessmentNotifier $notifier): RedirectResponse
     {
         abort_if(! auth()->user()->can('edit_isuppliers'), 403, '');
+        abort_unless($supplierAssessment->lab_id === $this->laboratoryAccess->activeLabId(), 404);
 
         $supplierAssessment->update(
             $this->payload($request)
@@ -73,6 +78,7 @@ class SupplierAssessmentController extends Controller
     public function destroy(InventorySupplierAssessment $supplierAssessment): RedirectResponse
     {
         abort_if(! auth()->user()->can('delete_isuppliers'), 403, '');
+        abort_unless($supplierAssessment->lab_id === $this->laboratoryAccess->activeLabId(), 404);
 
         $supplierAssessment->delete();
 

@@ -351,6 +351,7 @@
             <h2 class="ds-heading mt-1 text-lg">
               {{ editingSample.id ? 'Editar amostra' : (manualBatchMode ? 'Adicionar amostra à fila manual' : 'Registar amostra') }}
             </h2>
+            <p v-if="isIssuedIntake" id="sample-identity-help" class="ds-field-hint">Identidade e âmbito emitidos estão fixos. Pode corrigir os metadados de recepção e colheita.</p>
           </div>
           <span v-if="manualBatchMode" class="ds-chip">
             <QueueListIcon class="h-4 w-4" />
@@ -359,6 +360,12 @@
         </div>
 
         <form class="p-5 lg:p-6" @submit.prevent="editingSample.id ? updateSample() : submitSample()">
+          <div v-if="Object.keys(form.errors).length" class="mb-5" role="alert">
+            <p class="ds-field-error">Não foi possível guardar. Verifique os campos abaixo; as suas alterações foram mantidas.</p>
+            <ul class="mt-2 space-y-1">
+              <li v-for="(message, field) in form.errors" :key="field" class="ds-field-error">{{ message }}</li>
+            </ul>
+          </div>
           <div class="space-y-8">
             <div class="grid gap-5 lg:grid-cols-[15rem_minmax(0,1fr)]">
               <div>
@@ -372,18 +379,17 @@
               <div class="ds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="sample-name">Nome da amostra <span class="ds-field-required">*</span></label>
-                  <BaseInput id="sample-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" placeholder="Nome descritivo da amostra" />
-                  <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
+                  <BaseInput id="sample-name" v-model="form.name" type="text" class="ds-field" :error="form.errors.name || ''" placeholder="Nome descritivo da amostra" />
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="sample-code">Código</label>
-                  <BaseInput id="sample-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="Gerado automaticamente" />
-                  <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
+                  <BaseInput id="sample-code" v-model="form.code" type="text" class="ds-field font-mono" :readonly="Boolean(editingSample.id)" :error="form.errors.code || ''" placeholder="Gerado automaticamente" />
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="sample-type">Tipo <span class="ds-field-required">*</span></label>
-                  <BaseSelect id="sample-type" v-model="form.sample_type" class="ds-field" :aria-invalid="Boolean(form.errors.sample_type)">
+                  <BaseSelect id="sample-type" v-model="form.sample_type" class="ds-field" :disabled="isIssuedIntake" :error="form.errors.sample_type || ''">
                     <option value="">Seleccione o tipo</option>
+                    <option v-if="isIssuedIntake && !['ROTINA', 'MATERIA_PRIMA', 'PRODUTO_ACABADO', 'ESTABILIDADE', 'CONTRAPROVA', 'INTERLABORATORIAL', 'RETENCAO'].includes(form.sample_type)" :value="form.sample_type">{{ getSampleTypeLabel(form.sample_type) }}</option>
                     <option value="ROTINA">Rotina</option>
                     <option value="MATERIA_PRIMA">Matéria-prima</option>
                     <option value="PRODUTO_ACABADO">Produto acabado</option>
@@ -392,11 +398,10 @@
                     <option value="INTERLABORATORIAL">Interlaboratorial</option>
                     <option value="RETENCAO">Retenção</option>
                   </BaseSelect>
-                  <p v-if="form.errors.sample_type" class="ds-field-error">{{ form.errors.sample_type }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="request-origin">Origem do trabalho</label>
-                  <BaseSelect id="request-origin" v-model="form.client_submitted_info.request_origin" class="ds-field">
+                  <BaseSelect id="request-origin" v-model="form.client_submitted_info.request_origin" class="ds-field" :disabled="isIssuedIntake">
                     <option value="client">Cliente</option>
                     <option value="internal">Interno</option>
                   </BaseSelect>
@@ -404,18 +409,17 @@
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="collection-type">Fluxo de colheita</label>
-                  <BaseSelect id="collection-type" v-model="form.client_submitted_info.collection_type" class="ds-field">
+                  <BaseSelect id="collection-type" v-model="form.client_submitted_info.collection_type" class="ds-field" :disabled="isIssuedIntake">
                     <option value="direct">Directa / recepção imediata</option>
                     <option value="programmed">Programada / recolha planeada</option>
                   </BaseSelect>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="sample-customer">Cliente <span class="ds-field-required">*</span></label>
-                  <BaseSelect id="sample-customer" v-model="form.customer_id" class="ds-field" :aria-invalid="Boolean(form.errors.customer_id)">
+                  <BaseSelect id="sample-customer" v-model="form.customer_id" class="ds-field" :disabled="isIssuedIntake" :error="form.errors.customer_id || ''">
                     <option value="">Seleccione o cliente</option>
                     <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.name }} ({{ customer.code }})</option>
                   </BaseSelect>
-                  <p v-if="form.errors.customer_id" class="ds-field-error">{{ form.errors.customer_id }}</p>
                 </div>
 
                 <div v-if="form.client_submitted_info.collection_type === 'programmed'" class="md:col-span-2 xl:col-span-3">
@@ -447,7 +451,7 @@
                     <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       <div class="ds-field-group">
                         <label class="ds-field-label" for="qc-discipline">Disciplina</label>
-                        <BaseSelect id="qc-discipline" v-model="form.client_submitted_info.analysis_discipline" class="ds-field">
+                        <BaseSelect id="qc-discipline" v-model="form.client_submitted_info.analysis_discipline" class="ds-field" :disabled="isIssuedIntake">
                           <option value="microbiology">Microbiologia</option>
                           <option value="chemistry">Química / físico-química</option>
                           <option value="microbiology_and_chemistry">Microbiologia + química</option>
@@ -518,11 +522,10 @@
                 <div class="ds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="sample-product">Produto</label>
-                    <BaseSelect id="sample-product" v-model="form.client_submitted_info.product_id" class="ds-field" :aria-invalid="Boolean(form.errors['client_submitted_info.product_id'])">
+                    <BaseSelect id="sample-product" v-model="form.client_submitted_info.product_id" class="ds-field" :disabled="isIssuedIntake" :error="form.errors['client_submitted_info.product_id'] || ''">
                       <option :value="null">Seleccionar depois</option>
                       <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}{{ product.matrix ? ' · ' + product.matrix : '' }}</option>
                     </BaseSelect>
-                    <p v-if="form.errors['client_submitted_info.product_id']" class="ds-field-error">{{ form.errors['client_submitted_info.product_id'] }}</p>
                   </div>
                   <div v-if="!isInternalRequest" class="ds-field-group">
                     <label class="ds-field-label" for="sample-proposal">Proposta aceite</label>
@@ -538,23 +541,21 @@
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="sample-lab">Laboratório <span class="ds-field-required">*</span></label>
-                    <BaseSelect id="sample-lab" v-model="form.lab_id" class="ds-field" :aria-invalid="Boolean(form.errors.lab_id)">
+                    <BaseSelect id="sample-lab" v-model="form.lab_id" class="ds-field" :disabled="Boolean(editingSample.id)" :error="form.errors.lab_id || ''">
                       <option value="">Seleccione o laboratório</option>
                       <option v-for="lab in labs" :key="lab.id" :value="lab.id">{{ lab.name }} ({{ lab.code }})</option>
                     </BaseSelect>
-                    <p v-if="form.errors.lab_id" class="ds-field-error">{{ form.errors.lab_id }}</p>
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="sample-department">Departamento <span class="ds-field-required">*</span></label>
-                    <BaseSelect id="sample-department" v-model="form.department_id" class="ds-field" :aria-invalid="Boolean(form.errors.department_id)">
+                    <BaseSelect id="sample-department" v-model="form.department_id" class="ds-field" :disabled="isIssuedIntake" :error="form.errors.department_id || ''">
                       <option value="">Seleccione o departamento</option>
                       <option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }} ({{ department.code }})</option>
                     </BaseSelect>
-                    <p v-if="form.errors.department_id" class="ds-field-error">{{ form.errors.department_id }}</p>
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="received-at">Data de recepção</label>
-                    <DateTimePicker id="received-at" v-model="form.received_at" type="datetime-local" class="ds-field" />
+                    <DateTimePicker id="received-at" v-model="form.received_at" type="datetime-local" class="ds-field" :error="form.errors.received_at || ''" />
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="sample-packaging">Embalagem</label>
@@ -565,21 +566,19 @@
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="sample-warehouse">Armazém <span class="ds-field-required">*</span></label>
-                    <BaseSelect id="sample-warehouse" v-model="form.warehouse_id" class="ds-field" :aria-invalid="Boolean(form.errors.warehouse_id)">
+                    <BaseSelect id="sample-warehouse" v-model="form.warehouse_id" class="ds-field" :disabled="isIssuedIntake" :error="form.errors.warehouse_id || ''">
                       <option value="">Seleccione o armazém</option>
                       <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</option>
                     </BaseSelect>
-                    <p v-if="form.errors.warehouse_id" class="ds-field-error">{{ form.errors.warehouse_id }}</p>
                   </div>
                   <div class="ds-field-group md:col-span-2 xl:col-span-3">
                     <label class="ds-field-label" for="sample-profiles">Perfis analíticos</label>
-                    <BaseSelect id="sample-profiles" v-model="form.client_submitted_info.requested_profile_ids" multiple class="ds-field sample-profile-select min-h-40 py-2">
+                    <BaseSelect id="sample-profiles" v-model="form.client_submitted_info.requested_profile_ids" multiple class="ds-field sample-profile-select min-h-40 py-2" :disabled="isIssuedIntake" :error="form.errors['client_submitted_info.requested_profile_ids'] || ''">
                       <option v-for="profile in availableProfiles" :key="profile.id" :value="profile.id">
                         {{ profile.name }}{{ profile.analysis_type ? ' · ' + profile.analysis_type : '' }}{{ profile.parameter_count ? ' · ' + profile.parameter_count + ' parâmetros' : '' }}
                       </option>
                     </BaseSelect>
-                    <p class="ds-field-hint">Use Ctrl/Cmd para seleccionar mais de um perfil.</p>
-                    <p v-if="form.errors['client_submitted_info.requested_profile_ids']" class="ds-field-error">{{ form.errors['client_submitted_info.requested_profile_ids'] }}</p>
+                    <p class="ds-field-hint">{{ isIssuedIntake ? 'Perfis preservados do âmbito emitido.' : 'Seleccione os perfis analíticos necessários.' }}</p>
                   </div>
                 </div>
 
@@ -588,7 +587,7 @@
                     <div>
                       <h4 class="ds-heading text-sm">Checklist analítico previsto</h4>
                       <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
-                        {{ selectedProduct?.matrix || 'Matriz por confirmar' }} · {{ selectedProfileSummaries.length }} perfis · {{ requiredParameterPreview.length }} parâmetros
+                        {{ (isIssuedIntake ? form.client_submitted_info.matrix_description : selectedProduct?.matrix) || selectedProduct?.matrix || 'Matriz por confirmar' }} · {{ selectedProfileSummaries.length }} perfis · {{ requiredParameterPreview.length }} parâmetros
                       </p>
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -622,6 +621,7 @@
                     v-model="form.client_submitted_info[field.key]"
                     :type="field.type || 'text'"
                     class="ds-field"
+                    :error="form.errors[`client_submitted_info.${field.key}`] || ''"
                     :placeholder="field.placeholder"
                   />
                 </div>
@@ -665,7 +665,7 @@
                 </div>
                 <div class="ds-field-group md:col-span-2">
                   <label class="ds-field-label" for="requested-services">Serviços solicitados</label>
-                  <textarea id="requested-services" v-model="form.requested_services" rows="3" class="ds-field" placeholder="Análises e serviços solicitados..."></textarea>
+                  <textarea id="requested-services" v-model="form.requested_services" rows="3" class="ds-field" :readonly="isIssuedIntake" placeholder="Análises e serviços solicitados..."></textarea>
                 </div>
                 <div class="ds-field-group md:col-span-2">
                   <label class="ds-field-label" for="sample-observations">Observações gerais</label>
@@ -1007,6 +1007,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { router, useForm, usePage } from '@inertiajs/vue3'
+import { sampleEntryPayload, sampleTimestampInput } from '@/Utils/sampleEntryForm'
 import { 
   BeakerIcon,
   TagIcon,
@@ -1037,6 +1038,7 @@ const flash = computed(() => page.props.flash || {})
 const activeTab = ref('entry')
 const selectedSample = ref(null)
 const editingSample = ref(null)
+const isIssuedIntake = computed(() => Boolean(editingSample.value?.id && editingSample.value?.collection_product_id))
 const manualBatchMode = ref(false)
 const manualSampleQueue = ref([])
 const showDiscardForm = ref(false)
@@ -1348,6 +1350,7 @@ const form = useForm({
   collected_at: '',
   client_submitted_info: defaultClientSubmittedInfo(),
 })
+form.transform((data) => sampleEntryPayload(data, editingSample.value?.id ? editingSample.value : null))
 
 // Formulário de descarte
 const discardForm = useForm({
@@ -1431,6 +1434,10 @@ const totalPages = computed(() => {
 const selectedProduct = computed(() => products.value.find((product) => product.id === Number(form.client_submitted_info?.product_id)) || null)
 
 const availableProfiles = computed(() => {
+  if (isIssuedIntake.value && form.client_submitted_info?.resolved_profiles?.length) {
+    return form.client_submitted_info.resolved_profiles
+  }
+
   const productProfiles = selectedProduct.value?.profiles?.length
     ? selectedProduct.value.profiles
     : profiles.value
@@ -1455,6 +1462,10 @@ const selectedProfileSummaries = computed(() => {
 })
 
 const requiredParameterPreview = computed(() => {
+  if (isIssuedIntake.value && Array.isArray(form.client_submitted_info?.required_parameters)) {
+    return form.client_submitted_info.required_parameters
+  }
+
   const parameterMap = new Map()
 
   selectedProfileSummaries.value.forEach((profile) => {
@@ -1528,6 +1539,7 @@ const applyAcceptedProposalLineage = (proposal) => {
   if (!proposal) return
 
   form.proposal_id = proposal.id
+  if (isIssuedIntake.value) return
   form.customer_id = proposal.customer_id || ''
   form.warehouse_id = proposal.warehouse_id || ''
   form.department_id = proposal.department_id || ''
@@ -1740,22 +1752,18 @@ const newInternalQcSample = (discipline = 'chemistry') => {
 
 const editSample = (sample) => {
   editingSample.value = sample
+  const draft = JSON.parse(JSON.stringify(sample))
 
   form.reset()
   form.clearErrors()
   
   // Preencher formulário com dados da amostra
   Object.keys(form.data()).forEach(key => {
-    if (sample[key] !== undefined && sample[key] !== null) {
+    if (draft[key] !== undefined && draft[key] !== null) {
       if (key.includes('_at') || key.includes('_date')) {
-        const date = new Date(sample[key])
-        if (!isNaN(date.getTime())) {
-          const timezoneOffset = date.getTimezoneOffset() * 60000
-          const localISOTime = new Date(date - timezoneOffset).toISOString().slice(0, 16)
-          form[key] = localISOTime
-        }
+        form[key] = sampleTimestampInput(draft[key])
       } else {
-        form[key] = sample[key]
+        form[key] = draft[key]
       }
     }
   })
@@ -1818,6 +1826,7 @@ const cancelDiscard = () => {
 }
 
 const submitSample = () => {
+  if (form.processing) return
   if (editingSample.value?.id) {
     form.put(route('vap_samples.samples.update', editingSample.value.id), {
       preserveScroll: true,
@@ -1838,6 +1847,7 @@ const submitSample = () => {
 }
 
 const updateSample = () => {
+  if (form.processing || !editingSample.value?.id) return
   form.put(route('vap_samples.samples.update', editingSample.value.id), {
     preserveScroll: true,
     onSuccess: () => {
@@ -1928,17 +1938,8 @@ watch([searchQuery, statusFilter], () => {
   currentPage.value = 1
 })
 
-// Auto-gerar código quando o tipo de amostra é seleccionado
-watch(() => form.sample_type, (newType) => {
-  if (newType && !form.code && !editingSample.value?.id) {
-    const prefix = newType.substring(0, 3).toUpperCase()
-    const year = new Date().getFullYear()
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
-    form.code = `SMP-${year}-${prefix}-${random}`
-  }
-})
-
 watch(() => form.client_submitted_info?.request_origin, (origin) => {
+  if (isIssuedIntake.value) return
   if (origin === 'internal') {
     form.proposal_id = ''
     form.portal_request_id = ''
@@ -1947,6 +1948,7 @@ watch(() => form.client_submitted_info?.request_origin, (origin) => {
 })
 
 watch(() => form.proposal_id, (proposalId) => {
+  if (isIssuedIntake.value) return
   if (!proposalId || form.client_submitted_info?.request_origin === 'internal') {
     return
   }
@@ -1959,6 +1961,7 @@ watch(() => form.proposal_id, (proposalId) => {
 })
 
 watch(() => form.client_submitted_info?.product_id, (productId) => {
+  if (isIssuedIntake.value) return
   const product = products.value.find((item) => item.id === Number(productId))
 
   if (product) {
@@ -1975,6 +1978,7 @@ watch(() => form.client_submitted_info?.product_id, (productId) => {
 })
 
 watch(() => form.department_id, (departmentId) => {
+  if (isIssuedIntake.value) return
   if (!departmentId) {
     return
   }

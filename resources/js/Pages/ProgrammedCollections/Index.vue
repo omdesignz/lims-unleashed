@@ -30,6 +30,7 @@ const props = defineProps({
 const { hasPermission } = usePermission();
 const selectedAction = ref(null);
 const showActionConfirmation = ref(false);
+const isSubmitting = ref(false);
 const rows = computed(() => props.record?.data ?? []);
 const selectedRecordIds = computed(() => rows.value.filter((row) => row.selected).map((row) => row.id));
 const activeCategory = computed(() => props.query?.category ?? "pending");
@@ -46,8 +47,18 @@ const actions = [
   { id: "delete", label: "gestlab.actions.delete" },
   { id: "restore", label: "gestlab.actions.restore" },
 ];
-const confirmationTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`));
-const confirmationDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`));
+const actionConfirmation = {
+  delete: {
+    title: "Arquivar colheita?",
+    description: "A colheita e a entrada de amostra sairão da fila. Poderá restaurá-las; análises, resultados e assinaturas serão preservados.",
+  },
+  restore: {
+    title: "Restaurar colheita?",
+    description: "A colheita e a entrada de amostra voltarão à fila. Os dados analíticos serão mantidos.",
+  },
+};
+const confirmationTitle = computed(() => actionConfirmation[selectedAction.value]?.title);
+const confirmationDescription = computed(() => actionConfirmation[selectedAction.value]?.description);
 
 function changeCategory(category) {
   router.get(route("programmedcollections.index"), { ...props.query, category }, {
@@ -72,6 +83,7 @@ function exportSelectedAnalysisSheet() {
 }
 
 function requestBulkAction(action) {
+  if (isSubmitting.value) return;
   selectedAction.value = action;
   showActionConfirmation.value = true;
 }
@@ -82,14 +94,20 @@ function closeActionConfirmation() {
 }
 
 function executeBulkAction() {
+  if (isSubmitting.value) return;
   if (!selectedRecordIds.value.length || !["delete", "restore"].includes(selectedAction.value)) {
     closeActionConfirmation();
     return;
   }
 
-  router.get(route(`programmedcollections.${selectedAction.value}`), { recordIds: selectedRecordIds.value }, {
+  isSubmitting.value = true;
+  const endpoint = selectedAction.value === "delete" ? "destroy" : "restore";
+  router.post(route(`programmedcollections.${endpoint}`), { recordIds: selectedRecordIds.value }, {
     preserveScroll: true,
-    onFinish: closeActionConfirmation,
+    onFinish: () => {
+      isSubmitting.value = false;
+      closeActionConfirmation();
+    },
   });
 }
 </script>
@@ -154,6 +172,9 @@ function executeBulkAction() {
       :slide-over-edit="slideOverEdit"
       :query="query"
       :actions="actions"
+      :action-methods="{ delete: 'post', restore: 'post' }"
+      :action-processing="isSubmitting"
+      :action-confirmation="actionConfirmation"
       @execute-action="requestBulkAction"
       @create-record="createViaSampleEntry"
     >
@@ -163,6 +184,8 @@ function executeBulkAction() {
         </Link>
       </template>
     </RecordsTable>
+
+    <p v-if="isSubmitting" role="status" class="ds-copy text-sm">A actualizar o arquivo...</p>
 
     <ConfirmDialog
       v-if="showActionConfirmation"

@@ -778,7 +778,7 @@
             <div>
               <h4 class="text-sm font-black text-[var(--ds-text)]">{{ selectedTemplate.name }}</h4>
               <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
-                {{ $t('gestlab.general.labels.vap_proposals.show.template.created_by') }} {{ selectedTemplate.user.name }}
+                {{ $t('gestlab.general.labels.vap_proposals.show.template.created_by') }} {{ selectedTemplate.user?.name || '—' }}
               </p>
             </div>
             <div class="ds-copy mt-4 line-clamp-4 max-h-32 overflow-y-auto text-sm">

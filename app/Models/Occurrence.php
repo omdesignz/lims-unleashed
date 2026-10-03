@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
+use App\Traits\HasScopedSequence;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use HighSolutions\EloquentSequence\Sequence;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Occurrence extends Model
 {
-    use HasFactory, Sequence, SoftDeletes;
+    use HasFactory, HasScopedSequence, SoftDeletes;
 
     public const MENU_NAME = 'occurrences';
 
     protected $fillable = [
+        'lab_id',
         'occurrence_no',
         'occurrence_year',
         'seq',
@@ -61,18 +62,32 @@ class Occurrence extends Model
         'was_effective' => 'boolean',
     ];
 
-    public function sequence()
+    public function sequence(): array
     {
         return [
-            'group' => ['occurrence_year'],
+            'group' => ['lab_id', 'occurrence_year'],
             'fieldName' => 'seq',
-            'notUpdateOnDelete' => true,
         ];
+    }
+
+    public function resolveRouteBinding(mixed $value, mixed $field = null): ?self
+    {
+        if (($field ?? $this->getRouteKeyName()) === 'id'
+            && filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+            return null;
+        }
+
+        return parent::resolveRouteBinding($value, $field);
     }
 
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
     }
 
     public function user(): BelongsTo
@@ -95,12 +110,18 @@ class Occurrence extends Model
         return $this->belongsTo(OccurrenceCategory::class);
     }
 
-    public static function boot()
+    public static function boot(): void
     {
         parent::boot();
 
-        static::creating(function ($occurrence) {
-            $occurrence->occurrence_no = $occurrence->occurrence_year . '/' . str_pad($occurrence->seq, 3, '0', STR_PAD_LEFT);
+        static::creating(function (Occurrence $occurrence): void {
+            $occurrence->occurrence_no = $occurrence->occurrence_year.'/L'.$occurrence->lab_id.'/'.str_pad((string) $occurrence->seq, 3, '0', STR_PAD_LEFT);
+        });
+
+        static::updating(function (Occurrence $occurrence): void {
+            if ($occurrence->isDirty('occurrence_no')) {
+                throw new \LogicException('Issued occurrence identifiers cannot be changed.');
+            }
         });
     }
 }

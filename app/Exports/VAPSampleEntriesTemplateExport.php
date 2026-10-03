@@ -17,6 +17,8 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class VAPSampleEntriesTemplateExport implements FromCollection, ShouldAutoSize, WithHeadings, WithStyles
 {
+    public function __construct(private readonly int $labId) {}
+
     /**
      * @return Collection<int, array<string, mixed>>
      */
@@ -31,7 +33,7 @@ class VAPSampleEntriesTemplateExport implements FromCollection, ShouldAutoSize, 
             ? Department::query()->find($profile->type->department_id)
             : Department::query()->first();
         $customer = Customer::query()->first();
-        $lab = VAPLab::query()->first();
+        $lab = VAPLab::query()->findOrFail($this->labId);
         $warehouse = $customer
             ? (Warehouse::query()->where('customer_id', $customer->id)->first() ?: Warehouse::query()->first())
             : Warehouse::query()->first();

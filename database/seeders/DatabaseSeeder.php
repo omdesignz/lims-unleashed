@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(WorksheetPermissionSeeder::class);
+        $this->call(ReagentConsumptionPermissionSeeder::class);
         // \App\Models\User::factory(1)->create();
         // \App\Models\Department::factory(1)->create();
 

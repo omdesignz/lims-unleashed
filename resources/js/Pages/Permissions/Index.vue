@@ -21,6 +21,7 @@ const props = defineProps({
   record: { type: Object, default: () => ({ data: [], meta: {} }) },
   fields: { type: Array, default: () => [] },
   model: String,
+  manageGlobalAccess: { type: Boolean, default: false },
   abilities: { type: Array, default: () => [] },
   query: { type: Object, default: () => ({}) },
   slideOverEdit: { type: Boolean, default: true },
@@ -67,11 +68,11 @@ const metrics = computed(() => [
   },
 ]);
 
-const actions = [
+const actions = computed(() => props.manageGlobalAccess ? [
   { id: null, label: "gestlab.actions.bulk_actions_text" },
   { id: "delete", label: "gestlab.actions.delete" },
   { id: "restore", label: "gestlab.actions.restore" },
-];
+] : []);
 
 const editorTitle = computed(() => form.id ? "Editar permissão" : "Nova permissão");
 const editorDescription = computed(() => form.id
@@ -143,7 +144,7 @@ function executeBulkAction() {
     return;
   }
 
-  router.get(route(`permissions.${selectedAction.value}`), { recordIds }, {
+  router.post(route(selectedAction.value === "delete" ? "permissions.destroy" : "permissions.restore"), { recordIds }, {
     preserveScroll: true,
     onFinish: closeActionConfirmation,
   });
@@ -170,7 +171,7 @@ function executeBulkAction() {
         </div>
 
         <button
-          v-if="hasPermission('add_permissions')"
+          v-if="manageGlobalAccess && hasPermission('add_permissions')"
           type="button"
           class="ds-button ds-button-primary whitespace-nowrap"
           @click="openCreatePanel"
@@ -206,6 +207,7 @@ function executeBulkAction() {
       :slide-over-edit="slideOverEdit"
       :query="query"
       :actions="actions"
+      :action-methods="{ delete: 'post', restore: 'post' }"
       :create-action="false"
       @execute-action="requestBulkAction"
       @create-record="openCreatePanel"

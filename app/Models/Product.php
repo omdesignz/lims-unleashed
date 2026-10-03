@@ -6,12 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public CONST MENU_NAME = 'products';
+    public const MENU_NAME = 'products';
 
     /**
      * The attributes that are mass assignable.
@@ -29,12 +28,14 @@ class Product extends Model
         'price',
         'fixed_price',
         'tax_id',
-        'tax_percentage'
+        'tax_percentage',
     ];
 
     protected $table = 'products';
-    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
+    protected $attributes = ['price' => 0, 'fixed_price' => 0, 'tax_percentage' => 0];
+
+    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
      * The attributes that should be cast.
@@ -51,7 +52,8 @@ class Product extends Model
      *
      * @return Relationship
      */
-    public function exemption() {
+    public function exemption()
+    {
         return $this->belongsTo(TaxExemption::class, 'exemption_id');
     }
 
@@ -60,12 +62,13 @@ class Product extends Model
         return $this->belongsTo(Matrix::class);
     }
 
-     /**
+    /**
      * Tax Category
      *
      * @return Relationship
      */
-    public function tax_category() {
+    public function tax_category()
+    {
         return $this->belongsTo(TaxType::class, 'tax_id');
     }
 
@@ -83,6 +86,4 @@ class Product extends Model
     {
         return $this->morphOne(CreditNoteItem::class, 'itemable');
     }
-
-
 }

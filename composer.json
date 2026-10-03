@@ -12,7 +12,6 @@
         "diglactic/laravel-breadcrumbs": "^10.0.0",
         "endroid/qr-code": "^6.1",
         "guzzlehttp/guzzle": "^7.2",
-        "highsolutions/eloquent-sequence": "^3.12",
         "inertiajs/inertia-laravel": "^3.0",
         "jenssegers/agent": "^2.6",
         "kalnoy/nestedset": "^7.0",
@@ -71,6 +70,10 @@
         }
     },
     "scripts": {
+        "test": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php scripts/run-php-tests.php"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

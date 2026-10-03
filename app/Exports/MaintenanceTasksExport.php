@@ -14,14 +14,14 @@ class MaintenanceTasksExport implements FromCollection, WithHeadings, WithMappin
 {
     protected $filters;
 
-    public function __construct($filters = [])
+    public function __construct(private readonly int $labId, $filters = [])
     {
         $this->filters = $filters;
     }
 
     public function collection()
     {
-        $query = MaintenanceTask::with(['category', 'equipment', 'supplier']);
+        $query = MaintenanceTask::forLaboratory($this->labId)->with(['category', 'equipment', 'supplier']);
 
         if (isset($this->filters['category_id'])) {
             $query->where('category_id', $this->filters['category_id']);

@@ -6,9 +6,12 @@ use App\Models\Inventory;
 use App\Models\InventoryItem;
 use App\Models\InventoryItemTransfer;
 use App\Models\InventoryItemWarehouse;
+use App\Models\ItemCategory;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -18,20 +21,28 @@ class InventoryTransferShowTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $user = User::factory()->create(['is_active' => true]);
+        $user->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $user->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
+
+        return $user;
     }
 
     public function test_inventory_transfer_show_exposes_chart_payloads(): void
     {
         $user = $this->verifiedAdmin();
-        $item = InventoryItem::query()->firstOrFail();
-        $source = InventoryItemWarehouse::query()->firstOrFail();
-        $destination = InventoryItemWarehouse::query()->whereKeyNot($source->id)->firstOrFail();
+        $labId = (int) DB::table('lab_user')->where('user_id', $user->id)->value('lab_id');
+        $category = ItemCategory::query()->create(['name' => 'Consumíveis de ensaio']);
+        $item = InventoryItem::query()->create([
+            'lab_id' => $labId,
+            'name' => 'Transfer item',
+            'category_id' => $category->id,
+            'user_id' => $user->id,
+        ]);
+        $source = InventoryItemWarehouse::query()->create(['lab_id' => $labId, 'name' => 'Source warehouse']);
+        $destination = InventoryItemWarehouse::query()->create(['lab_id' => $labId, 'name' => 'Destination warehouse']);
 
         Inventory::query()->updateOrCreate(
             ['item_id' => $item->id, 'warehouse_id' => $source->id],
@@ -39,9 +50,7 @@ class InventoryTransferShowTest extends TestCase
                 'qty_available' => 25,
                 'min_stock_level' => 5,
                 'reorder_point' => 10,
-                'category_id' => $item->category_id,
                 'status' => 'AVAILABLE',
-                'name' => 'AVAILABLE',
             ]
         );
 
@@ -51,13 +60,12 @@ class InventoryTransferShowTest extends TestCase
                 'qty_available' => 4,
                 'min_stock_level' => 0,
                 'reorder_point' => 0,
-                'category_id' => $item->category_id,
                 'status' => 'AVAILABLE',
-                'name' => 'AVAILABLE',
             ]
         );
 
         $transfer = InventoryItemTransfer::query()->create([
+            'lab_id' => $labId,
             'item_id' => $item->id,
             'source_id' => $source->id,
             'destination_id' => $destination->id,

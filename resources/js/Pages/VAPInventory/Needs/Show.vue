@@ -50,10 +50,10 @@
       <article class="ds-panel overflow-hidden">
         <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
           <div>
-            <h2 class="ds-heading text-base">Âmbito quantitativo</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Quantidade solicitada, aprovada e pendente.</p>
+            <h2 class="ds-heading text-base">Âmbito de aprovação</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Linhas solicitadas, aprovadas e pendentes. Quantidades mantidas por unidade.</p>
           </div>
-          <span class="ds-chip">{{ formatQuantity(quantityScopeTotal) }} unidades</span>
+          <span class="ds-chip">{{ itemRows.length }} linhas</span>
         </div>
         <div class="p-4">
           <apexchart type="bar" height="300" :options="quantityScopeChartOptions" :series="quantityScopeChartSeries" />
@@ -116,8 +116,8 @@
                     <p class="mt-1 font-mono text-xs text-[color:var(--ds-text-soft)]">{{ item.inventory_item?.code || 'Sem código' }}</p>
                   </td>
                   <td class="ds-table-cell align-top text-sm text-[color:var(--ds-text)]">
-                    <div>Solicitado: <span class="font-bold">{{ formatQuantity(item.quantity_requested) }}</span></div>
-                    <div>Aprovado: <span class="font-bold">{{ item.quantity_approved ? formatQuantity(item.quantity_approved) : '—' }}</span></div>
+                    <div>Solicitado: <span class="font-bold">{{ formatQuantity(item.quantity_requested) }} {{ item.inventory_item?.unit?.code }}</span></div>
+                    <div>Aprovado: <span class="font-bold">{{ item.quantity_approved ? `${formatQuantity(item.quantity_approved)} ${item.inventory_item?.unit?.code || ''}` : '—' }}</span></div>
                   </td>
                   <td class="ds-table-cell align-top text-sm font-semibold text-[color:var(--ds-text)]">{{ item.warehouse?.name || 'A definir' }}</td>
                   <td class="ds-table-cell align-top text-sm font-semibold text-[color:var(--ds-text)]">{{ formatMoney(item.estimated_unit_price) }}</td>
@@ -157,7 +157,7 @@
                   <tr v-for="item in actionForm.items" :key="item.id" class="ds-table-row">
                     <td class="ds-table-cell text-sm font-semibold text-[color:var(--ds-text)]">{{ item.name }}</td>
                     <td class="ds-table-cell">
-                      <BaseInput v-model="item.quantity_approved" type="number" min="1" />
+                      <BaseInput v-model="item.quantity_approved" type="number" min="0.0001" step="0.0001" :max="item.quantity_requested" />
                     </td>
                   </tr>
                 </tbody>
@@ -291,14 +291,10 @@ const syncDarkMode = () => {
 
 const quantityScopeChartSeries = computed(() => [
   {
-    name: 'Quantidade',
+    name: 'Linhas',
     data: props.charts?.quantity_scope?.series || [],
   },
 ])
-
-const quantityScopeTotal = computed(() => (
-  props.charts?.quantity_scope?.series || []
-).reduce((sum, value) => sum + Number(value || 0), 0))
 
 const itemValueMixChartSeries = computed(() => props.charts?.item_value_mix?.series || [])
 
@@ -327,8 +323,7 @@ const needTitle = computed(() => {
 
 const itemRows = computed(() => props.need.items || [])
 
-const totalRequestedQuantity = computed(() => itemRows.value.reduce((sum, item) => sum + Number(item.quantity_requested || 0), 0))
-const totalApprovedQuantity = computed(() => itemRows.value.reduce((sum, item) => sum + Number(item.quantity_approved || 0), 0))
+const approvedLineCount = computed(() => itemRows.value.filter((item) => Number(item.quantity_approved || 0) > 0).length)
 const estimatedNeedValue = computed(() => itemRows.value.reduce((sum, item) => {
   const quantity = Number(item.quantity_approved || item.quantity_requested || 0)
   const unitPrice = Number(item.estimated_unit_price || 0)
@@ -490,17 +485,17 @@ const summaryCards = computed(() => [
     valueClass: 'text-[color:var(--ds-text)]',
   },
   {
-    label: 'Solicitado',
-    value: formatQuantity(totalRequestedQuantity.value),
-    caption: 'Unidades pedidas',
+    label: 'Solicitadas',
+    value: formatQuantity(itemRows.value.length),
+    caption: 'Linhas pedidas',
     dotClass: 'lims-status-dot-hold',
     valueClass: 'text-[color:var(--ds-text)]',
   },
   {
-    label: 'Aprovado',
-    value: formatQuantity(totalApprovedQuantity.value),
-    caption: 'Unidades aprovadas',
-    dotClass: totalApprovedQuantity.value ? 'lims-status-dot-release' : 'lims-status-dot-hold',
+    label: 'Aprovadas',
+    value: formatQuantity(approvedLineCount.value),
+    caption: 'Linhas aprovadas',
+    dotClass: approvedLineCount.value ? 'lims-status-dot-release' : 'lims-status-dot-hold',
     valueClass: 'text-[color:var(--ds-text)]',
   },
   {
@@ -605,7 +600,7 @@ function formatQuantity(value) {
     return '0'
   }
 
-  return new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 2 }).format(numericValue)
+  return new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 4 }).format(numericValue)
 }
 
 function formatMoney(value) {

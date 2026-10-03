@@ -10,10 +10,13 @@ use App\Models\InventoryItemSupplier;
 use App\Models\MaintenanceCategory;
 use App\Models\MaintenanceTask;
 use App\Models\User;
+use App\Services\SampleLaboratoryAccess;
 use App\Settings\GeneralSettings;
 use App\Support\NotificationTemplateService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Excel as ExcelWriter;
 use Maatwebsite\Excel\Facades\Excel;
@@ -23,12 +26,19 @@ class VAPMaintenanceController extends Controller
 {
     private const CALIBRATION_CATEGORY_CODES = ['CAL_INT', 'CAL_EXT'];
 
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
+    private function ownedTasks(): Builder
+    {
+        return MaintenanceTask::forLaboratory($this->laboratoryAccess->activeLabId());
+    }
+
     /**
      * Display maintenance dashboard
      */
     public function dashboard(Request $request)
     {
-        $query = MaintenanceTask::with(['category', 'equipment', 'supplier'])
+        $query = $this->ownedTasks()->with(['category', 'equipment', 'supplier'])
             ->when($request->category_id, function ($query, $categoryId) {
                 $query->where('category_id', $categoryId);
             })
@@ -61,15 +71,15 @@ class VAPMaintenanceController extends Controller
             ->orderBy($request->sort_by ?? 'due_date', $request->sort_direction ?? 'asc');
 
         $stats = [
-            'total_tasks' => MaintenanceTask::count(),
-            'overdue' => MaintenanceTask::where('due_date', '<', now())
+            'total_tasks' => $this->ownedTasks()->count(),
+            'overdue' => $this->ownedTasks()->where('due_date', '<', now())
                 ->where('is_executed', false)
                 ->count(),
-            'due_soon' => MaintenanceTask::whereBetween('due_date', [now(), now()->addDays(30)])
+            'due_soon' => $this->ownedTasks()->whereBetween('due_date', [now(), now()->addDays(30)])
                 ->where('is_executed', false)
                 ->count(),
-            'executed' => MaintenanceTask::where('is_executed', true)->count(),
-            'planned' => MaintenanceTask::where('is_planned', true)
+            'executed' => $this->ownedTasks()->where('is_executed', true)->count(),
+            'planned' => $this->ownedTasks()->where('is_planned', true)
                 ->where('is_executed', false)
                 ->count(),
         ];
@@ -77,7 +87,7 @@ class VAPMaintenanceController extends Controller
         return Inertia::render('VAPMaintenance/Dashboard', [
             'tasks' => $query->paginate($request->per_page ?? 20)->withQueryString(),
             'categories' => MaintenanceCategory::all(),
-            'equipment' => InventoryItem::whereNotNull('last_calibration_date')->get(),
+            'equipment' => InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->whereNotNull('last_calibration_date')->get(),
             'suppliers' => InventoryItemSupplier::all(),
             'filters' => $request->only(['category_id', 'equipment_id', 'supplier_id', 'status', 'cost_min', 'cost_max', 'sort_by', 'sort_direction']),
             'stats' => $stats,
@@ -152,7 +162,7 @@ class VAPMaintenanceController extends Controller
      */
     public function tasks(Request $request)
     {
-        $query = MaintenanceTask::with(['category', 'equipment', 'supplier'])
+        $query = $this->ownedTasks()->with(['category', 'equipment', 'supplier'])
             ->when($request->category_id, function ($query, $categoryId) {
                 $query->where('category_id', $categoryId);
             })
@@ -188,17 +198,17 @@ class VAPMaintenanceController extends Controller
             ->orderBy($request->sort_by ?? 'due_date', $request->sort_direction ?? 'asc');
 
         $stats = [
-            'total_tasks' => MaintenanceTask::count(),
-            'monthly_average' => MaintenanceTask::whereBetween('due_date', [now()->startOfMonth(), now()->endOfMonth()])
+            'total_tasks' => $this->ownedTasks()->count(),
+            'monthly_average' => $this->ownedTasks()->whereBetween('due_date', [now()->startOfMonth(), now()->endOfMonth()])
                 ->count(),
-            'overdue' => MaintenanceTask::where('due_date', '<', now())
+            'overdue' => $this->ownedTasks()->where('due_date', '<', now())
                 ->where('is_executed', false)
                 ->count(),
-            'due_soon' => MaintenanceTask::whereBetween('due_date', [now(), now()->addDays(30)])
+            'due_soon' => $this->ownedTasks()->whereBetween('due_date', [now(), now()->addDays(30)])
                 ->where('is_executed', false)
                 ->count(),
-            'executed' => MaintenanceTask::where('is_executed', true)->count(),
-            'planned' => MaintenanceTask::where('is_planned', true)
+            'executed' => $this->ownedTasks()->where('is_executed', true)->count(),
+            'planned' => $this->ownedTasks()->where('is_planned', true)
                 ->where('is_executed', false)
                 ->count(),
         ];
@@ -206,7 +216,7 @@ class VAPMaintenanceController extends Controller
         return Inertia::render('VAPMaintenance/Tasks/Index', [
             'tasks' => $query->paginate($request->per_page ?? 20)->withQueryString(),
             'categories' => MaintenanceCategory::all(),
-            'equipment' => InventoryItem::all(),
+            'equipment' => InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->get(),
             'suppliers' => InventoryItemSupplier::all(),
             'filters' => $request->only(['category_id', 'equipment_id', 'supplier_id', 'status', 'date_from', 'date_to', 'cost_min', 'cost_max', 'sort_by', 'sort_direction']),
             'stats' => $stats,
@@ -220,7 +230,7 @@ class VAPMaintenanceController extends Controller
     {
         return Inertia::render('VAPMaintenance/Tasks/Create', [
             'categories' => MaintenanceCategory::all(),
-            'equipment' => InventoryItem::all(),
+            'equipment' => InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->get(),
             'suppliers' => InventoryItemSupplier::all(),
         ]);
     }
@@ -250,6 +260,7 @@ class VAPMaintenanceController extends Controller
      */
     public function showTask(MaintenanceTask $task)
     {
+        abort_unless($this->ownedTasks()->whereKey($task->id)->exists(), 404);
         $task->load(['category', 'equipment', 'supplier']);
 
         // Get equipment history
@@ -266,6 +277,7 @@ class VAPMaintenanceController extends Controller
      */
     public function updateTask(VAPMaintenanceTaskRequest $request, MaintenanceTask $task)
     {
+        abort_unless($this->ownedTasks()->whereKey($task->id)->exists(), 404);
         $data = $request->validated();
 
         // If marking as executed, set previous date and calculate next
@@ -304,6 +316,7 @@ class VAPMaintenanceController extends Controller
      */
     public function destroyTask(MaintenanceTask $task)
     {
+        abort_unless($this->ownedTasks()->whereKey($task->id)->exists(), 404);
         $task->delete();
 
         return redirect()->route('vap-maintenance.tasks')
@@ -323,7 +336,7 @@ class VAPMaintenanceController extends Controller
             'format' => 'required|in:pdf,csv,excel',
         ]);
 
-        $query = MaintenanceTask::with(['category', 'equipment', 'supplier']);
+        $query = $this->ownedTasks()->with(['category', 'equipment', 'supplier']);
 
         if ($request->date_from) {
             $query->where('due_date', '>=', $request->date_from);
@@ -373,7 +386,8 @@ class VAPMaintenanceController extends Controller
             'send_notification' => 'boolean',
         ]);
 
-        $tasks = MaintenanceTask::whereIn('id', $request->task_ids)->get();
+        $tasks = $this->ownedTasks()->whereIn('id', $request->task_ids)->get();
+        abort_unless($tasks->count() === count(array_unique($request->task_ids)), 404);
 
         switch ($request->action) {
             case 'mark_executed':
@@ -427,6 +441,7 @@ class VAPMaintenanceController extends Controller
      */
     public function sendNotifications(Request $request, NotificationTemplateService $templates)
     {
+        $labId = $this->laboratoryAccess->activeLabId();
         $request->validate([
             'days_threshold' => 'required|integer|min:1|max:365',
             'notification_type' => 'required|in:upcoming,overdue,both',
@@ -434,9 +449,10 @@ class VAPMaintenanceController extends Controller
 
         $users = User::whereHas('roles', function ($query) {
             $query->whereIn('name', ['maintenance_manager', 'lab_manager', 'admin']);
-        })->get();
+        })->whereIn('id', DB::table('lab_user')->where('lab_id', $labId)->select('user_id'))
+            ->where('is_active', true)->whereNotNull('email_verified_at')->get();
 
-        $tasks = MaintenanceTask::with(['equipment', 'category'])
+        $tasks = $this->ownedTasks()->with(['equipment', 'category'])
             ->where('is_executed', false);
 
         if ($request->notification_type === 'upcoming' || $request->notification_type === 'both') {
@@ -481,9 +497,12 @@ class VAPMaintenanceController extends Controller
      */
     public function notifyCompletion(MaintenanceTask $task, NotificationTemplateService $templates)
     {
+        abort_unless($this->ownedTasks()->whereKey($task->id)->exists(), 404);
+        $labId = $this->laboratoryAccess->activeLabId();
         $users = User::whereHas('roles', function ($query) {
             $query->whereIn('name', ['maintenance_manager', 'lab_manager', 'admin']);
-        })->get();
+        })->whereIn('id', DB::table('lab_user')->where('lab_id', $labId)->select('user_id'))
+            ->where('is_active', true)->whereNotNull('email_verified_at')->get();
 
         $templates->notify($users, 'maintenance.completed', $this->maintenanceNotificationContext($task));
 
@@ -499,6 +518,7 @@ class VAPMaintenanceController extends Controller
         $task->loadMissing('equipment');
 
         return [
+            'lab_id' => $task->equipment?->lab_id,
             'equipment_name' => $task->equipment?->name ?? $task->name,
             'due_date' => $task->due_date?->format('d/m/Y') ?? 'sem data definida',
             'document_url' => route('vap-maintenance.tasks.show', $task),
@@ -534,7 +554,7 @@ class VAPMaintenanceController extends Controller
 
             $writerType = $request->format === 'csv' ? ExcelWriter::CSV : ExcelWriter::XLSX;
 
-            return Excel::download(new MaintenanceTasksExport($filters), "{$filename}.{$request->format}", $writerType);
+            return Excel::download(new MaintenanceTasksExport($this->laboratoryAccess->activeLabId(), $filters), "{$filename}.{$request->format}", $writerType);
         }
 
         if ($request->type === 'calendar') {
@@ -554,7 +574,7 @@ class VAPMaintenanceController extends Controller
 
             $writerType = $request->format === 'csv' ? ExcelWriter::CSV : ExcelWriter::XLSX;
 
-            return Excel::download(new MaintenanceCalendarExport($filters), "{$filename}.{$request->format}", $writerType);
+            return Excel::download(new MaintenanceCalendarExport($this->laboratoryAccess->activeLabId(), $filters), "{$filename}.{$request->format}", $writerType);
         }
 
         return response()->json(['error' => 'Tipo de exportação inválido.'], 400);
@@ -565,7 +585,7 @@ class VAPMaintenanceController extends Controller
      */
     private function getTasksForExport($filters)
     {
-        return MaintenanceTask::with(['category', 'equipment', 'supplier'])
+        return $this->ownedTasks()->with(['category', 'equipment', 'supplier'])
             ->when($filters['category_id'] ?? false, function ($query, $categoryId) {
                 $query->where('category_id', $categoryId);
             })
@@ -604,7 +624,7 @@ class VAPMaintenanceController extends Controller
         $startDate = $filters['date_from'] ?? now()->startOfMonth();
         $endDate = $filters['date_to'] ?? now()->addMonths(3)->endOfMonth();
 
-        $tasks = MaintenanceTask::with(['category', 'equipment'])
+        $tasks = $this->ownedTasks()->with(['category', 'equipment'])
             ->whereBetween('due_date', [$startDate, $endDate])
             ->when($filters['category_id'] ?? false, function ($query, $categoryId) {
                 $query->where('category_id', $categoryId);
@@ -701,7 +721,8 @@ class VAPMaintenanceController extends Controller
             return null;
         }
 
-        $tasks = MaintenanceTask::with(['category', 'supplier'])
+        InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->findOrFail($equipmentId);
+        $tasks = $this->ownedTasks()->with(['category', 'supplier'])
             ->where('equipment_id', $equipmentId)
             ->orderBy('due_date', 'desc')
             ->limit(50)
@@ -751,20 +772,21 @@ class VAPMaintenanceController extends Controller
 
         // Task status distribution
         $statusStats = [
-            'overdue' => MaintenanceTask::where('due_date', '<', now())
+            'overdue' => $this->ownedTasks()->where('due_date', '<', now())
                 ->where('is_executed', false)
                 ->count(),
-            'due_soon' => MaintenanceTask::whereBetween('due_date', [now(), now()->addDays(30)])
+            'due_soon' => $this->ownedTasks()->whereBetween('due_date', [now(), now()->addDays(30)])
                 ->where('is_executed', false)
                 ->count(),
-            'scheduled' => MaintenanceTask::where('due_date', '>', now()->addDays(30))
+            'scheduled' => $this->ownedTasks()->where('due_date', '>', now()->addDays(30))
                 ->where('is_executed', false)
                 ->count(),
-            'executed' => MaintenanceTask::where('is_executed', true)->count(),
+            'executed' => $this->ownedTasks()->where('is_executed', true)->count(),
         ];
 
         // Category distribution
         $categoryStats = MaintenanceCategory::withCount(['tasks' => function ($query) {
+            $query->forLaboratory($this->laboratoryAccess->activeLabId());
             $query->where('is_executed', false);
         }])->get();
 
@@ -777,11 +799,11 @@ class VAPMaintenanceController extends Controller
 
             $monthlyTrend[] = [
                 'month' => $month->format('M Y'),
-                'created' => MaintenanceTask::whereBetween('created_at', [$start, $end])->count(),
-                'executed' => MaintenanceTask::whereBetween('due_date', [$start, $end])
+                'created' => $this->ownedTasks()->whereBetween('created_at', [$start, $end])->count(),
+                'executed' => $this->ownedTasks()->whereBetween('due_date', [$start, $end])
                     ->where('is_executed', true)
                     ->count(),
-                'overdue' => MaintenanceTask::whereBetween('due_date', [$start, $end])
+                'overdue' => $this->ownedTasks()->whereBetween('due_date', [$start, $end])
                     ->where('is_executed', false)
                     ->where('due_date', '<', now())
                     ->count(),
@@ -789,14 +811,15 @@ class VAPMaintenanceController extends Controller
         }
 
         // Cost analysis
-        $totalCost = MaintenanceTask::sum('cost');
-        $monthlyCost = MaintenanceTask::whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+        $totalCost = $this->ownedTasks()->sum('cost');
+        $monthlyCost = $this->ownedTasks()->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
             ->sum('cost');
 
-        $avgCost = MaintenanceTask::where('cost', '>', 0)->avg('cost') ?? 0;
-        $tasksWithCost = MaintenanceTask::where('cost', '>', 0)->count();
+        $avgCost = $this->ownedTasks()->where('cost', '>', 0)->avg('cost') ?? 0;
+        $tasksWithCost = $this->ownedTasks()->where('cost', '>', 0)->count();
 
         $costByCategory = MaintenanceCategory::withSum(['tasks' => function ($query) {
+            $query->forLaboratory($this->laboratoryAccess->activeLabId());
             $query->where('cost', '>', 0);
         }], 'cost')->get();
 

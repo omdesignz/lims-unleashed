@@ -5,7 +5,8 @@ import { XMarkIcon } from '@heroicons/vue/24/outline'
 
 const emit = defineEmits(['closed', 'close'])
 
-defineProps({
+const props = defineProps({
+  disabled: Boolean,
   title: {
     type: String,
     default: '',
@@ -19,6 +20,7 @@ defineProps({
 const open = ref(true)
 
 const close = () => {
+  if (props.disabled) return
   open.value = false
   emit('close')
   emit('closed')
@@ -34,7 +36,7 @@ const close = () => {
         enter="ease-out duration-300"
         enter-from="opacity-0"
         enter-to="opacity-100"
-        leave="ease-in duration-200"
+        leave="ease-out duration-200"
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
@@ -46,12 +48,12 @@ const close = () => {
           <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full p-3 sm:p-6 lg:p-8">
             <TransitionChild
               as="template"
-              enter="transform transition ease-out duration-300"
-              enter-from="translate-x-full"
+              enter="transition-[translate,opacity] ease-out duration-300"
+              enter-from="translate-x-full opacity-0 motion-reduce:translate-x-0"
               enter-to="translate-x-0"
-              leave="transform transition ease-in duration-200"
+              leave="transition-[translate,opacity] ease-out duration-200"
               leave-from="translate-x-0"
-              leave-to="translate-x-full"
+              leave-to="translate-x-full opacity-0 motion-reduce:translate-x-0"
             >
               <DialogPanel class="pointer-events-auto w-screen max-w-4xl">
                 <div class="ds-slideover-panel flex h-full flex-col overflow-hidden">
@@ -73,6 +75,7 @@ const close = () => {
                         <button
                           type="button"
                           class="ds-icon-button"
+                          :disabled="props.disabled"
                           @click="close"
                         >
                           <span class="sr-only">Fechar painel</span>

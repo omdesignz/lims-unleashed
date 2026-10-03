@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToFinancialLaboratory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ImportCertificateItem extends Model
 {
+    use BelongsToFinancialLaboratory;
     use HasFactory, SoftDeletes;
 
     public const MENU_NAME = 'import_certificate_items';
@@ -28,15 +30,16 @@ class ImportCertificateItem extends Model
     ];
 
     protected $table = 'import_certificate_items';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
-     /**
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
      */
     protected $casts = [
-        
+
     ];
 
     /**
@@ -52,5 +55,5 @@ class ImportCertificateItem extends Model
     public function product()
     {
         return $this->belongsTo(PhytosanitaryProduct::class, 'product_id')->withTrashed();
-    }  
+    }
 }

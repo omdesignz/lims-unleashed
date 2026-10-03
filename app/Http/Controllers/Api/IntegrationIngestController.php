@@ -39,7 +39,7 @@ class IntegrationIngestController extends Controller
 
         $mapping = $connector->activeMapping()->first();
         $rawPayload = json_encode($validated['payload'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-        $normalization = $normalizer->normalize($validated['payload'], $mapping);
+        $normalization = $normalizer->normalize($validated['payload'], $connector, $mapping);
         $values = $normalization['values'];
         $matches = $normalization['matches'];
         $issues = $normalization['issues'];

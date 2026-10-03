@@ -2,61 +2,79 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ListSpecimensRequest;
 use App\Http\Resources\SampleResource;
 use App\Models\Parameter;
 use App\Models\Sample;
+use App\Services\LaboratoryWorkflowOwnership;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class SampleController extends Controller
 {
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratory,
+        private readonly LaboratoryWorkflowOwnership $ownership,
+    ) {}
+
+    /** @return Builder<Sample> */
+    private function records(): Builder
+    {
+        $labId = $this->laboratory->activeLabId();
+
+        return $this->ownership->samplesForLaboratory($labId)
+            ->whereHas('collection', fn (Builder $code): Builder => $code
+                ->where(fn (Builder $accession): Builder => $accession
+                    ->whereIn('lab_codes.collection_id', $this->ownership->collectionAccessionsForLaboratory($labId, 'direct')->select('collection_product.id'))
+                    ->orWhereIn('lab_codes.collection_id', $this->ownership->collectionAccessionsForLaboratory($labId, 'programmed')->select('collection_product.id'))));
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(ListSpecimensRequest $request): Response
     {
-        abort_if(! auth()->user()->can('view_samples'), 403, '');
+        $input = $request->validated();
+        $parameterIds = $input['parameters'] ?? [];
+        $perPage = (int) ($input['per_page'] ?? 10);
+        $sort = $input['sort'] ?? '';
 
-        $parameterIds = $this->parameterIdsFromRequest();
-        $perPage = max(1, min(100, (int) request()->query('per_page', 10)));
-        $sort = request()->query('sort', '');
-        $sort = is_string($sort) ? $sort : '';
-
-        $records = QueryBuilder::for(Sample::class)
-            ->with(['collection', 'analysis.profile.parameters'])
-            ->when($parameterIds !== [], function ($query) use ($parameterIds): void {
-                $query->whereHas('analysis.profile.parameters', function ($query) use ($parameterIds): void {
-                    $query->whereIn('parameter_id', $parameterIds);
-                });
-            })
+        $records = QueryBuilder::for($this->records())
+            ->with('collection.collection.sampleEntry')
+            ->byParameters($parameterIds)
+            ->bySearch($input['globalFilter'] ?? '')
             ->allowedFilters(Sample::getAllowedFilters())
             ->allowedSorts(Sample::getAllowedSorts())
-            ->latest('id')
+            ->latest('samples.id')
             ->paginate($perPage)
             ->withQueryString();
 
-        $selectedParameters = Parameter::query()
-            ->whereIn('id', $parameterIds)
+        $selectedIds = $parameterIds !== [] ? $parameterIds : data_get($input, 'filter.parameters', []);
+        $parameterOptions = Parameter::query()
+            ->whereIn('id', $selectedIds)
             ->orderBy('name')
             ->get(['id', 'name', 'code'])
-            ->map(fn (Parameter $parameter): array => [
-                'value' => $parameter->id,
-                'label' => collect([$parameter->code, $parameter->name])->filter()->join(' - '),
-            ])
-            ->values();
+            ->keyBy('id');
+        $selectedParameters = collect($selectedIds)->map(fn (int $id): array => [
+            'value' => $id,
+            'label' => $parameterOptions->has($id)
+                ? collect([$parameterOptions[$id]->code, $parameterOptions[$id]->name])->filter()->join(' - ')
+                : 'Parâmetro #'.$id,
+        ])->values();
 
         return Inertia::render('Samples/Index', [
             'record' => SampleResource::collection($records),
             'parameters' => $selectedParameters,
-            'query' => request()->only(['filter', 'sort', 'includes', 'globalFilter', 'parameters', 'per_page']),
-            'initialFilters' => request()->query('filter', ['collection.code' => '', 'created_at' => '', 'globalFilter' => '']),
+            'query' => $request->only(['filter', 'sort', 'includes', 'globalFilter', 'parameters', 'per_page']),
+            'initialFilters' => $input['filter'] ?? ['collection.code' => '', 'created_at' => '', 'globalFilter' => ''],
             'initialSortField' => $sort !== '' ? ($sort[0] === '-' ? ltrim($sort, '-') : $sort) : '',
             'initialSortDirection' => $sort !== '' ? ($sort[0] === '-' ? 'desc' : 'asc') : 'asc',
-            'initialIncludes' => request()->query('includes', []),
-            'initialGlobalFilter' => request()->query('globalFilter', ''),
+            'initialIncludes' => $input['includes'] ?? [],
+            'initialGlobalFilter' => $input['globalFilter'] ?? data_get($input, 'filter.globalFilter', ''),
             'per_page' => $perPage,
             'slideOverEdit' => false,
             'createAction' => false,
@@ -76,64 +94,15 @@ class SampleController extends Controller
         ]);
     }
 
-    public function create(): RedirectResponse
+    public function getCode(ListSpecimensRequest $request): JsonResponse
     {
-        return redirect()
-            ->route('vap_samples.index')
-            ->with('type', 'info')
-            ->with('message', trans('gestlab.general.labels.sample_entry'));
-    }
+        $search = $request->validated('q') ?? '';
+        $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%';
 
-    public function store(): RedirectResponse
-    {
-        return redirect()
-            ->route('vap_samples.index')
-            ->with('type', 'info')
-            ->with('message', trans('gestlab.general.labels.sample_entry'));
-    }
-
-    public function edit(Sample $sample): RedirectResponse
-    {
-        return redirect()
-            ->route('vap_samples.index')
-            ->with('type', 'info')
-            ->with('message', trans('gestlab.general.labels.sample_entry'));
-    }
-
-    public function update(Sample $sample): RedirectResponse
-    {
-        return redirect()
-            ->route('vap_samples.index')
-            ->with('type', 'info')
-            ->with('message', trans('gestlab.general.labels.sample_entry'));
-    }
-
-    public function destroy(): RedirectResponse
-    {
-        return redirect()
-            ->route('samples.index')
-            ->with('type', 'warning')
-            ->with('message', trans('gestlab.general.labels.sample_entry'));
-    }
-
-    public function restore(): RedirectResponse
-    {
-        return redirect()
-            ->route('samples.index')
-            ->with('type', 'warning')
-            ->with('message', trans('gestlab.general.labels.sample_entry'));
-    }
-
-    public function getCode(): JsonResponse
-    {
-        $search = request()->string('q')->trim()->toString();
-
-        $data = Sample::query()
-            ->select(['id', 'code'])
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where('code', 'LIKE', "%{$search}%");
-            })
-            ->latest('id')
+        $data = $this->records()
+            ->select(['samples.id', 'samples.code'])
+            ->when($search !== '', fn (Builder $query): Builder => $query->whereLike('samples.code', $like))
+            ->latest('samples.id')
             ->limit(25)
             ->get()
             ->map(fn (Sample $sample): array => [
@@ -144,22 +113,5 @@ class SampleController extends Controller
             ]);
 
         return response()->json($data);
-    }
-
-    /**
-     * @return array<int, int>
-     */
-    private function parameterIdsFromRequest(): array
-    {
-        $parameters = request()->query('parameters', []);
-        $values = is_array($parameters) ? $parameters : explode(',', (string) $parameters);
-
-        return collect($values)
-            ->flatten()
-            ->filter(fn ($id): bool => is_numeric($id))
-            ->map(fn ($id): int => (int) $id)
-            ->unique()
-            ->values()
-            ->all();
     }
 }

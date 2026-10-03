@@ -24,10 +24,7 @@
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
-          <button type="button" class="ds-button ds-button-secondary" @click="exportReport">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar PDF
-          </button>
+          <InventoryReportExportButton report-type="low_stock" :filters="filters" />
           <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-primary">
             <ArrowLeftIcon class="h-4 w-4" />
             Voltar ao inventário
@@ -338,8 +335,8 @@ import { Link, router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import Pagination from '@/Components/Pagination.vue'
+import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import {
-  ArrowDownTrayIcon,
   ArrowLeftIcon,
   ChartBarSquareIcon,
   CheckCircleIcon,
@@ -584,14 +581,6 @@ function clearFilters() {
     category_id: '',
     severity: '',
     sort_by: 'severity',
-  })
-}
-
-function exportReport() {
-  router.post(route('vap-inventory.reports.export'), {
-    report_type: 'low_stock',
-    format: 'pdf',
-    filters: { ...filters },
   })
 }
 

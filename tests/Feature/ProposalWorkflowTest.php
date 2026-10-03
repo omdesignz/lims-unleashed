@@ -14,14 +14,17 @@ use App\Models\Product;
 use App\Models\Role;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Models\VAPProposal;
 use App\Models\VAPProposalItem;
 use App\Models\VAPProposalTemplate;
+use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
 use App\Notifications\OperationalNotification;
 use App\Settings\GeneralSettings;
 use App\Support\ReportStudioPdfBuilder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -29,6 +32,14 @@ use Tests\TestCase;
 class ProposalWorkflowTest extends TestCase
 {
     use DatabaseTransactions;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Storage::fake(config('filesystems.default', 'local'));
+        config(['broadcasting.default' => 'null']);
+    }
 
     private function captureResponseOutput(callable $callback): array
     {
@@ -48,36 +59,31 @@ class ProposalWorkflowTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for proposal workflow testing.');
+        $admin = User::factory()->create(['is_active' => true]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
 
         return $admin;
     }
 
     private function draftProposal(User $user): VAPProposal
     {
-        $customer = Customer::query()->firstOrFail();
-        $department = Department::query()->firstOrFail();
-        $warehouse = Warehouse::query()->firstOrFail();
-        $template = VAPProposalTemplate::query()->first();
-
-        if (! $template) {
-            $template = VAPProposalTemplate::query()->create([
-                'name' => 'Smoke Template',
-                'content' => '<p>Smoke template</p>',
-                'user_id' => $user->id,
-                'is_active' => true,
-            ]);
-        }
+        $customer = Customer::query()->create(['name' => fake()->company()]);
+        $department = Department::factory()->create();
+        $warehouse = Warehouse::query()->create([
+            'name' => 'Proposal site '.str()->uuid(), 'customer_id' => $customer->id,
+            'email' => fake()->unique()->safeEmail(),
+        ]);
+        $template = VAPProposalTemplate::query()->create([
+            'name' => 'Smoke Template',
+            'content' => '<p>Smoke template</p>',
+            'user_id' => $user->id,
+            'is_active' => true,
+        ]);
 
         /** @var VAPProposal $proposal */
-        $proposal = VAPProposal::query()->create([
+        $proposal = new VAPProposal([
             'proposal_year' => now()->year,
             'service_location' => 'Smoke Workflow',
             'customer_id' => $customer->id,
@@ -102,6 +108,8 @@ class ProposalWorkflowTest extends TestCase
             'global_discount_percentage' => 0,
             'converted_to_invoice' => false,
         ]);
+        $proposal->lab_id = DB::table('lab_user')->where('user_id', $user->id)->value('lab_id');
+        $proposal->save();
 
         $proposal->complianceAgreement()->create([
             'confidentiality' => false,
@@ -144,11 +152,13 @@ class ProposalWorkflowTest extends TestCase
             $proposal->warehouse,
             OperationalNotification::class,
             fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'commercial.proposal.sent_customer'
+                && $notification->payload['context']['lab_id'] === $proposal->lab_id
         );
         Notification::assertSentTo(
             $user,
             OperationalNotification::class,
             fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'commercial.proposal.updated'
+                && $notification->payload['context']['lab_id'] === $proposal->lab_id
         );
     }
 
@@ -161,7 +171,7 @@ class ProposalWorkflowTest extends TestCase
 
         $user = $this->verifiedAdmin();
         $proposal = $this->draftProposal($user);
-        $unit = Unit::query()->firstOrFail();
+        $unit = Unit::query()->create(['code' => 'TEST-UNIT', 'description' => 'Test unit']);
         $stalePdfPath = 'vap-proposals/'.$proposal->id.'/'.str($proposal->proposal_number)->slug('-')->prepend('Proposta-')->append('.pdf')->value();
 
         Storage::disk($disk)->put($stalePdfPath, 'stale proposal pdf');
@@ -222,7 +232,8 @@ class ProposalWorkflowTest extends TestCase
         $proposal->refresh();
 
         $this->assertSame('SENT', $proposal->status);
-        $this->assertSame($stalePdfPath, $proposal->file_path);
+        $this->assertNotSame($stalePdfPath, $proposal->file_path);
+        $this->assertStringStartsWith('vap-proposals/'.$proposal->id.'/', $proposal->file_path);
         Storage::disk($disk)->assertExists($proposal->file_path);
         $this->assertStringStartsWith('%PDF-', Storage::disk($disk)->get($proposal->file_path));
     }
@@ -267,6 +278,8 @@ class ProposalWorkflowTest extends TestCase
         $response
             ->assertSuccessful()
             ->assertJsonPath('redirect', route('vap-proposals.public.thankyou', $proposal->unique_hash));
+
+        $this->assertTrue($proposal->complianceAgreementLogs()->latest('id')->firstOrFail()->nondisclosure);
     }
 
     public function test_public_proposal_decision_endpoints_require_public_hashes(): void
@@ -371,7 +384,7 @@ class ProposalWorkflowTest extends TestCase
                 ->assertOk()
                 ->assertInertia(fn ($page) => $page
                     ->component('Public/ProposalShow')
-                    ->where('proposal.id', $proposal->id)
+                    ->where('proposal.proposal_number', $proposal->proposal_number)
                     ->where('company.name', 'Laboratório de Qualidade Kudi')
                     ->where('company.tagline', 'Evidência técnica para decisões seguras')
                     ->where('company.logo_url', 'https://cdn.example.test/brand/kudi.svg')
@@ -421,7 +434,7 @@ class ProposalWorkflowTest extends TestCase
                 ->assertOk()
                 ->assertInertia(fn ($page) => $page
                     ->component('Public/ProposalShow')
-                    ->where('proposal.id', $proposal->id)
+                    ->where('proposal.proposal_number', $proposal->proposal_number)
                     ->where('parsedTemplateContent', fn (string $content): bool => str_contains($content, 'Verificação da proposta')
                         && str_contains($content, 'Evidência de aceite')
                         && str_contains($content, 'Banco Portal')
@@ -1162,8 +1175,8 @@ class ProposalWorkflowTest extends TestCase
         $this->assertSame($pageCount, substr_count($payload['data']['bodyHtml'], 'Bloco em todas'));
         $this->assertSame(1, substr_count($payload['data']['bodyHtml'], 'Bloco página 2'));
         $this->assertSame($pageCount - 1, substr_count($payload['data']['bodyHtml'], 'Cliente / representante'));
-        $this->assertStringContainsString($proposal->customer->name, $payload['data']['bodyHtml']);
-        $this->assertStringContainsString('Verificar proposta '.$proposal->proposal_number, $payload['data']['bodyHtml']);
+        $this->assertStringContainsString($proposal->customer->name, html_entity_decode($payload['data']['bodyHtml'], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $this->assertStringContainsString('Verificar proposta '.$proposal->proposal_number, html_entity_decode($payload['data']['bodyHtml'], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
         $this->assertStringNotContainsString('{customer_name}', $payload['data']['bodyHtml']);
         $this->assertStringNotContainsString('{proposal_number}', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('Cliente / representante', $payload['data']['bodyHtml']);
@@ -1219,7 +1232,7 @@ class ProposalWorkflowTest extends TestCase
         $this->assertStringContainsString('studio-body-marker', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('Corpo controlado pelo estúdio', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('proposal-clauses', $payload['data']['bodyHtml']);
-        $this->assertStringContainsString('Cláusulas aceites por '.$proposal->customer->name, $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('Cláusulas aceites por '.$proposal->customer->name, html_entity_decode($payload['data']['bodyHtml'], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
         $this->assertStringContainsString('studio-summary', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('Dados bancários', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('studio-evidence', $payload['data']['bodyHtml']);
@@ -1442,7 +1455,7 @@ class ProposalWorkflowTest extends TestCase
 
         $this->assertStringContainsString('report-chart studio-avoid-break', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('data-chart-type="line"', $payload['data']['bodyHtml']);
-        $this->assertStringContainsString('Resumo para '.$proposal->customer->name, $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('Resumo para '.e($proposal->customer->name), $payload['data']['bodyHtml']);
         $this->assertStringContainsString('Visualização comercial gerada pelo estúdio.', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('#f8f4ea', $payload['data']['bodyHtml']);
         $this->assertStringNotContainsString('{customer_name}', $payload['data']['bodyHtml']);
@@ -1524,7 +1537,7 @@ class ProposalWorkflowTest extends TestCase
         );
 
         $this->assertStringContainsString('data-chart-type="bar"', $payload['data']['bodyHtml']);
-        $this->assertStringContainsString('Resumo digitado para '.$proposal->customer->name, $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('Resumo digitado para '.$proposal->customer->name, html_entity_decode($payload['data']['bodyHtml'], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
         $this->assertStringContainsString('Valores introduzidos no painel do estúdio.', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('Âmbito', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('>1.5</text>', $payload['data']['bodyHtml']);
@@ -1783,14 +1796,9 @@ class ProposalWorkflowTest extends TestCase
             $this->assertStringNotContainsString('{banking_details}', $bodyHtml);
             $this->assertStringNotContainsString('{{bank_iban}}', $bodyHtml);
             $this->assertStringNotContainsString('{signature_block}', $bodyHtml);
-            preg_match_all('/data:image\/svg\+xml;base64,([^"\']+)/', $bodyHtml, $svgDataUris);
-            $this->assertTrue(collect($svgDataUris[1])->contains(function (string $encodedSvg): bool {
-                $svg = base64_decode($encodedSvg, true);
-
-                return is_string($svg)
-                    && str_contains($svg, 'fill="#143d37"')
-                    && str_contains($svg, 'fill="#f7f1e7"');
-            }));
+            preg_match_all('/<svg\b[^>]*>.*?<\/svg>/s', $bodyHtml, $inlineSvgs);
+            $this->assertTrue(collect($inlineSvgs[0])->contains(fn (string $svg): bool => str_contains($svg, 'fill="#143d37"') && str_contains($svg, 'fill="#f7f1e7"')
+            ));
 
             $response = $this->actingAs($user)->get(route('vap-proposals.templates.pdf', $template));
 
@@ -1823,6 +1831,8 @@ class ProposalWorkflowTest extends TestCase
         $acceptedProposal->update(['template_id' => $template->id, 'status' => 'ACCEPTED']);
         $pendingProposal->update(['template_id' => $template->id, 'status' => 'SENT']);
         $rejectedProposal->update(['template_id' => $template->id, 'status' => 'REJECTED']);
+        $peerProposal = $this->draftProposal($this->verifiedAdmin());
+        $peerProposal->update(['template_id' => $template->id, 'status' => 'ACCEPTED']);
 
         $response = $this->actingAs($user)->get(route('vap-proposals.templates.show', $template));
 
@@ -1833,13 +1843,14 @@ class ProposalWorkflowTest extends TestCase
                 ->where('template.accepted_proposals_count', 1)
                 ->where('template.pending_proposals_count', 1)
                 ->where('template.rejected_proposals_count', 1)
+                ->has('recentProposals', 3)
                 ->where('variables.{banking_details}', 'Dados bancários')
                 ->where('variables.{lab_details}', 'Dados do laboratório')
                 ->where('variables.{customer_details}', 'Dados do cliente')
             );
 
         $this->actingAs($user)
-            ->putJson(route('vap-proposals.templates.toggle-status', $template))
+            ->putJson(route('vap-proposals.templates.toggle-status', $template), ['is_active' => false])
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('is_active', false);
@@ -1850,7 +1861,7 @@ class ProposalWorkflowTest extends TestCase
     public function test_vap_proposal_combobox_option_endpoints_return_json_payloads(): void
     {
         $user = $this->verifiedAdmin();
-        $customer = Customer::query()->firstOrFail();
+        $customer = Customer::query()->create(['name' => 'Combobox customer']);
 
         $proposal = $this->draftProposal($user);
         $warehouse = Warehouse::query()->create([
@@ -1894,6 +1905,10 @@ class ProposalWorkflowTest extends TestCase
             'collection_id' => $collectionProduct->id,
             'codeable_type' => VAPProposal::class,
             'codeable_id' => $proposal->id,
+        ]);
+        VAPSampleEntry::factory()->create([
+            'lab_id' => $proposal->lab_id,
+            'collection_product_id' => $collectionProduct->id,
         ]);
 
         $routes = [
@@ -1980,12 +1995,14 @@ class ProposalWorkflowTest extends TestCase
     {
         $user = $this->verifiedAdmin();
         $proposal = $this->draftProposal($user);
+        $unit = Unit::query()->create(['code' => 'TAX-UNIT', 'description' => 'Tax test unit']);
+        $matrix = Matrix::query()->create(['description' => 'Tax calculation matrix']);
 
         VAPProposalItem::query()->create([
             'proposal_id' => $proposal->id,
-            'itemable_id' => 1,
+            'itemable_id' => $matrix->id,
             'itemable_type' => Matrix::class,
-            'unit_id' => Unit::query()->value('id'),
+            'unit_id' => $unit->id,
             'item_id' => 1,
             'item_description' => 'Ensaios com IVA',
             'qty' => 1,

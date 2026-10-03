@@ -7,7 +7,9 @@ use App\Models\InventoryItemType;
 use App\Models\ItemCategory;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -17,12 +19,13 @@ class CalibrationScheduleReportTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
+
+        return $admin;
     }
 
     public function test_calibration_schedule_exposes_filters_stats_and_metrology_context(): void
@@ -30,11 +33,13 @@ class CalibrationScheduleReportTest extends TestCase
         $user = $this->verifiedAdmin();
         $code = 'CAL-FEFO-'.uniqid();
         $serial = 'SER-CAL-'.uniqid();
-        $category = ItemCategory::query()
-            ->whereIn('id', [1, 2, 3, 4])
-            ->firstOrFail();
-        $type = InventoryItemType::query()->firstOrFail();
+        $category = ItemCategory::query()->create([
+            'name' => 'Calibration category',
+            'code' => fake()->unique()->bothify('CAL-######'),
+        ]);
+        $type = InventoryItemType::query()->create(['name' => 'Calibration equipment']);
         $item = InventoryItem::query()->create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'name' => 'Balança analítica rastreada',
             'code' => $code,
             'category_id' => $category->id,

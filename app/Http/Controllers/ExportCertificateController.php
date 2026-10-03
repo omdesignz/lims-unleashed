@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\IssueBillingSourceInvoice;
+use App\Actions\SaveTradeCertificate;
+use App\Actions\SetBillingDocumentsArchived;
 use App\Http\Requests\ExportCertificateRequest;
-use App\Http\Requests\InvoiceRequest;
+use App\Http\Requests\IssueCertificateInvoiceRequest;
+use App\Http\Requests\SetBillingDocumentsArchivedRequest;
 use App\Http\Resources\ExportCertificateResource;
 use App\Models\DiscountCategory;
 use App\Models\ExportCertificate;
-use App\Models\ExportCertificateItem;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Settings\GeneralSettings;
 use App\Support\ReportStudioPdfBuilder;
 use App\Support\ReportStudioPdfRenderer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -98,35 +100,11 @@ class ExportCertificateController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ExportCertificateRequest $request)
+    public function store(ExportCertificateRequest $request, SaveTradeCertificate $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('add_export_certificates'), 403, '');
+        $action->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'), 'export', $request->validated());
 
-        // dd(collect($request->safe()->only(['items']))->first());
-
-        DB::transaction(function () use ($request): void {
-            $certificate = ExportCertificate::create($request->safe()->except(['items']));
-
-            foreach (collect($request->safe()->only(['items']))->first() as $item) {
-
-                $obj = new ExportCertificateItem;
-
-                $obj->certificate_id = $certificate->id;
-                $obj->product_id = $item['product_id'];
-                $obj->qty = $item['qty'];
-
-                $obj->save();
-
-            }
-        });
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ],
-        ]);
-
+        return redirect()->back()->with(['toast' => ['title' => trans('gestlab.toasts.notification'), 'message' => trans('gestlab.toasts.record_successfully_created')]]);
     }
 
     /**
@@ -166,56 +144,20 @@ class ExportCertificateController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ExportCertificateRequest $request, $id)
+    public function update(ExportCertificateRequest $request, int $id, SaveTradeCertificate $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('edit_export_certificates'), 403, '');
+        $action->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'), 'export', $request->validated(), $id);
 
-        DB::transaction(function () use ($request, $id): void {
-
-            $record = tap(ExportCertificate::findOrFail($id), function ($record) use ($request) {
-
-                $record->update($request->safe()->except(['items']));
-
-                ExportCertificateItem::where('certificate_id', $record->id)->forcedelete();
-
-                foreach (collect($request->safe()->only(['items']))->first() as $item) {
-
-                    $obj = new ExportCertificateItem;
-
-                    $obj->certificate_id = $record->id;
-                    $obj->product_id = $item['product_id'];
-                    $obj->qty = $item['qty'];
-
-                    $obj->save();
-
-                }
-
-            });
-
-        });
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ],
-        ]);
+        return redirect()->back()->with(['toast' => ['title' => trans('gestlab.toasts.notification'), 'message' => trans('gestlab.toasts.record_successfully_updated')]]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy()
+    public function destroy(SetBillingDocumentsArchivedRequest $request, SetBillingDocumentsArchived $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('delete_export_certificates'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (ExportCertificate::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $action->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'),
+            ExportCertificate::class, $request->validated('recordIds'), true);
 
         return redirect()->back()->with([
             'toast' => [
@@ -228,17 +170,10 @@ class ExportCertificateController extends Controller
     /**
      * restore the specified resource from storage.
      */
-    public function restore()
+    public function restore(SetBillingDocumentsArchivedRequest $request, SetBillingDocumentsArchived $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('restore_export_certificates'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (ExportCertificate::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $action->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'),
+            ExportCertificate::class, $request->validated('recordIds'), false);
 
         return redirect()->back()->with([
             'toast' => [
@@ -301,7 +236,7 @@ class ExportCertificateController extends Controller
         $renderedPdf = app(ReportStudioPdfRenderer::class)->renderDocument('export_certificate', $payload, $filename);
 
         if (request()->q) {
-            activity()->log('baixou o Fitosanitário Para Exportação Nº '.$model->cert_no);
+            activity()->performedOn($model)->log('baixou o Fitosanitário Para Exportação Nº '.$model->cert_no);
 
             return response($renderedPdf['content'], 200, [
                 'Content-Type' => 'application/pdf',
@@ -312,6 +247,7 @@ class ExportCertificateController extends Controller
 
         if (! request()->q) {
             activity()
+                ->performedOn($model)
                 ->causedBy(auth()->user()->id)
                 ->log('visualizou o Fitosanitário Para Exportação Nº '.$model->cert_no);
 
@@ -325,7 +261,7 @@ class ExportCertificateController extends Controller
 
     public function getIssueInvoiceModal()
     {
-        abort_if(! auth()->user()->can('edit_quotes'), 403, '');
+        abort_unless(auth()->user()->can('view_export_certificates') && auth()->user()->can('add_invoices'), 403);
 
         $certificateId = request()->integer('id');
 
@@ -350,65 +286,14 @@ class ExportCertificateController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function issueInvoice(InvoiceRequest $request)
+    public function issueInvoice(IssueCertificateInvoiceRequest $request, IssueBillingSourceInvoice $issueInvoice)
     {
-        abort_if(! auth()->user()->can('add_invoices'), 403, '');
-
-        $validated = request()->validate([
-            'certificate_id' => ['required', 'integer', 'exists:export_certificates,id'],
-        ]);
-
-        DB::transaction(function () use ($request, $validated): void {
-
-            $certificate = ExportCertificate::query()
-                ->lockForUpdate()
-                ->findOrFail($validated['certificate_id']);
-
-            abort_if((bool) $certificate->invoiced, 409, 'Este certificado já foi facturado.');
-
-            tap(Invoice::create($request->safe()->except(['items'])), function ($record) use ($request, $certificate) {
-
-                foreach (collect($request->safe()->only(['items']))->first() as $item) {
-
-                    $obj = new InvoiceItem;
-
-                    $obj->invoice_id = $record->id;
-                    $obj->item_id = $item['item_id'];
-                    $obj->item_description = $item['item_description'];
-                    $obj->exemption_id = $item['exemption_id'];
-                    $obj->exemption_code = $item['exemption_code'];
-                    $obj->discount_id = $item['discount_id'];
-                    $obj->unit_id = $item['unit_id'];
-                    $obj->tax_id = $item['tax_id'];
-                    $obj->qty = $item['qty'];
-                    $obj->unit_price = $item['unit_price'];
-                    $obj->total = $item['total'];
-                    $obj->charge_tax = $item['charge_tax'];
-                    $obj->tax_amount = $item['tax_amount'];
-                    $obj->tax_percentage = $item['tax_percentage'];
-                    $obj->discount_amount = $item['discount_amount'];
-                    $obj->discount_percentage = $item['discount_percentage'];
-                    $obj->obs = $item['obs'];
-
-                    $obj->save();
-
-                }
-
-                // Update Certificate Invoice Details
-                $certificate->update([
-                    'invoice_id' => $record->id,
-                    'invoiced' => true,
-                ]);
-
-            });
-        });
+        $issueInvoice->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'),
+            'export_certificate', $request->integer('certificate_id'), $request->safe()->except(['items']),
+            $request->validated('items'));
 
         return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ],
+            'toast' => ['title' => trans('gestlab.toasts.notification'), 'message' => trans('gestlab.toasts.record_successfully_created')],
         ]);
-
     }
 }

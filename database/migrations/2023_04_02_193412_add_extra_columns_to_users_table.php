@@ -21,7 +21,11 @@ return new class extends Migration
             $table->date('dob')->nullable();
             $table->boolean('is_active')->default(1);
             $table->boolean('password_changed_by_user')->default(0);
-            $table->char('birthday', 5)->virtualAs('date_format(dob, "%m-%d")')->index();
+            if (Schema::getConnection()->getDriverName() === 'pgsql') {
+                $table->char('birthday', 5)->nullable()->storedAs("lpad(extract(month from dob)::text, 2, '0') || '-' || lpad(extract(day from dob)::text, 2, '0')")->index();
+            } else {
+                $table->char('birthday', 5)->nullable()->virtualAs('date_format(dob, "%m-%d")')->index();
+            }
             $table->enum('gender', ['M', 'F', 'O']);
             $table->softDeletes('deleted_at', 0);
         });

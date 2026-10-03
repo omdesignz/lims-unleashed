@@ -2,21 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Proposals\ProposalTrackingStatus;
 use App\Http\Requests\CustomerRequest;
 use App\Http\Resources\CustomerResource;
-use App\Models\CreditNote;
 use App\Models\Customer;
-use App\Models\CustomerRequest as PortalCustomerRequest;
-use App\Models\Invoice;
-use App\Models\Proposal;
-use App\Models\QualityCertificate;
-use App\Models\Receipt;
+use App\Models\VAPProposal;
 use App\Models\VAPSampleEntry;
 use App\Services\NIFIdentificationService;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CustomerController extends Controller
 {
@@ -114,70 +111,34 @@ class CustomerController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(int $id, SampleLaboratoryAccess $laboratory): Response
     {
         abort_if(! auth()->user()->can('view_customers'), 403, '');
 
+        $labId = $laboratory->activeLabId();
         $customer = Customer::query()
             ->with('category', 'main_warehouse', 'warehouses')
             ->findOrFail($id);
+        $samples = VAPSampleEntry::query()->where('lab_id', $labId)->where('customer_id', $customer->id);
         $summary = [
-            'accepted_proposals' => Proposal::query()->where('customer_id', $customer->id)->accepted()->count(),
-            'open_invoices' => Invoice::query()->where('customer_id', $customer->id)->where('amount_due', '>', 0)->count(),
-            'open_amount_due' => (float) Invoice::query()->where('customer_id', $customer->id)->sum('amount_due'),
-            'samples_in_progress' => VAPSampleEntry::query()
+            'accepted_proposals' => VAPProposal::query()
+                ->where('lab_id', $labId)
                 ->where('customer_id', $customer->id)
+                ->where('status', ProposalTrackingStatus::ACCEPTED->value)
+                ->count(),
+            'samples_in_progress' => (clone $samples)
                 ->whereIn('status', ['POR_INICIAR', 'EN_PROGRESO', 'EN_PAUSA'])
                 ->count(),
-            'completed_samples' => VAPSampleEntry::query()->where('customer_id', $customer->id)->where('status', 'COMPLETADO')->count(),
-            'open_requests' => PortalCustomerRequest::query()
-                ->where('customer_id', $customer->id)
-                ->whereIn('status', ['pending', 'in_progress'])
-                ->count(),
-            'certificates' => QualityCertificate::query()->where('customer_id', $customer->id)->count(),
-            'receipts' => Receipt::query()->where('customer_id', $customer->id)->count(),
-            'credit_notes' => CreditNote::query()->where('customer_id', $customer->id)->count(),
+            'completed_samples' => (clone $samples)->where('status', 'COMPLETADO')->count(),
         ];
-        $invoiceColumns = ['id', 'inv_no', 'total', 'amount_due', 'date'];
-
-        if (Schema::hasColumn('invoices', 'due_date')) {
-            $invoiceColumns[] = 'due_date';
-        }
 
         return Inertia::render('Customers/Show', [
             'record' => CustomerResource::make($customer),
-            'charts' => [
-                'commercial_health' => [
-                    'labels' => ['Propostas aceites', 'Facturas em aberto', 'Pedidos do portal', 'Notas de crédito'],
-                    'series' => [
-                        (int) ($summary['accepted_proposals'] ?? 0),
-                        (int) ($summary['open_invoices'] ?? 0),
-                        (int) ($summary['open_requests'] ?? 0),
-                        (int) ($summary['credit_notes'] ?? 0),
-                    ],
-                ],
-                'execution_mix' => [
-                    'labels' => ['Amostras em curso', 'Amostras concluídas', 'Certificados', 'Recibos'],
-                    'series' => [
-                        (int) ($summary['samples_in_progress'] ?? 0),
-                        (int) ($summary['completed_samples'] ?? 0),
-                        (int) ($summary['certificates'] ?? 0),
-                        (int) ($summary['receipts'] ?? 0),
-                    ],
-                ],
-                'financial_pressure' => [
-                    'labels' => ['Montante em aberto', 'Notas de crédito'],
-                    'series' => [
-                        (float) ($summary['open_amount_due'] ?? 0),
-                        (float) CreditNote::query()->where('customer_id', $customer->id)->sum('total'),
-                    ],
-                ],
-            ],
             'customerState' => [
                 'summary' => $summary,
-                'recent_samples' => VAPSampleEntry::query()
-                    ->where('customer_id', $customer->id)
-                    ->latest('received_at')
+                'recent_samples' => (clone $samples)
+                    ->orderByDesc('received_at')
+                    ->orderByDesc('id')
                     ->limit(5)
                     ->get(['id', 'code', 'name', 'status', 'received_at', 'analysis_end_date'])
                     ->map(fn ($sample) => [
@@ -187,33 +148,6 @@ class CustomerController extends Controller
                         'status' => $sample->status,
                         'received_at' => optional($sample->received_at)?->toIso8601String(),
                         'analysis_end_date' => optional($sample->analysis_end_date)?->toIso8601String(),
-                    ]),
-                'open_finance' => Invoice::query()
-                    ->where('customer_id', $customer->id)
-                    ->where('amount_due', '>', 0)
-                    ->latest('date')
-                    ->limit(5)
-                    ->get($invoiceColumns)
-                    ->map(fn ($invoice) => [
-                        'id' => $invoice->id,
-                        'reference' => $invoice->inv_no,
-                        'total' => (float) $invoice->total,
-                        'amount_due' => (float) $invoice->amount_due,
-                        'date' => optional($invoice->date)?->toDateString(),
-                        'due_date' => optional($invoice->due_date)?->toDateString(),
-                    ]),
-                'recent_requests' => PortalCustomerRequest::query()
-                    ->where('customer_id', $customer->id)
-                    ->latest('submitted_at')
-                    ->limit(5)
-                    ->get(['id', 'reference', 'title', 'request_type', 'status', 'submitted_at'])
-                    ->map(fn ($request) => [
-                        'id' => $request->id,
-                        'reference' => $request->reference,
-                        'title' => $request->title,
-                        'request_type' => $request->request_type,
-                        'status' => $request->portal_status,
-                        'submitted_at' => optional($request->submitted_at)?->toIso8601String(),
                     ]),
             ],
         ]);

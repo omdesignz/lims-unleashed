@@ -2,220 +2,105 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\InventoryTransactionRequest;
 use App\Http\Resources\InventoryTransactionResource;
 use App\Models\InventoryTransaction;
-use Illuminate\Support\Facades\DB;
+use App\Services\InventoryCatalogueAccess;
+use App\Services\InventoryCatalogueRead;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class InventoryTransactionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+        private readonly InventoryCatalogueRead $catalogueRead,
+        private readonly InventoryCatalogueAccess $catalogueAccess,
+    ) {}
+
+    public function index(Request $request): Response
     {
-        abort_if(! auth()->user()->can('view_itransactions'), 403, '');
+        abort_unless($request->user()->can('view_itransactions'), 403);
+        abort_unless($this->catalogueAccess->any($request->user(), 'view'), 403);
+
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'filter' => ['nullable', 'in:trashed'],
+        ]);
+
+        $transactions = $this->catalogueRead->transactions($this->laboratoryAccess->activeLabId(), $request->user())
+            ->with(['inventory', 'type' => fn ($types) => $types->withTrashed(), 'item' => fn ($items) => $items->withTrashed(), 'warehouse' => fn ($warehouses) => $warehouses->withTrashed(), 'user' => fn ($users) => $users->withTrashed()->select('id', 'name')])
+            ->when($filters['search'] ?? null, function (Builder $query, string $search): void {
+                $pattern = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], trim($search)).'%';
+                $query->where(function (Builder $searchQuery) use ($pattern): void {
+                    $searchQuery->whereLike($searchQuery->qualifyColumn('qty'), $pattern)
+                        ->orWhereHas('type', fn (Builder $types): Builder => $types->withTrashed()->whereLike('name', $pattern))
+                        ->orWhereHas('warehouse', fn (Builder $warehouses): Builder => $warehouses->withTrashed()->whereLike('name', $pattern))
+                        ->orWhereHas('item', fn (Builder $items): Builder => $items->withTrashed()->whereLike('name', $pattern));
+                });
+            })
+            ->when(($filters['filter'] ?? null) === 'trashed', fn (Builder $query) => $query->withTrashed())
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         return Inertia::render('InventoryTransactions/Index', [
-            'record' => InventoryTransactionResource::collection(
-                InventoryTransaction::query()
-                    ->with('inventory', 'type', 'item', 'warehouse', 'user')
-                    ->when(request()->input('search'), function ($query, $search) {
-                        $query->where(function ($searchQuery) use ($search) {
-                            $searchQuery->where('qty', 'like', "%{$search}%")
-                                ->orWhereRelation('type', 'name', 'like', "%{$search}%")
-                                ->orWhereRelation('warehouse', 'name', 'like', "%{$search}%")
-                                ->orWhereRelation('item', 'name', 'like', "%{$search}%");
-                        });
-                    })
-                    ->when(request()->input('filter'), function ($query, $filter) {
-                        if ($filter === 'trashed') {
-                            $query->withTrashed();
-                        }
-                    })
-                    ->latest()
-                    ->paginate(10)
-                    ->withQueryString()
-            ),
-            'slideOverEdit' => true,
+            'record' => InventoryTransactionResource::collection($transactions),
+            'slideOverEdit' => false,
             'fields' => [
-                [
-                    'name' => trans('gestlab.general.labels.itransactions.item_id'),
-                    'value' => 'item',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.itransactions.type_id'),
-                    'value' => 'type',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.itransactions.qty'),
-                    'value' => 'qty',
-                ],
-                // [
-                //     'name' => trans('gestlab.general.labels.itransactions.min_stock_level'),
-                //     'value' => 'min_stock_level'
-                // ],
-                [
-                    'name' => trans('gestlab.general.labels.itransactions.warehouse_id'),
-                    'value' => 'warehouse',
-                ],
-                // [
-                //     'name' => trans('gestlab.general.labels.itransactions.reorder_point'),
-                //     'value' => 'reorder_point'
-                // ],
+                ['name' => trans('gestlab.general.labels.itransactions.item_id'), 'value' => 'item'],
+                ['name' => trans('gestlab.general.labels.itransactions.type_id'), 'value' => 'type'],
+                ['name' => trans('gestlab.general.labels.itransactions.qty'), 'value' => 'qty'],
+                ['name' => trans('gestlab.general.labels.itransactions.warehouse_id'), 'value' => 'warehouse'],
             ],
             'model' => InventoryTransaction::MENU_NAME,
-            'abilities' => method_exists(InventoryTransaction::class, 'getAbilities') ? collect(InventoryTransaction::ABILITIES)->map(function ($item) {
-                return $item.'_'.InventoryTransaction::MENU_NAME;
-            }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
-                return $item.'_'.InventoryTransaction::MENU_NAME;
-            }),
-            'query' => request()->only(['search', 'filter']),
+            'query' => $filters,
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function show(Request $request, int $id): Response
     {
-        abort_if(! auth()->user()->can('add_itransactions'), 403, '');
+        abort_unless($request->user()->can('view_itransactions'), 403);
+        abort_unless($this->catalogueAccess->any($request->user(), 'view'), 403);
 
-        // Get any required data
-
-        // Load form
-
-        return Inertia::render('InventoryTransactions/Create', []);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(InventoryTransactionRequest $request)
-    {
-        abort_if(! auth()->user()->can('add_itransactions'), 403, '');
-
-        // Persiste data to DB
-        InventoryTransaction::create($request->validated());
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ],
-        ]);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
-    {
         return Inertia::render('InventoryTransactions/Show', [
             'record' => InventoryTransactionResource::make(
-                InventoryTransaction::query()
-                    ->with('inventory', 'type', 'item', 'warehouse', 'user')
-                    ->find($id)
+                $this->catalogueRead->transactions($this->laboratoryAccess->activeLabId(), $request->user())
+                    ->with(['inventory', 'type' => fn ($types) => $types->withTrashed(), 'item' => fn ($items) => $items->withTrashed(), 'warehouse' => fn ($warehouses) => $warehouses->withTrashed(), 'user' => fn ($users) => $users->withTrashed()->select('id', 'name')])
+                    ->findOrFail($id)
             ),
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
+    public function create(): never
     {
-        abort_if(! auth()->user()->can('edit_itransactions'), 403, '');
-
-        // Find the record
-        $record = InventoryTransaction::findOrFail($id);
-
-        // Return Inertia View with record data
-        return Inertia::render('InventoryTransactions/Edit', [
-            'record' => InventoryTransactionResource::make($record),
-        ]);
+        abort(410, 'Use the controlled stock adjustment workflow.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(InventoryTransactionRequest $request, $id)
+    public function store(): never
     {
-        abort_if(! auth()->user()->can('edit_itransactions'), 403, '');
-
-        // Find the record
-        $record = InventoryTransaction::findOrFail($id);
-
-        $record->update($request->validated());
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ],
-        ]);
+        abort(410, 'Use the controlled stock adjustment workflow.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy()
+    public function edit(int $id): never
     {
-        abort_if(! auth()->user()->can('delete_itransactions'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (InventoryTransaction::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ],
-        ]);
+        abort(410, 'Ledger entries cannot be edited directly.');
     }
 
-    /**
-     * restore the specified resource from storage.
-     */
-    public function restore()
+    public function update(int $id): never
     {
-        abort_if(! auth()->user()->can('restore_itransactions'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (InventoryTransaction::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ],
-        ]);
+        abort(410, 'Ledger entries cannot be edited directly.');
     }
 
-    public function getInventoryTransaction()
+    public function destroy(): never
     {
-        $data = [];
+        abort(410, 'Ledger entries cannot be deleted directly.');
+    }
 
-        if (request()->has('q')) {
-            $search = request()->q;
-
-            $data = DB::table('itransactions')
-                ->select('itransactions.*')
-                ->where('qty', 'LIKE', "%$search%")
-                ->get();
-        }
-
-        return response()->json($data);
+    public function restore(): never
+    {
+        abort(410, 'Ledger entries cannot be restored directly.');
     }
 }

@@ -2,23 +2,22 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
-use App\Filters\GlobalFilter;
-use Carbon\Carbon;
 
 // use App\Filters\AnalysisByParametersFilter;
-
 
 class Analysis extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public CONST MENU_NAME = 'analysis';
+    public const MENU_NAME = 'analysis';
 
     /**
      * The attributes that are mass assignable.
@@ -40,6 +39,7 @@ class Analysis extends Model
     ];
 
     protected $table = 'analysis';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at', 'entry_date', 'init_date', 'col_date', 'end_date'];
 
     /**
@@ -107,12 +107,12 @@ class Analysis extends Model
      * @return Relationship
      */
     public function sample()
-    { 
+    {
         return $this->belongsTo(Sample::class);
     }
 
     // public function scopeInsert($query) {
-        
+
     //     return $this->whereHas('sample', function($q) {
     //         $q->doesnthave('results');
     //         $q->whereNull('end_date');
@@ -121,50 +121,50 @@ class Analysis extends Model
 
     public function results()
     {
-        return $this->hasManyThrough(Result::class, Sample::class, 'id', 'sample_id', 'id'); 
+        return $this->hasManyThrough(Result::class, Sample::class, 'id', 'sample_id', 'id');
     }
 
-    public function scopeInsert($query) 
+    public function scopeInsert($query)
     {
-        return $query->whereHas('sample', function($q) {
+        return $query->whereHas('sample', function ($q) {
             $q->whereDoesntHave('results');
         })
-        ->whereNull('end_date'); // ✅ Already correct
+            ->whereNull('end_date'); // ✅ Already correct
     }
 
-    public function scopeVerify($query) 
+    public function scopeVerify($query)
     {
-        return $query->whereHas('sample', function($q) {
-            $q->whereHas('results', function($q) {
+        return $query->whereHas('sample', function ($q) {
+            $q->whereHas('results', function ($q) {
                 $q->whereNotNull('inserted_date')
-                ->whereNull('verified_date');
+                    ->whereNull('verified_date');
             })
-            ->whereDoesntHave('results', function($q) {
-                $q->whereNotNull('verified_date');
-            });
+                ->whereDoesntHave('results', function ($q) {
+                    $q->whereNotNull('verified_date');
+                });
         })
-        ->whereNull('end_date'); // ✅ Exclude archived
+            ->whereNull('end_date'); // ✅ Exclude archived
     }
 
-    public function scopeApprove($query) 
+    public function scopeApprove($query)
     {
-        return $query->whereHas('sample', function($q) {
-            $q->whereHas('results', function($q) {
+        return $query->whereHas('sample', function ($q) {
+            $q->whereHas('results', function ($q) {
                 $q->whereNotNull('verified_date')
-                ->whereNull('approved_date');
+                    ->whereNull('approved_date');
             })
-            ->whereDoesntHave('results', function($q) {
-                $q->whereNotNull('approved_date');
-            })
-            ->whereDoesntHave('results', function($q) {
-                $q->whereNull('verified_date');
-            });
+                ->whereDoesntHave('results', function ($q) {
+                    $q->whereNotNull('approved_date');
+                })
+                ->whereDoesntHave('results', function ($q) {
+                    $q->whereNull('verified_date');
+                });
         })
-        ->whereNull('end_date'); // ✅ Exclude archived
+            ->whereNull('end_date'); // ✅ Exclude archived
     }
-    
+
     // public function scopeVerify($query) {
-        
+
     //     return $this->whereHas('sample', function(Builder $q) {
     //         $q->whereHas('results', function(Builder $q) {
     //             $q->whereNotNull('inserted_value');
@@ -173,9 +173,9 @@ class Analysis extends Model
     //         });
     //     });
     // }
-    
+
     // public function scopeApprove($query) {
-        
+
     //     return $this->whereHas('sample', function(Builder $q) {
     //         $q->whereHas('results', function(Builder $q) {
     //             $q->whereNotNull('inserted_value');
@@ -186,25 +186,26 @@ class Analysis extends Model
     // }
 
     // public function scopeArchived($query) {
-        
+
     //     return $this->whereNotNull('end_date');
     // }
 
-    public function scopeArchived($query) 
+    public function scopeArchived($query)
     {
         return $query->whereNotNull('end_date')
-            ->whereHas('sample', function($q) {
+            ->whereHas('sample', function ($q) {
                 // Ensure all results are fully approved (no pending work)
-                $q->whereDoesntHave('results', function($q) {
+                $q->whereDoesntHave('results', function ($q) {
                     $q->whereNull('approved_date'); // No unapproved results
                 });
             });
     }
 
-    public function scopeByParameters(Builder $q, $parameters) : void {
-        
-         $q->whereHas('profile', function($q) use ($parameters) {
-                $q->whereHas('parameters', function($q) use ($parameters) {
+    public function scopeByParameters(Builder $q, $parameters): void
+    {
+
+        $q->whereHas('profile', function ($q) use ($parameters) {
+            $q->whereHas('parameters', function ($q) use ($parameters) {
                 $q->whereIn('parameter_id', explode(',', $parameters));
             });
         });
@@ -227,7 +228,7 @@ class Analysis extends Model
     //             // dd($start, $end);
 
     //             return $query->whereBetween('col_date', [Carbon::parse($value['start'])->startOfDay(), Carbon::parse($value['end'])->endOfDay()]);
-                
+
     //             // if($value == 'today'){
     //             //     $query->whereBetwee('col_date', '=', date('Y-m-d'));
     //             // }
@@ -266,48 +267,73 @@ class Analysis extends Model
     // }
 
     public static function getAllowedFilters(): array
-{
-    return [
-        AllowedFilter::partial('entry_date'),
-        AllowedFilter::partial('init_date'),
-        AllowedFilter::callback('col_date', function($query, $value) {
-            if(empty($value['start']) || empty($value['end'])){
-                return $query;
+    {
+        return [
+            AllowedFilter::partial('entry_date'),
+            AllowedFilter::partial('init_date'),
+            AllowedFilter::callback('col_date', function ($query, $value) {
+                if (empty($value['start']) || empty($value['end'])) {
+                    return $query;
+                }
+
+                return $query->whereBetween('col_date', [
+                    Carbon::parse($value['start'])->startOfDay(),
+                    Carbon::parse($value['end'])->endOfDay(),
+                ]);
+            }),
+            AllowedFilter::partial('end_date'),
+            AllowedFilter::partial('code.code'),
+            AllowedFilter::partial('product.name'),
+            AllowedFilter::partial('status'),
+
+            // FIXED: Remove return statements, call scopes directly on $query
+            // AllowedFilter::callback('category', function($query, $value) {
+            //     match($value) {
+            //         'insert' => $query->Insert(),
+            //         'verify' => $query->Verify(),
+            //         'approve' => $query->Approve(),
+            //         'archived' => $query->Archived(),
+            //         default => $query->Insert(), // Default fallback
+            //     };
+            // }),
+
+            AllowedFilter::partial('department.name'),
+            AllowedFilter::partial('created_at'),
+            AllowedFilter::callback('globalFilter', function (Builder $query, mixed $value): void {
+                $query->matchingSearch(is_array($value) ? implode(',', $value) : (string) $value);
+            }),
+            AllowedFilter::trashed(),
+        ];
+    }
+
+    /** @param Builder<self> $query */
+    #[Scope]
+    protected function matchingSearch(Builder $query, string $search): void
+    {
+        if ($search === '') {
+            return;
+        }
+
+        $query->where(function (Builder $matches) use ($search): void {
+            $pattern = '%'.$search.'%';
+            $matches->whereRaw('CAST(analysis.entry_date AS TEXT) ILIKE ?', [$pattern]);
+
+            foreach (['code' => 'code', 'sample' => 'code', 'profile' => 'name', 'product' => 'name', 'department' => 'name'] as $relation => $column) {
+                $matches->orWhereHas($relation, fn (Builder $related): Builder => $related->whereLike($column, $pattern));
             }
-            return $query->whereBetween('col_date', [
-                Carbon::parse($value['start'])->startOfDay(), 
-                Carbon::parse($value['end'])->endOfDay()
-            ]);
-        }),
-        AllowedFilter::partial('end_date'),
-        AllowedFilter::partial('code.code'),
-        AllowedFilter::partial('product.name'),
-        AllowedFilter::partial('status'),
-        
-        // FIXED: Remove return statements, call scopes directly on $query
-        // AllowedFilter::callback('category', function($query, $value) {
-        //     match($value) {
-        //         'insert' => $query->Insert(),
-        //         'verify' => $query->Verify(),
-        //         'approve' => $query->Approve(),
-        //         'archived' => $query->Archived(),
-        //         default => $query->Insert(), // Default fallback
-        //     };
-        // }),
-        
-        AllowedFilter::partial('department.name'),
-        AllowedFilter::partial('created_at'),
-        AllowedFilter::custom('globalFilter', new GlobalFilter(['entry_date'])),
-        AllowedFilter::trashed(),
-    ];
-}
+        });
+    }
 
     public static function getAllowedSorts(): array
     {
         return [
             'created_at',
-            'department.name',
-            'profile.name',
+            AllowedSort::callback('department.name', function (Builder $query, bool $descending): void {
+                $query->orderBy(Department::query()->select('name')->whereColumn('departments.id', 'analysis.department_id'), $descending ? 'desc' : 'asc');
+            }),
+            AllowedSort::callback('profile.name', function (Builder $query, bool $descending): void {
+                $query->orderBy(Profile::query()->select('name')->whereColumn('profiles.id', 'analysis.profile_id'), $descending ? 'desc' : 'asc');
+            }),
             'col_date',
             'status',
         ];
@@ -316,108 +342,108 @@ class Analysis extends Model
     public static function getColumns(): array
     {
         return [
-                [
-                    'name' => trans('gestlab.general.labels.analysis.cl_id'),
-                    'value' => 'cl',
-                    'filter_field' => 'code.code',
-                    'filterable' => true,
-                    'type' => 'string',
-                    'format' => '',
-                    'filter' => '',
+            [
+                'name' => trans('gestlab.general.labels.analysis.cl_id'),
+                'value' => 'cl',
+                'filter_field' => 'code.code',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.analysis.department_id'),
+                'value' => 'department',
+                'filter_field' => 'department.name',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+                'options' => [
+
                 ],
-                [
-                    'name' => trans('gestlab.general.labels.analysis.department_id'),
-                    'value' => 'department',
-                    'filter_field' => 'department.name',
-                    'filterable' => true,
-                    'type' => 'string',
-                    'format' => '',
-                    'filter' => '',
-                    'options' => [
-                        
-                    ],
-                    'config' => [
-                        'url' => route('departments.getDepartment'),
-                        'label' => 'name',
-                        'value' => 'id',
-                    ],
+                'config' => [
+                    'url' => route('departments.getDepartment'),
+                    'label' => 'name',
+                    'value' => 'id',
                 ],
-                // [
-                //     'name' => trans('gestlab.general.labels.analysis.profile_id'),
-                //     'value' => 'profile',
-                //     'filter_field' => 'profile.name',
-                //     'filterable' => true,
-                //     'type' => 'string',
-                //     'format' => '',
-                //     'filter' => '',
-                //     'options' => [
-                        
-                //     ],
-                //     'config' => [
-                //         'url' => route('profiles.getProfile'),
-                //         'label' => 'name',
-                //         'value' => 'id',
-                //     ],
-                // ],
-                [
-                    'name' => trans('gestlab.general.labels.analysis.product_id'),
-                    'value' => 'product',
-                    'filter_field' => 'product.name',
-                    'filterable' => true,
-                    'type' => 'string',
-                    'format' => '',
-                    'filter' => '',
-                    'options' => [
-                        
-                    ],
-                    'config' => [
-                        'url' => route('products.getProduct'),
-                        'label' => 'name',
-                        'value' => 'id',
-                    ],
+            ],
+            // [
+            //     'name' => trans('gestlab.general.labels.analysis.profile_id'),
+            //     'value' => 'profile',
+            //     'filter_field' => 'profile.name',
+            //     'filterable' => true,
+            //     'type' => 'string',
+            //     'format' => '',
+            //     'filter' => '',
+            //     'options' => [
+
+            //     ],
+            //     'config' => [
+            //         'url' => route('profiles.getProfile'),
+            //         'label' => 'name',
+            //         'value' => 'id',
+            //     ],
+            // ],
+            [
+                'name' => trans('gestlab.general.labels.analysis.product_id'),
+                'value' => 'product',
+                'filter_field' => 'product.name',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+                'options' => [
+
                 ],
-                [
-                    'name' => trans('gestlab.general.labels.analysis.col_date'),
-                    'value' => 'col_date',
-                    'filter_field' => 'col_date',
-                    'filterable' => true,
-                    'type' => 'date',
-                    'format' => '',
-                    'filter' => '',
+                'config' => [
+                    'url' => route('products.getProduct'),
+                    'label' => 'name',
+                    'value' => 'id',
                 ],
-                [
-                    'name' => trans('gestlab.general.labels.analysis.status'),
-                    'value' => 'status',
-                    'filter_field' => 'status',
-                    'filterable' => true,
-                    'type' => 'boolean',
-                    'format' => '',
-                    'filter' => '',
-                ],
-                // [
-                //     'name' => trans('gestlab.general.labels.created_at'),
-                //     'value' => 'created_at',
-                //     'filterable' => true,
-                //     'type' => 'date',
-                //     'format' => '',
-                //     'filter' => '',
-                // ],
-                [
-                    'name' => trans('gestlab.actions.action'),
-                    'value' => 'actions',
-                    'filterable' => false,
-                    'type' => 'actions',
-                    'format' => '',
-                    'filter' => '',
-                ],
-            ];
+            ],
+            [
+                'name' => trans('gestlab.general.labels.analysis.col_date'),
+                'value' => 'col_date',
+                'filter_field' => 'col_date',
+                'filterable' => true,
+                'type' => 'date',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.analysis.status'),
+                'value' => 'status',
+                'filter_field' => 'status',
+                'filterable' => true,
+                'type' => 'boolean',
+                'format' => '',
+                'filter' => '',
+            ],
+            // [
+            //     'name' => trans('gestlab.general.labels.created_at'),
+            //     'value' => 'created_at',
+            //     'filterable' => true,
+            //     'type' => 'date',
+            //     'format' => '',
+            //     'filter' => '',
+            // ],
+            [
+                'name' => trans('gestlab.actions.action'),
+                'value' => 'actions',
+                'filterable' => false,
+                'type' => 'actions',
+                'format' => '',
+                'filter' => '',
+            ],
+        ];
     }
 
     public static function getTrashedOptions(): array
     {
         return [
             ['value' => 'only', 'text' => trans('gestlab.general.labels.trashed_only')],
-            ['value' => 'with', 'text' => trans('gestlab.general.labels.trashed_with')]
+            ['value' => 'with', 'text' => trans('gestlab.general.labels.trashed_with')],
         ];
     }
 }

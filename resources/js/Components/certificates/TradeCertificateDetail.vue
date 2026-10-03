@@ -59,19 +59,23 @@ const importCosts = computed(() => [
   { label: "IVA", value: certificate.value.vat_cost },
 ]);
 const totalCost = computed(() => importCosts.value.reduce((total, item) => total + (Number.parseFloat(item.value) || 0), 0));
+const isBilled = computed(() => Boolean(certificate.value.invoice_id || certificate.value.invoiced));
+const canOpenInvoice = computed(() => Boolean(certificate.value.invoice_id) && hasPermission("view_invoices"));
+const canIssueInvoice = computed(() => !certificate.value.deleted && !isBilled.value
+  && hasPermission("add_invoices") && hasPermission(`view_${config.value.permissionKey}`));
 const status = computed(() => {
   if (certificate.value.deleted) {
     return { label: "Arquivado", className: "ds-badge-warning" };
   }
 
-  if (certificate.value.invoiced) {
+  if (isBilled.value) {
     return { label: "Facturado", className: "ds-badge-success" };
   }
 
   return { label: "Controlado", className: "ds-badge-info" };
 });
 const canEdit = computed(() => !certificate.value.deleted
-  && !certificate.value.invoiced
+  && !isBilled.value
   && hasPermission(`edit_${config.value.permissionKey}`));
 const routeFacts = computed(() => isImport.value
   ? [
@@ -143,12 +147,14 @@ function downloadAttachment() {
 }
 
 function openInvoice() {
-  if (certificate.value.invoice_id) {
+  if (canOpenInvoice.value) {
     router.get(route("invoices.show", { id: certificate.value.invoice_id }));
     return;
   }
 
-  router.get(route(`${config.value.routePrefix}.getIssueInvoiceModal`), { id: certificate.value.id });
+  if (canIssueInvoice.value) {
+    router.get(route(`${config.value.routePrefix}.getIssueInvoiceModal`), { id: certificate.value.id });
+  }
 }
 </script>
 
@@ -211,7 +217,7 @@ function openInvoice() {
         </div>
         <div class="px-4 py-3">
           <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Facturação</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ certificate.invoiced ? "Associada" : "Pendente" }}</dd>
+          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ certificate.invoice_id ? "Associada" : certificate.invoiced ? "Facturado · vínculo indisponível" : "Pendente" }}</dd>
         </div>
       </dl>
     </section>
@@ -350,7 +356,7 @@ function openInvoice() {
               <ArrowDownTrayIcon class="h-4 w-4" />
               Descarregar PDF
             </button>
-            <button type="button" class="ds-button w-full justify-start" :class="certificate.invoice_id ? 'ds-button-secondary' : 'ds-button-primary'" @click="openInvoice">
+            <button v-if="canOpenInvoice || canIssueInvoice" type="button" class="ds-button w-full justify-start" :class="certificate.invoice_id ? 'ds-button-secondary' : 'ds-button-primary'" @click="openInvoice">
               <BanknotesIcon class="h-4 w-4" />
               {{ certificate.invoice_id ? "Abrir factura" : "Emitir factura" }}
             </button>

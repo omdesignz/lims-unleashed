@@ -68,6 +68,7 @@ class InventoryNeedWorkflowNotifier
         }
 
         $this->templates->notify($recipients, 'inventory.need.updated', [
+            'lab_id' => $need->lab_id,
             'need_reference' => $need->reference,
             'status' => $status,
             'detail' => $detail,

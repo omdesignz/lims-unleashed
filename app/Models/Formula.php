@@ -15,13 +15,15 @@ class Formula extends Model
     // protected $guarded = [];
 
     protected $fillable = [
-        'name', 'code', 'expression', 'formula_expression', 'description', 'variables', 'category', 'output_unit', 'decimal_places', 'is_active', 'created_by'
+        'name', 'code', 'expression', 'formula_expression', 'description', 'variables', 'category', 'output_unit', 'decimal_places', 'is_active', 'created_by',
     ];
 
     protected $casts = [
         'variables' => 'array',
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
     ];
+
+    protected $attributes = ['is_active' => false];
 
     // public function variables(): HasMany
     // {

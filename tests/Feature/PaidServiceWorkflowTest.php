@@ -17,14 +17,8 @@ class PaidServiceWorkflowTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for paid-service testing.');
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
 
         return $admin;
     }
@@ -32,7 +26,7 @@ class PaidServiceWorkflowTest extends TestCase
     public function test_taxed_service_persists_selected_tax_type(): void
     {
         $admin = $this->verifiedAdmin();
-        $taxType = TaxType::query()->firstOrFail();
+        $taxType = $this->taxType();
         $name = 'Taxed service '.Str::uuid();
 
         $response = $this->actingAs($admin)
@@ -64,7 +58,7 @@ class PaidServiceWorkflowTest extends TestCase
     public function test_service_can_be_updated_without_changing_its_unique_name(): void
     {
         $admin = $this->verifiedAdmin();
-        $taxType = TaxType::query()->firstOrFail();
+        $taxType = $this->taxType();
         $service = PaidService::query()->create([
             'name' => 'Editable service '.Str::uuid(),
             'description' => 'Before update.',
@@ -121,5 +115,13 @@ class PaidServiceWorkflowTest extends TestCase
 
         $response->assertRedirect(route('paidservices.create'));
         $response->assertSessionHasErrors('exemption_id');
+    }
+
+    private function taxType(): TaxType
+    {
+        return TaxType::query()->create([
+            'name' => 'Paid service tax '.Str::uuid(),
+            'percent' => 14,
+        ]);
     }
 }

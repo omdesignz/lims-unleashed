@@ -6,12 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class InventoryDeliveryDetail extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public CONST MENU_NAME = 'ideliverydetails';
+    public const MENU_NAME = 'ideliverydetails';
 
     /**
      * The attributes that are mass assignable.
@@ -28,6 +27,7 @@ class InventoryDeliveryDetail extends Model
     ];
 
     protected $table = 'i_delivery_details';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
@@ -36,7 +36,7 @@ class InventoryDeliveryDetail extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        
+        'qty' => 'decimal:4',
     ];
 
     /**
@@ -44,7 +44,8 @@ class InventoryDeliveryDetail extends Model
      *
      * @return Relationship
      */
-    public function delivery() {
+    public function delivery()
+    {
         return $this->belongsTo(InventoryDelivery::class, 'delivery_id');
     }
 
@@ -53,7 +54,8 @@ class InventoryDeliveryDetail extends Model
      *
      * @return Relationship
      */
-    public function warehouse() {
+    public function warehouse()
+    {
         return $this->belongsTo(InventoryItemWarehouse::class, 'warehouse_id');
     }
 
@@ -62,8 +64,8 @@ class InventoryDeliveryDetail extends Model
      *
      * @return Relationship
      */
-    public function item() {
+    public function item()
+    {
         return $this->belongsTo(InventoryItem::class, 'item_id');
     }
-
 }

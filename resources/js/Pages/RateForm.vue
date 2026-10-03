@@ -13,6 +13,7 @@
           {{ trans('gestlab.rating.description') }}
         </p>
         <div class="mt-4 flex flex-wrap gap-2">
+          <span v-if="laboratoryName" class="ds-chip">{{ laboratoryName }}</span>
           <div class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
             {{ rateableLabel }}
           </div>
@@ -23,7 +24,7 @@
       </div>
     </div>
 
-    <form class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80" @submit.prevent="submit">
+    <form class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80" :aria-busy="form.processing" @submit.prevent="submit">
       <div v-if="criteria.length === 0" class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
         {{ trans('gestlab.rating.empty_criteria') }}
       </div>
@@ -36,18 +37,20 @@
         >
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 class="text-sm font-semibold text-slate-950 dark:text-white">
+              <h2 :id="`criterion-${criterion.id}`" class="text-sm font-semibold text-slate-950 dark:text-white">
                 {{ criterion.name }}
               </h2>
               <p v-if="criterion.description" class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {{ criterion.description }}
               </p>
             </div>
-            <div class="flex items-center gap-2">
+            <div role="group" :aria-labelledby="`criterion-${criterion.id}`" class="flex items-center gap-2">
               <button
                 v-for="score in [1, 2, 3, 4, 5]"
                 :key="score"
                 type="button"
+                :disabled="form.processing"
+                :aria-pressed="Number(form.criteria[criterion.id]) === score"
                 :class="[
                   'flex h-10 w-10 items-center justify-center rounded-2xl border text-sm font-semibold transition',
                   Number(form.criteria[criterion.id]) === score
@@ -60,24 +63,30 @@
               </button>
             </div>
           </div>
+          <p v-if="form.errors[`criteria.${criterion.id}`]" role="alert" class="mt-2 text-sm text-red-600">{{ form.errors[`criteria.${criterion.id}`] }}</p>
         </div>
       </div>
 
-      <p v-if="form.errors.criteria" class="mt-4 text-sm text-red-600 dark:text-red-300">
+      <p v-if="form.errors.criteria" role="alert" class="mt-4 text-sm text-red-600 dark:text-red-300">
         {{ form.errors.criteria }}
       </p>
 
       <div class="mt-6 space-y-2">
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+        <label for="rating-review" class="block text-sm font-medium text-slate-700 dark:text-slate-200">
           {{ trans('gestlab.rating.review') }}
         </label>
         <textarea
+          id="rating-review"
           v-model="form.review"
+          maxlength="1000"
+          :disabled="form.processing"
+          :aria-invalid="Boolean(form.errors.review)"
+          :aria-describedby="form.errors.review ? 'rating-review-error' : undefined"
           rows="4"
           class="block w-full rounded-2xl border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
           :placeholder="trans('gestlab.rating.review_placeholder')"
         />
-        <p v-if="form.errors.review" class="text-sm text-red-600 dark:text-red-300">
+        <p v-if="form.errors.review" id="rating-review-error" role="alert" class="text-sm text-red-600 dark:text-red-300">
           {{ form.errors.review }}
         </p>
       </div>
@@ -131,6 +140,8 @@ const props = defineProps({
     type: Object,
     default: null,
   },
+  laboratoryName: { type: String, default: '' },
+  storeParameters: { type: Object, required: true },
   storeRoute: {
     type: String,
     default: 'rating.store',
@@ -147,9 +158,7 @@ const form = useForm({
 })
 
 function submit() {
-  form.post(route(props.storeRoute, {
-    rateableType: props.rateableType,
-    rateableId: props.rateableId,
-  }))
+  if (form.processing || props.criteria.length === 0) return
+  form.post(route(props.storeRoute, props.storeParameters), { preserveState: 'errors' })
 }
 </script>

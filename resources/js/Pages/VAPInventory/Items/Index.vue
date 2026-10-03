@@ -14,22 +14,24 @@
               <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">
                 Itens de inventário
               </h1>
-              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]"> Controle reagentes, equipamentos e consumiveis com existências, estado, validade e bloqueios metrológicos em uma única fila. </p>
+              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]"> Controle reagentes, equipamentos e consumiveis com existências, estado, validade e bloqueios metrológicos em uma única fila. Os indicadores resumem os itens activos. </p>
             </div>
           </div>
         </div>
 
         <div class="flex flex-col gap-3 sm:flex-row xl:justify-end">
           <button
+            v-if="canExport && localFilters.archive_state !== 'archived'"
             type="button"
             class="ds-button ds-button-secondary"
             @click="exportItems"
           >
             <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar CSV
+            Exportar XLSX
           </button>
           <Link
-            :href="route('vap-inventory.items.create')"
+            v-if="canCreate"
+            :href="createItemUrl"
             class="ds-button ds-button-primary"
           >
             <PlusCircleIcon class="h-4 w-4" />
@@ -108,6 +110,14 @@
         </label>
       </div>
 
+      <label class="ds-field-group mt-4">
+        <span class="ds-field-label">Arquivo</span>
+        <select v-model="localFilters.archive_state" class="ds-field" :disabled="archive.processing.value">
+          <option value="active">Itens activos</option>
+          <option value="archived">Itens arquivados</option>
+        </select>
+      </label>
+
       <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div class="min-w-0">
           <p class="text-sm font-bold text-[var(--ds-text)]">
@@ -138,6 +148,7 @@
             Limpar filtros
           </button>
           <button
+            v-if="canExport && localFilters.archive_state !== 'archived'"
             type="button"
             class="ds-button ds-button-secondary"
             @click="exportItems"
@@ -243,21 +254,27 @@
             </div>
 
             <div class="flex flex-wrap gap-2">
-              <Link :href="route('vap-inventory.items.show', item.id)" class="ds-table-action">
+              <Link v-if="!item.is_archived" :href="route('vap-inventory.items.show', item.id)" class="ds-table-action">
                 <EyeIcon class="mr-1 h-4 w-4" />
                 Visualizar
               </Link>
-              <Link :href="route('vap-inventory.items.edit', item.id)" class="ds-table-action">
+              <Link v-if="item.can_edit" :href="route('vap-inventory.items.edit', item.id)" class="ds-table-action">
                 <PencilSquareIcon class="mr-1 h-4 w-4" />
                 Modificar
               </Link>
               <button
+                v-if="item.can_delete"
                 type="button"
                 class="ds-table-action ds-table-action-danger"
+                :disabled="archive.processing.value"
                 @click="confirmDelete(item)"
               >
                 <TrashIcon class="mr-1 h-4 w-4" />
-                Eliminar
+                Arquivar
+              </button>
+              <button v-if="item.can_restore" type="button" class="ds-table-action" :disabled="archive.processing.value" @click="requestArchive(item, 'restore')">
+                <ArrowPathIcon class="mr-1 h-4 w-4" />
+                Restaurar
               </button>
             </div>
           </article>
@@ -346,21 +363,27 @@
                 </td>
                 <td class="px-5 py-4">
                   <div class="flex flex-wrap gap-1.5">
-                    <Link :href="route('vap-inventory.items.show', item.id)" class="ds-table-action">
+                    <Link v-if="!item.is_archived" :href="route('vap-inventory.items.show', item.id)" class="ds-table-action">
                       <EyeIcon class="h-4 w-4" />
                       <span class="sr-only">Visualizar</span>
                     </Link>
-                    <Link :href="route('vap-inventory.items.edit', item.id)" class="ds-table-action">
+                    <Link v-if="item.can_edit" :href="route('vap-inventory.items.edit', item.id)" class="ds-table-action">
                       <PencilSquareIcon class="h-4 w-4" />
                       <span class="sr-only">Modificar</span>
                     </Link>
                     <button
+                      v-if="item.can_delete"
                       type="button"
                       class="ds-table-action ds-table-action-danger"
+                      :disabled="archive.processing.value"
                       @click="confirmDelete(item)"
                     >
                       <TrashIcon class="h-4 w-4" />
-                      <span class="sr-only">Eliminar</span>
+                      <span class="sr-only">Arquivar</span>
+                    </button>
+                    <button v-if="item.can_restore" type="button" class="ds-table-action" :disabled="archive.processing.value" @click="requestArchive(item, 'restore')">
+                      <ArrowPathIcon class="h-4 w-4" />
+                      <span class="sr-only">Restaurar</span>
                     </button>
                   </div>
                 </td>
@@ -372,13 +395,14 @@
         <div v-if="!itemRows.length" class="ds-empty-state m-5 p-8 text-center">
           <CubeIcon class="mx-auto h-11 w-11 text-[var(--ds-text-soft)]" />
           <h3 class="mt-4 text-base font-black text-[var(--ds-text)]">
-            Nenhum item encontrado
+            {{ localFilters.archive_state === 'archived' ? 'Nenhum item arquivado encontrado' : 'Nenhum item encontrado' }}
           </h3>
           <p class="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-            Ajuste os filtros ou adicione o primeiro item com dados de existências, validade e rastreabilidade.
+            {{ localFilters.archive_state === 'archived' ? 'Ajuste os filtros ou consulte os itens activos. Os registos arquivados permanecem preservados.' : 'Ajuste os filtros ou adicione o primeiro item com dados de existências, validade e rastreabilidade.' }}
           </p>
           <Link
-            :href="route('vap-inventory.items.create')"
+            v-if="canCreate"
+            :href="createItemUrl"
             class="ds-button ds-button-primary mt-6"
           >
             <PlusCircleIcon class="h-4 w-4" />
@@ -471,21 +495,20 @@
       </aside>
     </div>
 
-    <ConfirmationModal :show="showDeleteModal" @close="showDeleteModal = false" @confirm="deleteItem">
-      <template #title>Eliminar item</template>
-      <template #content>
-        Tem a certeza que deseja eliminar <span class="font-semibold">{{ itemToDelete?.name }}</span>? Esta acção não pode ser desfeita. </template>
-      <template #confirmButton>
-        <button
-          type="button"
-          class="ds-button ds-button-danger"
-          @click="deleteItem"
-        >
-          <TrashIcon class="h-4 w-4" />
-          Eliminar item
-        </button>
-      </template>
+    <ConfirmationModal
+      v-if="showDeleteModal"
+      :title="pendingOperation === 'restore' ? 'Restaurar item' : 'Arquivar item'"
+      :description="`${pendingOperation === 'restore' ? 'Restaurar' : 'Arquivar'} ${itemToDelete?.name}? Os registos, existências e documentos serão preservados.`"
+      :confirm="pendingOperation === 'restore' ? 'Restaurar item' : 'Arquivar item'"
+      :variant="pendingOperation === 'restore' ? 'info' : 'warning'"
+      :disabled="archive.processing.value"
+      keep-open-on-confirm
+      @canceled="cancelArchive"
+      @confirmed="deleteItem"
+    >
+      <ArchiveMutationFeedback :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="refreshArchive" />
     </ConfirmationModal>
+    <ArchiveMutationFeedback v-else :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="refreshArchive" />
   </div>
 </template>
 
@@ -496,6 +519,7 @@ import { debounce } from 'lodash'
 import {
   ArrowsRightLeftIcon,
   ArrowDownTrayIcon,
+  ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
   ChartBarIcon,
   CubeIcon,
@@ -510,9 +534,13 @@ import {
 } from '@heroicons/vue/24/outline'
 import Pagination from '@/Components/Pagination.vue'
 import ConfirmationModal from '@/Components/confirm-dialog.vue'
+import ArchiveMutationFeedback from '@/Components/archive-mutation-feedback.vue'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 
 const props = defineProps({
+  canCreate: { type: Boolean, default: false },
+  canExport: { type: Boolean, default: false },
   items: {
     type: Object,
     required: true,
@@ -544,17 +572,32 @@ const props = defineProps({
 })
 
 const localFilters = reactive({
+  archive_state: props.filters.archive_state || 'active',
+  inventory_type: props.filters.inventory_type || '',
   search: props.filters.search || '',
   category_id: props.filters.category_id || '',
   type_id: props.filters.type_id || '',
   status_id: props.filters.status_id || '',
 })
 
+const createItemUrl = computed(() => route('vap-inventory.items.create',
+  localFilters.inventory_type ? { inventory_type: localFilters.inventory_type } : {}))
+
 const selectedCategory = ref(null)
 const selectedType = ref(null)
 const selectedStatus = ref(null)
 const showDeleteModal = ref(false)
 const itemToDelete = ref(null)
+const pendingOperation = ref(null)
+const archive = useRecordArchive({
+  destroyUrl: ids => route('vap-inventory.items.destroy', ids[0]),
+  restoreUrl: ids => route('vap-inventory.items.restore', ids[0]),
+  onSuccess: () => {
+    showDeleteModal.value = false
+    itemToDelete.value = null
+    pendingOperation.value = null
+  },
+})
 
 const itemRows = computed(() => props.items?.data ?? [])
 
@@ -623,13 +666,14 @@ const quickActions = computed(() => [
     tone: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-100',
   },
   {
-    href: route('vap-inventory.items.create'),
+    href: createItemUrl.value,
     title: 'Novo item',
+    requiresCreate: true,
     description: 'Adicionar reagente, equipamento ou consumivel.',
     icon: PlusCircleIcon,
     tone: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100',
   },
-])
+].filter(action => !action.requiresCreate || props.canCreate))
 
 watch(selectedCategory, (newValue) => {
   localFilters.category_id = newValue?.value || ''
@@ -649,6 +693,7 @@ const activeFilterPills = computed(() => {
     selectedCategory.value ? { label: `Categoria: ${selectedCategory.value.label}` } : null,
     selectedType.value ? { label: `Tipo: ${selectedType.value.label}` } : null,
     selectedStatus.value ? { label: `Estado: ${selectedStatus.value.label}` } : null,
+    localFilters.archive_state === 'archived' ? { label: 'Arquivo: itens arquivados' } : null,
   ].filter(Boolean)
 })
 
@@ -700,26 +745,42 @@ const getMetrologyText = (status) => {
   return 'Metrologia validada'
 }
 
-const confirmDelete = (item) => {
-  itemToDelete.value = item
+function requestArchive(item, operation) {
+  if (archive.processing.value || showDeleteModal.value || !['delete', 'restore'].includes(operation)
+      || !item?.[operation === 'delete' ? 'can_delete' : 'can_restore']) return
+  itemToDelete.value = { id: item.id, name: item.name }
+  pendingOperation.value = operation
   showDeleteModal.value = true
 }
 
-const deleteItem = () => {
-  if (!itemToDelete.value) {
+const confirmDelete = item => requestArchive(item, 'delete')
+
+function deleteItem() {
+  if (archive.processing.value || !itemToDelete.value) return
+  const current = itemRows.value.find(item => item.id === itemToDelete.value.id)
+  if (!current?.[pendingOperation.value === 'delete' ? 'can_delete' : 'can_restore']) {
+    archive.failed.value = true
+    archive.message.value = 'O registo ou a autorização já não está disponível. Actualize a lista.'
     return
   }
+  archive.submit(pendingOperation.value, [itemToDelete.value.id])
+}
 
-  router.delete(route('vap-inventory.items.destroy', itemToDelete.value.id), {
-    preserveScroll: true,
-    onSuccess: () => {
-      showDeleteModal.value = false
-      itemToDelete.value = null
-    },
-  })
+function cancelArchive() {
+  if (archive.processing.value) return
+  showDeleteModal.value = false
+  itemToDelete.value = null
+  pendingOperation.value = null
+}
+
+function refreshArchive() {
+  if (archive.processing.value) return
+  cancelArchive()
+  router.reload()
 }
 
 const clearFilters = () => {
+  localFilters.archive_state = 'active'
   localFilters.search = ''
   localFilters.category_id = ''
   localFilters.type_id = ''

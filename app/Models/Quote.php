@@ -2,26 +2,36 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToFinancialLaboratory;
 use App\Models\Concerns\HasDocumentRevisions;
+use App\Traits\HasScopedSequence;
+use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use HighSolutions\EloquentSequence\Sequence;
-use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Support\Facades\Artisan;
 
 class Quote extends Model
 {
-    use HasFactory, SoftDeletes, Sequence, HasDocumentRevisions;
+    use BelongsToFinancialLaboratory;
+    use HasDocumentRevisions, HasFactory, HasScopedSequence, SoftDeletes;
 
     public const MENU_NAME = 'quotes';
+
+    private ?array $authoringIdentity = null;
+
+    public function generatedAuthoringIdentity(): ?array
+    {
+        return $this->authoringIdentity;
+    }
+
+    protected $attributes = ['is_service' => false];
 
     /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
-
     protected $fillable = [
         'user_id',
         'warehouse_id',
@@ -48,10 +58,11 @@ class Quote extends Model
         'converted_to_invoice',
         'extra_data',
         'is_service',
-        'invoice_id'
+        'invoice_id',
     ];
 
     protected $table = 'quotes';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at', 'date'];
 
     /**
@@ -64,20 +75,18 @@ class Quote extends Model
         'is_original' => 'boolean',
         'use_matrix_price' => 'boolean',
         'is_service' => 'boolean',
-        'expotrted_saft' => 'boolean',
+        'exported_saft' => 'boolean',
         'converted_to_invoice' => 'boolean',
         'extra_data' => AsCollection::class,
     ];
 
-
-    public function sequence()
+    public function sequence(): array
     {
         return [
             'group' => 'quote_month',
             'fieldName' => 'seq',
         ];
     }
-
 
     /**
      * Quote Items
@@ -98,7 +107,6 @@ class Quote extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-
 
     /**
      * Warehouse
@@ -144,28 +152,20 @@ class Quote extends Model
     {
         parent::boot();
 
-        static::saving(function ($quote) {
-        });
+        static::saving(function ($quote) {});
 
         static::creating(function (Quote $quote) {
-            $quote->quote_no = 'PP ' . $quote->quote_month . '/' . $quote->seq;
+            $quote->quote_no = 'PP '.$quote->quote_month.'/'.$quote->seq;
+            $quote->authoringIdentity = ['quote_month' => $quote->quote_month, 'seq' => $quote->seq, 'quote_no' => $quote->quote_no];
         });
 
-        static::created(function ($quote) {
-            Artisan::call('app:sign-quote-with-hash', ['quote' => $quote->id]);
-        });
-
-        self::deleting(function ($quote) {
-
-            if (ProgrammedCollection::whereQuoteId($quote->id)
-                ->whereNull('deleted_at')
-                ->count() > 0
-            ) {
-                ProgrammedCollection::whereQuoteId($quote->id)->update([
-                    'quoted' => 0,
-                    'quote_id' => null
-                ]);
+        static::created(function (Quote $quote) {
+            if (filled($quote->unique_hash)) {
+                throw new \LogicException('New quotes cannot supply a pre-signed identity.');
             }
+            Artisan::call('app:sign-quote-with-hash', ['quote' => $quote->id]);
+            $quote->authoringIdentity['unique_hash'] = $quote->fresh()->unique_hash;
         });
+
     }
 }

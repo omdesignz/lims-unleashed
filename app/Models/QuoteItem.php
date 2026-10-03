@@ -2,16 +2,42 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToFinancialLaboratory;
+use App\Services\LaboratoryWorkflowOwnership;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 class QuoteItem extends Model
 {
+    use BelongsToFinancialLaboratory;
     use HasFactory, SoftDeletes;
 
     public const MENU_NAME = null;
+
+    public function assertOperationalSourceOwnership(): void
+    {
+        if ($this->itemable_id === null) {
+            return;
+        }
+        $quote = Quote::query()->findOrFail($this->quote_id);
+        $ownership = app(LaboratoryWorkflowOwnership::class);
+        $query = match ($this->itemable_type) {
+            'collectionproduct' => $ownership->collectionProductsForLaboratory((int) $quote->lab_id)
+                ->where('customer_id', $quote->customer_id)->where('warehouse_id', $quote->warehouse_id),
+            'labcode' => $ownership->labCodesForLaboratory((int) $quote->lab_id)
+                ->whereHas('collection', fn (Builder $query): Builder => $query
+                    ->where('customer_id', $quote->customer_id)->where('warehouse_id', $quote->warehouse_id)),
+            default => null,
+        };
+        if (! $query || ! $query->whereKey($this->itemable_id)->lockForUpdate()->exists()) {
+            throw ValidationException::withMessages(['items' => 'A origem do item deve pertencer ao laboratório, cliente e local da cotação.']);
+        }
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -23,8 +49,8 @@ class QuoteItem extends Model
         'itemable_type',
         'unit_id',
         'exemption_id',
-        'exemption_code', # Added
-        'discount_id', # Added
+        'exemption_code', // Added
+        'discount_id', // Added
         'item_id',
         'item_description',
         'qty',
@@ -32,7 +58,7 @@ class QuoteItem extends Model
         'total',
         'discount_percentage',
         'discount_amount',
-        'tax_id', # Added
+        'tax_id', // Added
         'tax_amount',
         'tax_percentage',
         'obs',
@@ -50,7 +76,6 @@ class QuoteItem extends Model
         'extra_data' => AsCollection::class,
     ];
 
-
     /**
      * Quote
      *
@@ -60,7 +85,6 @@ class QuoteItem extends Model
     {
         return $this->belongsTo(Quote::class, 'quote_id');
     }
-
 
     /**
      * Unit
@@ -72,7 +96,6 @@ class QuoteItem extends Model
         return $this->belongsTo(Unit::class, 'unit_id');
     }
 
-
     /**
      * Tax Exemption
      *
@@ -82,7 +105,6 @@ class QuoteItem extends Model
     {
         return $this->belongsTo(TaxExemption::class, 'exemption_id');
     }
-
 
     public function itemable()
     {

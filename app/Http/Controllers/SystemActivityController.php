@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Exports\ActivityLogExport;
 use App\Http\Requests\ExportActivityLogRequest;
 use App\Http\Requests\FilterActivityLogRequest;
+use App\Http\Resources\SystemActivityDetailResource;
 use App\Http\Resources\SystemActivityResource;
 use App\Http\Resources\UserResource;
 use App\Models\SystemActivity;
 use App\Models\User;
+use App\Services\ProposalActivityAccess;
+use App\Services\StaffAccountHistory;
 use App\Support\ExportHubQuery;
 use App\Support\SpreadsheetDownloadResponder;
 use Carbon\Carbon;
@@ -40,7 +43,11 @@ class SystemActivityController extends Controller
 
         // Get paginated results
         $activities = $query->paginate($request->get('per_page', 25))
-            ->withQueryString();
+            ->withQueryString()
+            ->through(fn (Activity $activity): array => [...$activity->attributesToArray(),
+                'causer' => $activity->causer?->only(['id', 'name', 'email']),
+                'is_retained' => in_array($activity->log_name, StaffAccountHistory::RETAINED_LOGS, true),
+            ]);
 
         // Prepare data for Vue component
         $responseData = [
@@ -153,7 +160,7 @@ class SystemActivityController extends Controller
         }
 
         return response()->json([
-            'activity' => $activity,
+            'activity' => new SystemActivityDetailResource($activity),
             'properties_formatted' => $properties,
         ]);
     }
@@ -166,6 +173,7 @@ class SystemActivityController extends Controller
         if (! auth()->user()->can('delete_activity_log')) {
             abort(403, 'Acção não autorizada.');
         }
+        abort_if(app(StaffAccountHistory::class)->isRetained($activity), 409, 'Este histórico deve permanecer conservado.');
 
         try {
             $activity->delete();
@@ -191,10 +199,13 @@ class SystemActivityController extends Controller
         }
 
         try {
-            $count = Activity::count();
+            $query = Activity::query()->where(function ($query): void {
+                $query->whereNull('log_name')->orWhereNotIn('log_name', StaffAccountHistory::RETAINED_LOGS);
+            });
+            $count = (clone $query)->count();
 
             // Use chunk to avoid memory issues with large datasets
-            Activity::chunk(1000, function ($activities) {
+            $query->chunkById(1000, function ($activities) {
                 $activities->each->delete();
             });
 
@@ -598,8 +609,8 @@ class SystemActivityController extends Controller
      */
     private function getStatsByHour()
     {
-        return Activity::select(DB::raw('HOUR(created_at) as hour'), DB::raw('count(*) as count'))
-            ->groupBy(DB::raw('HOUR(created_at)'))
+        return Activity::selectRaw('EXTRACT(HOUR FROM created_at)::int as hour, count(*) as count')
+            ->groupByRaw('EXTRACT(HOUR FROM created_at)')
             ->orderBy('hour')
             ->get()
             ->mapWithKeys(function ($item) {
@@ -646,10 +657,12 @@ class SystemActivityController extends Controller
             }
 
             // Archive old logs
-            $oldActivities = Activity::where('created_at', '<', $cutoffDate)->get();
+            $oldActivities = Activity::where('created_at', '<', $cutoffDate)->where(function ($query): void {
+                $query->whereNull('log_name')->orWhereNotIn('log_name', StaffAccountHistory::RETAINED_LOGS);
+            })->get();
             $count = $oldActivities->count();
 
-            DB::transaction(function () use ($oldActivities, $cutoffDate) {
+            DB::transaction(function () use ($oldActivities) {
                 // Insert into archive
                 foreach ($oldActivities as $activity) {
                     DB::table('activity_log_archive')->insert([
@@ -668,7 +681,7 @@ class SystemActivityController extends Controller
                 }
 
                 // Delete from main table
-                Activity::where('created_at', '<', $cutoffDate)->delete();
+                Activity::whereKey($oldActivities->modelKeys())->delete();
             });
 
             return response()->json([
@@ -705,13 +718,13 @@ class SystemActivityController extends Controller
         $cutoffDate = Carbon::now()->subMonths($months);
 
         try {
-            $archivedActivities = DB::table('activity_log_archive')
+            $archivedActivities = ProposalActivityAccess::constrain(DB::table('activity_log_archive'), 'activity_log_archive')
                 ->where('created_at', '<', $cutoffDate)
                 ->get();
 
             $count = $archivedActivities->count();
 
-            DB::transaction(function () use ($archivedActivities, $cutoffDate) {
+            DB::transaction(function () use ($archivedActivities) {
                 // Restore to main table
                 foreach ($archivedActivities as $activity) {
                     Activity::create([
@@ -731,7 +744,7 @@ class SystemActivityController extends Controller
 
                 // Delete from archive
                 DB::table('activity_log_archive')
-                    ->where('created_at', '<', $cutoffDate)
+                    ->whereIn('id', $archivedActivities->pluck('id'))
                     ->delete();
             });
 

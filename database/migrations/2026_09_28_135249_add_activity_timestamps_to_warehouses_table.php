@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        $needsLastLogin = ! Schema::hasColumn('warehouses', 'last_login_at');
+        $needsLastActivity = ! Schema::hasColumn('warehouses', 'last_activity_at');
+
+        Schema::table('warehouses', function (Blueprint $table) use ($needsLastLogin, $needsLastActivity) {
+            if ($needsLastLogin) {
+                $table->timestamp('last_login_at')->nullable();
+            }
+
+            if ($needsLastActivity) {
+                $table->timestamp('last_activity_at')->nullable();
+            }
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('warehouses', function (Blueprint $table) {
+            $table->dropColumn(['last_login_at', 'last_activity_at']);
+        });
+    }
+};

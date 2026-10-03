@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToPrivateProposal;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VAPProposalComplianceAgreementLog extends Model
 {
+    use BelongsToPrivateProposal;
+
     protected $table = 'proposal_compliance_agreement_logs';
-    
+
     protected $fillable = [
         'proposal_id',
         'confidentiality',

@@ -2,309 +2,168 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CriteriaRating;
-use App\Models\CustomerRequest;
-use App\Models\InventoryOrder;
-use App\Models\MaintenanceTask;
-use App\Models\PaidService;
-use App\Models\QualityCertificate;
+use App\Actions\IssuePortalRatingInvitation;
+use App\Actions\SubmitRating;
+use App\Http\Requests\IssuePortalRatingInvitationRequest;
+use App\Http\Requests\SubmitRatingRequest;
+use App\Http\Resources\RatingResource;
 use App\Models\Rating;
 use App\Models\RatingRequest;
-use App\Models\User;
-use App\Models\VAPProposal;
-use App\Models\VAPSampleEntry;
-use App\Support\QualityModuleNotifier;
-use Illuminate\Database\Eloquent\Model;
+use App\Services\LaboratoryWorkflowMutationAccess;
+use App\Services\RatingLaboratoryAccess;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class RatingController extends Controller
 {
-    public function index(): Response
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+        private readonly RatingLaboratoryAccess $access,
+        private readonly LaboratoryWorkflowMutationAccess $mutationAccess,
+    ) {}
+
+    public function index(Request $request): Response
     {
-        $ratings = Rating::query()
-            ->with(['user', 'rater'])
-            ->latest()
-            ->paginate(20);
+        abort_unless($request->user()->can('view_ratings'), 403);
+        $labId = $this->laboratoryAccess->activeLabId();
+        $this->access->member($labId, (int) $request->user()->id);
+        $summary = $this->scoreSummary($labId);
 
         return Inertia::render('Ratings/Index', [
-            'ratings' => $ratings,
-            'stats' => $this->ratingStats(),
-            'charts' => $this->ratingCharts(),
-        ]);
-    }
-
-    public function store(Request $request, string $rateableType, int $rateableId = 0): RedirectResponse
-    {
-        return $this->storeForRater(
-            request: $request,
-            rateableType: $rateableType,
-            rateableId: $rateableId,
-            rater: $request->user(),
-            channel: 'internal',
-            redirectRoute: 'dashboard',
-        );
-    }
-
-    public function portalStore(Request $request, string $rateableType, int $rateableId = 0): RedirectResponse
-    {
-        return $this->storeForRater(
-            request: $request,
-            rateableType: $rateableType,
-            rateableId: $rateableId,
-            rater: auth('portal')->user(),
-            channel: 'portal',
-            redirectRoute: 'portal.home',
-        );
-    }
-
-    public function rate(Request $request, string $rateableType, int $rateableId = 0): RedirectResponse
-    {
-        return $this->store($request, $rateableType, $rateableId);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(Request $request, string $rateableType, int $rateableId = 0): Response
-    {
-        return $this->renderFormForRater(
-            rateableType: $rateableType,
-            rateableId: $rateableId,
-            rater: $request->user(),
-            channel: 'internal',
-            storeRoute: 'rating.store',
-            returnRoute: 'dashboard',
-        );
-    }
-
-    public function portalCreate(string $rateableType, int $rateableId = 0): Response
-    {
-        return $this->renderFormForRater(
-            rateableType: $rateableType,
-            rateableId: $rateableId,
-            rater: auth('portal')->user(),
-            channel: 'portal',
-            storeRoute: 'portal.rating.store',
-            returnRoute: 'portal.home',
-        );
-    }
-
-    private function storeForRater(Request $request, string $rateableType, int $rateableId, ?Model $rater, string $channel, string $redirectRoute): RedirectResponse
-    {
-        abort_if(! $rater, 403);
-
-        $this->validateRateable($rateableType, $rateableId);
-
-        $criteria = $this->criteriaFor($rateableType);
-
-        $validated = $request->validate([
-            'criteria' => 'required|array',
-            'criteria.*' => 'required|integer|min:1|max:5',
-            'review' => 'nullable|string|max:1000',
-        ]);
-
-        $criteriaIds = $criteria->pluck('id')->map(fn (int $id) => (string) $id);
-        $submittedCriteriaIds = collect(array_keys($validated['criteria']));
-        $invalidCriteria = $submittedCriteriaIds->diff($criteriaIds);
-        $missingCriteria = $criteriaIds->diff($submittedCriteriaIds);
-
-        if ($invalidCriteria->isNotEmpty() || $missingCriteria->isNotEmpty()) {
-            throw ValidationException::withMessages([
-                'criteria' => __('gestlab.rating.criteria_mismatch'),
-            ]);
-        }
-
-        $existingRating = Rating::query()
-            ->where('rateable_id', $rateableId)
-            ->where('rateable_type', $rateableType)
-            ->where(function ($query) use ($rater) {
-                $query
-                    ->where(function ($query) use ($rater) {
-                        $query
-                            ->where('rater_type', $rater->getMorphClass())
-                            ->where('rater_id', $rater->getKey());
-                    })
-                    ->when($rater instanceof User, function ($query) use ($rater) {
-                        $query->orWhere('user_id', $rater->id);
-                    });
-            })
-            ->exists();
-
-        if ($existingRating) {
-            throw ValidationException::withMessages([
-                'criteria' => __('gestlab.rating.already_rated'),
-            ]);
-        }
-
-        $rating = DB::transaction(function () use ($channel, $criteria, $rateableId, $rateableType, $rater, $validated): Rating {
-            $ratingData = $criteria
-                ->mapWithKeys(fn (CriteriaRating $criterion) => [
-                    $criterion->name => (int) $validated['criteria'][$criterion->id],
-                ])
-                ->all();
-
-            $rating = Rating::create([
-                'user_id' => $rater instanceof User ? $rater->id : null,
-                'rateable_type' => $rateableType,
-                'rateable_id' => $rateableId,
-                'rater_type' => $rater->getMorphClass(),
-                'rater_id' => $rater->getKey(),
-                'channel' => $channel,
-                'criteria' => $ratingData,
-                'review' => $validated['review'] ?? null,
-                'metadata' => [
-                    'submitted_via' => $channel,
-                ],
-            ]);
-
-            RatingRequest::query()
-                ->where('rateable_type', $rateableType)
-                ->where('rateable_id', $rateableId)
-                ->where(function ($query) use ($rater) {
-                    $query
-                        ->where(function ($query) use ($rater) {
-                            $query
-                                ->where('rater_type', $rater->getMorphClass())
-                                ->where('rater_id', $rater->getKey());
-                        })
-                        ->when($rater instanceof User, function ($query) use ($rater) {
-                            $query->orWhere('user_id', $rater->id);
-                        });
-                })
-                ->update(['status' => 'completed']);
-
-            return $rating;
-        });
-
-        app(QualityModuleNotifier::class)->notifyRatingSubmitted($rating);
-
-        return redirect()->route($redirectRoute)->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => __('gestlab.rating.thank_you'),
+            'ratings' => RatingResource::collection(Rating::query()->where('lab_id', $labId)->latest()->paginate(20)),
+            'stats' => [
+                'total' => Rating::query()->where('lab_id', $labId)->count(),
+                'portal' => Rating::query()->where('lab_id', $labId)->where('channel', 'portal')->count(),
+                'internal' => Rating::query()->where('lab_id', $labId)->where('channel', 'internal')->count(),
+                'average' => $summary['count'] ? round($summary['sum'] / $summary['count'], 2) : 0,
             ],
+            'charts' => $this->ratingCharts($summary['distribution']),
+            'canInvite' => $request->user()->can('add_ratings'),
+            'invitations' => RatingRequest::query()->where('lab_id', $labId)->where('channel', 'portal')
+                ->with('rater:id,name')->latest()->limit(20)->get()
+                ->map(fn (RatingRequest $invitation): array => [
+                    'invitation' => $invitation->invitation, 'recipient' => $invitation->rater?->name,
+                    'rateable_type' => $invitation->rateable_type, 'rateable_id' => $invitation->rateable_id,
+                    'status' => $invitation->status === 'pending' && $invitation->expires_at->isPast() ? 'expired' : $invitation->status,
+                    'expires_at' => $invitation->expires_at,
+                ]),
         ]);
     }
 
-    private function renderFormForRater(string $rateableType, int $rateableId, ?Model $rater, string $channel, string $storeRoute, string $returnRoute): Response
+    public function store(SubmitRatingRequest $request, SubmitRating $submit, string $rateableType, string $rateableId = '0'): RedirectResponse
     {
-        abort_if(! $rater, 403);
+        $submit->internal($this->laboratoryAccess->activeLabId(), (int) $request->user()->id, $rateableType, $this->subjectId($rateableId), $request->validated());
 
-        $rateableModel = $this->validateRateable($rateableType, $rateableId);
+        return $this->thanks('dashboard');
+    }
+
+    public function portalStore(SubmitRatingRequest $request, SubmitRating $submit, string $invitation): RedirectResponse
+    {
+        $submit->portal($invitation, (int) $request->user('portal')->id, $request->validated());
+
+        return $this->thanks('portal.home');
+    }
+
+    public function create(Request $request, string $rateableType, string $rateableId = '0'): Response
+    {
+        $labId = $this->laboratoryAccess->activeLabId();
+        $this->access->member($labId, (int) $request->user()->id);
+        $id = $this->subjectId($rateableId);
+        $subject = $this->access->subject($labId, $rateableType, $id);
+        $pending = RatingRequest::query()->where('lab_id', $labId)->where('channel', 'internal')
+            ->where('rateable_type', $rateableType)->where('rateable_id', $id)
+            ->where('rater_type', $request->user()->getMorphClass())->where('rater_id', $request->user()->id)->first();
 
         return Inertia::render('RateForm', [
-            'criteria' => $this->criteriaFor($rateableType),
-            'rateableType' => $rateableType,
-            'rateableId' => $rateableId,
-            'rateableLabel' => $this->rateableLabel($rateableType, $rateableModel),
-            'channel' => $channel,
-            'storeRoute' => $storeRoute,
-            'returnRoute' => $returnRoute,
-            'ratingRequest' => RatingRequest::query()
-                ->where('rateable_type', $rateableType)
-                ->where('rateable_id', $rateableId)
-                ->where(function ($query) use ($rater) {
-                    $query
-                        ->where(function ($query) use ($rater) {
-                            $query
-                                ->where('rater_type', $rater->getMorphClass())
-                                ->where('rater_id', $rater->getKey());
-                        })
-                        ->when($rater instanceof User, function ($query) use ($rater) {
-                            $query->orWhere('user_id', $rater->id);
-                        });
-                })
-                ->first(),
+            'criteria' => $this->access->criteria($rateableType), 'rateableType' => $rateableType, 'rateableId' => $id,
+            'rateableLabel' => $this->access->label($rateableType, $subject),
+            'storeRoute' => 'rating.store', 'storeParameters' => ['rateableType' => $rateableType, 'rateableId' => $id],
+            'returnRoute' => 'dashboard', 'ratingRequest' => $pending ? ['status' => $pending->status] : null,
         ]);
     }
 
-    private function criteriaFor(string $rateableType)
+    public function portalCreate(Request $request, string $invitation): Response
     {
-        $criteria = CriteriaRating::query()
-            ->where('type', $rateableType)
-            ->orderBy('id')
-            ->get();
+        $pending = $this->access->invitation($invitation, (int) $request->user('portal')->id);
+        $recipient = $this->access->recipient((int) $request->user('portal')->id);
+        $subject = $this->access->subject((int) $pending->lab_id, $pending->rateable_type, (int) $pending->rateable_id, $recipient);
 
-        if ($criteria->isEmpty() && $rateableType !== 'service') {
-            $criteria = CriteriaRating::query()
-                ->where('type', 'service')
-                ->orderBy('id')
-                ->get();
+        return Inertia::render('RateForm', [
+            'criteria' => $pending->criteria_snapshot, 'rateableType' => $pending->rateable_type, 'rateableId' => (int) $pending->rateable_id,
+            'rateableLabel' => $this->access->label($pending->rateable_type, $subject), 'laboratoryName' => $pending->lab?->name,
+            'storeRoute' => 'portal.rating.store', 'storeParameters' => ['invitation' => $pending->invitation],
+            'returnRoute' => 'portal.home', 'ratingRequest' => ['status' => $pending->status, 'expires_at' => $pending->expires_at],
+        ]);
+    }
+
+    public function portalIndex(Request $request): Response
+    {
+        $invitations = $this->access->pendingInvitations((int) $request->user('portal')->id)->with('lab:id,name')->latest()->paginate(20);
+        $invitations->through(fn (RatingRequest $invitation): array => [
+            'invitation' => $invitation->invitation, 'laboratory' => $invitation->lab->name,
+            'rateable_type' => $invitation->rateable_type, 'rateable_id' => (int) $invitation->rateable_id,
+            'expires_at' => $invitation->expires_at,
+        ]);
+
+        return Inertia::render('ClientPortal/Ratings/Index', ['invitations' => $invitations]);
+    }
+
+    public function issueInvitation(IssuePortalRatingInvitationRequest $request, IssuePortalRatingInvitation $issue): RedirectResponse
+    {
+        $issue->execute($this->laboratoryAccess->activeLabId(), (int) $request->user()->id, $request->validated());
+
+        return redirect()->route('ratings.index')->with('toast', ['title' => 'Convite registado', 'message' => 'Convite do laboratório disponível no portal. Validade: 30 dias.']);
+    }
+
+    public function revokeInvitation(Request $request, string $invitation): RedirectResponse
+    {
+        $labId = $this->laboratoryAccess->activeLabId();
+        DB::transaction(function () use ($request, $labId, $invitation): void {
+            $this->mutationAccess->operator((int) $request->user()->id, $labId, 'add_ratings');
+            $pending = RatingRequest::query()->where('lab_id', $labId)->where('channel', 'portal')
+                ->where('invitation', $invitation)->lockForUpdate()->firstOrFail();
+            abort_if($pending->status === 'completed', 409);
+            $pending->update(['status' => 'revoked']);
+        }, 3);
+
+        return redirect()->route('ratings.index');
+    }
+
+    private function subjectId(string $value): int
+    {
+        $id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+        abort_if($id === false, 404);
+
+        return $id;
+    }
+
+    private function thanks(string $route): RedirectResponse
+    {
+        return redirect()->route($route)->with('toast', ['title' => trans('gestlab.toasts.notification'), 'message' => __('gestlab.rating.thank_you')]);
+    }
+
+    /** @return array{sum: int, count: int, distribution: array<int, int>} */
+    private function scoreSummary(int $labId): array
+    {
+        $summary = ['sum' => 0, 'count' => 0, 'distribution' => []];
+        foreach (Rating::query()->where('lab_id', $labId)->select(['id', 'criteria'])->lazyById(200) as $rating) {
+            foreach ($rating->criteria ?? [] as $score) {
+                if (is_int($score) && $score >= 1 && $score <= 5) {
+                    $summary['sum'] += $score;
+                    $summary['count']++;
+                    $summary['distribution'][$score] = ($summary['distribution'][$score] ?? 0) + 1;
+                }
+            }
         }
 
-        abort_if($criteria->isEmpty(), 404, __('gestlab.rating.no_criteria'));
-
-        return $criteria;
+        return $summary;
     }
 
-    private function validateRateable(string $type, int $id): ?Model
-    {
-        $rateableModel = $this->getRateableModel($type, $id);
-
-        abort_if($type !== 'service' && ! $rateableModel, 404, __('gestlab.rating.invalid_rateable'));
-
-        return $rateableModel;
-    }
-
-    private function getRateableModel(string $type, int $id): ?Model
-    {
-        return match ($type) {
-            'order' => InventoryOrder::query()->find($id),
-            'proposal' => VAPProposal::query()->find($id),
-            'sample_entry' => VAPSampleEntry::query()->find($id),
-            'customer_request' => CustomerRequest::query()->find($id),
-            'quality_certificate' => QualityCertificate::query()->find($id),
-            'maintenance_task' => MaintenanceTask::query()->find($id),
-            'paid_service' => PaidService::query()->find($id),
-            'service' => null,
-            default => null,
-        };
-    }
-
-    private function rateableLabel(string $type, ?Model $model): string
-    {
-        if (! $model) {
-            return __('gestlab.rating.subjects.service');
-        }
-
-        return match ($type) {
-            'order' => $model->reference ?? __('gestlab.rating.subjects.order'),
-            'proposal' => $model->proposal_number ?? $model->proposal_no ?? __('gestlab.rating.subjects.proposal'),
-            'sample_entry' => $model->code ?? $model->name ?? __('gestlab.rating.subjects.sample_entry'),
-            'customer_request' => $model->reference ?? $model->title ?? __('gestlab.rating.subjects.customer_request'),
-            'quality_certificate' => $model->code ?? __('gestlab.rating.subjects.quality_certificate'),
-            'maintenance_task' => $model->maintenance_task_no ?? $model->name ?? __('gestlab.rating.subjects.maintenance_task'),
-            'paid_service' => $model->name ?? __('gestlab.rating.subjects.paid_service'),
-            default => __('gestlab.rating.subjects.service'),
-        };
-    }
-
-    private function ratingStats(): array
-    {
-        $ratings = Rating::query()
-            ->latest()
-            ->limit(500)
-            ->get(['criteria', 'channel', 'created_at']);
-
-        $scores = $ratings
-            ->flatMap(fn (Rating $rating) => collect($rating->criteria ?? [])->values())
-            ->map(fn ($score) => (int) $score)
-            ->filter(fn (int $score) => $score > 0);
-
-        return [
-            'total' => Rating::query()->count(),
-            'portal' => Rating::query()->where('channel', 'portal')->count(),
-            'internal' => Rating::query()->where('channel', 'internal')->count(),
-            'average' => $scores->isEmpty() ? 0 : round($scores->average(), 2),
-        ];
-    }
-
-    private function ratingCharts(): array
+    private function ratingCharts(array $scores): array
     {
         return [
             'by_type' => $this->ratingDistributionChart('rateable_type'),
@@ -313,13 +172,13 @@ class RatingController extends Controller
                 'portal' => 'Portal',
             ]),
             'monthly' => $this->ratingMonthlyTrendChart(),
-            'score_distribution' => $this->ratingScoreDistributionChart(),
+            'score_distribution' => $this->ratingScoreDistributionChart($scores),
         ];
     }
 
     private function ratingDistributionChart(string $column, ?array $labels = null): array
     {
-        $distribution = Rating::query()
+        $distribution = Rating::query()->where('lab_id', $this->laboratoryAccess->activeLabId())
             ->selectRaw("{$column}, count(*) as aggregate")
             ->groupBy($column)
             ->pluck('aggregate', $column);
@@ -346,10 +205,10 @@ class RatingController extends Controller
         $firstMonth = $months->first()->copy();
         $lastMonth = $months->last()->copy()->endOfMonth();
 
-        $aggregates = Rating::query()
+        $aggregates = Rating::query()->where('lab_id', $this->laboratoryAccess->activeLabId())
             ->whereBetween('created_at', [$firstMonth, $lastMonth])
-            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_key, count(*) as aggregate")
-            ->groupBy('month_key')
+            ->selectRaw("to_char(created_at, 'YYYY-MM') as month_key, count(*) as aggregate")
+            ->groupByRaw("to_char(created_at, 'YYYY-MM')")
             ->pluck('aggregate', 'month_key');
 
         return [
@@ -363,30 +222,14 @@ class RatingController extends Controller
         ];
     }
 
-    private function ratingScoreDistributionChart(): array
+    /** @param array<int, int> $scores */
+    private function ratingScoreDistributionChart(array $scores): array
     {
-        $scores = Rating::query()
-            ->latest()
-            ->limit(500)
-            ->get(['criteria'])
-            ->flatMap(fn (Rating $rating) => collect($rating->criteria ?? [])->values())
-            ->map(fn ($score) => (int) $score)
-            ->filter(fn (int $score) => $score >= 1 && $score <= 5)
-            ->countBy();
-
         $labels = [1, 2, 3, 4, 5];
 
         return [
-            'labels' => collect($labels)->map(fn (int $score) => (string) $score)->all(),
-            'series' => collect($labels)->map(fn (int $score) => (int) ($scores[$score] ?? 0))->all(),
+            'labels' => array_map(fn (int $score): string => (string) $score, $labels),
+            'series' => array_map(fn (int $score): int => $scores[$score] ?? 0, $labels),
         ];
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
-    {
-        //
     }
 }

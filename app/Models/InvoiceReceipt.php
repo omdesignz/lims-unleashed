@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToFinancialLaboratory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InvoiceReceipt extends Model
 {
-    use HasFactory, SoftDeletes;
+    use BelongsToFinancialLaboratory, HasFactory, SoftDeletes;
 
-    public CONST MENU_NAME = null;
+    public const MENU_NAME = null;
 
     /**
      * The attributes that are mass assignable.
@@ -29,8 +30,8 @@ class InvoiceReceipt extends Model
     ];
 
     protected $table = 'invoice_receipt';
-    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
+    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
      * Issued By
@@ -52,7 +53,6 @@ class InvoiceReceipt extends Model
         return $this->belongsTo(Invoice::class, 'invoice_id');
     }
 
-
     /**
      * Receipt
      *
@@ -71,20 +71,5 @@ class InvoiceReceipt extends Model
     public function payment_category()
     {
         return $this->belongsTo(PaymentCategory::class, 'payment_id');
-    }
-
-    public static function boot()
-    {
-        parent::boot();
-
-            static::created(function($item) {
-                $invoice = Invoice::findOrFail($item->invoice_id);
-
-                $invoice->update([
-                    'amount_due' => $invoice->amount_due - $item->paid_amount,
-                    'paid_date' => ($invoice->amount_due - $item->paid_amount > 0 ? null : now())
-                ]);
-            });
-
     }
 }

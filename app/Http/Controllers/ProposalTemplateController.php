@@ -2,25 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProposalTemplateRequest;
+use App\Actions\SetProposalTemplatesArchived;
+use App\Http\Requests\SetProposalTemplatesArchivedRequest;
 use App\Http\Resources\ProposalTemplateResource;
 use App\Models\ProposalTemplate;
+use App\Models\VAPProposalTemplate;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class ProposalTemplateController extends Controller
 {
-    //
     public function index()
     {
         $records = QueryBuilder::for(ProposalTemplate::class)
-                                ->with('user')
-                                ->allowedFilters(ProposalTemplate::getAllowedFilters())
-                                ->allowedSorts(ProposalTemplate::getAllowedSorts())
-                                ->paginate(request()->query('per_page', 10)); 
-
+            ->with('user:id,name')
+            ->withExists('proposals')
+            ->allowedFilters(ProposalTemplate::getAllowedFilters())
+            ->allowedSorts(ProposalTemplate::getAllowedSorts())
+            ->paginate(request()->query('per_page', 10));
 
         return Inertia::render('ProposalTemplates/Index', [
             'record' => ProposalTemplateResource::collection($records),
@@ -30,118 +32,52 @@ class ProposalTemplateController extends Controller
             'initialIncludes' => request()->query('includes', []),
             'initialGlobalFilter' => request()->query('globalFilter', ''),
             'per_page' => request()->query('per_page', 2),
-            'slideOverEdit' => false,  
+            'slideOverEdit' => false,
             'trashedFilter' => true,
             'trashedOptions' => ProposalTemplate::getTrashedOptions(),
             'fields' => ProposalTemplate::getColumns(),
             'model' => ProposalTemplate::MENU_NAME,
-            'abilities' => method_exists(ProposalTemplate::class, 'getAbilities') ? collect(ProposalTemplate::ABILITIES)->map(function($item){
-                return $item . '_' . ProposalTemplate::MENU_NAME;
-            }) : collect(config('gestlab.default_abilities'))->map(function($item){
-                return $item . '_' . ProposalTemplate::MENU_NAME;
-            }),                           
-            'query' => request()->only(['search', 'trashed', 'date', 'orderBy'])
+            'abilities' => method_exists(ProposalTemplate::class, 'getAbilities') ? collect(ProposalTemplate::ABILITIES)->map(function ($item) {
+                return $item.'_'.ProposalTemplate::MENU_NAME;
+            }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
+                return $item.'_'.ProposalTemplate::MENU_NAME;
+            }),
+            'query' => request()->only(['search', 'trashed', 'date', 'orderBy']),
         ]);
     }
 
-    public function create()
+    public function create(): RedirectResponse
     {
-        return Inertia::render('ProposalTemplates/Create');
+        return redirect()->route('vap-proposals.templates.create');
     }
 
-    public function store(ProposalTemplateRequest $request)
+    public function edit(int $template): RedirectResponse
     {
-        // abort_if(!auth()->user()->can('add_maintenance_categories'), 403, '');
+        $record = VAPProposalTemplate::query()->findOrFail($template);
 
-        // Persiste data to DB
-        ProposalTemplate::create($request->validated());
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
-        ]);
+        return redirect()->route('vap-proposals.templates.edit', $record);
     }
 
-    public function edit($id)
+    public function destroy(SetProposalTemplatesArchivedRequest $request, SetProposalTemplatesArchived $archive): RedirectResponse
     {
-        // Find the record
-        $record = ProposalTemplate::with('user')->findOrFail($id);
+        $archive->execute($request->user()->id, $request->validated('recordIds'), true);
 
-        // Return Inertia View with record data
-        return Inertia::render('ProposalTemplates/Edit', [
-            'record' => ProposalTemplateResource::make($record)
-        ]);
+        return back()->with('success', 'Modelos de proposta arquivados.');
     }
 
-    public function update(ProposalTemplateRequest $request, $id)
+    public function restore(SetProposalTemplatesArchivedRequest $request, SetProposalTemplatesArchived $archive): RedirectResponse
     {
-         // Find the record
-         $record = ProposalTemplate::findOrFail($id);
+        $archive->execute($request->user()->id, $request->validated('recordIds'), false);
 
-         $record->update($request->validated());
- 
-         return redirect()->back()->with([
-             'toast' => [
-                 'title' => trans('gestlab.toasts.notification'),
-                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-             ]
-         ]);
+        return back()->with('success', 'Modelos de proposta restaurados.');
     }
 
-    public function destroy()
+    public function getProposalTemplate(Request $request): JsonResponse
     {
-        // abort_if( !auth()->user()->can('delete_proposals'), 403, '');
+        $search = trim($request->string('q')->value());
+        $records = filled($search) ? VAPProposalTemplate::query()->where('name', 'like', "%{$search}%")
+            ->orderBy('name')->limit(50)->get(['id', 'name']) : collect();
 
-        request()->validate([
-            'recordIds' => ['required', 'array']
-        ]);
-        // Find and delete the record
-        foreach (ProposalTemplate::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
-        ]);
-    }
-
-    public function restore()
-    {
-        // abort_if( !auth()->user()->can('restore_proposals'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array']
-        ]);
-        // Find and restore the record
-        foreach (ProposalTemplate::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
-
-       return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ]
-       ]);
-    }
-
-    public function getProposalTemplate() {
-        $data = [];
-
-        if(request()->has('q')){
-            $search = request()->q;
-            
-            $data = DB::table("proposal_templates")
-                ->select('proposal_templates.*')
-                ->where('name','LIKE',"%$search%")
-                ->get();
-        }
-
-        return response()->json($data);
+        return response()->json($records);
     }
 }

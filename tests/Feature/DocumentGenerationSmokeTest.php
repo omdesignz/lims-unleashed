@@ -18,6 +18,7 @@ use App\Models\Receipt;
 use App\Models\ReportStudioTemplate;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Models\VAPLabel;
 use App\Models\VAPNonConformity;
 use App\Models\VAPProposal;
@@ -25,6 +26,7 @@ use App\Models\VAPProposalTemplate;
 use App\Models\VAPSampleDiscard;
 use App\Models\VAPSampleEntry;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class DocumentGenerationSmokeTest extends TestCase
@@ -33,14 +35,11 @@ class DocumentGenerationSmokeTest extends TestCase
 
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for document generation smoke testing.');
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $lab->id]);
 
         return $admin;
     }

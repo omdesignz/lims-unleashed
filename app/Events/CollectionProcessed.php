@@ -23,7 +23,7 @@ class CollectionProcessed implements ShouldBroadcast, ShouldDispatchAfterCommit
     /**
      * Create a new event instance.
      */
-    public function __construct(User $user, Customer $customer)
+    public function __construct(User $user, Customer $customer, public ?int $collectionProductId = null)
     {
         $this->user = $user;
         $this->customer = $customer;

@@ -28,15 +28,7 @@ class GestlabMediaResource extends JsonResource
             'updated_at' => $this->updated_at->format('d/m/Y'),
             'preview_url' => $this->preview_url,
             'url' => $this->url,
-            'links' => [
-                'edit_path' => route('media.edit', $this->id),
-                'delete_path' => route('media.destroy', [
-                    'recordIds' => [$this->id],
-                ]),
-                'restore_path' => route('media.restore', [
-                    'recordIds' => [$this->id],
-                ]),
-            ],
+            'links' => [],
         ];
     }
 }

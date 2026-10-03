@@ -16,6 +16,7 @@ class VAPFileResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'lab_id' => $this->lab_id,
             'name' => $this->name,
             'document_number' => $this->document_number,
             'type' => $this->type,
@@ -26,7 +27,6 @@ class VAPFileResource extends JsonResource
             'modified_at' => $this->modified_at,
             'parent_id' => $this->parent_id,
             'mime_type' => $this->mime_type,
-            'content' => $this->content,
             'status' => $this->status,
             'confidentiality_level' => $this->confidentiality_level,
             'is_controlled' => $this->is_controlled,
@@ -46,11 +46,12 @@ class VAPFileResource extends JsonResource
             'archived_at' => $this->archived_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'current_version_id' => $this->whenLoaded('versions', fn () => $this->versions->firstWhere('revision_code', $this->revision_code)?->id),
             'current_access_level' => $this->when(
                 $request->user(),
                 fn () => $this->accessLevelFor($request->user())
             ),
-            
+
             // Relationships
             'parent' => new VAPFileResource($this->whenLoaded('parent')),
             'children' => VAPFileResource::collection($this->whenLoaded('children')),

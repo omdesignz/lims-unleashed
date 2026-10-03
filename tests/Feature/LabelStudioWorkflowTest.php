@@ -2,12 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Models\Inventory;
 use App\Models\InventoryItem;
+use App\Models\InventoryItemWarehouse;
+use App\Models\ItemCategory;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\VAPLab;
 use App\Models\VAPLabel;
 use App\Models\VAPLabelTemplate;
+use App\Models\VAPSampleEntry;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -15,22 +21,48 @@ class LabelStudioWorkflowTest extends TestCase
 {
     use DatabaseTransactions;
 
+    private VAPLab $lab;
+
     private function verifiedAdmin(): User
     {
-        return Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->firstOrFail();
+        $admin = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $admin->assignRole(Role::findOrCreate('admin', 'web'));
+        $this->lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $this->lab->id, 'user_id' => $admin->id]);
+        $this->withSession(['active_lab_id' => $this->lab->id]);
+
+        return $admin;
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function createLabel(array $attributes): VAPLabel
+    {
+        return VAPLabel::query()->create(array_merge(['lab_id' => $this->lab->id], $attributes));
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function createTemplate(array $attributes): VAPLabelTemplate
+    {
+        return VAPLabelTemplate::query()->create(array_merge(['lab_id' => $this->lab->id], $attributes));
     }
 
     public function test_admin_can_generate_label_from_inventory_source(): void
     {
         $user = $this->verifiedAdmin();
-        $item = InventoryItem::query()->firstOrFail();
+        $category = ItemCategory::query()->create(['name' => 'Label studio equipment '.fake()->uuid()]);
+        $item = InventoryItem::query()->create([
+            'lab_id' => $this->lab->id,
+            'name' => 'Label studio instrument',
+            'code' => fake()->unique()->bothify('EQ-#######'),
+            'category_id' => $category->id,
+        ]);
+        $warehouse = InventoryItemWarehouse::query()->forceCreate([
+            'name' => 'Label studio warehouse',
+            'lab_id' => $this->lab->id,
+        ]);
+        Inventory::query()->create(['item_id' => $item->id, 'warehouse_id' => $warehouse->id, 'qty_available' => 1]);
 
-        $template = VAPLabelTemplate::query()->create([
+        $template = $this->createTemplate([
             'name' => 'Etiqueta de Equipamento',
             'category' => 'equipment',
             'template_data' => [
@@ -68,13 +100,36 @@ class LabelStudioWorkflowTest extends TestCase
         $this->assertSame('equipment', data_get($label->template_data, 'source_type'));
         $this->assertSame($item->id, data_get($label->template_data, 'source_id'));
         $this->assertSame($template->id, data_get($label->template_data, 'template_id'));
+
+        $peerLab = VAPLab::factory()->create();
+        $peerWarehouse = InventoryItemWarehouse::query()->forceCreate([
+            'name' => 'Other laboratory warehouse',
+            'lab_id' => $peerLab->id,
+        ]);
+        $peerItem = InventoryItem::query()->create([
+            'lab_id' => $peerLab->id,
+            'name' => 'Private peer instrument',
+            'code' => fake()->unique()->bothify('EQ-#######'),
+            'category_id' => $category->id,
+        ]);
+        Inventory::query()->create(['item_id' => $peerItem->id, 'warehouse_id' => $peerWarehouse->id, 'qty_available' => 1]);
+
+        $this->actingAs($user)
+            ->post(route('vap_labels.label-generation.from-source'), [
+                'name' => 'Foreign inventory label',
+                'template_id' => $template->id,
+                'source_type' => 'equipment',
+                'source_id' => $peerItem->id,
+            ])
+            ->assertNotFound();
+        $this->assertDatabaseMissing('labels', ['name' => 'Foreign inventory label']);
     }
 
     public function test_label_show_route_can_return_json_payload_for_studio_consumers(): void
     {
         $user = $this->verifiedAdmin();
 
-        $label = VAPLabel::query()->create([
+        $label = $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Etiqueta JSON',
@@ -102,7 +157,7 @@ class LabelStudioWorkflowTest extends TestCase
     {
         $user = $this->verifiedAdmin();
 
-        $label = VAPLabel::query()->create([
+        $label = $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Etiqueta com Modelos',
@@ -119,7 +174,7 @@ class LabelStudioWorkflowTest extends TestCase
             'is_active' => true,
         ]);
 
-        VAPLabelTemplate::query()->create([
+        $this->createTemplate([
             'name' => 'Modelo Ativo',
             'description' => 'Disponível no ecrã de detalhe',
             'category' => 'general',
@@ -128,7 +183,7 @@ class LabelStudioWorkflowTest extends TestCase
             'is_featured' => true,
         ]);
 
-        VAPLabelTemplate::query()->create([
+        $this->createTemplate([
             'name' => 'Modelo Inativo',
             'description' => 'Não deve ser exposto',
             'category' => 'general',
@@ -158,7 +213,7 @@ class LabelStudioWorkflowTest extends TestCase
     {
         $user = $this->verifiedAdmin();
 
-        $template = VAPLabelTemplate::query()->create([
+        $template = $this->createTemplate([
             'name' => 'Modelo Pré-selecionado',
             'description' => 'Deve preencher o estúdio',
             'category' => 'general',
@@ -183,7 +238,7 @@ class LabelStudioWorkflowTest extends TestCase
     {
         $user = $this->verifiedAdmin();
 
-        $template = VAPLabelTemplate::query()->create([
+        $template = $this->createTemplate([
             'name' => 'Modelo de edição',
             'description' => 'Disponível no ecrã unificado',
             'category' => 'general',
@@ -192,7 +247,7 @@ class LabelStudioWorkflowTest extends TestCase
             'is_featured' => false,
         ]);
 
-        $label = VAPLabel::query()->create([
+        $label = $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Etiqueta editável',
@@ -225,7 +280,7 @@ class LabelStudioWorkflowTest extends TestCase
     {
         $user = $this->verifiedAdmin();
 
-        VAPLabel::query()->create([
+        $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Filtro Nome Ativo',
@@ -242,7 +297,7 @@ class LabelStudioWorkflowTest extends TestCase
             'is_active' => true,
         ]);
 
-        VAPLabel::query()->create([
+        $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Filtro Nome Inativo',
@@ -273,7 +328,7 @@ class LabelStudioWorkflowTest extends TestCase
     {
         $user = $this->verifiedAdmin();
 
-        VAPLabelTemplate::query()->create([
+        $this->createTemplate([
             'name' => 'Modelo Filtro Ativo',
             'description' => 'Ativo',
             'category' => 'general',
@@ -282,7 +337,7 @@ class LabelStudioWorkflowTest extends TestCase
             'is_featured' => false,
         ]);
 
-        VAPLabelTemplate::query()->create([
+        $this->createTemplate([
             'name' => 'Modelo Filtro Inativo',
             'description' => 'Inativo',
             'category' => 'general',
@@ -305,7 +360,7 @@ class LabelStudioWorkflowTest extends TestCase
     {
         $user = $this->verifiedAdmin();
 
-        $label = VAPLabel::query()->create([
+        $label = $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Etiqueta Original',
@@ -353,7 +408,7 @@ class LabelStudioWorkflowTest extends TestCase
     {
         $user = $this->verifiedAdmin();
 
-        $label = VAPLabel::query()->create([
+        $label = $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Etiqueta Aplicada',
@@ -375,12 +430,15 @@ class LabelStudioWorkflowTest extends TestCase
             'is_active' => true,
         ]);
 
-        $template = VAPLabelTemplate::query()->create([
+        $template = $this->createTemplate([
             'name' => 'Novo Modelo',
             'description' => 'Atualiza a etiqueta',
             'category' => 'general',
             'template_data' => [
                 'content' => '{name} / {code}',
+                'lab_id' => 999999,
+                'tenant_id' => 999999,
+                'user_id' => 999999,
                 'width' => 90,
                 'height' => 45,
                 'background_color' => '#f3f4f6',
@@ -408,13 +466,18 @@ class LabelStudioWorkflowTest extends TestCase
         $this->assertSame($template->id, data_get($label->template_data, 'template_id'));
         $this->assertSame('sample_entry', data_get($label->template_data, 'source_type'));
         $this->assertSame(88, data_get($label->template_data, 'source_id'));
+        $this->assertSame($this->lab->id, $label->lab_id);
+        $this->assertSame($user->id, $label->user_id);
+        $this->assertSame($user->tenant_id, $label->tenant_id);
+        $this->assertArrayNotHasKey('lab_id', $label->template_data);
     }
 
     public function test_updating_label_can_switch_template_and_keep_source_metadata(): void
     {
         $user = $this->verifiedAdmin();
+        $sample = VAPSampleEntry::factory()->create(['lab_id' => $this->lab->id, 'name' => 'Amostra em edição']);
 
-        $label = VAPLabel::query()->create([
+        $label = $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Etiqueta em edição',
@@ -431,12 +494,12 @@ class LabelStudioWorkflowTest extends TestCase
             'template_data' => [
                 'template_id' => 1,
                 'source_type' => 'sample_entry',
-                'source_id' => 99,
+                'source_id' => $sample->id,
             ],
             'is_active' => true,
         ]);
 
-        $template = VAPLabelTemplate::query()->create([
+        $template = $this->createTemplate([
             'name' => 'Template Editado',
             'description' => 'Aplicado durante update',
             'category' => 'general',
@@ -482,24 +545,24 @@ class LabelStudioWorkflowTest extends TestCase
                 'barcode_height' => null,
                 'is_active' => true,
                 'source_type' => 'sample_entry',
-                'source_id' => 99,
+                'source_id' => $sample->id,
                 'template_id' => $template->id,
             ])
             ->assertRedirect();
 
         $label->refresh();
 
-        $this->assertSame('{name} atualizado', $label->content);
+        $this->assertSame('Amostra em edição atualizado', $label->content);
         $this->assertSame($template->id, data_get($label->template_data, 'template_id'));
         $this->assertSame('sample_entry', data_get($label->template_data, 'source_type'));
-        $this->assertSame(99, data_get($label->template_data, 'source_id'));
+        $this->assertSame($sample->id, data_get($label->template_data, 'source_id'));
     }
 
     public function test_updating_label_template_can_persist_template_data_changes(): void
     {
         $user = $this->verifiedAdmin();
 
-        $template = VAPLabelTemplate::query()->create([
+        $template = $this->createTemplate([
             'name' => 'Template Base',
             'description' => 'Descrição inicial',
             'category' => 'general',
@@ -561,7 +624,7 @@ class LabelStudioWorkflowTest extends TestCase
     {
         $user = $this->verifiedAdmin();
 
-        $template = VAPLabelTemplate::query()->create([
+        $template = $this->createTemplate([
             'name' => 'Template Completo',
             'description' => 'Com metadados avançados',
             'category' => 'general',
@@ -635,9 +698,10 @@ class LabelStudioWorkflowTest extends TestCase
         $this->assertSame(18, data_get($template->template_data, 'logo_size'));
     }
 
-    public function test_labels_are_isolated_by_tenant_across_index_and_document_routes(): void
+    public function test_labels_are_isolated_by_laboratory_across_index_and_document_routes(): void
     {
         $user = $this->verifiedAdmin();
+        $peerLab = VAPLab::factory()->create();
         $attributes = [
             'user_id' => $user->id,
             'type' => 'sample',
@@ -653,21 +717,22 @@ class LabelStudioWorkflowTest extends TestCase
             'is_active' => true,
         ];
 
-        VAPLabel::query()->create(array_merge($attributes, [
+        $this->createLabel(array_merge($attributes, [
             'tenant_id' => $user->tenant_id,
-            'name' => 'Tenant scope marker local',
+            'name' => 'Laboratory scope marker local',
         ]));
-        $foreignLabel = VAPLabel::query()->create(array_merge($attributes, [
-            'tenant_id' => 999999,
-            'name' => 'Tenant scope marker foreign',
+        $foreignLabel = $this->createLabel(array_merge($attributes, [
+            'tenant_id' => $user->tenant_id,
+            'lab_id' => $peerLab->id,
+            'name' => 'Laboratory scope marker foreign',
         ]));
 
         $this->actingAs($user)
-            ->get(route('vap_labels.labels.index', ['search' => 'Tenant scope marker']))
+            ->get(route('vap_labels.labels.index', ['search' => 'Laboratory scope marker']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->has('labels.data', 1)
-                ->where('labels.data.0.name', 'Tenant scope marker local'));
+                ->where('labels.data.0.name', 'Laboratory scope marker local'));
 
         $this->actingAs($user)
             ->get(route('vap_labels.labels.show', $foreignLabel))
@@ -676,6 +741,131 @@ class LabelStudioWorkflowTest extends TestCase
         $this->actingAs($user)
             ->get(route('vap_labels.preview-pdf', $foreignLabel))
             ->assertNotFound();
+
+        $this->get(route('vap_labels.labels.edit', $foreignLabel))->assertNotFound();
+        $this->put(route('vap_labels.labels.update', $foreignLabel), [])->assertNotFound();
+        $this->delete(route('vap_labels.labels.destroy', $foreignLabel))->assertNotFound();
+        $this->post(route('vap_labels.duplicate', $foreignLabel))->assertNotFound();
+        $this->post(route('vap_labels.toggle-status', $foreignLabel))->assertNotFound();
+        $this->post(route('vap_labels.apply-template', $foreignLabel), [])->assertNotFound();
+        $this->post(route('vap_labels.generate-pdf', $foreignLabel), [])->assertNotFound();
+        $this->post(route('vap_labels.generate-batch-pdf', $foreignLabel), [])->assertNotFound();
+        $this->assertModelExists($foreignLabel);
+    }
+
+    public function test_custom_templates_follow_active_lab_while_system_presets_remain_shared_and_read_only(): void
+    {
+        $user = $this->verifiedAdmin();
+        $firstLab = $this->lab;
+        $secondLab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $secondLab->id, 'user_id' => $user->id]);
+        $templateData = ['content' => '{name}', 'width' => 50, 'height' => 25];
+
+        $local = $this->createTemplate(['name' => 'Modelo local', 'category' => 'samples', 'template_data' => $templateData]);
+        $peer = $this->createTemplate(['name' => 'Modelo de outra bancada', 'category' => 'samples', 'template_data' => $templateData, 'lab_id' => $secondLab->id]);
+        $system = VAPLabelTemplate::query()->forceCreate([
+            'name' => 'Modelo de sistema', 'category' => 'samples', 'template_data' => $templateData,
+            'is_system' => true, 'lab_id' => null,
+        ]);
+        $inactive = $this->createTemplate([
+            'name' => 'Modelo desactivado', 'category' => 'samples',
+            'template_data' => $templateData, 'is_active' => false,
+        ]);
+        $label = $this->createLabel([
+            'name' => 'Etiqueta local', 'content' => 'Antes', 'width' => 50, 'height' => 25,
+        ]);
+
+        $this->actingAs($user)->withSession(['active_lab_id' => $firstLab->id]);
+        $firstPage = $this->get(route('vap_labels.label-templates.index'))->assertOk();
+        $this->assertEqualsCanonicalizing([$local->id, $system->id, $inactive->id], collect($firstPage->inertiaProps('templates.data'))->pluck('id')->all());
+        $this->post(route('vap_labels.apply-template', $label), ['template_id' => $peer->id])->assertNotFound();
+        $this->post(route('vap_labels.apply-template', $label), ['template_id' => $inactive->id])->assertNotFound();
+        $this->post(route('vap_labels.apply-template', $label), ['template_id' => $system->id])->assertRedirect();
+        $this->assertSame($system->id, data_get($label->fresh()->template_data, 'template_id'));
+        $this->get(route('vap_labels.label-templates.edit', $peer))->assertNotFound();
+        $this->get(route('vap_labels.label-templates.edit', $system))->assertNotFound();
+        $this->post(route('vap_labels.templates.toggle-status', $system))->assertNotFound();
+        $this->post(route('vap_labels.templates.toggle-featured', $system))->assertNotFound();
+        $this->put(route('vap_labels.label-templates.update', $peer), [])->assertNotFound();
+        $this->delete(route('vap_labels.label-templates.destroy', $system))->assertNotFound();
+
+        $secondPage = $this->withSession(['active_lab_id' => $secondLab->id])
+            ->get(route('vap_labels.label-templates.index'))->assertOk();
+        $this->assertEqualsCanonicalizing([$peer->id, $system->id], collect($secondPage->inertiaProps('templates.data'))->pluck('id')->all());
+    }
+
+    public function test_custom_template_requests_reject_ownership_fields_hidden_inside_presentation_data(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->post(route('vap_labels.label-templates.store'), [
+                'name' => 'Modelo adulterado',
+                'category' => 'samples',
+                'template_data' => [
+                    'content' => '{name}',
+                    'width' => 50,
+                    'height' => 25,
+                    'user_id' => $user->id,
+                    'lab_id' => $this->lab->id,
+                ],
+            ])
+            ->assertSessionHasErrors('template_data');
+
+        $this->assertDatabaseMissing('label_templates', ['name' => 'Modelo adulterado']);
+    }
+
+    public function test_label_sources_require_local_sample_ownership_and_ignore_forged_lab_selection(): void
+    {
+        $user = $this->verifiedAdmin();
+        $peerLab = VAPLab::factory()->create();
+        $localSample = VAPSampleEntry::factory()->create(['lab_id' => $this->lab->id, 'name' => 'Amostra local']);
+        $peerSample = VAPSampleEntry::factory()->create(['lab_id' => $peerLab->id, 'name' => 'Amostra privada']);
+        $template = $this->createTemplate([
+            'name' => 'Modelo de amostra', 'category' => 'samples',
+            'template_data' => ['content' => '{name} | {code}', 'width' => 50, 'height' => 25],
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('vap_labels.labels.create', ['source_type' => 'sample_entry', 'source_id' => $peerSample->id]))
+            ->assertOk();
+        $this->assertNull($response->inertiaProps('sourcePreview'));
+        $this->assertSame([$localSample->id], collect($response->inertiaProps('sourceOptions.samples'))->pluck('id')->all());
+        $this->actingAs($user)
+            ->get(route('vap_labels.labels.create', ['source_type' => 'unknown', 'source_id' => $localSample->id]))
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->post(route('vap_labels.labels.store'), [
+                'name' => 'Etiqueta de origem privada',
+                'type' => 'sample',
+                'content' => '{name}',
+                'width' => 50,
+                'height' => 25,
+                'background_color' => '#ffffff',
+                'text_color' => '#000000',
+                'font_size' => 12,
+                'border_width' => 1,
+                'border_color' => '#000000',
+                'text_alignment' => 'center',
+                'source_type' => 'sample_entry',
+                'source_id' => $peerSample->id,
+            ])
+            ->assertNotFound();
+        $this->assertDatabaseMissing('labels', ['name' => 'Etiqueta de origem privada']);
+
+        $payload = [
+            'name' => 'Etiqueta da amostra', 'template_id' => $template->id,
+            'source_type' => 'sample_entry', 'source_id' => $peerSample->id,
+        ];
+        $this->post(route('vap_labels.label-generation.from-source'), $payload)->assertNotFound();
+        $this->post(route('vap_labels.label-generation.from-source'), array_merge($payload, [
+            'source_id' => $localSample->id, 'lab_id' => $peerLab->id,
+        ]))->assertSessionHasErrors('lab_id');
+        $this->post(route('vap_labels.label-generation.from-source'), array_merge($payload, [
+            'source_id' => $localSample->id,
+        ]))->assertRedirect();
+        $this->assertSame($this->lab->id, VAPLabel::query()->latest('id')->firstOrFail()->lab_id);
     }
 
     public function test_label_preview_pdf_uses_production_renderer_contract(): void
@@ -683,7 +873,7 @@ class LabelStudioWorkflowTest extends TestCase
         config()->set('laravel-pdf.chrome.chrome_binary', '/missing/chrome');
 
         $user = $this->verifiedAdmin();
-        $label = VAPLabel::query()->create([
+        $label = $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Etiqueta PDF Preview',
@@ -732,7 +922,7 @@ class LabelStudioWorkflowTest extends TestCase
     public function test_label_generation_pdf_embeds_real_qr_and_barcode_payloads(): void
     {
         $user = $this->verifiedAdmin();
-        $label = VAPLabel::query()->create([
+        $label = $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Etiqueta PDF Produção',
@@ -788,7 +978,7 @@ class LabelStudioWorkflowTest extends TestCase
         config()->set('laravel-pdf.chrome.chrome_binary', '/missing/chrome');
 
         $user = $this->verifiedAdmin();
-        $label = VAPLabel::query()->create([
+        $label = $this->createLabel([
             'tenant_id' => $user->tenant_id,
             'user_id' => $user->id,
             'name' => 'Etiqueta PDF Lote',

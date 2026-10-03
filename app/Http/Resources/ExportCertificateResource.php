@@ -16,6 +16,7 @@ class ExportCertificateResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'lab_id' => $this->lab_id,
             'exporter_id' => $this->exporter_id,
             'exporter' => CustomerResource::make($this->whenLoaded('exporter'))?->name ?? null,
             'trans_type_id' => $this->trans_type_id,
@@ -48,12 +49,8 @@ class ExportCertificateResource extends JsonResource
             'deleted' => $this->deleted_at ? true : false,
             'links' => [
                 'edit_path' => route('exportcertificates.edit', $this->id),
-                'delete_path' => route('exportcertificates.destroy', [
-                    'recordIds' => [$this->id],
-                ]),
-                'restore_path' => route('exportcertificates.restore', [
-                    'recordIds' => [$this->id],
-                ]),
+                'delete_path' => route('exportcertificates.destroy'),
+                'restore_path' => route('exportcertificates.restore'),
             ],
         ];
     }

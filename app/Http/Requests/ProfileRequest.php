@@ -6,6 +6,7 @@ use App\Models\AnalysisCategory;
 use App\Models\Parameter;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class ProfileRequest extends FormRequest
@@ -25,68 +26,40 @@ class ProfileRequest extends FormRequest
      */
     public function rules(): array
     {
-        if ($this->isMethod('post')) {
-            $rules = [
-                'name' => 'required',
-                'code' => 'nullable|min:1|unique:profiles,code',
-                'description' => 'nullable',
-                'price' => 'nullable',
-                'category_id' => 'required|exists:analysis_categories,id',
-                'parameters' => 'required|array|min:1',
-                'parameters.*.parameter_id' => 'required|exists:parameters,id',
-                'parameters.*.unit_id' => 'required',
-                'parameters.*.unit_label' => 'nullable',
-                'parameters.*.protocol_id' => 'nullable',
-                'parameters.*.protocol_label' => 'nullable',
-                'parameters.*.nwp_id' => 'nullable',
-                'parameters.*.nwp_label' => 'nullable',
-                'parameters.*.standard_id' => 'nullable',
-                'parameters.*.standard_label' => 'nullable',
-                'parameters.*.count' => 'boolean',
-                'parameters.*.min_ref_value' => 'required',
-                'parameters.*.max_ref_value' => 'nullable',
-                'parameters.*.category_label' => 'nullable',
-                'parameters.*.dilutions' => 'nullable',
-                'parameters.*.extra_data' => 'nullable',
-                'parameters.*.category_id' => 'required|exists:result_categories,id',
-                'parameters.*.formula_label' => 'nullable',
-                'parameters.*.formula_id' => 'nullable|exists:formulas,id',
-                'parameters.*.optimal_analysis_time' => 'nullable',
-                'parameters.*.ref_val_origin' => 'nullable',
-            ];
-        } else {
-            $rules = [
-                'name' => 'required',
-                'code' => 'nullable|min:1|unique:profiles,code,'.request()->profile,
-                'description' => 'nullable',
-                'price' => 'nullable',
-                'category_id' => 'nullable|exists:analysis_categories,id',
-                'parameters' => 'required|array|min:1',
-                'parameters.*.parameter_id' => 'required|exists:parameters,id',
-                'parameters.*.unit_id' => 'required',
-                'parameters.*.unit_label' => 'nullable',
-                'parameters.*.protocol_id' => 'nullable',
-                'parameters.*.protocol_label' => 'nullable',
-                'parameters.*.nwp_id' => 'nullable',
-                'parameters.*.nwp_label' => 'nullable',
-                'parameters.*.standard_id' => 'nullable',
-                'parameters.*.standard_label' => 'nullable',
-                'parameters.*.count' => 'boolean',
-                'parameters.*.min_ref_value' => 'required',
-                'parameters.*.max_ref_value' => 'nullable',
-                'parameters.*.category_label' => 'nullable',
-                'parameters.*.dilutions' => 'nullable',
-                'parameters.*.extra_data' => 'nullable',
-                'parameters.*.category_id' => 'required|exists:result_categories,id',
-                'parameters.*.formula_label' => 'nullable',
-                'parameters.*.formula_id' => 'nullable|exists:formulas,id',
-                'parameters.*.optimal_analysis_time' => 'nullable',
-                'parameters.*.ref_val_origin' => 'nullable',
+        $codeRule = Rule::unique('profiles', 'code');
 
-            ];
+        if (! $this->isMethod('post')) {
+            $codeRule->ignore((int) $this->route('profile'));
         }
 
-        return $rules;
+        return [
+            'name' => 'required',
+            'code' => ['nullable', 'min:1', $codeRule],
+            'description' => 'nullable',
+            'price' => 'nullable',
+            'category_id' => [$this->isMethod('post') ? 'required' : 'nullable', 'exists:analysis_categories,id'],
+            'parameters' => 'required|array|min:1',
+            'parameters.*.parameter_id' => 'required|exists:parameters,id',
+            'parameters.*.unit_id' => 'required|exists:units,id',
+            'parameters.*.unit_label' => 'nullable',
+            'parameters.*.protocol_id' => 'nullable|exists:protocols,id',
+            'parameters.*.protocol_label' => 'nullable',
+            'parameters.*.nwp_id' => 'nullable|exists:nwps,id',
+            'parameters.*.nwp_label' => 'nullable',
+            'parameters.*.standard_id' => 'nullable|exists:standards,id',
+            'parameters.*.standard_label' => 'nullable',
+            'parameters.*.count' => 'boolean',
+            'parameters.*.min_ref_value' => 'required',
+            'parameters.*.max_ref_value' => 'nullable',
+            'parameters.*.category_label' => 'nullable',
+            'parameters.*.dilutions' => 'nullable',
+            'parameters.*.extra_data' => 'nullable',
+            'parameters.*.category_id' => 'required|exists:result_categories,id',
+            'parameters.*.formula_label' => 'nullable',
+            'parameters.*.formula_id' => 'nullable|exists:formulas,id',
+            'parameters.*.optimal_analysis_time' => 'nullable',
+            'parameters.*.ref_val_origin' => 'nullable',
+        ];
     }
 
     /**

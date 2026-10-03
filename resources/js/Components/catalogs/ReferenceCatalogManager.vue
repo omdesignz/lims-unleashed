@@ -14,7 +14,7 @@ import {
   PlusIcon,
 } from "@heroicons/vue/24/outline";
 import { trans } from "laravel-vue-i18n";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = defineProps({
   record: { type: Object, default: () => ({ data: [], meta: {} }) },
@@ -24,6 +24,7 @@ const props = defineProps({
   query: { type: Object, default: () => ({}) },
   slideOverEdit: { type: Boolean, default: false },
   openCreate: { type: Boolean, default: false },
+  initialRecord: { type: Object, default: null },
   routePrefix: { type: String, required: true },
   routeParameter: { type: String, required: true },
   permissionKey: { type: String, required: true },
@@ -49,6 +50,7 @@ const props = defineProps({
 
 const { hasPermission } = usePermission();
 const isPanelOpen = ref(props.openCreate);
+const editingRecord = ref(null);
 const showActionConfirmation = ref(false);
 const selectedAction = ref(null);
 
@@ -98,6 +100,7 @@ function loadDepartments(query, setOptions) {
 }
 
 function openCreatePanel() {
+  editingRecord.value = null;
   form.defaults(emptyForm());
   form.reset();
   form.clearErrors();
@@ -105,6 +108,7 @@ function openCreatePanel() {
 }
 
 function openEditPanel(data) {
+  editingRecord.value = data;
   form.defaults({
     id: data.id,
     name: data.name || "",
@@ -119,6 +123,10 @@ function openEditPanel(data) {
   form.clearErrors();
   isPanelOpen.value = true;
 }
+
+watch(() => props.initialRecord, (record) => {
+  if (record) openEditPanel(record.data ?? record);
+}, { immediate: true });
 
 function closePanel() {
   isPanelOpen.value = false;
@@ -268,7 +276,7 @@ function executeBulkAction() {
                     :placeholder="field.placeholder || ''"
                   />
                   <BaseInput
-                    v-else
+                    v-else-if="field.type !== 'select'"
                     :id="`reference-${field.key}`"
                     v-model="form[field.key]"
                     :type="field.type || 'text'"
@@ -280,7 +288,18 @@ function executeBulkAction() {
                     :aria-invalid="Boolean(form.errors[field.key])"
                     :placeholder="field.placeholder || ''"
                   />
-                  <p v-if="field.help" class="ds-field-help">{{ field.help }}</p>
+                  <select
+                    v-else
+                    :id="`reference-${field.key}`"
+                    v-model="form[field.key]"
+                    class="ds-field disabled:cursor-not-allowed disabled:opacity-60"
+                    :disabled="form.processing || Boolean(field.lockWhenRecordKey && editingRecord?.[field.lockWhenRecordKey])"
+                    :aria-invalid="Boolean(form.errors[field.key])"
+                    :aria-describedby="`reference-${field.key}-help`"
+                  >
+                    <option v-for="option in field.options" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  </select>
+                  <p v-if="field.help" :id="`reference-${field.key}-help`" class="ds-field-help">{{ field.lockWhenRecordKey && editingRecord?.[field.lockWhenRecordKey] ? field.lockedHelp : field.help }}</p>
                 </template>
                 <p v-if="form.errors[field.key]" class="ds-field-error">{{ form.errors[field.key] }}</p>
               </div>

@@ -31,15 +31,6 @@ class InventoryTransactionResource extends JsonResource
             'updated_at' => $this->updated_at,
             'deleted_at' => $this->deleted_at,
             'deleted' => (bool) $this->deleted_at,
-            'links' => [
-                'edit_path' => route('itransactions.edit', $this->id),
-                'delete_path' => route('itransactions.destroy', [
-                    'recordIds' => [$this->id],
-                ]),
-                'restore_path' => route('itransactions.restore', [
-                    'recordIds' => [$this->id],
-                ]),
-            ],
         ];
     }
 }

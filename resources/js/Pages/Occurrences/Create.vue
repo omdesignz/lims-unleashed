@@ -7,7 +7,7 @@ import { computed } from "vue";
 
 defineOptions({ layout: Layout });
 
-const form = useForm("OccurrenceCreate", {
+const form = useForm({
   date_reported: new Date().toISOString().slice(0, 10),
   issue_description: "",
   corrective_action: "",
@@ -39,7 +39,7 @@ const form = useForm("OccurrenceCreate", {
 const canSubmit = computed(() => form.date_reported && form.issue_description.trim().length > 0);
 
 function submit() {
-  if (!canSubmit.value) {
+  if (form.processing || !canSubmit.value) {
     return;
   }
 

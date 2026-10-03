@@ -38,7 +38,7 @@
       </div>
 
       <div class="flex flex-wrap gap-2 px-5 py-4 lg:px-6">
-        <a v-if="proposal.file_path" :href="route('vap-proposals.download.pdf', proposal.id)" class="ds-button ds-button-primary">
+        <a v-if="proposal.has_document" :href="route('vap-proposals.download.pdf', proposal.id)" class="ds-button ds-button-primary">
           <ArrowDownTrayIcon class="h-4 w-4" />
           {{ $t('gestlab.general.labels.vap_proposals.show.download_pdf') }}
         </a>
@@ -359,8 +359,8 @@
               <div v-if="revision.properties?.reason" class="mt-3 rounded-lg bg-[var(--ds-panel-subtle)] p-3 text-xs font-semibold text-[var(--ds-text-muted)]">
                 <strong>{{ $t('gestlab.general.labels.vap_proposals.show.revisions.reason') }}:</strong> {{ revision.properties.reason }}
               </div>
-              <div v-if="revision.event === 'revised' && revision.properties?.old_values" class="mt-4 grid gap-3 text-xs md:grid-cols-2">
-                <div v-if="revision.properties.old_values.total !== revision.properties.new_values.total" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+              <div v-if="revision.event === 'revised' && revision.properties?.old_values && revision.properties?.new_values" class="mt-4 grid gap-3 text-xs md:grid-cols-2">
+                <div v-if="revision.properties.old_values.total != null && revision.properties.new_values.total != null && revision.properties.old_values.total !== revision.properties.new_values.total" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
                   <span class="font-bold text-[var(--ds-text-soft)]">Total</span>
                   <div class="mt-2 flex items-center gap-2">
                     <span class="font-bold text-red-600 line-through dark:text-red-300">{{ formatCurrency(revision.properties.old_values.total) }}</span>
@@ -368,7 +368,7 @@
                     <span class="font-bold text-emerald-700 dark:text-emerald-300">{{ formatCurrency(revision.properties.new_values.total) }}</span>
                   </div>
                 </div>
-                <div v-if="revision.properties.old_values.items_count !== revision.properties.new_values.items_count" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <div v-if="revision.properties.old_values.items_count != null && revision.properties.new_values.items_count != null && revision.properties.old_values.items_count !== revision.properties.new_values.items_count" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
                   <span class="font-bold text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_proposals.items') }}</span>
                   <div class="mt-2 flex items-center gap-2">
                     <span class="font-bold text-red-600 line-through dark:text-red-300">{{ revision.properties.old_values.items_count }}</span>

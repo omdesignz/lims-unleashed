@@ -2,6 +2,9 @@
 
 namespace App\Notifications;
 
+use App\Models\User;
+use App\Models\VAPLab;
+use App\Services\LaboratoryWorkflowOwnership;
 use App\Support\WhiteLabelMessageDefaults;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,7 +23,8 @@ class GlobalNotification extends Notification implements ShouldQueue
         public string $type = 'info',
         public string $priority = 'normal',
         public ?string $actionUrl = null,
-        public ?string $actionLabel = null
+        public ?string $actionLabel = null,
+        public ?int $labId = null
     ) {
         $this->afterCommit();
         $this->onQueue('notifications');
@@ -35,8 +39,19 @@ class GlobalNotification extends Notification implements ShouldQueue
     {
         return [
             'database',
-            'broadcast',
+            $this->labId !== null ? LaboratoryBroadcastChannel::class : 'broadcast',
         ];
+    }
+
+    public function shouldSend(object $notifiable, string $channel): bool
+    {
+        if ($this->labId === null) {
+            return true;
+        }
+
+        return $this->labId > 0 && $notifiable instanceof User
+            && VAPLab::query()->whereKey($this->labId)->exists()
+            && app(LaboratoryWorkflowOwnership::class)->eligibleUsers($this->labId)->whereKey($notifiable->getKey())->exists();
     }
 
     /**
@@ -69,6 +84,7 @@ class GlobalNotification extends Notification implements ShouldQueue
             'sender_name' => $defaults->senderAlias($this->sender->name ?? null),
             'action_url' => $this->actionUrl,
             'action_label' => $this->actionLabel,
+            'lab_id' => $this->labId,
         ];
     }
 

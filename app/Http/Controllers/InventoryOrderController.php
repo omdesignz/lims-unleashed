@@ -9,8 +9,7 @@ use App\Http\Resources\InventoryOrderResource;
 use App\Models\Inventory;
 use App\Models\InventoryOrder;
 use App\Models\InventoryOrderDetail;
-use App\Models\RatingRequest;
-use App\Support\NotificationTemplateService;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Enum;
@@ -18,6 +17,8 @@ use Inertia\Inertia;
 
 class InventoryOrderController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -27,7 +28,7 @@ class InventoryOrderController extends Controller
 
         return Inertia::render('InventoryOrders/Index', [
             'record' => InventoryOrderResource::collection(
-                InventoryOrder::query()
+                InventoryOrder::forLaboratory($this->laboratoryAccess->activeLabId())
                     ->with('supplier')
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('name', 'like', "%{$search}%");
@@ -85,7 +86,9 @@ class InventoryOrderController extends Controller
 
         // DB::transaction(function () use ($request): void {
         DB::transaction(function () use ($request): void {
-            $order = InventoryOrder::create($request->safe()->except(['items']));
+            $order = InventoryOrder::create($request->safe()->except(['items']) + [
+                'lab_id' => $this->laboratoryAccess->activeLabId(),
+            ]);
 
             foreach (collect($request->safe()->only(['items']))->first() as $item) {
 
@@ -120,9 +123,9 @@ class InventoryOrderController extends Controller
     {
         return Inertia::render('InventoryOrders/Show', [
             'record' => InventoryOrderResource::make(
-                InventoryOrder::query()
+                InventoryOrder::forLaboratory($this->laboratoryAccess->activeLabId())
                     ->with('user', 'items')
-                    ->find($id)
+                    ->findOrFail($id)
             ),
             'steps' => collect(InventoryOrderTrackingStatus::cases())->map(fn ($item, $index) => [
                 'id' => $index + 1,
@@ -142,7 +145,7 @@ class InventoryOrderController extends Controller
         abort_if(! auth()->user()->can('edit_iorders'), 403, '');
 
         // Find the record
-        $record = InventoryOrder::with('supplier', 'items')->findOrFail($id);
+        $record = InventoryOrder::forLaboratory($this->laboratoryAccess->activeLabId())->with('supplier', 'items')->findOrFail($id);
 
         // Return Inertia View with record data
         return Inertia::render('InventoryOrders/Edit', [
@@ -184,7 +187,7 @@ class InventoryOrderController extends Controller
 
         DB::transaction(function () use ($request, $id): void {
 
-            $record = tap(InventoryOrder::findOrFail($id), function ($record) use ($request) {
+            $record = tap(InventoryOrder::forLaboratory($this->laboratoryAccess->activeLabId())->findOrFail($id), function ($record) use ($request) {
 
                 $record->update($request->safe()->except(['items']));
 
@@ -228,7 +231,7 @@ class InventoryOrderController extends Controller
             'recordIds' => ['required', 'array'],
         ]);
         // Find and delete the record
-        foreach (InventoryOrder::withTrashed()->findOrFail(request('recordIds')) as $record) {
+        foreach (InventoryOrder::forLaboratory($this->laboratoryAccess->activeLabId())->withTrashed()->findOrFail(request('recordIds')) as $record) {
             $record->delete();
         }
 
@@ -251,7 +254,7 @@ class InventoryOrderController extends Controller
             'recordIds' => ['required', 'array'],
         ]);
         // Find and restore the record
-        foreach (InventoryOrder::withTrashed()->findOrFail(request('recordIds')) as $record) {
+        foreach (InventoryOrder::forLaboratory($this->laboratoryAccess->activeLabId())->withTrashed()->findOrFail(request('recordIds')) as $record) {
             $record->restore();
         }
 
@@ -263,34 +266,6 @@ class InventoryOrderController extends Controller
         ]);
     }
 
-    public function completeOrder($orderId, NotificationTemplateService $templates)
-    {
-        $order = InventoryOrder::find($orderId);
-
-        // Complete the order (your business logic)
-        $order->status = 'completed';
-        $order->save();
-
-        // Create a rating request for the user
-        $ratingRequest = RatingRequest::create([
-            'user_id' => $order->user_id,
-            'rateable_type' => 'order',  // Specify type as 'order'
-            'rateable_id' => $order->id,
-            'status' => 'pending',
-        ]);
-
-        $templates->notify([$order->user], 'quality.rating.requested', [
-            'rateable_type' => $ratingRequest->rateable_type,
-            'rateable_id' => $ratingRequest->rateable_id,
-            'document_url' => route('rating.create', [
-                'rateableType' => $ratingRequest->rateable_type,
-                'rateableId' => $ratingRequest->rateable_id,
-            ]),
-        ]);
-
-        return response()->json(['message' => 'Pedido concluído e pedido de avaliação enviado.']);
-    }
-
     public function getInventoryOrder()
     {
         $data = [];
@@ -300,7 +275,9 @@ class InventoryOrderController extends Controller
 
             $data = DB::table('i_orders')
                 ->select('i_orders.*')
-                ->where('date', 'LIKE', "%$search%")
+                ->where('lab_id', $this->laboratoryAccess->activeLabId())
+                ->whereNull('deleted_at')
+                ->whereRaw('CAST(i_orders.date AS TEXT) ILIKE ?', ['%'.$search.'%'])
                 ->get();
         }
 
@@ -318,7 +295,7 @@ class InventoryOrderController extends Controller
             ],
         ]);
 
-        $order = InventoryOrder::findOrFail($orderId);
+        $order = InventoryOrder::forLaboratory($this->laboratoryAccess->activeLabId())->findOrFail($orderId);
 
         $order->status = $validated['status'];
         $order->save();
@@ -330,16 +307,6 @@ class InventoryOrderController extends Controller
         }
 
         broadcast(new InventoryOrderUpdatedEvent($order));
-
-        // Create a rating request for the user
-        // $ratingRequest = RatingRequest::create([
-        //     'user_id' => $order->user_id,
-        //     'rateable_type' => 'order',  // Specify type as 'order'
-        //     'rateable_id' => $order->id,
-        //     'status' => 'pending',
-        // ]);
-
-        // return redirect()->route('iorders.show', $order->id);
 
         return redirect()->back()->with([
             'toast' => [

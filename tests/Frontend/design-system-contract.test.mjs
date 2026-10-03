@@ -62,7 +62,7 @@ const slideOverMenuSource = readFileSync(new URL('../../resources/js/Shared/Navi
 const componentMenuItemSource = readFileSync(new URL('../../resources/js/Components/menu-item.vue', import.meta.url), 'utf8')
 const quickStatsSource = readFileSync(new URL('../../resources/js/Components/quick-stats.vue', import.meta.url), 'utf8')
 const quickMenuSource = readFileSync(new URL('../../resources/js/Components/quick-menu.vue', import.meta.url), 'utf8')
-const dashboardSource = readFileSync(new URL('../../resources/js/Pages/Dashboard.vue', import.meta.url), 'utf8')
+const workbenchSource = readFileSync(new URL('../../resources/js/Pages/LaboratoryWorkbench.vue', import.meta.url), 'utf8')
 const metricsIndexSource = readFileSync(new URL('../../resources/js/Pages/Metrics/Index.vue', import.meta.url), 'utf8')
 const systemActivitySource = readFileSync(new URL('../../resources/js/Pages/SystemActivity/Index.vue', import.meta.url), 'utf8')
 const qmsIndexSource = readFileSync(new URL('../../resources/js/Pages/QMS/Index.vue', import.meta.url), 'utf8')
@@ -301,9 +301,7 @@ const settingsFieldSource = readFileSync(new URL('../../resources/js/Components/
 const directCollectionsIndexSource = readFileSync(new URL('../../resources/js/Pages/DirectCollections/Index.vue', import.meta.url), 'utf8')
 const directCollectionsShowSource = readFileSync(new URL('../../resources/js/Pages/DirectCollections/Show.vue', import.meta.url), 'utf8')
 const programmedCollectionsIndexSource = readFileSync(new URL('../../resources/js/Pages/ProgrammedCollections/Index.vue', import.meta.url), 'utf8')
-const directCollectionsCreateSource = readFileSync(new URL('../../resources/js/Pages/DirectCollections/Create.vue', import.meta.url), 'utf8')
 const directCollectionsEditSource = readFileSync(new URL('../../resources/js/Pages/DirectCollections/Edit.vue', import.meta.url), 'utf8')
-const programmedCollectionsCreateSource = readFileSync(new URL('../../resources/js/Pages/ProgrammedCollections/Create.vue', import.meta.url), 'utf8')
 const programmedCollectionsEditSource = readFileSync(new URL('../../resources/js/Pages/ProgrammedCollections/Edit.vue', import.meta.url), 'utf8')
 const collectionAccessionFormSource = readFileSync(new URL('../../resources/js/Components/collections/CollectionAccessionForm.vue', import.meta.url), 'utf8')
 const supplierAssessmentsIndexSource = readFileSync(new URL('../../resources/js/Pages/SupplierAssessments/Index.vue', import.meta.url), 'utf8')
@@ -426,9 +424,8 @@ test('defines a semantic product design contract for shared application surfaces
     assert.match(appCss, new RegExp(className.replace('.', '\\.')))
   }
 
-  assert.match(appCss, /family=ibm-plex-sans:400,500,600,700/)
-  assert.match(appCss, /--font-sans: 'IBM Plex Sans'/)
-  assert.doesNotMatch(appCss, /Manrope/)
+  assert.match(appCss, /family=dm-sans:400,500,600,700/)
+  assert.match(appCss, /--font-sans: 'DM Sans'/)
   assert.doesNotMatch(appCss, /#143d37|#d9b05f|#fffaf0|#ded3bf|#1f7a68/)
   assert.doesNotMatch(appCss, /radial-gradient\(circle/)
 })
@@ -938,7 +935,7 @@ test('VAP inventory-value report uses reconciliation and financial-control surfa
   assert.match(vapInventoryValueReportSource, /<apexchart type="donut"/)
   assert.match(vapInventoryValueReportSource, /const summaryCards = computed/)
   assert.match(vapInventoryValueReportSource, /const activeFilterPills = computed/)
-  assert.match(vapInventoryValueReportSource, /const valuationUnitPrice = 100/)
+  assert.match(vapInventoryValueReportSource, /function unitCost\(position\)/)
   assert.match(vapInventoryValueReportSource, /sort_by: 'qty_available'/)
   assert.match(vapInventoryValueReportSource, /router\.get\(route\('vap-inventory\.reports\.inventory-value'/)
   assert.match(vapInventoryValueReportSource, /router\.post\(route\('vap-inventory\.reports\.export'/)
@@ -1207,6 +1204,19 @@ test('VAP label show and print workflow use semantic surfaces and modal confirma
   assert.doesNotMatch(vapLabelsShowSource, /border-\[#ded3bf\]|bg-\[#fffdf7\]|text-\[#15231f\]/)
 })
 
+test('Label Studio keeps lab assignment fixed and system presets read-only', () => {
+  assert.match(vapLabelsCreateSource, /labsList\[0\]\?\.name/)
+  assert.doesNotMatch(vapLabelsCreateSource, /v-model="form\.lab_id"/)
+  assert.match(vapLabelTemplatesIndexSource, /Modelo do sistema/)
+  assert.match(vapLabelTemplatesIndexSource, /v-if="!template\.is_system"/)
+  assert.match(vapLabelTemplateFormSource, /onMounted\(\(\) =>/)
+  assert.match(vapLabelTemplateFormSource, /labs\[0\]\?\.name/)
+  assert.match(vapLabelTemplateFormSource, /role="status"/)
+  assert.match(vapLabelTemplateFormSource, /role="alert"/)
+  assert.match(vapLabelTemplateFormSource, /Tentar novamente/)
+  assert.doesNotMatch(vapLabelTemplateFormSource, /v-model="selectedLab"/)
+})
+
 test('VAP label template index uses shared surfaces and safe destructive actions', () => {
   assert.match(vapLabelTemplatesIndexSource, /<ModuleHero/)
   assert.match(vapLabelTemplatesIndexSource, /<BaseInput/)
@@ -1369,22 +1379,26 @@ test('commercial document create screens use the compact LIMS form language', ()
 })
 
 test('commercial document edit screens avoid legacy motion and native field styling', () => {
+  const financialObservationSource = readFileSync(new URL('../../resources/js/Components/documents/FinancialObservationForm.vue', import.meta.url), 'utf8')
   const commercialEditScreens = [
-    invoicesEditSource,
     quotesEditSource,
-    creditNotesEditSource,
-    receiptsEditSource,
+    financialObservationSource,
   ]
+
+  for (const source of [invoicesEditSource, creditNotesEditSource, receiptsEditSource]) {
+    assert.match(source, /<FinancialObservationForm/)
+    assert.doesNotMatch(source, /v-model|items|total|customer_id/)
+  }
 
   for (const source of commercialEditScreens) {
     assert.match(source, /class="ds-field/)
     assert.match(source, /class="ds-field-label"/)
     assert.match(source, /class="ds-button ds-button-primary/)
-    assert.match(source, /class="ds-table-action/)
     assert.doesNotMatch(source, /v-motion|focus:ring-ft-orange|focus:border-ft-orange|focus:border-indigo|focus:ring-orange|focus:ring-blue/)
     assert.doesNotMatch(source, /Registrar Item|>Registrar<|observações sobre o artigo|Itens associados à factura:/)
     assert.doesNotMatch(source, /class="block w-full rounded-md border-0 py-1\.5|class="block w-full border-0/)
   }
+  assert.match(quotesEditSource, /class="ds-table-action/)
 })
 
 test('quality certificate release workflow uses controlled dossier surfaces', () => {
@@ -1556,15 +1570,19 @@ test('portal and dashboard shortcuts share the LIMS product surfaces', () => {
   assert.doesNotMatch(quickMenuSource, legacyWarmPalettePattern)
 })
 
-test('executive dashboard uses dense decision and register surfaces', () => {
-  assert.match(dashboardSource, /Visão geral do laboratório/)
-  assert.match(dashboardSource, /class="ds-panel overflow-hidden"/)
-  assert.match(dashboardSource, /class="ds-table-shell"/)
-  assert.match(dashboardSource, /Fornecedores sob observação/)
-  assert.match(dashboardSource, /Necessidades à espera de compra/)
-  assert.match(dashboardSource, /Recepções com desvio formal/)
-  assert.match(dashboardSource, /ds-badge ds-badge-danger/)
-  assert.doesNotMatch(dashboardSource, /commercialDocumentThemeClasses|class="card|rounded-3xl|rounded-2xl|rounded-\[/)
+test('laboratory workbench shows only the active laboratory operation', () => {
+  assert.match(workbenchSource, /O laboratório, em foco\./)
+  assert.match(workbenchSource, /Apenas \{\{ lab\.name \}\}/)
+  assert.match(workbenchSource, /Na sua bancada/)
+  assert.match(workbenchSource, /Encontrar materiais na rede/)
+  assert.match(workbenchSource, /Nenhum dado de outros laboratórios é mostrado/)
+  assert.doesNotMatch(workbenchSource, /dashboard\.export|Recebível em aberto|Fornecedores sob observação/)
+})
+
+test('shared customer dossier labels laboratory data without implying unavailable finance is zero', () => {
+  assert.match(customersShowSource, /Identidade e locais partilhados; execução visível apenas para o laboratório activo/)
+  assert.match(customersShowSource, /Facturas, pedidos do portal e outros documentos sem titularidade laboratorial definida não são apresentados aqui/)
+  assert.doesNotMatch(customersShowSource, /Saldo em aberto|Sem facturas em aberto|Sem pedidos recentes/)
 })
 
 test('laboratory metrics use a period-filtered throughput control surface', () => {
@@ -1920,7 +1938,7 @@ test('staff dossier uses controlled identity, access, and competence sections', 
   assert.match(usersEditSource, /<ToggleField/)
   assert.match(usersEditSource, /<ConfirmDialog/)
   assert.match(usersEditSource, /confirmationAction\.value = 'discard'/)
-  assert.match(usersEditSource, /form\.put\(route\('users\.update', \{ user: form\.id \}\)/)
+  assert.match(usersEditSource, /form\.transform\(\(data\) => staffAccountPayload\(data, props\.accountCapabilities\)\)\.put\(route\('users\.update', \{ user: form\.id \}\)/)
   assert.match(usersEditSource, /passwordForm\.put\(route\('users\.setpass', \{ user: form\.id \}\)/)
   assert.match(usersEditSource, /route\('users\.setsignature'\)/)
   assert.match(usersEditSource, /route\('users\.unsetsignature'\)/)
@@ -1991,7 +2009,8 @@ test('occurrence register uses a triage-first table and compact batch import', (
   assert.match(occurrencesIndexSource, /:slide-over-edit="false"/)
   assert.match(occurrencesIndexSource, /route\('occurrences\.show'/)
   assert.match(occurrencesIndexSource, /implementation_date_overdue/)
-  assert.match(occurrenceImportFormSource, /useForm\("OccurrenceImport"/)
+  assert.match(occurrenceImportFormSource, /useForm\(\{/)
+  assert.doesNotMatch(occurrenceImportFormSource, /useForm\("OccurrenceImport"/)
   assert.match(occurrenceImportFormSource, /accept="\.csv,text\/csv"/)
   assert.match(occurrenceImportFormSource, /forceFormData: true/)
 })
@@ -2136,11 +2155,13 @@ test('customer site registry uses controlled operational directory and dossier s
   assert.match(warehousesIndexSource, /show-customer-selector/)
   assert.match(warehousesIndexSource, /hasPermission\('add_warehouses'\)/)
   assert.match(warehousesIndexSource, /function executeBulkAction/)
-  assert.match(warehousesShowSource, /Saúde da conta/)
-  assert.match(warehousesShowSource, /Execução operacional/)
+  assert.match(warehousesShowSource, /Amostras recentes/)
+  assert.match(warehousesShowSource, /Âmbito deste local/)
+  assert.match(warehousesShowSource, /Deste laboratório/)
   assert.match(warehousesShowSource, /Acesso ao portal/)
   assert.match(warehousesShowSource, /function sendPasswordResetEmail/)
-  assert.match(warehousesShowSource, /function resolveActivityIcon/)
+  assert.match(warehousesShowSource, /passwordStrengthScore\.value === 4/)
+  assert.doesNotMatch(warehousesShowSource, /props\.stats|props\.charts|Saúde da conta|Resumo financeiro/)
   assert.match(customerSiteEditorSource, /async function loadCustomers/)
   assert.match(customerSiteEditorSource, /emit\("saved"\)/)
 })
@@ -2312,16 +2333,14 @@ test('collection queues use accessioning-first operational worklists', () => {
   assert.doesNotMatch(programmedCollectionsIndexSource, /onMounted|changeCollectionCategory\(\)/)
 })
 
-test('collection create and edit routes share one chain-of-custody intake form', () => {
-  assert.match(directCollectionsCreateSource, /<CollectionAccessionForm kind="direct"/)
+test('collection corrections retain chain of custody without duplicate intake forms', () => {
+  assert.equal(existsSync(new URL('../../resources/js/Pages/DirectCollections/Create.vue', import.meta.url)), false)
+  assert.equal(existsSync(new URL('../../resources/js/Pages/ProgrammedCollections/Create.vue', import.meta.url)), false)
   assert.match(directCollectionsEditSource, /<CollectionAccessionForm kind="direct" :record="record"/)
-  assert.match(programmedCollectionsCreateSource, /<CollectionAccessionForm kind="programmed"/)
   assert.match(programmedCollectionsEditSource, /<CollectionAccessionForm kind="programmed" :record="record"/)
 
   for (const source of [
-    directCollectionsCreateSource,
     directCollectionsEditSource,
-    programmedCollectionsCreateSource,
     programmedCollectionsEditSource,
     collectionAccessionFormSource,
   ]) {
@@ -2332,9 +2351,9 @@ test('collection create and edit routes share one chain-of-custody intake form',
   assert.match(collectionAccessionFormSource, /Contexto da colheita/)
   assert.match(collectionAccessionFormSource, /Amostras e cadeia de custódia/)
   assert.match(collectionAccessionFormSource, /Rastreabilidade do lote/)
-  assert.match(collectionAccessionFormSource, /form\.products\.length < 5/)
   assert.match(collectionAccessionFormSource, /form\.put\(route/)
-  assert.match(collectionAccessionFormSource, /form\.post\(route/)
+  assert.match(collectionAccessionFormSource, /if \(form\.processing \|\| !form\.isDirty\)/)
+  assert.doesNotMatch(collectionAccessionFormSource, /form\.post|form\.products|isEditing|addProduct|removeProduct/)
   assert.doesNotMatch(collectionAccessionFormSource, /<ConfirmDialog|<confirm-dialog/)
 })
 
@@ -2503,7 +2522,12 @@ test('proficiency workflows use compact LIMS monitoring and evidence surfaces', 
   assert.match(proficiencyTestsIndexSource, /class="ds-modal-panel/)
   assert.match(proficiencyTestsIndexSource, /class="ds-table-row"/)
   assert.match(proficiencyTestsIndexSource, /form\.post\(route\('proficiency_tests\.store'/)
+  assert.match(proficiencyTestsIndexSource, /:aria-pressed="filters\.filter === 'trashed'"/)
+  assert.match(proficiencyTestsIndexSource, /filters\.filter = filters\.filter === 'trashed' \? '' : 'trashed'/)
+  assert.match(proficiencyTestsIndexSource, /router\.post\(item\.links\.delete_path, \{ recordIds: \[item\.id\] \}/)
+  assert.match(proficiencyTestsIndexSource, /router\.post\(item\.links\.restore_path, \{ recordIds: \[item\.id\] \}/)
   assert.match(proficiencyTestsShowSource, /class="ds-table-shell mt-4 overflow-x-auto"/)
+  assert.match(proficiencyTestsShowSource, /<fieldset :disabled="!canEdit"/)
   assert.match(proficiencyTestsShowSource, /form\.put\(route\('proficiency_tests\.results\.update'/)
   assert.match(proficiencyTestsShowSource, /importForm\.post\(route\('proficiency_tests\.results\.import'/)
 })
@@ -2536,7 +2560,7 @@ test('report studio and document manager use focused specialist workspaces', () 
   assert.match(fileManagerListSource, /class="ds-data-table min-w-full"/)
   assert.match(fileManagerListSource, /role="tablist" aria-label="Estado documental"/)
   assert.doesNotMatch(fileManagerListSource, /bg-gradient-to-r from-blue-900 to-blue-800|rounded-\[2rem\]/)
-  assert.match(fileManagerStoreSource, /files\.value = loadedFiles\.map\(\(file\) => mapFileRecord\(file\)\)\s+filesLoaded\.value = true/)
+  assert.match(fileManagerStoreSource, /files\.value = loadedFiles\.map\(\(file\) => mapFileRecord\(file\)\)\.filter\(belongsToActiveLab\)\s+filesLoaded\.value = true/)
   assert.match(fileManagerStoreSource, /notifications\.folder_created/)
 })
 
@@ -2553,7 +2577,10 @@ test('trade certificate indexes share one controlled border-workflow register', 
   assert.match(tradeCertificateRegisterSource, /<RecordsTable/)
   assert.match(tradeCertificateRegisterSource, /<ConfirmDialog/)
   assert.match(tradeCertificateRegisterSource, /hasPermission\(`add_\$\{config\.permissionKey\}`\)/)
-  assert.match(tradeCertificateRegisterSource, /route\(`\$\{config\.value\.routePrefix\}\.\$\{selectedAction\.value\}`\)/)
+  assert.match(tradeCertificateRegisterSource, /destroyUrl: \(\) => route\(`\$\{config\.value\.routePrefix\}\.destroy`\)/)
+  assert.match(tradeCertificateRegisterSource, /restoreUrl: \(\) => route\(`\$\{config\.value\.routePrefix\}\.restore`\)/)
+  assert.match(tradeCertificateRegisterSource, /:archive-handler="archiveRecord"/)
+  assert.match(tradeCertificateRegisterSource, /<ArchiveMutationFeedback/)
 })
 
 test('trade certificate details share one governed lifecycle surface', () => {
@@ -2594,7 +2621,8 @@ test('trade certificate editors share one sectioned border-control workflow', ()
   assert.match(tradeCertificateFormSource, /Partes comerciais/)
   assert.match(tradeCertificateFormSource, /Percurso logístico/)
   assert.match(tradeCertificateFormSource, /Produtos certificados/)
-  assert.match(tradeCertificateFormSource, /form\.transform/)
+  assert.doesNotMatch(tradeCertificateFormSource, /form\.transform|form\.invoice_id|form\.invoiced|loadInvoices/)
+  assert.match(tradeCertificateFormSource, /Estado de facturação/)
   assert.match(tradeCertificateFormSource, /form\.put\(route/)
   assert.match(tradeCertificateFormSource, /form\.post\(route/)
   assert.doesNotMatch(tradeCertificateFormSource, /type="file"/)
@@ -2715,6 +2743,8 @@ test('notification administration uses one traceable operational workflow', () =
   assert.match(notificationIndexSource, /<Pagination v-bind="notifications"/)
   assert.match(notificationCreateSource, /form\.post\(route\('admin\.notifications\.store'/)
   assert.match(notificationCreateSource, /Pré-visualização/)
+  assert.match(notificationCreateSource, /Utilizadores deste laboratório/)
+  assert.doesNotMatch(notificationCreateSource, /notification-expiry|expires_at|scheduled_at/)
   assert.doesNotMatch(notificationCreateSource, /schedule_send = !form\.schedule_send/)
   assert.match(notificationShowSource, /<ConfirmDialog/)
   assert.match(notificationShowSource, /route\('notifications\.delete'/)
@@ -2983,7 +3013,7 @@ test('public landing presents the LIMS as a professional laboratory control surf
 })
 
 test('application UI consistently inherits the laboratory workspace typeface', () => {
-  assert.match(appCss, /--font-sans: 'IBM Plex Sans'/)
+  assert.match(appCss, /--font-sans: 'DM Sans'/)
   assert.doesNotMatch(appBladeSource, /family=manrope/)
   assert.match(publicLandingSource, /font-family: var\(--font-sans\)/)
   assert.doesNotMatch(publicLandingSource, /fonts\.bunny\.net\/css\?family=manrope|font-family: "Manrope"/)

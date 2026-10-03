@@ -180,6 +180,7 @@
                 <span :class="categoryBadgeClass(template.category)">{{ categoryLabel(template.category) }}</span>
                 <span :class="statusBadgeClass(template.is_active)">{{ template.is_active ? $t('gestlab.general.labels.vap_labels.templates.active') : $t('gestlab.general.labels.vap_labels.templates.inactive') }}</span>
                 <span v-if="template.is_featured" class="ds-badge ds-badge-warning">{{ $t('gestlab.general.labels.vap_labels.templates.featured') }}</span>
+                <span v-if="template.is_system" class="ds-chip">Modelo do sistema</span>
               </div>
               <p class="mt-1 line-clamp-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ template.description || $t('gestlab.general.labels.vap_labels.templates.no_description') }}</p>
               <p class="mt-2 text-xs font-semibold text-[var(--ds-text-soft)]">
@@ -193,10 +194,10 @@
                 <PlusCircleIcon class="h-4 w-4" />
                 {{ $t('gestlab.general.labels.vap_labels.buttons.use_template') }}
               </Link>
-              <Link :href="route('vap_labels.label-templates.edit', template.id)" class="ds-table-action" :title="$t('gestlab.general.labels.vap_labels.buttons.edit')"><PencilIcon class="h-5 w-5" /></Link>
-              <button type="button" class="ds-table-action" :title="template.is_featured ? $t('gestlab.general.labels.vap_labels.buttons.remove_featured') : $t('gestlab.general.labels.vap_labels.buttons.mark_featured')" @click="toggleFeatured(template)"><StarIcon :class="['h-5 w-5', template.is_featured ? 'fill-amber-500 text-amber-500' : '']" /></button>
-              <button type="button" class="ds-table-action" :title="template.is_active ? $t('gestlab.general.labels.vap_labels.buttons.deactivate') : $t('gestlab.general.labels.vap_labels.buttons.activate')" @click="toggleStatus(template)"><PowerIcon class="h-5 w-5" /></button>
-              <button type="button" class="ds-table-action ds-table-action-danger" :title="$t('gestlab.general.labels.vap_labels.buttons.delete')" @click="confirmDelete(template)"><TrashIcon class="h-5 w-5" /></button>
+              <Link v-if="!template.is_system" :href="route('vap_labels.label-templates.edit', template.id)" class="ds-table-action" :title="$t('gestlab.general.labels.vap_labels.buttons.edit')"><PencilIcon class="h-5 w-5" /></Link>
+              <button v-if="!template.is_system" type="button" class="ds-table-action" :title="template.is_featured ? $t('gestlab.general.labels.vap_labels.buttons.remove_featured') : $t('gestlab.general.labels.vap_labels.buttons.mark_featured')" @click="toggleFeatured(template)"><StarIcon :class="['h-5 w-5', template.is_featured ? 'fill-amber-500 text-amber-500' : '']" /></button>
+              <button v-if="!template.is_system" type="button" class="ds-table-action" :title="template.is_active ? $t('gestlab.general.labels.vap_labels.buttons.deactivate') : $t('gestlab.general.labels.vap_labels.buttons.activate')" @click="toggleStatus(template)"><PowerIcon class="h-5 w-5" /></button>
+              <button v-if="!template.is_system" type="button" class="ds-table-action ds-table-action-danger" :title="$t('gestlab.general.labels.vap_labels.buttons.delete')" @click="confirmDelete(template)"><TrashIcon class="h-5 w-5" /></button>
             </div>
           </article>
         </div>

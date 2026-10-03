@@ -2,19 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\DownloadPublicProposalPdf;
+use App\Actions\RecordPublicProposalView;
+use App\Http\Resources\PublicProposalResource;
 use App\Models\VAPProposal;
 use App\Models\VAPProposalTemplate;
+use App\Services\PublicProposalAccess;
 use App\Settings\GeneralSettings;
-use App\Support\ReportStudioPdfBuilder;
-use App\Support\ReportStudioPdfRenderer;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Response;
 use Inertia\Inertia;
 
 class VAPPublicProposalController extends Controller
 {
-    public function show($hash, GeneralSettings $settings)
+    public function show(string $hash, GeneralSettings $settings, RecordPublicProposalView $view, PublicProposalAccess $access): \Inertia\Response
     {
-        $proposal = VAPProposal::with([
+        $proposal = $view->execute($hash, request()->ip())->load([
             'customer',
             'department',
             'warehouse',
@@ -23,24 +25,16 @@ class VAPPublicProposalController extends Controller
             'items.unit',
             'complianceAgreement',
             'template',
-        ])->where('unique_hash', $hash)
-            ->firstOrFail();
-
-        // Track view
-        if ($proposal->status === 'SENT') {
-            $proposal->update(['status' => 'VIEWED']);
-            activity()
-                ->performedOn($proposal)
-                ->withProperties(['client_ip' => request()->ip()])
-                ->log('viewed_by_client');
-        }
+        ]);
 
         $parsedTemplateContent = $proposal->template?->content
             ? VAPProposalTemplate::parseContent($proposal->template->content, $proposal, $settings)
             : null;
+        $publicProposal = PublicProposalResource::make($proposal)->resolve();
+        $access->current($proposal);
 
         return Inertia::render('Public/ProposalShow', [
-            'proposal' => $proposal,
+            'proposal' => $publicProposal,
             'parsedTemplateContent' => $parsedTemplateContent,
             'isExpired' => $proposal->expiry_date && now()->gt($proposal->expiry_date),
             'company' => [
@@ -63,79 +57,25 @@ class VAPPublicProposalController extends Controller
         ]);
     }
 
-    public function thankyou(VAPProposal $proposal)
+    public function thankyou(VAPProposal $proposal, PublicProposalAccess $access): \Inertia\Response
     {
+        $proposal = $access->current($proposal);
+
         return Inertia::render('Public/ThankYou', [
             'proposal' => $proposal->only(['proposal_number', 'status']),
+            'proposalUrl' => route('vap-proposals.public.show', $proposal->unique_hash),
         ]);
     }
 
-    public function downloadPdf2($hash)
+    public function downloadPdf(string $hash, DownloadPublicProposalPdf $download): Response
     {
-        $proposal = VAPProposal::where('unique_hash', $hash)->firstOrFail();
+        $rendered = $download->execute($hash);
 
-        if (! $proposal->file_path || ! Storage::exists($proposal->file_path)) {
-            abort(404, 'PDF da proposta não encontrado.');
-        }
-
-        return Storage::download($proposal->file_path);
-    }
-
-    public function downloadPdf(
-        $hash,
-        ReportStudioPdfBuilder $reportStudioPdfBuilder,
-        ReportStudioPdfRenderer $reportStudioPdfRenderer,
-        GeneralSettings $settings
-    ) {
-
-        $proposal = VAPProposal::where('unique_hash', $hash)->firstOrFail();
-
-        $proposal->load([
-            'customer',
-            'department',
-            'warehouse',
-            'user',
-            'template',
-            'items.standard',
-            'items.unit',
-            'complianceAgreement',
-        ]);
-
-        // Add days_until_expiry to proposal
-        $proposal->days_until_expiry = $proposal->expiry_date
-            ? now()->diffInDays($proposal->expiry_date, false)
-            : null;
-
-        // Parse template content if needed
-        $parsedContent = null;
-        if ($proposal->template && $proposal->template->content) {
-            $parsedContent = VAPProposalTemplate::parseContent(
-                $proposal->template->content,
-                $proposal,
-                $settings
-            );
-        }
-
-        $studioPayload = $reportStudioPdfBuilder->buildProposalPayload(
-            $proposal,
-            $parsedContent ?? '<p>Sem conteúdo configurado para esta proposta.</p>',
-            $settings
-        );
-
-        $filename = str($proposal->proposal_number)->slug('-')->prepend('Proposta-')->append('.pdf')->value();
-        $renderedPdf = $reportStudioPdfRenderer->renderDocument('proposal', $studioPayload, $filename);
-
-        // Save to storage
-        $path = "vap-proposals/{$proposal->id}/{$filename}";
-        Storage::put($path, $renderedPdf['content']);
-
-        // Update proposal with file path
-        $proposal->update(['file_path' => $path]);
-
-        return response($renderedPdf['content'], 200, [
+        return response($rendered['content'], 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="'.$filename.'"',
-            'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
+            'Content-Disposition' => 'inline; filename="'.$rendered['filename'].'"',
+            'X-Report-Studio-Renderer' => $rendered['renderer'],
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 }

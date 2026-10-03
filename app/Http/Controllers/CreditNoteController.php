@@ -2,20 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SetBillingDocumentsArchived;
+use App\Actions\UpdateFinancialDocumentObservation;
 use App\Http\Requests\CreditNoteRequest;
+use App\Http\Requests\FinancialDocumentObservationRequest;
+use App\Http\Requests\SetBillingDocumentsArchivedRequest;
 use App\Http\Resources\CreditNoteResource;
+use App\Http\Resources\FinancialObservationResource;
 use App\Models\CollectionProduct;
 use App\Models\CreditNote;
 use App\Models\CreditNoteItem;
 use App\Models\DiscountCategory;
 use App\Models\Invoice;
+use App\Services\FinancialDocumentAssembly;
 use App\Settings\GeneralSettings;
 use App\Support\ReportStudioPdfBuilder;
 use App\Support\ReportStudioPdfRenderer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CreditNoteController extends Controller
 {
@@ -210,7 +218,7 @@ class CreditNoteController extends Controller
                 $obj->discount_percentage = $item['discount_percentage'];
                 $obj->obs = $item['obs'];
 
-                $obj->save();
+                abort_unless(app(FinancialDocumentAssembly::class)->withLines($note, fn (): bool => $obj->save()), 409);
 
             }
 
@@ -220,9 +228,9 @@ class CreditNoteController extends Controller
                 $invoice = Invoice::find($note->invoice_id);
 
                 if ($invoice) {
-                    $invoice->update([
+                    app(FinancialDocumentAssembly::class)->withInvoiceState($invoice, ['status_code'], fn (): bool => $invoice->update([
                         'status_code' => Invoice::STATUS_CODE_CANCELED,
-                    ]);
+                    ]));
 
                     // Find Invoice Items IDs
                     $IDs = $invoice->items->pluck('itemable_id')->toArray();
@@ -270,112 +278,21 @@ class CreditNoteController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(int $id): Response
     {
-        abort_if(! auth()->user()->can('edit_credit_notes'), 403, '');
+        abort_unless(auth()->user()->can('edit_credit_notes'), 403);
 
-        // Find the record
-        $record = CreditNote::with('items.itemable.code', 'customer', 'warehouse', 'user', 'invoice')->findOrFail($id);
-
-        // Return Inertia View with record data
         return Inertia::render('CreditNotes/Edit', [
-
-            'record' => [
-                'id' => $record->id,
-                'date' => $record->date,
-                'internal_ref' => $record->internal_ref,
-                'reason' => $record->reason,
-                'note_no' => $record->note_no,
-                'obs' => $record->obs,
-                'status' => $record->status,
-                'use_matrix_price' => $record->use_matrix_price,
-                'is_service' => $record->is_service,
-                'is_original' => $record->is_original,
-                'exported_saft' => $record->exported_saft,
-                'invoice_id' => [
-                    'value' => $record->invoice_id,
-                    'label' => $record->invoice->inv_no,
-                ],
-                'customer_id' => [
-                    'value' => $record->customer_id,
-                    'label' => $record->customer->name,
-                ],
-                'user_id' => [
-                    'value' => $record->user_id,
-                    'label' => $record->user->name,
-                ],
-                'warehouse_id' => [
-                    'value' => $record?->warehouse?->id,
-                    'label' => $record?->warehouse?->address,
-                ],
-                'items' => collect($record->items)->map(function ($item) {
-                    return [
-                        'id' => $item->id ?? null,
-                        'invoice_id' => [
-                            'value' => $item->invoice_id ?? null,
-                            'label' => $item->invoice?->inv_no,
-                        ],
-                        'unit_id' => [
-                            'value' => $item->unit_id,
-                            'label' => $item->unit->code,
-                        ],
-                        'exemption_id' => $item->exemption_id ?? null,
-                        'exemption_code' => $item->exemption_code ?? null,
-                        'discount_id' => $item->discount_id,
-                        'item_id' => [
-                            'value' => $item->item_id,
-                            'label' => $item->item_description,
-                            'price' => $item->unit_price + $item->discount_amount,
-                            'tax_id' => $item->tax_id,
-                            'charge_tax' => $item->charge_tax,
-                            'tax_percentage' => $item->tax_percentage,
-                            'exemption_id' => $item->exemption_id,
-                            'exemption_code' => $item->exemption_code,
-                        ],
-                        'item_description' => $item->item_description,
-                        'itemable_id' => [
-                            'value' => $item->itemable_id ?? '',
-                            'label' => $item->itemable?->code?->code ?? '',
-                        ],
-                        'itemable_type' => $item->itemable_type,
-                        'qty' => $item->qty ?? 1,
-                        'unit_price' => $item->unit_price,
-                        'tax_id' => $item->tax_id,
-                        'total' => $item->total,
-                        'discount_percentage' => $item->discount_percentage,
-                        'discount_amount' => $item->discount_id == 1 ? $item->discount_percentage : $item->discount_amount,
-                        'tax_percentage' => $item->tax_percentage,
-                        'tax_amount' => $item->tax_amount,
-                        'obs' => $item->obs,
-                        'charge_tax' => $item->charge_tax,
-                    ];
-                }),
-            ],
-            'discount_categories' => collect(DiscountCategory::all())->map(function ($item) {
-                return [
-                    'value' => $item->id,
-                    'label' => $item->symbol,
-                ];
-            }),
+            'record' => FinancialObservationResource::make(CreditNote::query()->findOrFail($id)),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(CreditNoteRequest $request, $id)
+    public function update(FinancialDocumentObservationRequest $request, int $id, UpdateFinancialDocumentObservation $correctObservation): RedirectResponse
     {
-        abort_if(! auth()->user()->can('edit_credit_notes'), 403, '');
-
-        DB::transaction(function () use ($request, $id): void {
-
-            tap(CreditNote::findOrFail($id), function ($record) use ($request) {
-
-                $record->update($request->validated());
-
-            });
-
-        });
+        $correctObservation->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'), CreditNote::class, $id, $request->validated('obs'));
 
         return redirect()->back()->with([
             'toast' => [
@@ -388,17 +305,10 @@ class CreditNoteController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy()
+    public function destroy(SetBillingDocumentsArchivedRequest $request, SetBillingDocumentsArchived $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('delete_credit_notes'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and delete the record
-        foreach (CreditNote::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        $action->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'),
+            CreditNote::class, $request->validated('recordIds'), true);
 
         return redirect()->back()->with([
             'toast' => [
@@ -411,17 +321,10 @@ class CreditNoteController extends Controller
     /**
      * restore the specified resource from storage.
      */
-    public function restore()
+    public function restore(SetBillingDocumentsArchivedRequest $request, SetBillingDocumentsArchived $action): RedirectResponse
     {
-        abort_if(! auth()->user()->can('restore_credit_notes'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array'],
-        ]);
-        // Find and restore the record
-        foreach (CreditNote::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        $action->execute($request->user()->id, (int) $request->attributes->get('proposal_laboratory_id'),
+            CreditNote::class, $request->validated('recordIds'), false);
 
         return redirect()->back()->with([
             'toast' => [
@@ -565,7 +468,7 @@ class CreditNoteController extends Controller
         $renderedPdf = app(ReportStudioPdfRenderer::class)->renderDocument('credit_note', $payload, $filename);
 
         if (request()->q) {
-            activity()->log('baixou o Nota de Crédito Nº '.$model->note_no);
+            activity()->performedOn($model)->log('baixou o Nota de Crédito Nº '.$model->note_no);
 
             return response($renderedPdf['content'], 200, [
                 'Content-Type' => 'application/pdf',
@@ -576,6 +479,7 @@ class CreditNoteController extends Controller
 
         if (! request()->q) {
             activity()
+                ->performedOn($model)
                 ->causedBy(auth()->user()->id)
                 ->log('visualizou o Nota de Crédito Nº '.$model->note_no);
 

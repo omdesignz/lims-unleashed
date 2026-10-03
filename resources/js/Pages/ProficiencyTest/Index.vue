@@ -13,6 +13,7 @@
           </div>
 
           <button
+            v-if="permissions.add"
             type="button"
             class="ds-button ds-button-primary"
             @click="openCreate"
@@ -58,13 +59,25 @@
           placeholder="Todos os estados"
         />
 
-        <button
-          type="button"
-          class="ds-button ds-button-secondary"
-          @click="clearFilters"
-        >
-          Limpar
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="ds-button"
+            :class="filters.filter === 'trashed' ? 'ds-button-primary' : 'ds-button-secondary'"
+            :aria-pressed="filters.filter === 'trashed'"
+            @click="toggleArchived"
+          >
+            <ArchiveBoxIcon class="h-4 w-4" />
+            Arquivados
+          </button>
+          <button
+            type="button"
+            class="ds-button ds-button-secondary"
+            @click="clearFilters"
+          >
+            Limpar
+          </button>
+        </div>
       </div>
     </section>
 
@@ -116,7 +129,8 @@
                       <BeakerIcon class="h-5 w-5" />
                     </span>
                     <div class="min-w-0">
-                      <Link :href="route('proficiency_tests.show', item.id)" class="truncate text-sm font-bold text-[var(--ds-text)] hover:text-[rgb(var(--primary-700-rgb))]">{{ item.name }}</Link>
+                      <Link v-if="!item.deleted" :href="route('proficiency_tests.show', item.id)" class="truncate text-sm font-bold text-[var(--ds-text)] hover:text-[rgb(var(--primary-700-rgb))]">{{ item.name }}</Link>
+                      <p v-else class="truncate text-sm font-bold text-[var(--ds-text)]">{{ item.name }}</p>
                       <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">{{ item.round_reference || 'Sem referência' }}</p>
                       <div class="mt-2 flex flex-wrap gap-2">
                         <span class="ds-badge ds-badge-neutral">{{ schemeLabel(item.scheme_type) }}</span>
@@ -141,10 +155,10 @@
                 </td>
                 <td class="ds-table-cell px-5 py-4">
                   <div class="flex justify-end gap-2">
-                    <Link :href="route('proficiency_tests.show', item.id)" class="ds-table-action">Abrir</Link>
-                    <button type="button" class="ds-table-action" @click="openEdit(item)">Editar</button>
+                    <Link v-if="!item.deleted" :href="route('proficiency_tests.show', item.id)" class="ds-table-action">Abrir</Link>
+                    <button v-if="permissions.edit && !item.deleted" type="button" class="ds-table-action" @click="openEdit(item)">Editar</button>
                     <button
-                      v-if="!item.deleted"
+                      v-if="permissions.delete && !item.deleted"
                       type="button"
                       class="ds-table-action ds-table-action-danger"
                       @click="destroy(item)"
@@ -152,7 +166,7 @@
                       Arquivar
                     </button>
                     <button
-                      v-else
+                      v-if="permissions.restore && item.deleted"
                       type="button"
                       class="ds-table-action"
                       @click="restore(item)"
@@ -197,10 +211,10 @@
               </div>
             </div>
             <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <Link :href="route('proficiency_tests.show', item.id)" class="ds-button ds-button-secondary">Abrir</Link>
-              <button type="button" class="ds-button ds-button-secondary" @click="openEdit(item)">Editar</button>
+              <Link v-if="!item.deleted" :href="route('proficiency_tests.show', item.id)" class="ds-button ds-button-secondary">Abrir</Link>
+              <button v-if="permissions.edit && !item.deleted" type="button" class="ds-button ds-button-secondary" @click="openEdit(item)">Editar</button>
               <button
-                v-if="!item.deleted"
+                v-if="permissions.delete && !item.deleted"
                 type="button"
                 class="ds-button ds-button-danger"
                 @click="destroy(item)"
@@ -208,7 +222,7 @@
                 Arquivar
               </button>
               <button
-                v-else
+                v-if="permissions.restore && item.deleted"
                 type="button"
                 class="ds-button ds-button-secondary"
                 @click="restore(item)"
@@ -225,7 +239,7 @@
           <BeakerIcon class="h-7 w-7" />
         </div>
         <p class="ds-heading mt-5 text-base">Sem programas registados</p>
-        <p class="ds-copy mx-auto mt-2 max-w-md text-sm">Crie o primeiro ensaio de proficiência ou interlaboratorial e acompanhe-o até ao encerramento.</p>
+        <p class="ds-copy mx-auto mt-2 max-w-md text-sm">{{ permissions.add ? 'Crie o primeiro ensaio de proficiência ou interlaboratorial e acompanhe-o até ao encerramento.' : 'Nenhum ensaio de proficiência disponível neste laboratório.' }}</p>
       </div>
     </section>
 
@@ -412,6 +426,7 @@ import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import DatePickerEnhanced from '@/Components/date-picker-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import {
+  ArchiveBoxIcon,
   BeakerIcon,
   BellAlertIcon,
   CheckBadgeIcon,
@@ -434,6 +449,7 @@ const props = defineProps({
   schemeOptions: { type: Array, default: () => [] },
   roleOptions: { type: Array, default: () => [] },
   charts: { type: Object, default: () => ({}) },
+  permissions: { type: Object, default: () => ({}) },
 })
 
 const records = computed(() => props.record?.data ?? [])
@@ -447,7 +463,7 @@ const filters = useForm({
 })
 
 let filterTimer = null
-watch(() => [filters.search, filters.status, filters.scheme_type], () => {
+watch(() => [filters.search, filters.status, filters.scheme_type, filters.filter], () => {
   window.clearTimeout(filterTimer)
   filterTimer = window.setTimeout(() => {
     router.get(route('proficiency_tests.index'), filters.data(), {
@@ -730,11 +746,15 @@ function submit() {
 }
 
 function destroy(item) {
-  router.get(route('proficiency_tests.destroy', { recordIds: [item.id] }), {}, { preserveScroll: true })
+  router.post(item.links.delete_path, { recordIds: [item.id] }, { preserveScroll: true })
 }
 
 function restore(item) {
-  router.get(route('proficiency_tests.restore', { recordIds: [item.id] }), {}, { preserveScroll: true })
+  router.post(item.links.restore_path, { recordIds: [item.id] }, { preserveScroll: true })
+}
+
+function toggleArchived() {
+  filters.filter = filters.filter === 'trashed' ? '' : 'trashed'
 }
 
 function clearFilters() {

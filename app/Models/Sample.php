@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
-use App\Filters\GlobalFilter;
-use HighSolutions\EloquentSequence\Sequence;
+use App\Support\SpecimenParameterSelection;
+use App\Traits\HasScopedSequence;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 
 class Sample extends Model
 {
-    use HasFactory, Sequence, SoftDeletes;
+    use HasFactory, HasScopedSequence, SoftDeletes;
 
     public const MENU_NAME = 'samples';
 
@@ -32,7 +36,7 @@ class Sample extends Model
 
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
-    public function sequence()
+    public function sequence(): array
     {
         return [
             'group' => 'sample_month',
@@ -40,70 +44,63 @@ class Sample extends Model
         ];
     }
 
-    /**
-     * Analysis
-     *
-     * @return Relationship
-     */
-    public function analysis()
+    public function analysis(): HasOne
     {
         return $this->hasOne(Analysis::class);
     }
 
-    /**
-     * Counter Analysis
-     *
-     * @return Relationship
-     */
-    public function counteranalysis()
+    public function counteranalysis(): HasOne
     {
         return $this->hasOne(CounterAnalysis::class);
     }
 
-    public function collection()
+    public function collection(): BelongsTo
     {
         return $this->belongsTo(LabCode::class, 'cl_id');
     }
 
     public function scopeByParameters(Builder $query, mixed $parameters): void
     {
-        $parameterIds = self::normalizeParameterIds($parameters);
+        $parameterIds = SpecimenParameterSelection::normalize($parameters);
 
         if ($parameterIds === []) {
             return;
         }
 
-        $query->whereHas('analysis.profile.parameters', function (Builder $query) use ($parameterIds): void {
-            $query->whereIn('parameter_id', $parameterIds);
-        });
+        $query->whereHas('analysis', fn (Builder $analysis): Builder => $analysis
+            ->whereColumn('analysis.cl_id', 'samples.cl_id')
+            ->whereHas('sample.collection.collection.sampleEntry', function (Builder $entry) use ($parameterIds): void {
+                $entry->where(function (Builder $scope) use ($parameterIds): void {
+                    foreach ($parameterIds as $parameterId) {
+                        $scope->orWhereRaw("(sample_entries.client_submitted_info::jsonb -> 'required_parameters') @> jsonb_build_array(jsonb_build_object('id', CAST(? AS BIGINT), 'profile_ids', jsonb_build_array(analysis.profile_id)))", [$parameterId]);
+                    }
+                });
+            }));
     }
 
-    /**
-     * Results
-     *
-     * @return Relationship
-     */
-    public function results()
+    public function scopeBySearch(Builder $query, string $search): void
+    {
+        if ($search === '') {
+            return;
+        }
+
+        $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%';
+        $query->where(fn (Builder $matches): Builder => $matches
+            ->whereLike('samples.code', $like)
+            ->orWhereHas('collection', fn (Builder $code): Builder => $code->whereLike('lab_codes.code', $like)));
+    }
+
+    public function results(): HasMany
     {
         return $this->hasMany(Result::class, 'sample_id');
     }
 
-    public static function boot()
+    public static function boot(): void
     {
         parent::boot();
 
-        static::creating(function ($model) {
-
-            $model->seq += 1;
-            $model->code = $model->sample_month.'/'.str_pad($model->seq, 4, '0', STR_PAD_LEFT);
-
-        });
-
-        self::deleting(function ($model) {
-            // Analysis
-            $model->analysis()->delete();
-            // Results
-            $model->results->each->forcedelete();
+        static::creating(function (Sample $sample): void {
+            $sample->code = $sample->sample_month.'/'.str_pad((string) $sample->seq, 4, '0', STR_PAD_LEFT);
         });
 
     }
@@ -113,20 +110,11 @@ class Sample extends Model
         return [
             AllowedFilter::partial('collection.code'),
             AllowedFilter::partial('code'),
-            AllowedFilter::partial('created_at'),
-            // AllowedFilter::scope('parameters', 'by_parameters'),
+            AllowedFilter::callback('created_at', fn (Builder $query, string $value): Builder => $query->whereDate('samples.created_at', $value)),
             AllowedFilter::callback('parameters', function (Builder $query, mixed $value): void {
-                $parameterIds = self::normalizeParameterIds($value);
-
-                if ($parameterIds === []) {
-                    return;
-                }
-
-                $query->whereHas('analysis.profile.parameters', function (Builder $query) use ($parameterIds): void {
-                    $query->whereIn('parameter_id', $parameterIds);
-                });
+                $query->byParameters($value);
             }),
-            AllowedFilter::custom('globalFilter', new GlobalFilter(['code', 'collection.code'])),
+            AllowedFilter::callback('globalFilter', fn (Builder $query, mixed $value): Builder => $query->bySearch(self::filterText($value))),
             AllowedFilter::trashed(),
         ];
     }
@@ -134,8 +122,10 @@ class Sample extends Model
     public static function getAllowedSorts(): array
     {
         return [
-            'collection.code',
-            'created_at',
+            AllowedSort::callback('collection.code', fn (Builder $query, bool $descending): Builder => $query
+                ->orderBy(LabCode::query()->select('code')->whereColumn('lab_codes.id', 'samples.cl_id'), $descending ? 'desc' : 'asc')),
+            AllowedSort::field('code', 'samples.code'),
+            AllowedSort::field('created_at', 'samples.created_at'),
         ];
     }
 
@@ -190,26 +180,12 @@ class Sample extends Model
         ];
     }
 
-    /**
-     * @return array<int, int>
-     */
-    private static function normalizeParameterIds(mixed $parameters): array
+    private static function filterText(mixed $value): string
     {
-        $values = is_array($parameters) ? $parameters : explode(',', (string) $parameters);
+        $parts = is_array($value) ? $value : [$value];
 
-        return collect($values)
-            ->flatten()
-            ->flatMap(function (mixed $item): array {
-                if (is_array($item)) {
-                    return collect(data_get($item, 'value', $item))->flatten()->all();
-                }
-
-                return [$item];
-            })
-            ->filter(fn (mixed $id): bool => is_numeric($id))
-            ->map(fn (mixed $id): int => (int) $id)
-            ->unique()
-            ->values()
-            ->all();
+        return implode(',', array_map(fn (mixed $part): string => is_bool($part)
+            ? ($part ? 'true' : 'false')
+            : (string) $part, $parts));
     }
 }

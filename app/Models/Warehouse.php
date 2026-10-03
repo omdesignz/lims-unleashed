@@ -44,6 +44,8 @@ class Warehouse extends Authenticatable implements HasPasskeysContract, MustVeri
         'nif',
         'customer_id',
         'email_verified_at',
+        'last_login_at',
+        'last_activity_at',
         'two_factor_secret',
         'two_factor_recovery_codes',
         'two_factor_confirmed_at',
@@ -72,6 +74,8 @@ class Warehouse extends Authenticatable implements HasPasskeysContract, MustVeri
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'last_activity_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
     ];
 

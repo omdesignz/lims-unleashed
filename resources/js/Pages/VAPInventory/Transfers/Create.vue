@@ -108,7 +108,8 @@
                   <BaseInput
                     v-model="form.qty"
                     type="number"
-                    min="1"
+                    min="0.0001"
+                    step="0.0001"
                     :max="maxQuantity"
                     class="ds-field pr-20"
                     :aria-invalid="Boolean(form.errors.qty)"

@@ -1,13 +1,13 @@
 <template>
   <TransitionRoot as="template" :show="open">
-    <Dialog as="div" class="relative z-50" @close="open = false; $emit('canceled')">
+    <Dialog as="div" class="relative z-50" @close="cancelDialog">
       <!-- Backdrop -->
       <TransitionChild
         as="template"
         enter="ease-out duration-300"
         enter-from="opacity-0"
         enter-to="opacity-100"
-        leave="ease-in duration-200"
+        leave="ease-out duration-200"
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
@@ -21,12 +21,12 @@
             enter="ease-out duration-300"
             enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             enter-to="opacity-100 translate-y-0 sm:scale-100"
-            leave="ease-in duration-200"
+            leave="ease-out duration-200"
             leave-from="opacity-100 translate-y-0 sm:scale-100"
             leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
             <DialogPanel
-              class="ds-modal-panel relative w-full transform overflow-hidden transition-all sm:my-8"
+              class="ds-modal-panel relative w-full transform overflow-hidden transition-[opacity,transform] sm:my-8"
               :class="size"
             >
               <!-- Content -->
@@ -68,7 +68,8 @@
                 <button
                   type="button"
                   class="ds-button ds-button-secondary w-full sm:w-auto"
-                  @click="open = false; $emit('canceled')"
+                  :disabled="props.disabled"
+                  @click="cancelDialog"
                 >
                   {{ props.cancel }}
                 </button>
@@ -76,7 +77,8 @@
                   type="button"
                   class="ds-button w-full sm:w-auto"
                   :class="confirmButtonClass"
-                  @click="open = false; $emit('confirmed', true)"
+                  :disabled="props.disabled"
+                  @click="confirmDialog"
                 >
                   {{ props.confirm }}
                 </button>
@@ -102,6 +104,8 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
+  disabled: Boolean,
+  keepOpenOnConfirm: Boolean,
   hideButtons: {
     type: Boolean,
     default: false,
@@ -136,9 +140,21 @@ const props = defineProps({
   },
 })
 
-defineEmits(['confirmed', 'canceled'])
+const emit = defineEmits(['confirmed', 'canceled'])
 
 const open = ref(true)
+
+function cancelDialog() {
+  if (props.disabled) return
+  open.value = false
+  emit('canceled')
+}
+
+function confirmDialog() {
+  if (props.disabled) return
+  if (!props.keepOpenOnConfirm) open.value = false
+  emit('confirmed', true)
+}
 
 const variantConfig = computed(() => {
   const variants = {

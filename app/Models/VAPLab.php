@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class VAPLab extends Model
 {
@@ -26,11 +26,18 @@ class VAPLab extends Model
         'supervisor_id',
         'technical_head_id',
         'department_id',
+        'network_id',
+        'primary_color',
     ];
 
     protected $casts = [
         'deleted_at' => 'datetime',
     ];
+
+    public function network(): BelongsTo
+    {
+        return $this->belongsTo(LabNetwork::class, 'network_id');
+    }
 
     /**
      * Get the parent lab if this is a sub-lab
@@ -112,7 +119,7 @@ class VAPLab extends Model
         if ($this->email) {
             $info[] = "Email: {$this->email}";
         }
-        
+
         return implode(' | ', $info);
     }
 }

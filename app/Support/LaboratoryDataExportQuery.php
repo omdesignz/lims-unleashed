@@ -2,12 +2,16 @@
 
 namespace App\Support;
 
+use App\Models\LabCode;
+use App\Services\SampleLaboratoryAccess;
 use Carbon\Carbon;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class LaboratoryDataExportQuery
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     /**
      * @param  array<string, mixed>  $filters
      */
@@ -22,31 +26,31 @@ class LaboratoryDataExportQuery
         $query = DB::table('analysis')
             ->join('samples', 'samples.id', '=', 'analysis.sample_id')
             ->join('profiles', 'profiles.id', '=', 'analysis.profile_id')
-            ->join('parameter_profile', function ($join): void {
-                $join->on('parameter_profile.profile_id', '=', 'analysis.profile_id')
-                    ->whereNull('parameter_profile.deleted_at');
+            ->leftJoin('departments', 'departments.id', '=', 'analysis.department_id')
+            ->join('lab_codes', 'lab_codes.id', '=', 'samples.cl_id')
+            ->join('collection_product as collection_products', 'collection_products.id', '=', 'lab_codes.collection_id')
+            ->leftJoin('customers', 'customers.id', '=', 'collection_products.customer_id')
+            ->leftJoin('products', 'products.id', '=', 'collection_products.product_id')
+            ->join('sample_entries', 'sample_entries.collection_product_id', '=', 'collection_products.id')
+            ->join(DB::raw("LATERAL jsonb_to_recordset(COALESCE(sample_entries.client_submitted_info::jsonb -> 'required_parameters', '[]'::jsonb)) AS issued_parameter(id bigint, code text, name text, profile_ids jsonb, profile_definitions jsonb, optimal_analysis_time text)"), function ($join): void {
+                $join->whereRaw('issued_parameter.profile_ids @> jsonb_build_array(analysis.profile_id)');
             })
-            ->join('parameters', function ($join): void {
-                $join->on('parameters.id', '=', 'parameter_profile.parameter_id')
-                    ->whereNull('parameters.deleted_at');
+            ->leftJoin(DB::raw("LATERAL jsonb_to_recordset(COALESCE(issued_parameter.profile_definitions, '[]'::jsonb)) AS issued_definition(profile_id bigint, unit_code text, unit_label text, protocol_label text, standard_label text, nwp_label text, dilutions text)"), function ($join): void {
+                $join->on('issued_definition.profile_id', '=', 'analysis.profile_id');
             })
             ->leftJoinSub($insertedResults, 'inserted_results', function ($join): void {
                 $join->on('inserted_results.sample_id', '=', 'analysis.sample_id')
-                    ->on('inserted_results.parameter_id', '=', 'parameter_profile.parameter_id');
+                    ->on('inserted_results.parameter_id', '=', 'issued_parameter.id');
             })
-            ->leftJoin('departments', 'departments.id', '=', 'analysis.department_id')
-            ->leftJoin('lab_codes', 'lab_codes.id', '=', 'analysis.cl_id')
-            ->leftJoin('collection_product as collection_products', 'collection_products.id', '=', 'lab_codes.collection_id')
-            ->leftJoin('customers', 'customers.id', '=', 'collection_products.customer_id')
-            ->leftJoin('products', 'products.id', '=', 'collection_products.product_id')
-            ->leftJoin('sample_entries', 'sample_entries.collection_product_id', '=', 'collection_products.id')
-            ->leftJoin('units', 'units.id', '=', 'parameter_profile.unit_id')
-            ->leftJoin('protocols', 'protocols.id', '=', 'parameter_profile.protocol_id')
-            ->leftJoin('standards', 'standards.id', '=', 'parameter_profile.standard_id')
-            ->leftJoin('nwps', 'nwps.id', '=', 'parameter_profile.nwp_id')
             ->whereNull('analysis.deleted_at')
+            ->whereColumn('analysis.cl_id', 'lab_codes.id')
             ->whereNull('analysis.end_date')
             ->whereNull('samples.deleted_at')
+            ->whereNull('lab_codes.deleted_at')
+            ->whereNull('collection_products.deleted_at')
+            ->whereNull('sample_entries.deleted_at')
+            ->where('sample_entries.lab_id', $this->laboratoryAccess->activeLabId())
+            ->whereIn('lab_codes.id', LabCode::query()->forLaboratory($this->laboratoryAccess->activeLabId())->select('lab_codes.id'))
             ->whereNull('inserted_results.sample_id')
             ->select([
                 'analysis.id as analysis_id',
@@ -64,15 +68,15 @@ class LaboratoryDataExportQuery
                 'customers.name as customer',
                 'products.name as product',
                 'profiles.name as profile',
-                'parameters.id as parameter_id',
-                'parameters.code as parameter_code',
-                'parameters.name as parameter',
-                'parameters.optimal_analysis_time',
-                DB::raw('COALESCE(units.code, parameter_profile.unit_label) as unit'),
-                DB::raw('COALESCE(protocols.code, parameter_profile.protocol_label) as protocol'),
-                DB::raw('COALESCE(standards.code, parameter_profile.standard_label) as standard'),
-                DB::raw('COALESCE(nwps.code, parameter_profile.nwp_label) as nwp'),
-                'parameter_profile.dilutions',
+                'issued_parameter.id as parameter_id',
+                'issued_parameter.code as parameter_code',
+                'issued_parameter.name as parameter',
+                'issued_parameter.optimal_analysis_time',
+                DB::raw('COALESCE(issued_definition.unit_code, issued_definition.unit_label) as unit'),
+                'issued_definition.protocol_label as protocol',
+                'issued_definition.standard_label as standard',
+                'issued_definition.nwp_label as nwp',
+                'issued_definition.dilutions',
             ]);
 
         $this->applyPendingFilters($query, $filters);
@@ -80,7 +84,7 @@ class LaboratoryDataExportQuery
         return $query
             ->orderByRaw('COALESCE(analysis.entry_date, analysis.col_date, DATE(analysis.created_at))')
             ->orderBy('analysis.id')
-            ->orderBy('parameters.name');
+            ->orderBy('issued_parameter.name');
     }
 
     /**
@@ -100,15 +104,20 @@ class LaboratoryDataExportQuery
                     ->on('analysis_context.profile_id', '=', 'results.profile_id');
             })
             ->leftJoin('departments', 'departments.id', '=', 'analysis_context.department_id')
-            ->leftJoin('lab_codes', 'lab_codes.id', '=', 'results.code_id')
-            ->leftJoin('collection_product as collection_products', 'collection_products.id', '=', 'results.collection_id')
+            ->join('lab_codes', 'lab_codes.id', '=', 'samples.cl_id')
+            ->join('collection_product as collection_products', 'collection_products.id', '=', 'lab_codes.collection_id')
             ->leftJoin('customers', 'customers.id', '=', 'collection_products.customer_id')
-            ->leftJoin('sample_entries', 'sample_entries.collection_product_id', '=', 'collection_products.id')
+            ->join('sample_entries', 'sample_entries.collection_product_id', '=', 'collection_products.id')
             ->leftJoin('users as inserted_users', 'inserted_users.id', '=', 'results.inserted_by_id')
             ->leftJoin('users as verified_users', 'verified_users.id', '=', 'results.verified_by_id')
             ->leftJoin('users as approved_users', 'approved_users.id', '=', 'results.approved_by_id')
             ->whereNull('results.deleted_at')
             ->whereNull('samples.deleted_at')
+            ->whereNull('lab_codes.deleted_at')
+            ->whereNull('collection_products.deleted_at')
+            ->whereNull('sample_entries.deleted_at')
+            ->where('sample_entries.lab_id', $this->laboratoryAccess->activeLabId())
+            ->whereIn('lab_codes.id', LabCode::query()->forLaboratory($this->laboratoryAccess->activeLabId())->select('lab_codes.id'))
             ->whereNotNull('results.inserted_date')
             ->select([
                 'results.id as result_id',
@@ -246,7 +255,7 @@ class LaboratoryDataExportQuery
     private function applyPendingFilters(Builder $query, array $filters): void
     {
         $query
-            ->when($filters['department_id'] ?? null, fn (Builder $query, $departmentId) => $query->where('analysis_context.department_id', $departmentId))
+            ->when($filters['department_id'] ?? null, fn (Builder $query, $departmentId) => $query->where('analysis.department_id', $departmentId))
             ->when($filters['date_from'] ?? null, fn (Builder $query, $date) => $query->whereDate(DB::raw('COALESCE(analysis.entry_date, analysis.col_date, analysis.created_at)'), '>=', $date))
             ->when($filters['date_to'] ?? null, fn (Builder $query, $date) => $query->whereDate(DB::raw('COALESCE(analysis.entry_date, analysis.col_date, analysis.created_at)'), '<=', $date))
             ->when($filters['search'] ?? null, function (Builder $query, string $search): void {
@@ -259,8 +268,8 @@ class LaboratoryDataExportQuery
                         ->orWhere('customers.name', 'like', $like)
                         ->orWhere('products.name', 'like', $like)
                         ->orWhere('profiles.name', 'like', $like)
-                        ->orWhere('parameters.code', 'like', $like)
-                        ->orWhere('parameters.name', 'like', $like);
+                        ->orWhere('issued_parameter.code', 'like', $like)
+                        ->orWhere('issued_parameter.name', 'like', $like);
                 });
             });
     }
@@ -276,7 +285,7 @@ class LaboratoryDataExportQuery
             ->when($stage === 'inserted', fn (Builder $query) => $query->whereNull('results.verified_date'))
             ->when($stage === 'verified', fn (Builder $query) => $query->whereNotNull('results.verified_date')->whereNull('results.approved_date'))
             ->when($stage === 'approved', fn (Builder $query) => $query->whereNotNull('results.approved_date'))
-            ->when($filters['department_id'] ?? null, fn (Builder $query, $departmentId) => $query->where('analysis.department_id', $departmentId))
+            ->when($filters['department_id'] ?? null, fn (Builder $query, $departmentId) => $query->where('analysis_context.department_id', $departmentId))
             ->when($filters['date_from'] ?? null, fn (Builder $query, $date) => $query->whereDate(DB::raw('COALESCE(results.approved_date, results.verified_date, results.inserted_date)'), '>=', $date))
             ->when($filters['date_to'] ?? null, fn (Builder $query, $date) => $query->whereDate(DB::raw('COALESCE(results.approved_date, results.verified_date, results.inserted_date)'), '<=', $date))
             ->when($filters['search'] ?? null, function (Builder $query, string $search): void {

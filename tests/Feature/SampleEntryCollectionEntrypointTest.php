@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Analysis;
+use App\Models\AnalysisCategory;
 use App\Models\CollectionProduct;
 use App\Models\Customer;
 use App\Models\Department;
+use App\Models\Matrix;
 use App\Models\Parameter;
 use App\Models\PersonnelQualification;
 use App\Models\Product;
@@ -17,6 +19,10 @@ use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -25,24 +31,62 @@ class SampleEntryCollectionEntrypointTest extends TestCase
 {
     use DatabaseTransactions;
 
+    private User $operator;
+
+    private VAPLab $lab;
+
+    private Customer $customer;
+
+    private Warehouse $warehouse;
+
+    private Product $product;
+
+    private Parameter $parameter;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->operator = User::factory()->create(['is_active' => true]);
+        $this->operator->assignRole(Role::findOrCreate('admin', 'web'));
+        $this->lab = VAPLab::factory()->create();
+        DB::table('lab_user')->insert(['lab_id' => $this->lab->id, 'user_id' => $this->operator->id]);
+        $this->withSession(['active_lab_id' => $this->lab->id]);
+        $this->customer = Customer::query()->create(['name' => fake()->unique()->bothify('Intake customer ######')]);
+        $this->warehouse = Warehouse::query()->create([
+            'name' => fake()->unique()->bothify('Intake site ######'), 'customer_id' => $this->customer->id,
+        ]);
+        $department = Department::factory()->create();
+        $category = AnalysisCategory::query()->create([
+            'name' => fake()->unique()->bothify('Intake category ######'),
+            'code' => fake()->unique()->bothify('IC-######'), 'department_id' => $department->id,
+        ]);
+        $matrix = Matrix::query()->create([
+            'code' => fake()->unique()->bothify('IM-######'), 'description' => fake()->unique()->bothify('Intake matrix ######'),
+        ]);
+        $profile = Profile::query()->create([
+            'name' => fake()->unique()->bothify('Intake profile ######'),
+            'code' => fake()->unique()->bothify('IP-######'), 'category_id' => $category->id,
+        ]);
+        $matrix->profiles()->attach($profile->id);
+        $this->parameter = Parameter::query()->create(['name' => fake()->unique()->bothify('Intake parameter ######'), 'active' => true]);
+        $profile->parameters()->attach($this->parameter->id);
+        $this->product = Product::query()->create([
+            'name' => fake()->unique()->bothify('Intake product ######'), 'matrix_id' => $matrix->id,
+        ])->load('matrix.profiles.type');
+        Notification::fake();
+        Event::fake([fn (string $event): bool => str_starts_with($event, 'App\\Events\\')]);
+    }
+
     private function verifiedAdmin(): User
     {
-        $admin = Role::query()
-            ->where('name', 'admin')
-            ->firstOrFail()
-            ->users()
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        $this->assertNotNull($admin, 'Expected at least one verified admin user for sample entry collection testing.');
-
-        return $admin;
+        return $this->operator;
     }
 
     private function qualifyUser(User $user, Department $department): void
     {
         PersonnelQualification::query()->updateOrCreate(
             [
+                'lab_id' => $this->lab->id,
                 'user_id' => $user->id,
                 'capability' => 'sample_intake_validation',
                 'department_id' => $department->id,
@@ -61,17 +105,14 @@ class SampleEntryCollectionEntrypointTest extends TestCase
     public function test_programmed_collection_starts_from_sample_entry_and_exposes_lineage(): void
     {
         $user = $this->verifiedAdmin();
-        $product = Product::query()
-            ->whereHas('matrix.profiles.type')
-            ->with(['matrix.profiles.type'])
-            ->firstOrFail();
+        $product = $this->product;
 
         /** @var Profile $profile */
         $profile = $product->matrix->profiles->first();
         $department = Department::query()->findOrFail($profile->type->department_id);
-        $customer = Customer::query()->firstOrFail();
-        $warehouse = Warehouse::query()->where('customer_id', $customer->id)->first() ?: Warehouse::query()->firstOrFail();
-        $lab = VAPLab::query()->firstOrFail();
+        $customer = $this->customer;
+        $warehouse = $this->warehouse;
+        $lab = $this->lab;
         $code = 'PRG-SE-'.Str::upper(Str::random(6));
 
         $this->qualifyUser($user, $department);
@@ -172,17 +213,14 @@ class SampleEntryCollectionEntrypointTest extends TestCase
     public function test_manual_sample_entry_batch_registers_multiple_samples_through_normal_flow(): void
     {
         $user = $this->verifiedAdmin();
-        $product = Product::query()
-            ->whereHas('matrix.profiles.type')
-            ->with(['matrix.profiles.type'])
-            ->firstOrFail();
+        $product = $this->product;
 
         /** @var Profile $profile */
         $profile = $product->matrix->profiles->first();
         $department = Department::query()->findOrFail($profile->type->department_id);
-        $customer = Customer::query()->firstOrFail();
-        $warehouse = Warehouse::query()->where('customer_id', $customer->id)->first() ?: Warehouse::query()->firstOrFail();
-        $lab = VAPLab::query()->firstOrFail();
+        $customer = $this->customer;
+        $warehouse = $this->warehouse;
+        $lab = $this->lab;
 
         $this->qualifyUser($user, $department);
 
@@ -281,21 +319,12 @@ class SampleEntryCollectionEntrypointTest extends TestCase
                 ->where('entryWorkflowDefaults.collection_type', 'programmed')
             );
 
-        $this->actingAs($user)
-            ->get(route('directcollections.create'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('DirectCollections/Create')
-                ->where('entrypoint.create_sample_url', route('vap_samples.index', ['collection_type' => 'direct']))
-            );
-
-        $this->actingAs($user)
-            ->get(route('programmedcollections.create'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('ProgrammedCollections/Create')
-                ->where('entrypoint.create_sample_url', route('vap_samples.index', ['collection_type' => 'programmed']))
-            );
+        foreach (['directcollections', 'programmedcollections'] as $routePrefix) {
+            $this->assertFalse(Route::has($routePrefix.'.create'));
+            $this->assertFalse(Route::has($routePrefix.'.store'));
+            $this->actingAs($user)->get('/'.$routePrefix.'/create')->assertNotFound();
+            $this->postJson(route($routePrefix.'.index'), ['products' => []])->assertStatus(405);
+        }
 
         $this->actingAs($user)
             ->get(route('samples.index'))
@@ -307,7 +336,7 @@ class SampleEntryCollectionEntrypointTest extends TestCase
                 ->where('entrypoint.create_sample_url', route('vap_samples.index'))
             );
 
-        $parameter = Parameter::query()->firstOrFail();
+        $parameter = $this->parameter;
 
         $this->actingAs($user)
             ->get(route('samples.index', ['parameters' => [$parameter->id]]))
@@ -324,17 +353,16 @@ class SampleEntryCollectionEntrypointTest extends TestCase
                 ->component('Samples/Index')
             );
 
-        $this->actingAs($user)
-            ->get(route('samples.create'))
-            ->assertRedirect(route('vap_samples.index'));
+        foreach (['create', 'store', 'edit', 'update', 'destroy', 'restore'] as $action) {
+            $this->assertFalse(Route::has('samples.'.$action));
+        }
 
-        $this->actingAs($user)
-            ->get(route('samples.destroy'))
-            ->assertRedirect(route('samples.index'));
+        foreach (['create', 'destroy', 'restore', '1/edit'] as $path) {
+            $this->actingAs($user)->get('/samples/'.$path)->assertNotFound();
+        }
 
-        $this->actingAs($user)
-            ->get(route('samples.restore'))
-            ->assertRedirect(route('samples.index'));
+        $this->postJson(route('samples.index'), [])->assertStatus(405);
+        $this->putJson('/samples/1', [])->assertNotFound();
 
         $sampleCodesResponse = $this->actingAs($user)->getJson(route('samples.getCode'));
 
@@ -345,17 +373,14 @@ class SampleEntryCollectionEntrypointTest extends TestCase
     public function test_sample_entry_bulk_import_creates_entries_and_collection_lineage(): void
     {
         $user = $this->verifiedAdmin();
-        $product = Product::query()
-            ->whereHas('matrix.profiles.type')
-            ->with(['matrix.profiles.type'])
-            ->firstOrFail();
+        $product = $this->product;
 
         /** @var Profile $profile */
         $profile = $product->matrix->profiles->first();
         $department = Department::query()->findOrFail($profile->type->department_id);
-        $customer = Customer::query()->firstOrFail();
-        $warehouse = Warehouse::query()->where('customer_id', $customer->id)->first() ?: Warehouse::query()->firstOrFail();
-        $lab = VAPLab::query()->firstOrFail();
+        $customer = $this->customer;
+        $warehouse = $this->warehouse;
+        $lab = $this->lab;
         $code = 'BULK-SE-'.Str::upper(Str::random(6));
 
         $this->qualifyUser($user, $department);
@@ -396,17 +421,14 @@ class SampleEntryCollectionEntrypointTest extends TestCase
     public function test_sample_entry_bulk_import_accepts_portuguese_human_headings_and_names(): void
     {
         $user = $this->verifiedAdmin();
-        $product = Product::query()
-            ->whereHas('matrix.profiles.type')
-            ->with(['matrix.profiles.type'])
-            ->firstOrFail();
+        $product = $this->product;
 
         /** @var Profile $profile */
         $profile = $product->matrix->profiles->first();
         $department = Department::query()->findOrFail($profile->type->department_id);
-        $customer = Customer::query()->firstOrFail();
-        $warehouse = Warehouse::query()->where('customer_id', $customer->id)->first() ?: Warehouse::query()->firstOrFail();
-        $lab = VAPLab::query()->firstOrFail();
+        $customer = $this->customer;
+        $warehouse = $this->warehouse;
+        $lab = $this->lab;
         $code = 'BULK-PT-'.Str::upper(Str::random(6));
 
         $this->qualifyUser($user, $department);
@@ -477,7 +499,7 @@ class SampleEntryCollectionEntrypointTest extends TestCase
         $this->actingAs($user)
             ->get(route('analysis.create'))
             ->assertRedirect(route('vap_samples.index'))
-            ->assertSessionHas('toast.message', 'Novas análises devem iniciar pela Sample Entry para manter a rastreabilidade completa.');
+            ->assertSessionHas('toast.message', 'As novas análises devem começar pela entrada de amostra para manter a rastreabilidade completa.');
 
         $this->actingAs($user)
             ->get(route('counteranalysis.create'))
@@ -488,7 +510,7 @@ class SampleEntryCollectionEntrypointTest extends TestCase
     public function test_sample_entry_destroy_archives_with_traceability_metadata(): void
     {
         $user = $this->verifiedAdmin();
-        $sampleEntry = VAPSampleEntry::query()->firstOrFail();
+        $sampleEntry = VAPSampleEntry::factory()->create(['lab_id' => $this->lab->id, 'customer_id' => $this->customer->id]);
 
         $this->from(route('vap_samples.index'))
             ->actingAs($user)

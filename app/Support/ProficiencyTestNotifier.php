@@ -5,8 +5,10 @@ namespace App\Support;
 use App\Models\Permission;
 use App\Models\ProficiencyTest;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class ProficiencyTestNotifier
 {
@@ -79,29 +81,35 @@ class ProficiencyTestNotifier
         );
     }
 
-    private function recipients(): Collection
+    private function recipients(int $labId): Collection
     {
-        return User::query()
+        return $this->labUsers($labId)
             ->role('admin')
-            ->whereNotNull('email_verified_at')
             ->get()
-            ->concat($this->usersWithPermission('view_proficiency_tests'))
-            ->concat($this->usersWithPermission('view_analysis'))
-            ->whereNotNull('email_verified_at')
+            ->concat($this->usersWithPermission('view_proficiency_tests', $labId))
+            ->concat($this->usersWithPermission('view_analysis', $labId))
             ->unique('id')
             ->values();
     }
 
-    private function usersWithPermission(string $permission): Collection
+    private function usersWithPermission(string $permission, int $labId): Collection
     {
         if (! Permission::query()->where('name', $permission)->exists()) {
             return collect();
         }
 
-        return User::query()
+        return $this->labUsers($labId)
             ->permission($permission)
-            ->whereNotNull('email_verified_at')
             ->get();
+    }
+
+    /** @return Builder<User> */
+    private function labUsers(int $labId): Builder
+    {
+        return User::query()
+            ->whereIn('users.id', DB::table('lab_user')->where('lab_id', $labId)->select('user_id'))
+            ->where('is_active', true)
+            ->whereNotNull('email_verified_at');
     }
 
     private function send(
@@ -110,17 +118,22 @@ class ProficiencyTestNotifier
         string $cacheKey,
         mixed $ttl = null,
     ): void {
-        if (! Cache::add('proficiency-test-notification:'.$cacheKey, true, $ttl ?? now()->addHours(6))) {
+        if (! $test->lab_id) {
             return;
         }
 
-        $targets = $this->recipients();
+        $targets = $this->recipients((int) $test->lab_id);
 
         if ($targets->isEmpty()) {
             return;
         }
 
+        if (! Cache::add('proficiency-test-notification:'.$test->lab_id.':'.$cacheKey, true, $ttl ?? now()->addHours(6))) {
+            return;
+        }
+
         $this->templates->notify($targets, 'quality.proficiency_test.updated', [
+            'lab_id' => (int) $test->lab_id,
             'document_number' => $test->round_reference,
             'status' => $test->status,
             'outcome' => $test->outcome ?: 'pendente',

@@ -24,10 +24,7 @@
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
-          <button type="button" class="ds-button ds-button-secondary" @click="exportReport">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar PDF
-          </button>
+          <InventoryReportExportButton report-type="stock_movement" :filters="filters" />
           <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-primary">
             <ArrowLeftIcon class="h-4 w-4" />
             Voltar ao inventário
@@ -412,9 +409,9 @@ import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Pagination from '@/Components/Pagination.vue'
+import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import {
   ArrowDownCircleIcon,
-  ArrowDownTrayIcon,
   ArrowLeftIcon,
   ArrowUpCircleIcon,
   ArrowsUpDownIcon,
@@ -438,7 +435,7 @@ const props = defineProps({
   stats: { type: Object, default: () => ({}) },
 })
 
-const inboundCodes = ['stock_in', 'stock_adjustment_add']
+const inboundCodes = ['stock_in', 'stock_adjustment_add', 'consumption_reversal']
 const outboundCodes = ['stock_out', 'stock_adjustment_remove', 'consumption']
 const loading = ref(false)
 const isDarkMode = ref(false)
@@ -600,7 +597,7 @@ function formatDateTime(value) {
 }
 
 function formatQuantity(value) {
-  return new Intl.NumberFormat('pt-AO', { maximumFractionDigits: 2 }).format(Number(value || 0))
+  return new Intl.NumberFormat('pt-AO', { maximumFractionDigits: 4 }).format(Number(value || 0))
 }
 
 function signedNumber(value) {
@@ -671,14 +668,6 @@ function clearFilters() {
     search: '',
     sort_by: 'created_at',
     sort_direction: 'desc',
-  })
-}
-
-function exportReport() {
-  router.post(route('vap-inventory.reports.export'), {
-    report_type: 'stock_movement',
-    format: 'pdf',
-    filters: { ...filters },
   })
 }
 

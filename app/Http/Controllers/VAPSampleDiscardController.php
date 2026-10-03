@@ -4,71 +4,34 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\DiscardLaboratorySample;
+use App\Http\Requests\VAP\StoreSampleDiscardRequest;
 use App\Models\VAPSampleDiscard;
-use App\Models\VAPSampleEntry;
+use App\Services\SampleLaboratoryAccess;
 use App\Settings\GeneralSettings;
 use App\Support\PdfResponse;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PDF;
 
 class VAPSampleDiscardController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     /**
      * Store a newly created sample discard record
      */
-    public function store(Request $request)
+    public function store(StoreSampleDiscardRequest $request, DiscardLaboratorySample $action): RedirectResponse
     {
-        $validated = $request->validate([
-            'sample_id' => 'required|exists:sample_entries,id',
-            'discard_method' => 'required|string|max:255',
-            'qty' => 'required|string|max:255',
-            'discarded_at' => 'nullable|date',
-            'lab_id' => 'nullable|exists:labs,id',
-            'department_id' => 'nullable|exists:departments,id',
+        $discard = $action->execute($this->laboratoryAccess->activeLabId(), $request->user(), $request->validated());
+
+        return redirect()->back()->with([
+            'message' => 'Descarte da amostra registado com êxito.',
+            'type' => 'success',
+            'discard_id' => $discard->id,
         ]);
-
-        DB::beginTransaction();
-        try {
-            $sample = VAPSampleEntry::findOrFail($validated['sample_id']);
-
-            // Check if sample can be discarded
-            if (! in_array($sample->status, ['COMPLETADO', 'CANCELADO'])) {
-                return redirect()->back()->with([
-                    'message' => 'Apenas podem ser descartadas amostras concluídas ou canceladas.',
-                    'type' => 'error',
-                ]);
-            }
-
-            // Create discard record
-            $discard = VAPSampleDiscard::create(array_merge($validated, [
-                'discarded_by_id' => auth()->id(),
-                'discarded_at' => $validated['discarded_at'] ?? now(),
-            ]));
-
-            $sample->forceFill([
-                'retention_status' => 'discarded',
-                'discard_scheduled_at' => now()->toDateString(),
-            ])->save();
-
-            // Soft delete the sample (optional - depends on your business logic)
-            // $sample->delete();
-
-            DB::commit();
-
-            return redirect()->back()->with([
-                'message' => 'Descarte da amostra registado com êxito.',
-                'type' => 'success',
-                'discard_id' => $discard->id,
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return redirect()->back()->with([
-                'message' => 'Erro ao registar o descarte da amostra: '.$e->getMessage(),
-                'type' => 'error',
-            ]);
-        }
     }
 
     /**
@@ -76,7 +39,10 @@ class VAPSampleDiscardController extends Controller
      */
     public function generatePdf(VAPSampleDiscard $sampleDiscard)
     {
-        $sampleDiscard->load(['sample.customer', 'sample.lab', 'sample.department', 'discardedBy']);
+        $sampleDiscard->load([
+            'sample' => fn (BelongsTo $query) => $query->withTrashed()->with(['customer', 'lab', 'department']),
+            'discardedBy',
+        ]);
 
         $pdf = PDF::loadView('PDFs.sample-discard', [
             'discard' => $sampleDiscard,
@@ -95,9 +61,10 @@ class VAPSampleDiscardController extends Controller
      */
     public function recent(Request $request)
     {
-        $days = $request->get('days', 7);
+        $validated = $request->validate(['days' => ['sometimes', 'integer', 'min:1', 'max:365']]);
+        $days = $validated['days'] ?? 7;
 
-        $discards = VAPSampleDiscard::with(['sample', 'discardedBy'])
+        $discards = $this->laboratoryAccess->discards()->with(['sample' => fn (BelongsTo $query) => $query->withTrashed(), 'discardedBy'])
             ->recent($days)
             ->orderBy('created_at', 'desc')
             ->get()
@@ -122,12 +89,12 @@ class VAPSampleDiscardController extends Controller
     public function stats()
     {
         $stats = [
-            'total_discards' => VAPSampleDiscard::count(),
-            'discards_this_month' => VAPSampleDiscard::whereMonth('created_at', now()->month)->count(),
-            'by_method' => VAPSampleDiscard::select('discard_method', DB::raw('count(*) as total'))
+            'total_discards' => $this->laboratoryAccess->discards()->count(),
+            'discards_this_month' => $this->laboratoryAccess->discards()->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+            'by_method' => $this->laboratoryAccess->discards()->select('discard_method', DB::raw('count(*) as total'))
                 ->groupBy('discard_method')
                 ->get(),
-            'by_lab' => VAPSampleDiscard::select('lab_id', DB::raw('count(*) as total'))
+            'by_lab' => $this->laboratoryAccess->discards()->select('lab_id', DB::raw('count(*) as total'))
                 ->with('lab')
                 ->groupBy('lab_id')
                 ->get(),
@@ -141,7 +108,7 @@ class VAPSampleDiscardController extends Controller
      */
     public function export(Request $request)
     {
-        $discards = VAPSampleDiscard::with(['sample', 'discardedBy', 'lab', 'department'])
+        $discards = $this->laboratoryAccess->discards()->with(['sample' => fn (BelongsTo $query) => $query->withTrashed(), 'discardedBy', 'lab', 'department'])
             ->when($request->has('start_date'), function ($query) use ($request) {
                 $query->where('created_at', '>=', $request->start_date);
             })

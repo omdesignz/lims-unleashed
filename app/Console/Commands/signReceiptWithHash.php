@@ -2,9 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Models\InvoiceReceipt;
 use App\Models\Receipt;
 use App\Support\DocumentSignature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use LogicException;
 
 class signReceiptWithHash extends Command
 {
@@ -25,23 +29,36 @@ class signReceiptWithHash extends Command
     /**
      * Execute the console command.
      */
-    public function handle(DocumentSignature $documentSignature): void
+    public function handle(DocumentSignature $documentSignature): int
     {
-        $receipt = Receipt::with('items')->findOrFail($this->argument('receipt'));
+        return DB::transaction(function () use ($documentSignature): int {
+            $receipt = Receipt::with('items')->lockForUpdate()->findOrFail($this->argument('receipt'));
+            if (filled($receipt->unique_hash)) {
+                return self::SUCCESS;
+            }
+            $lines = $receipt->items()->orderBy('id')->lockForUpdate()->get();
+            $receipt->setRelation('items', $lines);
+            $lineSnapshot = $lines->map(fn (InvoiceReceipt $line): array => $line->getAttributes())->all();
+            $previousHash = Receipt::withoutGlobalScope('financial_laboratory')->withTrashed()
+                ->where('rec_month', $receipt->rec_month)->where('id', '<', $receipt->id)
+                ->whereNotNull('unique_hash')->where('unique_hash', '!=', '')->orderByDesc('id')->value('unique_hash');
+            $data = $receipt->date.';'.$receipt->created_at->toDateTimeLocalString().';'.$receipt->rec_no.';'.$receipt->items->sum('paid_amount').';'.$previousHash;
+            $signature = $documentSignature->sign($data);
+            if (blank($signature)) {
+                throw new LogicException('Receipt signing did not produce a signature.');
+            }
+            $expected = [...Arr::except($receipt->getAttributes(), ['updated_at']), 'unique_hash' => $signature];
+            $receipt->unique_hash = $signature;
 
-        if (Receipt::whereRecMonth(now()->format('Y'))->count() !== 1) {
-            $prev_hash = Receipt::where('id', '<', $receipt->id)->orderBy('id', 'desc')->first()->unique_hash;
-            $data = $receipt->date.';'.$receipt->created_at->toDateTimeLocalString().';'.$receipt->rec_no.';'.$receipt->items->sum('paid_amount').';'.$prev_hash;
+            if (! $receipt->save()) {
+                throw new LogicException('Receipt signature was not persisted.');
+            }
+            if (Arr::except($receipt->fresh()->getAttributes(), ['updated_at']) !== $expected
+                || $receipt->items()->withTrashed()->orderBy('id')->get()->map(fn (InvoiceReceipt $line): array => $line->getAttributes())->all() !== $lineSnapshot) {
+                throw new LogicException('Receipt content, allocations or signature changed during signing.');
+            }
 
-            $receipt->unique_hash = $documentSignature->sign($data);
-        }
-
-        if (Receipt::whereRecMonth(now()->format('Y'))->count() == 1) {
-            $data = $receipt->date.';'.$receipt->created_at->toDateTimeLocalString().';'.$receipt->rec_no.';'.$receipt->items->sum('paid_amount').';';
-
-            $receipt->unique_hash = $documentSignature->sign($data);
-        }
-
-        $receipt->save();
+            return self::SUCCESS;
+        }, 3);
     }
 }

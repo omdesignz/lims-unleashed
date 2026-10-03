@@ -174,14 +174,27 @@ const defaultConnectorForm = () => ({
   event_types: ['lims.analysis.validated'],
 })
 const connectorForm = useForm(defaultConnectorForm())
-const equipmentComboboxOptions = computed(() => props.equipmentOptions.map((item) => ({
-  value: item.value,
-  label: [item.label, item.meta].filter(Boolean).join(' · '),
-})))
+const equipmentComboboxOptions = computed(() => {
+  const options = props.equipmentOptions.map((item) => ({
+    value: item.value,
+    label: [item.label, item.meta].filter(Boolean).join(' · '),
+  }))
+  const retainedEquipment = props.connectors.find((connector) => connector.uuid === editingConnectorUuid.value)?.equipment
+
+  if (retainedEquipment?.is_archived && !options.some((item) => String(item.value) === String(retainedEquipment.id))) {
+    options.push({
+      value: retainedEquipment.id,
+      label: [retainedEquipment.name, retainedEquipment.code, retainedEquipment.serial_number, 'Arquivado'].filter(Boolean).join(' · '),
+    })
+  }
+
+  return options
+})
 const selectedEquipmentOption = computed({
   get: () => equipmentComboboxOptions.value.find((item) => String(item.value) === String(connectorForm.inventory_item_id)) ?? null,
   set: (item) => { connectorForm.inventory_item_id = item?.value ?? '' },
 })
+const equipmentLinkUnavailable = computed(() => Boolean(props.connectors.find((connector) => connector.uuid === editingConnectorUuid.value)?.equipment_link_unavailable))
 const mappingForm = useForm({
   name: 'Mapeamento de resultados',
   field_paths: {
@@ -245,6 +258,14 @@ function openEditConnector(connector) {
 }
 
 function submitConnector() {
+  connectorForm.transform((data) => {
+    if (equipmentLinkUnavailable.value && !data.inventory_item_id) {
+      const { inventory_item_id, ...metadata } = data
+      return metadata
+    }
+
+    return data
+  })
   const options = {
     preserveScroll: true,
     onSuccess: () => {
@@ -678,7 +699,7 @@ function relativeTime(value) {
             <dl class="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
               <div><dt class="text-xs text-[var(--ds-text-soft)]">Adaptador</dt><dd class="mt-1 text-sm font-semibold text-[var(--ds-text)]">{{ connectorAdapter(selectedConnector)?.label }}</dd></div>
               <div><dt class="text-xs text-[var(--ds-text-soft)]">Direcção</dt><dd class="mt-1 text-sm font-semibold text-[var(--ds-text)]">{{ directionLabel(selectedConnector.direction) }}</dd></div>
-              <div><dt class="text-xs text-[var(--ds-text-soft)]">Equipamento</dt><dd class="mt-1 text-sm font-semibold text-[var(--ds-text)]">{{ selectedConnector.equipment?.name || 'Não associado' }}</dd></div>
+              <div><dt class="text-xs text-[var(--ds-text-soft)]">Equipamento</dt><dd class="mt-1 text-sm font-semibold text-[var(--ds-text)]">{{ selectedConnector.equipment?.name || (selectedConnector.equipment_link_unavailable ? 'Associação indisponível' : 'Não associado') }}</dd></div>
               <div><dt class="text-xs text-[var(--ds-text-soft)]">Edge agent</dt><dd class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text)]">{{ selectedConnector.configuration?.edge_agent_id || 'Não definido' }}</dd></div>
             </dl>
 
@@ -890,6 +911,7 @@ function relativeTime(value) {
                       :has-error="Boolean(connectorForm.errors.inventory_item_id)"
                     />
                     <span v-if="connectorForm.errors.inventory_item_id" class="mt-1 block text-xs text-rose-600">{{ connectorForm.errors.inventory_item_id }}</span>
+                    <p v-if="equipmentLinkUnavailable" class="mt-1 text-xs text-[var(--ds-text-muted)]">A associação existente está indisponível. Será preservada se não escolher outro equipamento.</p>
                   </div>
                   <BaseSelect v-model="connectorForm.direction" label="Direcção" :options="directionOptions" />
                   <BaseSelect v-model="connectorForm.adapter" label="Adaptador" :options="adapterCatalog" />

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -19,6 +20,7 @@ class ProficiencyTest extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'lab_id',
         'name',
         'date',
         'scheme_type',
@@ -60,6 +62,11 @@ class ProficiencyTest extends Model
         'performance_summary' => 'array',
         'z_score' => 'decimal:2',
     ];
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
+    }
 
     public function deadlineDate(): ?Carbon
     {

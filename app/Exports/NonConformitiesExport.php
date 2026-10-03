@@ -17,16 +17,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class NonConformitiesExport implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithHeadings, WithMapping, WithStyles
 {
-    protected $filters;
-
-    public function __construct(array $filters = [])
-    {
-        $this->filters = $filters;
-    }
+    public function __construct(private readonly int $labId, private readonly array $filters = []) {}
 
     public function collection()
     {
         $query = VAPNonConformity::with(['lab', 'department'])
+            ->where('lab_id', $this->labId)
             ->orderBy('created_at', 'desc');
 
         if (! empty($this->filters['status'])) {
@@ -39,10 +35,6 @@ class NonConformitiesExport implements FromCollection, ShouldAutoSize, WithColum
 
         if (! empty($this->filters['category'])) {
             $query->where('category', $this->filters['category']);
-        }
-
-        if (! empty($this->filters['lab_id'])) {
-            $query->where('lab_id', $this->filters['lab_id']);
         }
 
         if (! empty($this->filters['start_date'])) {

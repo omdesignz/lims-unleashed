@@ -162,8 +162,9 @@
                   :id="`need-quantity-${index}`"
                   v-model="item.quantity_requested"
                   type="number"
-                  min="1"
-                  label="Quantidade"
+                  min="0.0001"
+                  step="0.0001"
+                  :label="`Quantidade${selectedItemUnit(item.inventory_item_id) ? ` (${selectedItemUnit(item.inventory_item_id)})` : ''}`"
                   :error="form.errors[`items.${index}.quantity_requested`]"
                   required
                 />
@@ -206,7 +207,7 @@
           </div>
 
           <div class="ds-table-summary px-5 py-4">
-            <p class="text-sm font-bold text-[var(--ds-text)]">{{ itemCount }} itens · {{ totalQuantity }} unidades</p>
+            <p class="text-sm font-bold text-[var(--ds-text)]">{{ itemCount }} itens · {{ validQuantityCount }} quantidades verificadas</p>
             <p class="text-sm font-black text-[var(--ds-text)]">Estimativa: {{ formatMoney(estimatedValue) }}</p>
           </div>
         </section>
@@ -242,8 +243,8 @@
               <dd class="text-lg font-black text-[var(--ds-text)]">{{ itemCount }}</dd>
             </div>
             <div class="flex items-center justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Quantidade</dt>
-              <dd class="text-lg font-black text-[var(--ds-text)]">{{ totalQuantity }}</dd>
+              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Quantidades válidas</dt>
+              <dd class="text-lg font-black text-[var(--ds-text)]">{{ validQuantityCount }}/{{ form.items.length }}</dd>
             </div>
             <div class="flex items-center justify-between gap-4 py-3">
               <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Estimativa</dt>
@@ -330,9 +331,7 @@ const itemOptions = computed(() => props.items.map((item) => ({
   label: `${item.name}${item.code ? ` · ${item.code}` : ''}`,
 })))
 const itemCount = computed(() => form.items.filter((item) => item.inventory_item_id).length)
-const totalQuantity = computed(() => form.items.reduce((total, item) => (
-  total + (item.inventory_item_id ? Math.max(Number(item.quantity_requested || 0), 0) : 0)
-), 0))
+const validQuantityCount = computed(() => form.items.filter((item) => isValidQuantity(item.quantity_requested)).length)
 const estimatedValue = computed(() => form.items.reduce((total, item) => (
   total + (item.inventory_item_id
     ? Math.max(Number(item.quantity_requested || 0), 0) * Math.max(Number(item.estimated_unit_price || 0), 0)
@@ -342,7 +341,7 @@ const estimatedValue = computed(() => form.items.reduce((total, item) => (
 const isFormReady = computed(() => (
   Boolean(form.department_id)
   && form.items.length > 0
-  && form.items.every((item) => Boolean(item.inventory_item_id) && Number(item.quantity_requested) >= 1)
+  && form.items.every((item) => Boolean(item.inventory_item_id) && isValidQuantity(item.quantity_requested))
 ))
 
 const urgencyLabel = computed(() => {
@@ -377,8 +376,8 @@ const readinessSteps = computed(() => [
   },
   {
     label: 'Quantidades verificadas',
-    detail: `${totalQuantity.value} unidades solicitadas.`,
-    complete: itemCount.value > 0 && form.items.every((item) => Boolean(item.inventory_item_id) && Number(item.quantity_requested) >= 1),
+    detail: `${validQuantityCount.value} de ${form.items.length} linhas com quantidade válida.`,
+    complete: itemCount.value > 0 && validQuantityCount.value === form.items.length,
   },
   {
     label: 'Pronta para aprovação',
@@ -393,7 +392,7 @@ function newNeedItem(clientId = nextClientId++) {
     inventory_item_id: '',
     inventory_item_option: null,
     warehouse_id: '',
-    quantity_requested: 1,
+    quantity_requested: '1',
     estimated_unit_price: '',
     notes: '',
   }
@@ -402,6 +401,15 @@ function newNeedItem(clientId = nextClientId++) {
 function inventoryItemName(itemId) {
   const item = props.items.find((candidate) => String(candidate.id) === String(itemId))
   return item?.name || 'Item por seleccionar'
+}
+
+function selectedItemUnit(itemId) {
+  const item = props.items.find((candidate) => String(candidate.id) === String(itemId))
+  return item?.unit?.code || item?.unit?.description || ''
+}
+
+function isValidQuantity(value) {
+  return /^(?:0|[1-9]\d*)(?:\.\d{1,4})?$/.test(String(value)) && Number(value) >= 0.0001
 }
 
 function selectInventoryItem(item, option) {
@@ -434,7 +442,7 @@ function submit() {
     ...data,
     items: data.items.map(({ client_id, inventory_item_option, ...item }) => ({
       ...item,
-      quantity_requested: Number(item.quantity_requested),
+      quantity_requested: item.quantity_requested,
       estimated_unit_price: item.estimated_unit_price === '' ? null : Number(item.estimated_unit_price),
     })),
   })).post(route('vap-inventory.needs.store'), {

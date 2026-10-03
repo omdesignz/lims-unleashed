@@ -100,7 +100,8 @@
             <BaseInput
               v-model.number="form.qty"
               type="number"
-              :min="1"
+              :min="0.0001"
+              step="0.0001"
               :max="sourceStock?.qty_available || 0"
               required
               :class="[

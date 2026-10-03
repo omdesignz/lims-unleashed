@@ -2,6 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CreateProposal;
+use App\Actions\DownloadStaffProposalPdf;
+use App\Actions\RecordPublicProposalDecision;
+use App\Actions\ReviseProposal;
+use App\Actions\SendProposal;
+use App\Actions\SetProposalArchived;
+use App\Http\Requests\RecordPublicProposalDecisionRequest;
+use App\Http\Requests\StoreVAPProposalRequest;
+use App\Http\Requests\UpdateVAPProposalRequest;
+use App\Http\Resources\ProposalRevisionResource;
+use App\Http\Resources\VAPProposalResource;
+use App\Http\Resources\VAPProposalTemplateResource;
 use App\Models\Customer;
 use App\Models\Department;
 use App\Models\LabCode;
@@ -14,16 +26,17 @@ use App\Models\VAPProposalTemplate;
 use App\Models\Warehouse;
 use App\Settings\GeneralSettings;
 use App\Support\LaboratoryDossierService;
-use App\Support\ProposalWorkflowNotifier;
-use App\Support\ReportStudioPdfBuilder;
-use App\Support\ReportStudioPdfRenderer;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Throwable;
 
 class VAPProposalController extends Controller
 {
@@ -66,7 +79,8 @@ class VAPProposalController extends Controller
             });
         }
 
-        $proposals = $query->paginate(20)->withQueryString();
+        $proposals = $query->paginate(20)->withQueryString()
+            ->through(fn (VAPProposal $proposal): array => VAPProposalResource::make($proposal)->resolve($request));
 
         $statsQuery = VAPProposal::query()
             ->when($templateId, fn ($builder) => $builder->where('template_id', $templateId));
@@ -129,7 +143,7 @@ class VAPProposalController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         return Inertia::render('VAPProposals/Create', [
             'customers' => Customer::active()->get(['id', 'name', 'code']),
@@ -139,115 +153,23 @@ class VAPProposalController extends Controller
                 ->with('user')
                 ->where('is_active', true)
                 ->orderBy('name')
-                ->get(),
+                ->get()->map(fn (VAPProposalTemplate $template): array => VAPProposalTemplateResource::make($template)->forAuthoring()->resolve($request)),
             'units' => Unit::all(['id', 'code', 'description']),
             'standards' => Standard::all(['id', 'description', 'code']),
             'nextProposalNo' => $this->generateProposalNumber(),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreVAPProposalRequest $request, CreateProposal $create): RedirectResponse
     {
-        // dd($request->all());
+        $proposal = $create->execute((int) $request->attributes->get('proposal_laboratory_id'), $request->user()->id, $request->validated());
 
-        $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'warehouse_id' => 'required|exists:warehouses,id',
-            'department_id' => 'required|exists:departments,id',
-            'template_id' => 'required|exists:proposal_templates,id',
-            'service_location' => 'required|string|max:255',
-            'obs' => 'nullable|string',
-            'tolerance_days' => 'required|integer|min:1|max:365',
-            'withhold_tax' => 'boolean',
-            'use_matrix_price' => 'boolean',
-            'tax' => 'nullable|numeric|min:0',
-            'sub_total' => 'required|numeric|min:0',
-            'total' => 'required|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0',
-            'items' => 'required|array|min:1',
-            'items.*.item_id' => 'nullable',
-            'items.*.item_description' => 'required|string|max:255',
-            'items.*.standard_id' => 'nullable|exists:standards,id',
-            'items.*.unit_id' => 'required|exists:units,id',
-            'items.*.qty' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.itemable_type' => 'nullable|string',
-            'items.*.itemable_id' => 'nullable|integer',
-            'items.*.discount_percentage' => 'nullable|numeric|min:0|max:100',
-            'items.*.discount_amount' => 'nullable|numeric|min:0',
-            'items.*.discount_id' => 'nullable|integer',
-            'items.*.tax_percentage' => 'nullable|numeric|min:0|max:100',
-            'items.*.tax_amount' => 'nullable|numeric|min:0',
-            'items.*.tax_id' => 'nullable|exists:tax_types,id',
-            'items.*.charge_tax' => 'boolean',
-            'items.*.withhold_tax' => 'boolean',
-            'items.*.exemption_id' => 'nullable|exists:tax_exemptions,id',
-            'items.*.exemption_code' => 'nullable|string|max:50',
-            'items.*.obs' => 'nullable|string',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            $normalizedItems = $this->normalizeProposalItems($validated['items']);
-            $totals = $this->calculateProposalTotals($normalizedItems);
-
-            // Create proposal with all calculated fields
-            $proposal = VAPProposal::create([
-                'proposal_year' => date('Y'),
-                'service_location' => $validated['service_location'],
-                'customer_id' => $validated['customer_id'],
-                'warehouse_id' => $validated['warehouse_id'],
-                'department_id' => $validated['department_id'],
-                'user_id' => auth()->id(),
-                'template_id' => $validated['template_id'],
-                'status' => 'PENDING',
-                'details' => [],
-                'obs' => $validated['obs'] ?? null,
-                'sub_total' => $totals['sub_total'],
-                'total' => $totals['total'],
-                'discount' => $totals['discount'],
-                'unique_hash' => Str::uuid(),
-                'tolerance_days' => $validated['tolerance_days'],
-                'withhold_tax' => $validated['withhold_tax'] ?? false,
-                'use_matrix_price' => $validated['use_matrix_price'] ?? true,
-                'withholding_tax_amount' => 0, // Will be calculated if needed
-                'withholding_tax_percentage' => 0,
-                'global_discount_amount' => 0,
-                'global_discount_percentage' => 0,
-                'converted_to_invoice' => false,
-            ]);
-
-            // Create items with all fields
-            foreach ($normalizedItems as $item) {
-                $proposal->items()->create($item);
-            }
-
-            // Create compliance agreement record
-            $proposal->complianceAgreement()->create([
-                'confidentiality' => false,
-                'impartiality' => false,
-                'nondisclosure' => false,
-            ]);
-
-            DB::commit();
-
-            return redirect()->route('vap-proposals.show', $proposal)
-                ->with('success', 'Proposta criada com sucesso. Já pode enviá-la ao cliente.');
-
-        } catch (\Exception $e) {
-            Log::error('Failed to create proposal: '.$e->getMessage());
-            DB::rollBack();
-
-            if (app()->environment('testing')) {
-                throw $e;
-            }
-
-            return back()->with('error', 'Não foi possível criar a proposta.');
-        }
+        return redirect()->route('vap-proposals.show', $proposal)
+            ->with('success', 'Proposta criada com sucesso. Já pode enviá-la ao cliente.');
     }
 
     public function show(
+        Request $request,
         VAPProposal $proposal,
         GeneralSettings $settings,
         LaboratoryDossierService $laboratoryDossierService
@@ -261,42 +183,40 @@ class VAPProposalController extends Controller
             'items.standard',
             'items.unit',
             'complianceAgreement',
-            'complianceAgreementLogs',
-            'discountCategory',
         ]);
 
         // Get revision history
         $revisions = $proposal->activities()
-            ->whereIn('event', ['updated', 'revised'])
+            ->where(fn ($query) => $query->whereIn('event', ['updated', 'revised'])->orWhere('description', 'revised'))
             ->with('causer')
             ->latest()
-            ->get();
+            ->get()->map(fn ($revision): array => ProposalRevisionResource::make($revision)->resolve($request));
 
         return Inertia::render('VAPProposals/Show', [
-            'proposal' => $proposal,
+            'proposal' => VAPProposalResource::make($proposal)->resolve($request),
             'revisions' => $revisions,
             'parsedTemplateContent' => $proposal->template?->content
                 ? VAPProposalTemplate::parseContent($proposal->template->content, $proposal, $settings)
                 : null,
-            'canSend' => $proposal->status === 'PENDING',
-            'canRevise' => in_array($proposal->status, ['PENDING', 'SENT', 'VIEWED', 'REJECTED']),
+            'canSend' => $request->user()->can('edit_proposals') && in_array($proposal->status, ['PENDING', 'REVISED'], true),
+            'canRevise' => $request->user()->can('edit_proposals') && in_array($proposal->status, ['PENDING', 'SENT', 'VIEWED', 'REJECTED'], true),
             'laboratoryDossier' => $proposal->status === 'ACCEPTED'
                 ? $laboratoryDossierService->summarize($proposal, auth()->user())
                 : null,
         ]);
     }
 
-    public function edit(VAPProposal $proposal)
+    public function edit(Request $request, VAPProposal $proposal)
     {
         if (! in_array($proposal->status, ['PENDING', 'SENT', 'VIEWED', 'REJECTED'])) {
             return redirect()->route('vap-proposals.show', $proposal)
                 ->with('error', 'A proposta não pode ser editada no estado actual.');
         }
 
-        $proposal->load('items');
+        $proposal->load(['customer', 'warehouse', 'department', 'user', 'items.standard', 'items.unit']);
 
         return Inertia::render('VAPProposals/Edit', [
-            'proposal' => $proposal,
+            'proposal' => VAPProposalResource::make($proposal)->resolve($request),
             'customers' => Customer::active()->get(['id', 'name', 'code']),
             'warehouses' => Warehouse::active()->get(['id', 'name']),
             'departments' => Department::active()->get(['id', 'name']),
@@ -310,394 +230,84 @@ class VAPProposalController extends Controller
                     }
                 })
                 ->orderBy('name')
-                ->get(),
+                ->get()->map(fn (VAPProposalTemplate $template): array => VAPProposalTemplateResource::make($template)->forAuthoring()->resolve($request)),
             'units' => Unit::all(['id', 'code', 'description']),
             'standards' => Standard::all(['id', 'description', 'code']),
         ]);
     }
 
-    public function update(Request $request, VAPProposal $proposal, ProposalWorkflowNotifier $proposalWorkflowNotifier)
+    public function update(UpdateVAPProposalRequest $request, VAPProposal $proposal, ReviseProposal $revise): RedirectResponse
     {
-        if (! in_array($proposal->status, ['PENDING', 'SENT', 'VIEWED', 'REJECTED'])) {
-            return back()->with('error', 'A proposta não pode ser actualizada no estado actual.');
-        }
+        $revised = $revise->execute((int) $request->attributes->get('proposal_laboratory_id'), $request->user()->id, $proposal, $request->validated());
 
-        $previousPdfPath = $proposal->file_path;
-
-        $validated = $request->validate([
-            'service_location' => 'required|string|max:255',
-            'obs' => 'nullable|string',
-            'tolerance_days' => 'required|integer|min:1|max:365',
-            'revision_reason' => 'required|string|min:10',
-            'withhold_tax' => 'boolean',
-            'use_matrix_price' => 'boolean',
-            'sub_total' => 'required|numeric|min:0',
-            'total' => 'required|numeric|min:0',
-            'tax' => 'nullable|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0',
-            'items' => 'required|array|min:1',
-            'items.*.item_id' => 'nullable',
-            'items.*.itemable_type' => 'nullable|string',
-            'items.*.itemable_id' => 'nullable|integer',
-            'items.*.item_description' => 'required|string|max:255',
-            'items.*.standard_id' => 'nullable|exists:standards,id',
-            'items.*.unit_id' => 'required|exists:units,id',
-            'items.*.qty' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount_percentage' => 'nullable|numeric|min:0|max:100',
-            'items.*.discount_amount' => 'nullable|numeric|min:0',
-            'items.*.discount_id' => 'nullable|integer',
-            'items.*.tax_percentage' => 'nullable|numeric|min:0|max:100',
-            'items.*.tax_amount' => 'nullable|numeric|min:0',
-            'items.*.tax_id' => 'nullable|exists:tax_types,id',
-            'items.*.charge_tax' => 'boolean',
-            'items.*.withhold_tax' => 'boolean',
-            'items.*.exemption_id' => 'nullable|exists:tax_exemptions,id',
-            'items.*.exemption_code' => 'nullable|string|max:50',
-            'items.*.obs' => 'nullable|string',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            $normalizedItems = $this->normalizeProposalItems($validated['items']);
-            $totals = $this->calculateProposalTotals($normalizedItems);
-
-            // Create revision log with detailed changes
-            $oldItems = $proposal->items->toArray();
-
-            try {
-                activity()
-                    ->performedOn($proposal)
-                    ->causedBy(auth()->user())
-                    ->withProperties([
-                        'old_values' => [
-                            'obs' => $proposal->obs,
-                            'service_location' => $proposal->service_location,
-                            'tolerance_days' => $proposal->tolerance_days,
-                            'total' => $proposal->total,
-                            'sub_total' => $proposal->sub_total,
-                            'tax' => $proposal->tax ?? 0,
-                            'discount' => $proposal->discount ?? 0,
-                            'withhold_tax' => $proposal->withhold_tax,
-                            'use_matrix_price' => $proposal->use_matrix_price,
-                            'items_count' => count($oldItems),
-                        ],
-                        'new_values' => [
-                            'obs' => $validated['obs'] ?? null,
-                            'service_location' => $validated['service_location'],
-                            'tolerance_days' => $validated['tolerance_days'],
-                            'total' => $totals['total'],
-                            'sub_total' => $totals['sub_total'],
-                            'tax' => $totals['tax'],
-                            'discount' => $totals['discount'],
-                            'withhold_tax' => $validated['withhold_tax'] ?? false,
-                            'use_matrix_price' => $validated['use_matrix_price'] ?? true,
-                            'items_count' => count($normalizedItems),
-                        ],
-                        'reason' => $validated['revision_reason'],
-                        'item_changes' => [
-                            'removed' => array_diff(
-                                array_column($oldItems, 'id'),
-                                array_column($validated['items'], 'id')
-                            ),
-                            'added' => count($normalizedItems) - count($oldItems),
-                        ],
-                    ])
-                    ->log('revised');
-            } catch (\Throwable $exception) {
-                report($exception);
-            }
-
-            // Update proposal with all fields
-            $proposal->update([
-                'service_location' => $validated['service_location'],
-                'obs' => $validated['obs'] ?? null,
-                'tolerance_days' => $validated['tolerance_days'],
-                'withhold_tax' => $validated['withhold_tax'] ?? false,
-                'use_matrix_price' => $validated['use_matrix_price'] ?? true,
-                'sub_total' => $totals['sub_total'],
-                'total' => $totals['total'],
-                'discount' => $totals['discount'],
-                'status' => 'REVISED',
-                'is_original' => false,
-                'file_path' => null,
-            ]);
-
-            // Delete old items
-            $proposal->items()->delete();
-
-            // Create new items with all fields
-            foreach ($normalizedItems as $item) {
-                $proposal->items()->create($item);
-            }
-
-            // Update expiry date based on tolerance days
-            $expiryDate = Carbon::now()->addDays($validated['tolerance_days']);
-            $proposal->update(['expiry_date' => $expiryDate]);
-
-            DB::commit();
-
-            if ($previousPdfPath) {
-                try {
-                    Storage::delete($previousPdfPath);
-                } catch (\Throwable $exception) {
-                    report($exception);
-                }
-            }
-
-            // Send notification if needed
-            $proposalWorkflowNotifier->notifyRevised($proposal->fresh(['customer', 'warehouse', 'user']));
-
-            return redirect()->route('vap-proposals.show', $proposal)
-                ->with('success', 'Proposta revista com sucesso.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            // Log error
-            Log::error('Failed to revise proposal: '.$e->getMessage(), [
-                'proposal_id' => $proposal->id,
-                'user_id' => auth()->id(),
-                'errors' => $e->getTrace(),
-            ]);
-
-            return back()->with('error', 'Não foi possível rever a proposta.');
-        }
+        return redirect()->route('vap-proposals.show', $revised)->with('success', 'Proposta revista com sucesso.');
     }
 
-    public function send(VAPProposal $proposal, ProposalWorkflowNotifier $proposalWorkflowNotifier)
+    public function send(Request $request, VAPProposal $proposal, SendProposal $send): RedirectResponse
     {
-        if (! in_array($proposal->status, ['PENDING', 'REVISED'], true)) {
-            return back()->with('error', 'A proposta só pode ser enviada quando estiver pendente ou revista.');
-        }
-
-        if (! $proposal->file_path) {
-            app()->call([$this, 'generatePdf'], ['proposal' => $proposal]);
-            $proposal->refresh();
-        }
-
-        $proposal->update(['status' => 'SENT']);
-
-        $proposalWorkflowNotifier->notifySent($proposal->fresh(['customer', 'warehouse', 'user']));
-
-        try {
-            activity()
-                ->performedOn($proposal)
-                ->causedBy(auth()->user())
-                ->log('sent');
-        } catch (\Throwable $exception) {
-            report($exception);
-        }
+        $send->execute((int) $request->attributes->get('proposal_laboratory_id'), $request->user()->id, $proposal);
 
         return back()->with('success', 'Proposta marcada como enviada e pronta para acompanhamento.');
     }
 
-    public function generatePdf(
-        VAPProposal $proposal,
-        ReportStudioPdfBuilder $reportStudioPdfBuilder,
-        ReportStudioPdfRenderer $reportStudioPdfRenderer,
-        GeneralSettings $settings
-    ) {
-        $proposal->load([
-            'customer',
-            'warehouse',
-            'department',
-            'user',
-            'template',
-            'complianceAgreement',
-            'items.standard',
-            'items.unit',
-        ]);
+    public function generatePdf(Request $request, VAPProposal $proposal, DownloadStaffProposalPdf $download): Response
+    {
+        $rendered = $download->execute((int) $request->attributes->get('proposal_laboratory_id'), $request->user()->id, $proposal);
 
-        $parsedContent = null;
-
-        if ($proposal->template && $proposal->template->content) {
-            $parsedContent = VAPProposalTemplate::parseContent(
-                $proposal->template->content,
-                $proposal,
-                $settings
-            );
-        }
-
-        $studioPayload = $reportStudioPdfBuilder->buildProposalPayload(
-            $proposal,
-            $parsedContent ?? '<p>Sem conteúdo configurado para esta proposta.</p>',
-            $settings
-        );
-
-        $filename = str($proposal->proposal_number)->slug('-')->prepend('Proposta-')->append('.pdf')->value();
-        $renderedPdf = $reportStudioPdfRenderer->renderDocument('proposal', $studioPayload, $filename);
-
-        // Save to storage
-        $path = "vap-proposals/{$proposal->id}/{$filename}";
-        Storage::put($path, $renderedPdf['content']);
-
-        $proposal->update(['file_path' => $path]);
-
-        return response($renderedPdf['content'], 200, [
+        return response($rendered['content'], 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-            'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
+            'Content-Disposition' => 'attachment; filename="'.$rendered['filename'].'"',
+            'X-Report-Studio-Renderer' => $rendered['renderer'],
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 
-    public function destroy(VAPProposal $proposal)
+    public function destroy(Request $request, VAPProposal $proposal, SetProposalArchived $archive): RedirectResponse
     {
-        if (! in_array($proposal->status, ['PENDING', 'REJECTED'])) {
-            return back()->with('error', 'A proposta só pode ser eliminada quando estiver pendente ou rejeitada.');
-        }
-
-        $proposal->delete();
+        $archive->execute((int) $request->attributes->get('proposal_laboratory_id'), $request->user()->id, [$proposal->id], true);
 
         return redirect()->route('vap-proposals.index')
             ->with('success', 'Proposta eliminada com sucesso.');
     }
 
-    public function accept(Request $request, VAPProposal $proposal, ProposalWorkflowNotifier $proposalWorkflowNotifier)
+    public function accept(RecordPublicProposalDecisionRequest $request, VAPProposal $proposal, RecordPublicProposalDecision $decision): JsonResponse
     {
-        $validated = $request->validate([
-            'confidentiality' => 'required|boolean',
-            'impartiality' => 'required|boolean',
-            'nondisclosure' => 'required|boolean',
-        ]);
-
-        if (! in_array($proposal->status, ['SENT', 'VIEWED', 'REVISED'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'A proposta não pode ser aceite no estado actual.',
-            ], 400);
-        }
-
-        DB::beginTransaction();
-
-        try {
-            // Update compliance agreement
-            $proposal->complianceAgreement()->updateOrCreate([
-                'proposal_id' => $proposal->id,
-            ], [
-                'confidentiality' => $validated['confidentiality'],
-                'impartiality' => $validated['impartiality'],
-                'nondisclosure' => $validated['nondisclosure'],
-                'acknowledged_at' => now(),
-                'rejected_at' => null,
-                'rejection_reason' => null,
-                'client_ip' => $request->ip(),
-            ]);
-
-            // Create log entry
-            $proposal->complianceAgreementLogs()->create([
-                'confidentiality' => $validated['confidentiality'],
-                'impartiality' => $validated['impartiality'],
-                'acknowledged_at' => now(),
-                'client_ip' => $request->ip(),
-            ]);
-
-            // Update proposal status
-            $proposal->update(['status' => 'ACCEPTED']);
-
-            try {
-                activity()
-                    ->performedOn($proposal)
-                    ->withProperties(['client_ip' => $request->ip()])
-                    ->log('accepted');
-            } catch (\Throwable $exception) {
-                report($exception);
-            }
-
-            DB::commit();
-
-            $proposalWorkflowNotifier->notifyAccepted($proposal->fresh(['customer', 'warehouse', 'user']));
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Proposta aceite com sucesso.',
-                'redirect' => route('vap-proposals.public.thankyou', $proposal->unique_hash),
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            \Log::error('Failed to accept VAP proposal.', [
-                'proposal_id' => $proposal->id,
-                'message' => $e->getMessage(),
-            ]);
-
-            if (app()->environment('testing')) {
-                throw $e;
-            }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Não foi possível aceitar a proposta.',
-            ], 500);
-        }
+        return $this->recordPublicDecision($request, $proposal, $decision, true);
     }
 
-    public function reject(Request $request, VAPProposal $proposal, ProposalWorkflowNotifier $proposalWorkflowNotifier)
+    public function reject(RecordPublicProposalDecisionRequest $request, VAPProposal $proposal, RecordPublicProposalDecision $decision): JsonResponse
     {
-        $validated = $request->validate([
-            'reason' => 'required|string|min:10',
-        ]);
+        return $this->recordPublicDecision($request, $proposal, $decision, false);
+    }
 
-        if (! in_array($proposal->status, ['SENT', 'VIEWED', 'REVISED'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'A proposta não pode ser rejeitada no estado actual.',
-            ], 400);
-        }
-
-        DB::beginTransaction();
-
+    private function recordPublicDecision(RecordPublicProposalDecisionRequest $request, VAPProposal $proposal, RecordPublicProposalDecision $decision, bool $accepted): JsonResponse
+    {
         try {
-            $proposal->complianceAgreement()->updateOrCreate([
-                'proposal_id' => $proposal->id,
-            ], [
-                'confidentiality' => false,
-                'impartiality' => false,
-                'nondisclosure' => false,
-                'acknowledged_at' => null,
-                'rejected_at' => now(),
-                'rejection_reason' => $validated['reason'],
-                'client_ip' => $request->ip(),
-            ]);
+            $recorded = $decision->execute($proposal, $accepted, $request->validated(), $request->ip());
+        } catch (HttpException $exception) {
+            if (! in_array($exception->getStatusCode(), [400, 409], true)) {
+                throw $exception;
+            }
 
-            $proposal->update([
-                'status' => 'REJECTED',
-                'obs' => ($proposal->obs ? $proposal->obs."\n\n" : '').'Motivo da rejeição: '.$validated['reason'],
-            ]);
-
-            DB::commit();
-        } catch (\Throwable $exception) {
-            DB::rollBack();
-
+            return response()->json(['success' => false, 'message' => $exception->getMessage()], $exception->getStatusCode());
+        } catch (ModelNotFoundException|ValidationException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
             report($exception);
-
             if (app()->environment('testing')) {
                 throw $exception;
             }
 
             return response()->json([
                 'success' => false,
-                'message' => 'Não foi possível rejeitar a proposta.',
+                'message' => $accepted ? 'Não foi possível aceitar a proposta.' : 'Não foi possível rejeitar a proposta.',
             ], 500);
         }
 
-        try {
-            activity()
-                ->performedOn($proposal)
-                ->withProperties(['reason' => $validated['reason']])
-                ->log('rejected');
-        } catch (\Throwable $exception) {
-            report($exception);
-        }
-
-        $proposalWorkflowNotifier->notifyRejected($proposal->fresh(['customer', 'warehouse', 'user']));
-
         return response()->json([
             'success' => true,
-            'message' => 'Proposta rejeitada com sucesso.',
-            'redirect' => route('vap-proposals.public.thankyou', $proposal->unique_hash),
+            'message' => $accepted ? 'Proposta aceite com sucesso.' : 'Proposta rejeitada com sucesso.',
+            'redirect' => route('vap-proposals.public.thankyou', $recorded->unique_hash),
         ]);
     }
 
@@ -779,6 +389,7 @@ class VAPProposalController extends Controller
 
         return response()->json(
             LabCode::query()
+                ->forLaboratory((int) $request->attributes->get('proposal_laboratory_id', 0))
                 ->when($query, function ($builder) use ($query): void {
                     $builder->where('code', 'like', "%{$query}%");
                 })
@@ -872,6 +483,7 @@ class VAPProposalController extends Controller
         }
 
         $labCode = LabCode::query()
+            ->forLaboratory((int) $request->attributes->get('proposal_laboratory_id', 0))
             ->with('collection.product.matrix')
             ->find($codeId);
 
@@ -891,7 +503,14 @@ class VAPProposalController extends Controller
             ]);
         }
 
-        $parameterIds = Matrix::query()->parameters($matrix->id);
+        $parameterIds = DB::table('parameter_profile')
+            ->join('profiles', 'profiles.id', '=', 'parameter_profile.profile_id')
+            ->join('matrix_profile', 'matrix_profile.profile_id', '=', 'profiles.id')
+            ->where('matrix_profile.matrix_id', $matrix->id)
+            ->whereNull('parameter_profile.deleted_at')
+            ->whereNull('matrix_profile.deleted_at')
+            ->whereNull('profiles.deleted_at')
+            ->select('parameter_profile.parameter_id');
 
         return response()->json(
             Parameter::query()
@@ -914,76 +533,6 @@ class VAPProposalController extends Controller
         $nextNumber = $lastProposal ? $lastProposal->seq + 1 : 1;
 
         return str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $items
-     * @return array<int, array<string, mixed>>
-     */
-    private function normalizeProposalItems(array $items): array
-    {
-        return collect($items)
-            ->map(function (array $item): array {
-                $quantity = (float) $item['qty'];
-                $unitPrice = (float) $item['unit_price'];
-                $grossTotal = $quantity * $unitPrice;
-                $discountPercent = (float) ($item['discount_percentage'] ?? 0);
-                $discountAmount = isset($item['discount_amount']) && (float) $item['discount_amount'] > 0
-                    ? min((float) $item['discount_amount'], $grossTotal)
-                    : $grossTotal * ($discountPercent / 100);
-                $netTotal = max($grossTotal - $discountAmount, 0);
-                $taxPercent = (float) ($item['tax_percentage'] ?? 0);
-                $taxAmount = 0.0;
-
-                if ($item['charge_tax'] ?? false) {
-                    $taxAmount = isset($item['tax_amount']) && (float) $item['tax_amount'] > 0
-                        ? (float) $item['tax_amount']
-                        : ($netTotal * ($taxPercent / 100));
-                }
-
-                return [
-                    'item_id' => $item['item_id'] ?? null,
-                    'itemable_type' => $item['itemable_type'] ?? null,
-                    'itemable_id' => $item['itemable_id'] ?? null,
-                    'item_description' => $item['item_description'],
-                    'standard_id' => $item['standard_id'] ?? null,
-                    'unit_id' => $item['unit_id'],
-                    'qty' => round($quantity, 2),
-                    'unit_price' => round($unitPrice, 2),
-                    'total' => round($netTotal, 2),
-                    'discount_percentage' => round($discountPercent, 2),
-                    'discount_amount' => round($discountAmount, 2),
-                    'discount_id' => $item['discount_id'] ?? 1,
-                    'tax_percentage' => round($taxPercent, 2),
-                    'tax_amount' => round($taxAmount, 2),
-                    'tax_id' => $item['tax_id'] ?? null,
-                    'charge_tax' => (bool) ($item['charge_tax'] ?? false),
-                    'withhold_tax' => (bool) ($item['withhold_tax'] ?? false),
-                    'exemption_id' => $item['exemption_id'] ?? null,
-                    'exemption_code' => $item['exemption_code'] ?? null,
-                    'obs' => $item['obs'] ?? null,
-                ];
-            })
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $items
-     * @return array{sub_total: float, discount: float, tax: float, total: float}
-     */
-    private function calculateProposalTotals(array $items): array
-    {
-        $subTotal = collect($items)->sum(fn (array $item): float => (float) $item['total']);
-        $discount = collect($items)->sum(fn (array $item): float => (float) $item['discount_amount']);
-        $tax = collect($items)->sum(fn (array $item): float => (float) $item['tax_amount']);
-
-        return [
-            'sub_total' => round($subTotal, 2),
-            'discount' => round($discount, 2),
-            'tax' => round($tax, 2),
-            'total' => round($subTotal + $tax, 2),
-        ];
     }
 
     /**

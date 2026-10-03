@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\VAPSampleEntry;
 use App\Support\LaboratoryWorkflowNotifier;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Queue\Queueable;
 
 class CheckLaboratoryWorkflowStaleness implements ShouldQueue
@@ -15,22 +16,14 @@ class CheckLaboratoryWorkflowStaleness implements ShouldQueue
     use Queueable;
 
     /**
-     * Create a new job instance.
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
      * Execute the job.
      */
     public function handle(LaboratoryWorkflowNotifier $workflowNotifier): void
     {
-        $systemUser = User::query()
-            ->role('admin')
-            ->whereNotNull('email_verified_at')
-            ->first() ?? User::query()->whereNotNull('email_verified_at')->first();
+        $eligibleUsers = User::query()->where('is_active', true)->whereNotNull('email_verified_at');
+        $systemUser = (clone $eligibleUsers)
+            ->whereHas('roles', fn (Builder $query): Builder => $query->where('name', 'admin')->where('guard_name', 'web'))
+            ->first() ?? $eligibleUsers->first();
 
         if (! $systemUser) {
             return;
@@ -40,30 +33,26 @@ class CheckLaboratoryWorkflowStaleness implements ShouldQueue
             ->whereIn('status', ['POR_INICIAR', 'EN_PROGRESO'])
             ->where('updated_at', '<=', now()->subDays(3))
             ->with(['warehouse', 'receivedBy'])
-            ->get()
-            ->each(fn (VAPSampleEntry $sampleEntry) => $workflowNotifier->notifyStaleSample($sampleEntry, $systemUser));
+            ->each(fn (VAPSampleEntry $sampleEntry) => $workflowNotifier->notifyStaleSample($sampleEntry, $systemUser), 100);
 
         Result::query()
             ->whereNotNull('inserted_date')
             ->whereNull('verified_date')
             ->where('updated_at', '<=', now()->subDays(2))
             ->with('sample.collection.collection.warehouse')
-            ->get()
-            ->each(fn (Result $result) => $workflowNotifier->notifyStaleResult($result, 'verify', $systemUser));
+            ->each(fn (Result $result) => $workflowNotifier->notifyStaleResult($result, 'verify', $systemUser), 100);
 
         Result::query()
             ->whereNotNull('verified_date')
             ->whereNull('approved_date')
             ->where('updated_at', '<=', now()->subDays(2))
             ->with('sample.collection.collection.warehouse')
-            ->get()
-            ->each(fn (Result $result) => $workflowNotifier->notifyStaleResult($result, 'approve', $systemUser));
+            ->each(fn (Result $result) => $workflowNotifier->notifyStaleResult($result, 'approve', $systemUser), 100);
 
         CounterAnalysis::query()
             ->whereNull('end_date')
             ->where('updated_at', '<=', now()->subDays(2))
             ->with('requested_result.sample.collection.collection.warehouse')
-            ->get()
-            ->each(fn (CounterAnalysis $counterAnalysis) => $workflowNotifier->notifyStaleCounterAnalysis($counterAnalysis, $systemUser));
+            ->each(fn (CounterAnalysis $counterAnalysis) => $workflowNotifier->notifyStaleCounterAnalysis($counterAnalysis, $systemUser), 100);
     }
 }

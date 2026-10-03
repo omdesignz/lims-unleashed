@@ -4,14 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\WorkflowTaskRequest;
 use App\Http\Resources\WorkflowTaskResource;
+use App\Models\VAPFile;
 use App\Models\WorkflowTask;
-use App\Models\WorkflowTaskComment;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class WorkflowController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private readonly SampleLaboratoryAccess $laboratory) {}
+
+    public function index(Request $request): AnonymousResourceCollection
     {
+        $labId = $this->laboratory->activeLabId();
         $tasks = WorkflowTask::query()
             ->with(['comments.creator', 'assignee', 'file'])
             ->when($request->has('file_id'), function ($query) use ($request) {
@@ -20,7 +25,8 @@ class WorkflowController extends Controller
             ->when($request->has('status'), function ($query) use ($request) {
                 $query->where('status', $request->status);
             })
-            ->whereHas('file', function ($query) use ($request) {
+            ->whereHas('file', function ($query) use ($request, $labId) {
+                $query->where('lab_id', $labId);
                 $user = $request->user();
 
                 if (! $user) {
@@ -33,53 +39,61 @@ class WorkflowController extends Controller
                     return;
                 }
 
-                $query->where('created_by', $user->id)
-                    ->orWhereHas('permissions', function ($permissionQuery) use ($user) {
-                        $permissionQuery->where('user_id', $user->id);
-                    });
+                $query->where(function ($accessible) use ($user) {
+                    $accessible->where('created_by', $user->id)
+                        ->orWhereHas('permissions', function ($permissionQuery) use ($user) {
+                            $permissionQuery->where('user_id', $user->id);
+                        });
+                });
             })
             ->get();
 
         return WorkflowTaskResource::collection($tasks);
     }
 
-    public function store(WorkflowTaskRequest $request)
+    public function store(WorkflowTaskRequest $request): WorkflowTaskResource
     {
-        $file = \App\Models\VAPFile::query()->findOrFail($request->file_id);
+        $validated = $request->validated();
+        $file = VAPFile::query()->where('lab_id', $this->laboratory->activeLabId())
+            ->findOrFail($validated['file_id']);
         abort_unless($file->canBeWrittenBy($request->user()), 403);
 
-        $task = WorkflowTask::create($request->all());
+        $task = WorkflowTask::query()->create($validated);
 
         return new WorkflowTaskResource($task->load(['comments', 'assignee', 'file']));
     }
 
-    public function updateStatus(Request $request, WorkflowTask $task)
+    public function updateStatus(Request $request, WorkflowTask $task): WorkflowTaskResource
     {
-        abort_unless($task->file && $task->file->canBeWrittenBy($request->user()), 403);
+        $file = $task->file;
+        abort_unless($file && (int) $file->lab_id === $this->laboratory->activeLabId(), 404);
+        abort_unless($file->canBeWrittenBy($request->user()), 403);
 
-        $request->validate([
+        $validated = $request->validate([
             'status' => 'required|in:pending,in_progress,completed,rejected',
         ]);
 
         $task->update([
-            'status' => $request->status,
-            'completed_at' => in_array($request->status, ['completed', 'rejected']) ? now() : null,
+            'status' => $validated['status'],
+            'completed_at' => in_array($validated['status'], ['completed', 'rejected'], true) ? now() : null,
         ]);
 
         return new WorkflowTaskResource($task->load(['comments', 'assignee', 'file']));
     }
 
-    public function addComment(Request $request, WorkflowTask $task)
+    public function addComment(Request $request, WorkflowTask $task): WorkflowTaskResource
     {
-        abort_unless($task->file && $task->file->canBeWrittenBy($request->user()), 403);
+        $file = $task->file;
+        abort_unless($file && (int) $file->lab_id === $this->laboratory->activeLabId(), 404);
+        abort_unless($file->canBeWrittenBy($request->user()), 403);
 
-        $request->validate([
+        $validated = $request->validate([
             'comment' => 'required|string',
         ]);
 
-        $comment = $task->comments()->create([
-            'comment' => $request->comment,
-            'created_by' => auth()->id(),
+        $task->comments()->create([
+            'comment' => $validated['comment'],
+            'created_by' => $request->user()->id,
         ]);
 
         return new WorkflowTaskResource($task->load(['comments.creator', 'assignee']));

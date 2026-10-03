@@ -225,7 +225,7 @@
                       <!-- <CurrencyEuroIcon class="h-4 w-4 text-gray-400" /> -->
                                     <p class="text-gray-400 mr-2">AOA</p>
 
-                      {{ formatCurrency(item.unit_price) }}
+                      {{ formatCurrency(item.extra_data?.agreed_unit_price ?? (Number(item.unit_price) + Number(item.discount_amount))) }}
                     </div>
                   </td>
 
@@ -265,7 +265,7 @@
                       <!-- <CurrencyEuroIcon class="h-4 w-4 text-gray-400" /> -->
                                     <p class="text-gray-400 mr-2">AOA</p>
 
-                      {{ formatCurrency(props.record.data?.sub_total) }}
+                      {{ formatCurrency(Number(props.record.data?.sub_total || 0) + Number(props.record.data?.discount || 0)) }}
                     </div>
                   </td>
                 </tr>
@@ -389,7 +389,7 @@
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-600">{{ $t('gestlab.general.labels.quotes.subtotal') }}</span>
-                  <span class="font-semibold text-gray-900">{{ formatCurrency(props.record.data?.sub_total) }}</span>
+                  <span class="font-semibold text-gray-900">{{ formatCurrency(Number(props.record.data?.sub_total || 0) + Number(props.record.data?.discount || 0)) }}</span>
                 </div>
                 <div v-if="props.record.data?.discount > 0" class="flex justify-between text-sm">
                   <span class="text-gray-600">{{ $t('gestlab.general.labels.quotes.discount') }}</span>

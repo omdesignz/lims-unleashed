@@ -188,7 +188,6 @@
 
                 <td class="ds-table-cell align-top text-sm text-[color:var(--ds-text)]">
                   <div><span class="font-bold">{{ formatQuantity(order.items_count) }}</span> itens</div>
-                  <div class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ formatQuantity(order.total_quantity) }} unidades</div>
                   <div class="mt-1 text-xs font-semibold text-[color:var(--ds-text)]">{{ formatCurrency(order.total_amount || 0) }}</div>
                 </td>
 
@@ -322,6 +321,10 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  nonConformitiesAvailable: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const loading = ref(false)
@@ -417,10 +420,10 @@ const procurementSignals = computed(() => [
   },
   {
     label: 'Não conformidades',
-    value: formatQuantity(openReceptionNonConformities.value),
-    caption: 'NCs de recepção em aberto',
-    dotClass: openReceptionNonConformities.value ? 'lims-status-dot-critical' : 'lims-status-dot-release',
-    valueClass: openReceptionNonConformities.value ? 'text-rose-700 dark:text-rose-300' : 'text-[color:var(--ds-text)]',
+    value: props.nonConformitiesAvailable ? formatQuantity(openReceptionNonConformities.value) : '—',
+    caption: props.nonConformitiesAvailable ? 'NCs de recepção em aberto' : 'Registo indisponível',
+    dotClass: !props.nonConformitiesAvailable ? 'lims-status-dot-hold' : openReceptionNonConformities.value ? 'lims-status-dot-critical' : 'lims-status-dot-release',
+    valueClass: props.nonConformitiesAvailable && openReceptionNonConformities.value ? 'text-rose-700 dark:text-rose-300' : 'text-[color:var(--ds-text)]',
   },
   {
     label: 'Sem avaliação',

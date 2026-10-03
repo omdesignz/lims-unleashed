@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileRequest;
 use App\Http\Resources\ProfileResource;
-use App\Models\ParameterProfile;
 use App\Models\Profile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -205,22 +204,14 @@ class ProfileController extends Controller
 
         DB::transaction(function () use ($request, $id): void {
 
-            $record = tap(Profile::findOrFail($id), function ($record) use ($request) {
+            $record = Profile::findOrFail($id);
+            $record->update($request->safe()->except(['parameters']));
 
-                $record->update($request->safe()->except(['parameters']));
-
-            });
-
-            if ($request->parameters) {
-                ParameterProfile::where('profile_id', $id)->whereNotIn('parameter_id', collect($request->parameters)->pluck('parameter_id')->toArray())->delete();
-            }
-            // Structure parameters to Update
-            $keyed = collect($request->parameters)->mapWithKeys(function (array $item, int $key) {
+            $keyed = collect($request->validated('parameters'))->mapWithKeys(function (array $item) {
                 return [$item['parameter_id'] => $item];
             });
 
-            // $record->parameters()->updateExistingPivot($soft);
-            $record->parameters()->syncWithoutDetaching($keyed);
+            $record->parameters()->sync($keyed);
 
         });
 
@@ -299,11 +290,11 @@ class ProfileController extends Controller
         // Subquery to calculate total price per profile
         $parameterPrices = DB::table('parameter_profile')
             ->select('parameter_profile.profile_id')
-            ->selectRaw('SUM(parameters.price * parameter_profile.count) as total_price')
+            ->selectRaw('SUM(CASE WHEN parameter_profile.count = true OR parameter_profile.count IS NULL THEN parameters.price ELSE 0 END) as total_price')
             ->join('parameters', function ($join) {
                 $join->on('parameter_profile.parameter_id', '=', 'parameters.id')
                     ->whereNull('parameters.deleted_at')
-                    ->where('parameters.active', 1);  // Only active parameters
+                    ->where('parameters.active', true);
             })
             ->whereNull('parameter_profile.deleted_at')
             ->groupBy('parameter_profile.profile_id');
@@ -311,7 +302,7 @@ class ProfileController extends Controller
         $parameterCounts = DB::table('parameter_profile')
             ->select('parameter_profile.profile_id')
             ->selectRaw('COUNT(DISTINCT parameter_profile.parameter_id) as total_parameter_count')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN parameters.active = 1 AND parameters.deleted_at IS NULL THEN parameter_profile.parameter_id END) as active_parameter_count')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN parameters.active = true AND parameters.deleted_at IS NULL THEN parameter_profile.parameter_id END) as active_parameter_count')
             ->leftJoin('parameters', 'parameters.id', '=', 'parameter_profile.parameter_id')
             ->whereNull('parameter_profile.deleted_at')
             ->groupBy('parameter_profile.profile_id');

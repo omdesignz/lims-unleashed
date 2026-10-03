@@ -4,14 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\VAPLab;
 use App\Models\VAPLabelTemplate;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class VAPLabelTemplateController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+
     public function index(Request $request)
     {
-        $query = VAPLabelTemplate::query()
+        $baseQuery = $this->availableTemplates();
+        $query = (clone $baseQuery)
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($searchQuery) use ($search) {
                     $searchQuery->where('name', 'like', "%{$search}%")
@@ -31,23 +36,23 @@ class VAPLabelTemplateController extends Controller
 
         $templates = $query->latest()->paginate(20);
 
-        $categories = VAPLabelTemplate::distinct()->pluck('category');
+        $categories = (clone $baseQuery)->distinct()->pluck('category');
 
         return Inertia::render('VAPLabelTemplates/Index', [
             'templates' => $templates,
             'filters' => $request->only(['search', 'category', 'featured', 'status']),
             'categories' => $categories,
             'stats' => [
-                'total' => VAPLabelTemplate::count(),
-                'active' => VAPLabelTemplate::where('is_active', true)->count(),
-                'featured' => VAPLabelTemplate::where('is_featured', true)->count(),
+                'total' => (clone $baseQuery)->count(),
+                'active' => (clone $baseQuery)->where('is_active', true)->count(),
+                'featured' => (clone $baseQuery)->where('is_featured', true)->count(),
             ],
         ]);
     }
 
     public function create()
     {
-        $labs = VAPLab::active()->get(['id', 'name']);
+        $labs = VAPLab::query()->whereKey($this->laboratoryAccess->activeLabId())->get(['id', 'name']);
 
         return Inertia::render('VAPLabelTemplates/Create', [
             'categories' => [
@@ -69,7 +74,7 @@ class VAPLabelTemplateController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category' => 'required|string',
-            'template_data' => 'required|array',
+            'template_data' => 'required|array:'.implode(',', VAPLabelTemplate::PRESENTATION_FIELDS),
             'template_data.content' => 'required|string',
             'template_data.type' => 'nullable|string',
             'template_data.width' => 'required|numeric|min:1|max:1000',
@@ -94,6 +99,7 @@ class VAPLabelTemplateController extends Controller
             'is_featured' => 'boolean',
         ]);
 
+        $validated['lab_id'] = $this->laboratoryAccess->activeLabId();
         VAPLabelTemplate::create($validated);
 
         return redirect()->route('vap_labels.label-templates.index')
@@ -102,6 +108,8 @@ class VAPLabelTemplateController extends Controller
 
     public function edit(VAPLabelTemplate $labelTemplate)
     {
+        $this->ensureEditable($labelTemplate);
+
         return Inertia::render('VAPLabelTemplates/Edit', [
             'template' => $labelTemplate,
             'categories' => [
@@ -118,11 +126,13 @@ class VAPLabelTemplateController extends Controller
 
     public function update(Request $request, VAPLabelTemplate $labelTemplate)
     {
+        $this->ensureEditable($labelTemplate);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category' => 'required|string',
-            'template_data' => 'required|array',
+            'template_data' => 'required|array:'.implode(',', VAPLabelTemplate::PRESENTATION_FIELDS),
             'template_data.content' => 'required|string',
             'template_data.type' => 'nullable|string',
             'template_data.width' => 'required|numeric|min:1|max:1000',
@@ -155,6 +165,7 @@ class VAPLabelTemplateController extends Controller
 
     public function destroy(VAPLabelTemplate $labelTemplate)
     {
+        $this->ensureEditable($labelTemplate);
         $labelTemplate->delete();
 
         return redirect()->route('vap_labels.label-templates.index')
@@ -163,6 +174,7 @@ class VAPLabelTemplateController extends Controller
 
     public function toggleStatus(VAPLabelTemplate $labelTemplate)
     {
+        $this->ensureEditable($labelTemplate);
         $labelTemplate->update(['is_active' => ! $labelTemplate->is_active]);
 
         return back()->with('success', 'Estado do modelo actualizado.');
@@ -170,8 +182,23 @@ class VAPLabelTemplateController extends Controller
 
     public function toggleFeatured(VAPLabelTemplate $labelTemplate)
     {
+        $this->ensureEditable($labelTemplate);
         $labelTemplate->update(['is_featured' => ! $labelTemplate->is_featured]);
 
         return back()->with('success', 'Estado de destaque actualizado.');
+    }
+
+    /** @return Builder<VAPLabelTemplate> */
+    private function availableTemplates(): Builder
+    {
+        $labId = $this->laboratoryAccess->activeLabId();
+
+        return VAPLabelTemplate::query()
+            ->where(fn (Builder $query): Builder => $query->where('lab_id', $labId)->orWhere('is_system', true));
+    }
+
+    private function ensureEditable(VAPLabelTemplate $template): void
+    {
+        abort_unless(! $template->is_system && (int) $template->lab_id === $this->laboratoryAccess->activeLabId(), 404);
     }
 }

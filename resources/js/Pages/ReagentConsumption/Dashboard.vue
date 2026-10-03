@@ -65,6 +65,7 @@
   </template>
   
   <script setup>
+  import { useInventoryCatalogueOptions } from '@/Composables/useInventoryCatalogueOptions'
   import { ref, onMounted, watch } from "vue";
   import axios from "axios";
   import combobox from '@/Components/combobox.vue';
@@ -144,21 +145,7 @@
         // legend: { position: 'top' },
       });
       
-      function loadReagents(query, setOptions) {
-            fetch('/iitems/getReagentInventoryItem?q=' + query)
-            .then(response => response.json())
-            .then(results => {
-                setOptions(
-                results.map(result => { 
-                    return {
-                    value: result.id,
-                    label: result.name,
-                    category_id: result.category_id,
-                    };
-                })
-                );
-            });
-        }
+      const loadReagents = useInventoryCatalogueOptions({ reagentsOnly: true })
   
       const fetchChartData = async () => {
         let url = `/reagent-dashboard?filter=${selectedFilter.value}&alert_sensitivity=${alertSensitivity.value}&moving_average_length=${movingAverageLength.value}` + (selectedReagentId.value ? `&reagent_id=${selectedReagentId.value.value}` : '');

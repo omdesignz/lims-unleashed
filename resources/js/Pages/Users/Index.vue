@@ -3,7 +3,9 @@ import ComboboxMultiple from "@/Components/combobox-multiple.vue";
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
+import LaboratoryMembershipForm from "@/Components/LaboratoryMembershipForm.vue";
 import { usePermission } from "@/Composables/usePermissions";
+import { submitStaffAccountMutation } from "@/Composables/useStaffAccountPayload";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
@@ -16,6 +18,7 @@ import {
   PlusIcon,
   ShieldCheckIcon,
   UsersIcon,
+  UserMinusIcon,
 } from "@heroicons/vue/24/outline";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
@@ -31,20 +34,26 @@ const props = defineProps({
   competenceSummary: { type: Object, default: () => ({}) },
   openCreate: { type: Boolean, default: false },
   slideOverEdit: { type: Boolean, default: false },
+  accountCapabilities: { type: Object, default: () => ({}) },
 });
 
 const { hasPermission } = usePermission();
 const createPanelOpen = ref(props.openCreate);
+const membershipPanelOpen = ref(false);
 const selectedAction = ref(null);
 const selectedRecordId = ref(null);
+const pendingRecordIds = ref([]);
 const showActionConfirmation = ref(false);
+const mutationForm = useForm({});
 
-const form = useForm("CreateUser", {
+const form = useForm({
   name: "",
   email: "",
   gender: "",
   username: "",
   departments: [],
+  password: "",
+  password_confirmation: "",
 });
 
 const pageRecords = computed(() => props.record?.data || []);
@@ -93,20 +102,22 @@ const genderOptions = [
   { value: "O", label: "Outro" },
 ];
 
-const actions = [
+const actions = computed(() => [
   { id: null, label: "gestlab.actions.bulk_actions_text" },
   { id: "delete", label: "gestlab.actions.delete" },
   { id: "restore", label: "gestlab.actions.restore" },
-];
+].filter((action) => !action.id || props.accountCapabilities[action.id]));
 
 const confirmationDialogTitle = computed(() =>
+  selectedAction.value === 'removeMembership' ? 'Remover adesão ao laboratório' :
   trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`),
 );
 const confirmationDialogDescription = computed(() =>
+  selectedAction.value === 'removeMembership' ? 'Este membro deixará de ter acesso a este laboratório. A conta partilhada, a adesão a outros laboratórios e a evidência de qualificações serão preservadas.' :
   trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`),
 );
 const confirmationVariant = computed(() =>
-  ["delete", "ban"].includes(selectedAction.value) ? "danger" : "question",
+  ["delete", "ban", "removeMembership"].includes(selectedAction.value) ? "danger" : "question",
 );
 
 function loadDepartments(search, setOptions) {
@@ -124,77 +135,64 @@ function loadDepartments(search, setOptions) {
 }
 
 function openCreatePanel() {
+  if (!props.accountCapabilities.create || form.processing) return;
   form.reset();
   form.clearErrors();
   createPanelOpen.value = true;
 }
 
 function closeCreatePanel() {
+  if (form.processing) return;
   createPanelOpen.value = false;
   form.reset();
   form.clearErrors();
 }
 
 function submit() {
+  if (form.processing || !props.accountCapabilities.create) return;
   form.post(route("users.store"), {
     preserveScroll: true,
-    onSuccess: closeCreatePanel,
+    onSuccess: () => { createPanelOpen.value = false; form.reset(); form.clearErrors(); },
+    onError: () => form.reset("password", "password_confirmation"),
   });
 }
 
 function requestBulkAction(action) {
+  if (mutationForm.processing || !props.accountCapabilities[action]) return;
+  mutationForm.clearErrors();
   selectedAction.value = action;
   selectedRecordId.value = null;
+  pendingRecordIds.value = pageRecords.value.filter((record) => record.selected).map((record) => record.id);
+  if (!pendingRecordIds.value.length) return;
   showActionConfirmation.value = true;
 }
 
 function requestRecordAction(action, recordId) {
+  if (mutationForm.processing) return;
+  mutationForm.clearErrors();
   selectedAction.value = action;
   selectedRecordId.value = recordId;
+  pendingRecordIds.value = [recordId];
   showActionConfirmation.value = true;
 }
 
 function closeActionConfirmation() {
+  if (mutationForm.processing) return;
   showActionConfirmation.value = false;
   selectedAction.value = null;
   selectedRecordId.value = null;
 }
 
 function executeAction() {
-  const bulkRecordIds = pageRecords.value
-    .filter((record) => record.selected)
-    .map((record) => record.id);
+  submitStaffAccountMutation(mutationForm, selectedAction.value, pendingRecordIds.value, route, () => {
+    showActionConfirmation.value = false;
+    selectedAction.value = null;
+    selectedRecordId.value = null;
+  });
+}
 
-  if (["delete", "restore"].includes(selectedAction.value)) {
-    if (!bulkRecordIds.length) {
-      closeActionConfirmation();
-      return;
-    }
-
-    router.get(route(`users.${selectedAction.value}`), { recordIds: bulkRecordIds }, {
-      preserveScroll: true,
-      onFinish: closeActionConfirmation,
-    });
-    return;
-  }
-
-  if (["ban", "unban"].includes(selectedAction.value) && selectedRecordId.value) {
-    router.get(route("users.toggleActiveStatus", { id: selectedRecordId.value }), {}, {
-      preserveScroll: true,
-      onFinish: closeActionConfirmation,
-    });
-    return;
-  }
-
-  if (selectedAction.value === "impersonate" && selectedRecordId.value) {
-    router.get(route("users.impersonate"), { id: selectedRecordId.value }, {
-      preserveScroll: true,
-      onFinish: closeActionConfirmation,
-    });
-    return;
-  }
-
-  closeActionConfirmation();
+function archiveRecord(action, ids) {
+  submitStaffAccountMutation(mutationForm, action, ids, route, () => {});
 }
 </script>
 
@@ -217,8 +215,12 @@ function executeAction() {
           </div>
         </div>
 
+        <button v-if="accountCapabilities.join" type="button" class="ds-button ds-button-secondary whitespace-nowrap" @click="membershipPanelOpen = true">
+          <PlusIcon class="h-4 w-4" />
+          Adicionar membro
+        </button>
         <button
-          v-if="hasPermission('add_users')"
+          v-if="accountCapabilities.create"
           type="button"
           class="ds-button ds-button-primary whitespace-nowrap"
           @click="openCreatePanel"
@@ -263,6 +265,7 @@ function executeAction() {
       </div>
     </section>
 
+    <p v-if="mutationForm.hasErrors && !showActionConfirmation" role="alert" class="ds-field-error">{{ Object.values(mutationForm.errors)[0] }}</p>
     <RecordsTable
       :record="record"
       :model="model"
@@ -271,13 +274,19 @@ function executeAction() {
       :slide-over-edit="slideOverEdit"
       :query="query"
       :actions="actions"
+      :action-methods="{ delete: 'post', restore: 'post' }"
+      :archive-handler="archiveRecord"
+      :action-processing="mutationForm.processing"
       :create-action="false"
       @execute-action="requestBulkAction"
       @create-record="openCreatePanel"
     >
       <template #actions="{ data }">
+        <button v-if="data.action_capabilities?.removeMembership" type="button" class="ds-table-action ds-table-action-danger" :aria-label="`Remover adesão de ${data.name} a este laboratório`" title="Remover adesão ao laboratório" :disabled="mutationForm.processing" @click="requestRecordAction('removeMembership', data.id)">
+          <UserMinusIcon class="h-4 w-4" />
+        </button>
         <button
-          v-if="!data.deleted && hasPermission('impersonate_users')"
+          v-if="!data.deleted && data.action_capabilities?.impersonate"
           type="button"
           class="ds-table-action"
           title="Entrar como este utilizador"
@@ -289,7 +298,7 @@ function executeAction() {
         </button>
 
         <button
-          v-if="!data.deleted && hasPermission('ban_users')"
+          v-if="!data.deleted && data.action_capabilities?.status"
           type="button"
           class="ds-table-action"
           :class="{ 'ds-table-action-danger': data.is_active }"
@@ -304,8 +313,10 @@ function executeAction() {
       </template>
     </RecordsTable>
 
+    <LaboratoryMembershipForm v-if="membershipPanelOpen" @close="membershipPanelOpen = false" />
     <SlideOver
       v-if="createPanelOpen"
+      :disabled="form.processing"
       title="Novo utilizador"
       description="Defina a identidade e a unidade operacional; complete funções, permissões e competências no dossier individual."
       @close="closeCreatePanel"
@@ -336,7 +347,20 @@ function executeAction() {
                 <BaseInput id="user-username" v-model="form.username" type="text" autocomplete="username" class="ds-field mt-2" />
                 <p v-if="form.errors.username" class="ds-field-error">{{ form.errors.username }}</p>
               </div>
+
+              <div>
+                <label for="new-user-password" class="ds-field-label">Palavra-passe inicial</label>
+                <BaseInput id="new-user-password" v-model="form.password" type="password" autocomplete="new-password" class="ds-field mt-2" required :aria-invalid="Boolean(form.errors.password)" />
+                <p v-if="form.errors.password" class="ds-field-error">{{ form.errors.password }}</p>
+              </div>
+
+              <div>
+                <label for="new-user-password-confirmation" class="ds-field-label">Confirmar palavra-passe</label>
+                <BaseInput id="new-user-password-confirmation" v-model="form.password_confirmation" type="password" autocomplete="new-password" class="ds-field mt-2" required :aria-invalid="Boolean(form.errors.password_confirmation)" />
+                <p v-if="form.errors.password_confirmation" class="ds-field-error">{{ form.errors.password_confirmation }}</p>
+              </div>
             </div>
+            <p class="ds-copy text-xs">Use pelo menos 8 caracteres, com maiúsculas, minúsculas, número e símbolo. Partilhe a credencial por um canal seguro.</p>
           </section>
 
           <section class="space-y-4 px-6 py-5">
@@ -392,10 +416,14 @@ function executeAction() {
       :title="confirmationDialogTitle"
       :description="confirmationDialogDescription"
       :variant="confirmationVariant"
-      confirm="Sim"
+      :confirm="mutationForm.processing ? 'A processar...' : 'Sim'"
       cancel="Não"
+      :disabled="mutationForm.processing"
+      keep-open-on-confirm
       @canceled="closeActionConfirmation"
       @confirmed="executeAction"
-    />
+    >
+      <p v-if="mutationForm.hasErrors" role="alert" class="ds-field-error">{{ Object.values(mutationForm.errors)[0] }}</p>
+    </ConfirmDialog>
   </div>
 </template>

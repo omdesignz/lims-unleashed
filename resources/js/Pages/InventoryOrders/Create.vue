@@ -1,4 +1,5 @@
 <script setup>
+import { useInventoryCatalogueOptions } from '@/Composables/useInventoryCatalogueOptions'
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { ref, computed } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
@@ -82,20 +83,7 @@ function loadWarehouses(query, setOptions) {
     });
 }
 
-function loadItems(query, setOptions) {
-    fetch('/iitems/getInventoryItem?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.name,
-            };
-        })
-        );
-    });
-}
+const loadItems = useInventoryCatalogueOptions()
 
 
 let submit = () => {
