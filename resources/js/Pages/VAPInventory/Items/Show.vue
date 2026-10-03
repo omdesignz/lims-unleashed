@@ -57,7 +57,7 @@
                       <td class="text-right"><span class="pl-num font-medium">{{ inv.qty_available }}</span> <span class="text-[12.5px] text-[var(--pl-muted)]">{{ unitCode }}</span></td>
                       <td class="pl-num text-right">{{ inv.min_stock_level }}</td>
                       <td class="pl-num text-right">{{ inv.reorder_point }}</td>
-                      <td><StatusChip :tone="stockTone(inv)">{{ inv.stock_status_label }}</StatusChip></td>
+                      <td><StatusChip :tone="stockTone(inv)">{{ stockStatusLabels[stockStatus(inv)] }}</StatusChip></td>
                     </tr>
                   </tbody>
                 </DataTable>
@@ -393,7 +393,7 @@ const technicalSpecFields = computed(() => [
 const plural = (count, singular, pluralForm) => `${count} ${count === 1 ? singular : pluralForm}`
 
 const replenishmentPositions = computed(() => (props.inventory ?? [])
-  .filter(position => ['out_of_stock', 'critical_stock', 'low_stock'].includes(position.stock_status)))
+  .filter(position => ['out_of_stock', 'critical_stock', 'low_stock'].includes(stockStatus(position))))
 
 const lede = computed(() => {
   const stock = `${props.totalStock || 0} ${unitCode.value} em ${plural(props.inventory?.length ?? 0, 'armazém', 'armazéns')}`
@@ -564,8 +564,28 @@ const getMetrologyStatusText = (status) => {
   return 'Não aplicável'
 }
 
+/**
+ * Same thresholds as the Inventory model's stock_status accessor, which the
+ * payload does not carry: none, at or below the minimum, at or below the
+ * reorder point, available.
+ */
+const stockStatus = (inventory) => {
+  const available = Number(inventory.qty_available ?? 0)
+  if (available <= 0) return 'out_of_stock'
+  if (available <= Number(inventory.min_stock_level ?? 0)) return 'critical_stock'
+  if (available <= Number(inventory.reorder_point ?? 0)) return 'low_stock'
+  return 'in_stock'
+}
+
+const stockStatusLabels = {
+  out_of_stock: 'Sem existências',
+  critical_stock: 'Crítico',
+  low_stock: 'Existências baixas',
+  in_stock: 'Disponível',
+}
+
 const stockTone = (inventory) => {
-  const status = inventory.stock_status
+  const status = stockStatus(inventory)
   if (status === 'out_of_stock' || status === 'critical_stock') return 'bad'
   if (status === 'low_stock') return 'wait'
   return 'ok'

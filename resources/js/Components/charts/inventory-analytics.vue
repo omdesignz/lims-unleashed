@@ -383,6 +383,16 @@ const baseChartOptions = computed(() => ({
   tooltip: { theme: chartTooltipTheme.value },
 }))
 
+// The server sends a timestamp per day and English month abbreviations (January first).
+const monthLabels = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+const formatTrendDay = (value) => {
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime())
+    ? String(value ?? '')
+    : date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', timeZone: 'Africa/Luanda' })
+}
+
 const consumptionChartSeries = computed(() => [{
   name: 'Consumo diário',
   data: consumptionTrend.value.map((item) => Number(item.quantity || 0)),
@@ -393,7 +403,7 @@ const consumptionChartOptions = computed(() => ({
   stroke: { curve: 'straight', width: 3 },
   markers: { size: 3 },
   xaxis: {
-    categories: consumptionTrend.value.map((item) => item.date),
+    categories: consumptionTrend.value.map((item) => formatTrendDay(item.date)),
     labels: { rotate: -20, trim: true, style: { colors: chartTextColor.value } },
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
@@ -419,9 +429,9 @@ const monthlyChartSeries = computed(() => [
 const monthlyChartOptions = computed(() => ({
   ...baseChartOptions.value,
   colors: ['#14a3a8', '#7c5ce0'],
-  plotOptions: { bar: { borderRadius: 4, columnWidth: '52%' } },
+  plotOptions: { bar: { borderRadius: 0, columnWidth: '52%' } },
   xaxis: {
-    categories: monthlyComparison.value.map((month) => month.month),
+    categories: monthlyComparison.value.map((month, index) => monthLabels[index] ?? month.month),
     labels: { style: { colors: chartTextColor.value } },
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
@@ -437,7 +447,7 @@ const topReagentsChartSeries = computed(() => [{
 const topReagentsChartOptions = computed(() => ({
   ...baseChartOptions.value,
   colors: ['#e0902b'],
-  plotOptions: { bar: { borderRadius: 4, horizontal: true } },
+  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
   xaxis: {
     categories: topReagents.value.slice(0, 8).map((item) => item.name || 'Sem nome'),
     labels: { style: { colors: chartTextColor.value } },
@@ -462,7 +472,7 @@ const supplierChartOptions = computed(() => ({
       label: { text: 'Meta 90%', style: { color: '#fff', background: '#e5484d' } },
     }],
   },
-  plotOptions: { bar: { borderRadius: 4, horizontal: true } },
+  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
   xaxis: {
     categories: supplierPerformance.value.map((supplier) => supplier.supplier || 'Sem fornecedor'),
     min: 0,

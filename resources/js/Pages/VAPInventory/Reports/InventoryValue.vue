@@ -326,7 +326,7 @@ const categoryValueChartOptions = computed(() => ({
   colors: ['#0f766e'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 4, horizontal: true } },
+  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
   xaxis: {
     categories: props.charts?.category_value_breakdown?.labels || [],
     axisBorder: { color: chartGridColor.value },
@@ -357,7 +357,7 @@ const topItemValueChartOptions = computed(() => ({
   colors: ['#1d4ed8'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 4, columnWidth: '48%' } },
+  plotOptions: { bar: { borderRadius: 0, columnWidth: '48%' } },
   xaxis: {
     categories: props.charts?.top_item_value?.labels || [],
     labels: { rotate: -25, trim: true, style: { colors: chartTextColor.value } },

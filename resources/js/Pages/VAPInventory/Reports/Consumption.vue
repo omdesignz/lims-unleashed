@@ -349,7 +349,7 @@ const itemConsumptionChartOptions = computed(() => ({
   colors: ['#e5484d'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 4, horizontal: true } },
+  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
   xaxis: {
     categories: props.charts?.item_consumption?.labels || [],
     axisBorder: { color: chartGridColor.value },

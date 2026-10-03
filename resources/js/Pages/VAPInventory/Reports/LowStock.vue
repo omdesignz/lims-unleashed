@@ -337,7 +337,7 @@ const severityMixChartOptions = computed(() => ({
   colors: ['#e5484d'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 4, horizontal: true } },
+  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
   xaxis: {
     categories: props.charts?.severity_mix?.labels || [],
     axisBorder: { color: chartGridColor.value },
@@ -368,7 +368,7 @@ const replenishmentGapChartOptions = computed(() => ({
   colors: ['#14a3a8'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 4, columnWidth: '48%' } },
+  plotOptions: { bar: { borderRadius: 0, columnWidth: '48%' } },
   xaxis: {
     categories: props.charts?.replenishment_gap?.labels || [],
     labels: { rotate: -25, trim: true, style: { colors: chartTextColor.value } },

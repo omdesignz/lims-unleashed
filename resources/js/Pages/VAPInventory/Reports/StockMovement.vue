@@ -326,7 +326,7 @@ const directionBreakdownChartOptions = computed(() => ({
   colors: ['#14a3a8'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 4, columnWidth: '52%' } },
+  plotOptions: { bar: { borderRadius: 0, columnWidth: '52%' } },
   xaxis: {
     categories: props.charts?.direction_breakdown?.labels || [],
     axisBorder: { color: chartGridColor.value },

@@ -2863,6 +2863,7 @@ input[type="checkbox"]:not(.peer):not(.sr-only):disabled {
 
 /* Wide tables scroll inside their panel instead of spilling out of it. */
 .pl-panel:has(> .ds-data-table) { overflow-x: auto; }
+.pl-panel [role='tabpanel']:has(> .ds-data-table) { overflow-x: auto; }
 .pl-panel > .ds-data-table td.pl-num,
 .pl-panel > .ds-data-table td:first-child { white-space: nowrap; }
 

@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Psr\Log\LogLevel;
 use Throwable;
+use Tighten\Ziggy\Ziggy;
 
 class Handler extends ExceptionHandler
 {
@@ -89,11 +90,18 @@ class Handler extends ExceptionHandler
     /**
      * Exceptions raised before the Inertia middleware (route-model binding, CSRF,
      * session) would otherwise render the error page without routes, user and
-     * settings, and the page cannot draw.
+     * settings, and the page cannot draw. Without a session only the routes are
+     * shared, because the other shared props read the session.
      */
     protected function shareInertiaPropsWhenMiddlewareDidNotRun(Request $request): void
     {
         if (array_key_exists('ziggy', Inertia::getShared())) {
+            return;
+        }
+
+        if (! $request->hasSession()) {
+            Inertia::share('ziggy', fn (): array => [...(new Ziggy)->toArray(), 'location' => $request->url()]);
+
             return;
         }
 
