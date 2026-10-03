@@ -68,9 +68,9 @@ class LaboratorySampleQueueTest extends TestCase
         VAPSampleEntry::factory()->create(['status' => 'EN_PAUSA']);
         $this->actingAs($this->operator($lab))->get(route('vap_samples.queue', ['status' => 'EN_PROGRESO']))
             ->assertOk()->assertInertia(fn (Assert $page) => $page
-                ->where('counts.EN_PAUSA', 2)->where('counts.EN_PROGRESO', 1)
-                ->where('counts.POR_INICIAR', 0)->where('counts.COMPLETADO', 0)->where('counts.CANCELADO', 0)
-                ->has('samples.data', 1));
+            ->where('counts.EN_PAUSA', 2)->where('counts.EN_PROGRESO', 1)
+            ->where('counts.POR_INICIAR', 0)->where('counts.COMPLETADO', 0)->where('counts.CANCELADO', 0)
+            ->has('samples.data', 1));
     }
 
     public function test_filters_are_validated_and_wildcards_are_literal(): void
