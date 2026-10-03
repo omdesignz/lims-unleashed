@@ -291,7 +291,7 @@ const plural = (count, singular, pluralForm) => `${count} ${count === 1 ? singul
 
 const lede = computed(() => {
   const stats = props.stats ?? {}
-  const summary = `${plural(stats.total_items ?? 0, 'item activo', 'itens activos')}: ${stats.equipment_count ?? 0} equipamentos, ${stats.reagents_count ?? 0} reagentes e ${stats.consumables_count ?? 0} consumíveis.`
+  const summary = `${plural(stats.total_items ?? 0, 'item activo', 'itens activos')}: ${plural(stats.equipment_count ?? 0, 'equipamento', 'equipamentos')}, ${plural(stats.reagents_count ?? 0, 'reagente', 'reagentes')} e ${plural(stats.consumables_count ?? 0, 'consumível', 'consumíveis')}.`
   const alerts = [
     stats.items_on_metrology_hold ? plural(stats.items_on_metrology_hold, 'em bloqueio metrológico', 'em bloqueio metrológico') : null,
     stats.expired_reagents ? plural(stats.expired_reagents, 'reagente vencido', 'reagentes vencidos') : null,

@@ -1,51 +1,46 @@
 <template>
-    <nav class="flex" aria-label="Breadcrumb">
-      <ol class="m-2 flex items-center space-x-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-xs shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
-        <li>
-          <button
-            @click="navigateToFolder(null)"
-            class="text-gray-500 transition hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-100"
-            :class="{ 'font-medium text-gray-900 dark:text-slate-100': !fileStore.currentFolder }"
-          >
-            <HomeIcon class="h-4 w-4" />
-          </button>
-        </li>
-        
-        <li v-for="(folder, index) in fileStore.breadcrumbs" :key="folder.id" class="flex items-center">
-            <ChevronRightIcon class="h-4 w-4 text-gray-400 dark:text-slate-600" />
-            <button
-              @click="navigateToFolder(folder.id)"
-              class="ml-2 text-gray-500 transition hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-100"
-              :class="{ 'font-medium text-gray-900 dark:text-slate-100': index === fileStore.breadcrumbs.length - 1 }"
-              :disabled="index === fileStore.breadcrumbs.length - 1"
-            >
-              {{ folder.name }}
-            </button>
-          </li>
-        
-        <li v-if="fileStore.isLoading && fileStore.currentFolder" class="flex items-center">
-          <ChevronRightIcon class="h-4 w-4 text-gray-400 dark:text-slate-600" />
-          <span class="ml-2 text-gray-400 dark:text-slate-500">A carregar...</span>
-        </li>
-      </ol>
-    </nav>
+  <nav class="min-w-0" aria-label="Pasta actual">
+    <ol class="flex min-w-0 flex-wrap items-center gap-1.5 text-[13px]">
+      <li>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 text-[var(--pl-muted)] hover:text-[var(--pl-fg)]"
+          :class="{ 'font-medium text-[var(--pl-fg)]': !fileStore.currentFolder }"
+          :aria-current="!fileStore.currentFolder ? 'page' : undefined"
+          @click="navigateToFolder(null)"
+        >
+          <HomeIcon class="h-4 w-4" aria-hidden="true" />
+          <span class="pl-k">Raiz</span>
+        </button>
+      </li>
+      <li v-for="(folder, index) in fileStore.breadcrumbs" :key="folder.id" class="flex min-w-0 items-center gap-1.5">
+        <span class="text-[var(--pl-faint)]" aria-hidden="true">/</span>
+        <button
+          type="button"
+          class="truncate text-[var(--pl-muted)] hover:text-[var(--pl-fg)] disabled:cursor-default"
+          :class="{ 'font-medium text-[var(--pl-fg)]': index === fileStore.breadcrumbs.length - 1 }"
+          :aria-current="index === fileStore.breadcrumbs.length - 1 ? 'page' : undefined"
+          :disabled="index === fileStore.breadcrumbs.length - 1"
+          @click="navigateToFolder(folder.id)"
+        >
+          {{ folder.name }}
+        </button>
+      </li>
+      <li v-if="fileStore.isLoading && fileStore.currentFolder" class="flex items-center gap-1.5 text-[var(--pl-faint)]" role="status">
+        <span aria-hidden="true">/</span>
+        A carregar…
+      </li>
+    </ol>
+  </nav>
 </template>
-  
-  <script setup lang="ts">
-  import { ChevronRight as ChevronRightIcon } from '@lucide/vue'
-  import { useFileStore } from '../../Stores/fileStore'
-  import {
-  House as HomeIcon,
-} from '@lucide/vue'
 
-  
-const fileStore = useFileStore();
+<script setup lang="ts">
+import { House as HomeIcon } from '@lucide/vue'
+import { useFileStore } from '../../Stores/fileStore'
 
-// 💡 The problematic line 'const breadcrumbs = fileStore.breadcrumbs;' is removed.
-// The template will now correctly use the reactive property directly via fileStore.breadcrumbs.
+const fileStore = useFileStore()
 
 async function navigateToFolder(folderId: string | null) {
   await fileStore.navigateToFolder(folderId)
 }
-
-  </script>
+</script>

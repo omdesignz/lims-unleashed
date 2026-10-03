@@ -223,7 +223,7 @@ function printTransfer() {
 
     <div class="pl-dossier-grid">
       <div class="grid min-w-0 gap-7">
-        <Journey :steps="journeySteps" aria-label="Percurso da transferência" />
+        <Journey :steps="journeySteps" label="Percurso da transferência" />
 
         <section class="pl-panel" aria-labelledby="transfer-line-title">
           <div class="pl-panel-head">
