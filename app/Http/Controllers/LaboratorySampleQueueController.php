@@ -20,9 +20,15 @@ class LaboratorySampleQueueController extends Controller
     {
         $lab = $this->activeLab($request);
 
+        $counts = VAPSampleEntry::query()->where('lab_id', $lab['id'])
+            ->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+
         return Inertia::render('VAPSamples/Queue', [
             'lab' => $lab,
             'filters' => $request->validated(),
+            'counts' => collect(['POR_INICIAR', 'EN_PROGRESO', 'EN_PAUSA', 'COMPLETADO', 'CANCELADO'])
+                ->mapWithKeys(fn (string $status): array => [$status => (int) ($counts[$status] ?? 0)])
+                ->all(),
             'samples' => LaboratorySampleResource::collection($list->execute($lab['id'], $request->validated())),
         ]);
     }

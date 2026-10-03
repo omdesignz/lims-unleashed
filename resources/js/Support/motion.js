@@ -10,6 +10,9 @@ export const easeDrawer = [0.32, 0.72, 0, 1]
 
 export const springSnappy = { type: 'spring', duration: 0.3, bounce: 0 }
 
+/** The accent plane that marks the current position slides, never bounces (Plano: 220 ms). */
+export const springPlane = { type: 'spring', duration: 0.22, bounce: 0 }
+
 export const durations = {
   press: 0.15,
   popover: 0.16,

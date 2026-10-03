@@ -2,12 +2,15 @@
 import { computed, onUnmounted, ref, watch } from 'vue'
 import { Head, Link, useForm, useHttp } from '@inertiajs/vue3'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue'
-import { ArrowRight as ArrowRightIcon, FlaskConical as BeakerIcon, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search as MagnifyingGlassIcon, Plus as PlusIcon, X as XMarkIcon } from '@lucide/vue'
+import { ArrowRight as ArrowRightIcon, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, X as XMarkIcon } from '@lucide/vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { sampleDate as date } from '@/Utils/samplePresentation'
+import { sampleDate as date, sampleStatusLabels, sampleTypeLabels } from '@/Utils/samplePresentation'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StateCells from '@/Components/plano/StateCells.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 
 defineOptions({ layout: Layout })
-const props = defineProps({ lab: Object, filters: Object, samples: Object })
+const props = defineProps({ lab: Object, filters: Object, counts: { type: Object, default: () => ({}) }, samples: Object })
 const filter = useForm({ search: props.filters.search ?? '', status: props.filters.status ?? '', per_page: props.filters.per_page ?? 25 })
 const detail = useHttp({})
 const previewOpen = ref(false)
@@ -15,7 +18,17 @@ const selected = ref(null)
 const previewError = ref('')
 let requestVersion = 0
 const states = { POR_INICIAR: 'Por iniciar', EN_PROGRESO: 'Em análise', EN_PAUSA: 'Em espera', COMPLETADO: 'Concluídas', CANCELADO: 'Canceladas' }
-const tones = { POR_INICIAR: 'received', EN_PROGRESO: 'analysis', EN_PAUSA: 'hold', COMPLETADO: 'complete', CANCELADO: 'hold' }
+const tones = { POR_INICIAR: 'neutral', EN_PROGRESO: 'run', EN_PAUSA: 'wait', COMPLETADO: 'ok', CANCELADO: 'done' }
+const totalCount = computed(() => Object.values(props.counts).reduce((sum, value) => sum + Number(value || 0), 0))
+const cells = computed(() => [
+  { key: '', label: 'Todas', value: totalCount.value },
+  ...Object.entries(states).map(([key, label]) => ({ key, label, value: props.counts[key] ?? 0, tone: key === 'EN_PAUSA' && props.counts[key] ? 'bad' : undefined })),
+])
+const lede = computed(() => {
+  const open = (props.counts.POR_INICIAR ?? 0) + (props.counts.EN_PROGRESO ?? 0) + (props.counts.EN_PAUSA ?? 0)
+  const held = props.counts.EN_PAUSA ?? 0
+  return `${open} amostras em curso no ${props.lab.name}.${held ? ` ${held} em espera.` : ''}`
+})
 const hasFilters = computed(() => Boolean(filter.search || filter.status))
 const requestedServices = computed(() => {
   const value = selected.value?.details?.requested_services
@@ -63,39 +76,80 @@ onUnmounted(() => { requestVersion++; detail.cancel() })
 </script>
 
 <template>
-  <div class="workbench-page">
-    <Head title="Amostras" />
-    <header class="app-page-header lab-page-head">
-      <div class="app-page-header-row">
-        <div><h1 class="app-page-title">Amostras</h1><p class="app-page-meta">{{ lab.name }} · Cada amostra, no seu lugar · {{ samples.meta.total }} nesta vista</p></div>
-        <div class="app-page-actions"><Link :href="route('vap_samples.index')" class="lab-btn lab-primary"><PlusIcon aria-hidden="true" />Receber amostra</Link></div>
-      </div>
-      <nav class="app-tabs" aria-label="Filtrar estado das amostras"><button type="button" class="app-tab" :aria-pressed="!filter.status" @click="search('')">Todas</button><button v-for="(label, status) in states" :key="status" type="button" class="app-tab" :aria-pressed="filter.status === status" @click="search(status)">{{ label }}</button></nav>
-    </header>
-    <form class="lab-toolbar" @submit.prevent="search()">
-      <div class="min-w-44 max-w-xs flex-1">
-        <BaseInput v-model="filter.search" type="search" maxlength="100" aria-label="Pesquisar amostras" placeholder="Pesquisar nome ou código">
-          <template #leading><MagnifyingGlassIcon aria-hidden="true" /></template>
-        </BaseInput>
-      </div>
-      <button class="lab-btn" type="submit" :disabled="filter.processing">{{ filter.processing ? 'A pesquisar…' : 'Pesquisar' }}</button>
-      <button v-if="hasFilters" class="lab-link lab-small" type="button" @click="clearFilters">Limpar filtros</button>
-      <div class="lab-spacer"></div>
-      <div class="lab-flex lab-small"><span id="queue-per-page">Por página</span><div class="w-24"><BaseSelect :model-value="filter.per_page" :options="[25, 50, 100]" aria-labelledby="queue-per-page" @update:model-value="filter.per_page = $event; search()" /></div></div>
+  <div class="pl-page" data-template="queue">
+    <Head title="Fila de amostras" />
+    <PageHeader :crumbs="[{ title: 'Amostras' }, { title: 'Fila' }]" title="Fila de amostras" :lede="lede" />
+
+    <StateCells class="mb-10" :items="cells" :model-value="filter.status" label="Filtrar estado das amostras" @update:model-value="search($event)" />
+
+    <form class="pl-filter" @submit.prevent="search()">
+      <label for="queue-search" class="pl-filter-prompt">Filtro://</label>
+      <BaseInput id="queue-search" v-model="filter.search" type="search" data-bare class="pl-filter-input" maxlength="100" placeholder="código, nome da amostra" />
+      <button class="ds-button ds-button-quiet" type="submit" :disabled="filter.processing">{{ filter.processing ? 'A procurar…' : 'Procurar' }}</button>
+      <button v-if="hasFilters" class="ds-chip" type="button" @click="clearFilters">Limpar filtros <XMarkIcon class="h-3.5 w-3.5" aria-hidden="true" /></button>
+      <div class="ml-auto flex items-center gap-2"><span id="queue-per-page" class="pl-k pl-muted">Por página</span><div class="w-24"><BaseSelect :model-value="filter.per_page" :options="[25, 50, 100]" aria-labelledby="queue-per-page" @update:model-value="filter.per_page = $event; search()" /></div></div>
     </form>
-    <p v-if="filter.hasErrors" class="lab-field-error" role="alert">{{ Object.values(filter.errors)[0] }}</p>
-    <section class="lab-queue" aria-label="Fila de amostras" :aria-busy="filter.processing">
-      <div v-if="samples.data.length" class="lab-table-wrap"><DataTable class="lab-table"><thead><tr><th scope="col">Amostra</th><th scope="col">Cliente</th><th scope="col">Estado</th><th scope="col">Recepção</th><th scope="col">Retenção até</th><th scope="col"><span class="sr-only">Consulta</span></th></tr></thead><tbody><tr v-for="sample in samples.data" :key="sample.id"><td><button type="button" class="lab-link" @click="preview(sample)">{{ sample.code || 'Código por atribuir' }}</button><small>{{ sample.name }}</small></td><td>{{ sample.customer?.name || 'Não associado' }}<small>{{ sample.sample_type || 'Tipo por definir' }}</small></td><td><span class="lab-pill" :data-tone="tones[sample.status]"><span class="lab-dot"></span>{{ states[sample.status] || sample.status }}</span></td><td>{{ date(sample.received_at) }}</td><td>{{ date(sample.retention_due_at) }}</td><td><button type="button" class="lab-link" :aria-label="`Consultar ${sample.name}`" @click="preview(sample)">Consultar <ArrowRightIcon /></button></td></tr></tbody></DataTable></div>
-      <div v-else class="lab-empty"><BeakerIcon class="lab-empty-icon" /><strong>{{ hasFilters ? 'Nenhuma amostra encontrada' : 'Uma bancada pronta para começar' }}</strong>{{ hasFilters ? 'Experimente outro nome, código ou estado.' : 'As amostras recebidas neste laboratório aparecerão aqui.' }}<div v-if="hasFilters" class="lab-empty-action"><button type="button" class="lab-btn" @click="clearFilters">Limpar filtros</button></div></div>
-      <nav class="lab-pagination" aria-label="Paginação de amostras"><p role="status">{{ samples.meta.from ?? 0 }}–{{ samples.meta.to ?? 0 }} de {{ samples.meta.total }} amostras</p><div class="lab-flex"><Link v-if="samples.links.prev" :href="samples.links.prev" class="lab-btn lab-icon-btn" aria-label="Página anterior" preserve-scroll><ChevronLeftIcon /></Link><button v-else type="button" class="lab-btn lab-icon-btn" aria-label="Página anterior" disabled><ChevronLeftIcon /></button><span>Página {{ samples.meta.current_page }} de {{ samples.meta.last_page }}</span><Link v-if="samples.links.next" :href="samples.links.next" class="lab-btn lab-icon-btn" aria-label="Página seguinte" preserve-scroll><ChevronRightIcon /></Link><button v-else type="button" class="lab-btn lab-icon-btn" aria-label="Página seguinte" disabled><ChevronRightIcon /></button></div></nav>
+    <p v-if="filter.hasErrors" class="ds-field-error mb-3" role="alert">{{ Object.values(filter.errors)[0] }}</p>
+
+    <section class="pl-panel" aria-label="Fila de amostras" :aria-busy="filter.processing">
+      <DataTable v-if="samples.data.length">
+        <thead><tr><th scope="col">Código</th><th scope="col">Cliente</th><th scope="col">Amostra</th><th scope="col">Estado</th><th scope="col" class="text-right">Recepção</th><th scope="col" class="text-right">Retenção até</th><th scope="col"><span class="sr-only">Consulta</span></th></tr></thead>
+        <tbody>
+          <tr v-for="sample in samples.data" :key="sample.id" :data-selected="selected?.id === sample.id && previewOpen">
+            <td><button type="button" class="pl-num whitespace-nowrap text-left font-medium hover:text-[var(--pl-accent-text)]" @click="preview(sample)">{{ sample.code || 'Por atribuir' }}</button></td>
+            <td>{{ sample.customer?.name || 'Não associado' }}<span class="text-[var(--pl-muted)]"> · {{ sampleTypeLabels[sample.sample_type] || sample.sample_type || 'Tipo por definir' }}</span></td>
+            <td class="max-w-[14rem] truncate">{{ sample.name }}</td>
+            <td><StatusChip :tone="tones[sample.status]">{{ sampleStatusLabels[sample.status] || sample.status }}</StatusChip></td>
+            <td class="pl-num text-right">{{ date(sample.received_at) }}</td>
+            <td class="pl-num text-right">{{ date(sample.retention_due_at) }}</td>
+            <td class="text-right"><button type="button" class="ds-icon-button pl-row-go" :aria-label="`Consultar ${sample.name}`" @click="preview(sample)"><ChevronRightIcon aria-hidden="true" /></button></td>
+          </tr>
+        </tbody>
+      </DataTable>
+      <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+        <span class="pl-k">{{ hasFilters ? 'Nenhuma amostra encontrada' : 'Uma bancada pronta para começar' }}</span>
+        <p class="text-sm text-[var(--pl-muted)]">{{ hasFilters ? 'Experimente outro nome, código ou estado.' : 'As amostras recebidas neste laboratório aparecerão aqui.' }}</p>
+        <button v-if="hasFilters" type="button" class="ds-button ds-button-quiet mt-2" @click="clearFilters">Limpar filtros</button>
+      </div>
     </section>
-    <Dialog :open="previewOpen" class="lab-quick-view" @close="closePreview">
-      <div class="lab-quick-backdrop" aria-hidden="true"></div>
-      <div class="lab-quick-position"><DialogPanel class="lab-quick-panel"><header><div><p>Consulta de amostra · {{ lab.name }}</p><DialogTitle>{{ selected?.code || 'Detalhes da amostra' }}</DialogTitle></div><button type="button" aria-label="Fechar consulta" @click="closePreview"><XMarkIcon /></button></header>
-        <p v-if="previewError" role="alert" class="lab-quick-message">{{ previewError }}</p>
-        <div v-else-if="!selected" class="lab-quick-message" role="status" aria-live="polite">A carregar a amostra…</div>
-        <template v-else><h3>{{ selected.name }}</h3><dl><div><dt>Estado</dt><dd>{{ states[selected.status] || selected.status }}</dd></div><div><dt>Cliente</dt><dd>{{ selected.customer?.name || 'Não associado' }}</dd></div><div><dt>Recepção</dt><dd>{{ date(selected.received_at) }}</dd></div><div><dt>Retenção até</dt><dd>{{ date(selected.retention_due_at) }}</dd></div><div><dt>Início da análise</dt><dd>{{ date(selected.details?.analysis_started_at) }}</dd></div><div><dt>Conclusão da análise</dt><dd>{{ date(selected.details?.analysis_completed_at) }}</dd></div></dl><section><h3>Serviços solicitados</h3><p>{{ requestedServices }}</p></section><section><h3>Observações de recepção</h3><p>{{ selected.details?.observations || 'Sem observações registadas.' }}</p></section><Link :href="route('vap_samples.show', selected.id)" class="lab-quick-record-link">Abrir ficha completa<ArrowRightIcon /></Link></template>
-      </DialogPanel></div>
+
+    <nav class="mt-6 flex flex-wrap items-center justify-between gap-4" aria-label="Paginação de amostras">
+      <p class="pl-k pl-muted" role="status">{{ samples.meta.from ?? 0 }}–{{ samples.meta.to ?? 0 }} de {{ samples.meta.total }} · {{ filter.per_page }} por página</p>
+      <div class="pl-pager">
+        <Link v-if="samples.links.prev" :href="samples.links.prev" aria-label="Página anterior" preserve-scroll><ChevronLeftIcon aria-hidden="true" />Ant</Link>
+        <span v-else aria-disabled="true"><ChevronLeftIcon aria-hidden="true" />Ant</span>
+        <span aria-current="page">{{ samples.meta.current_page }} / {{ samples.meta.last_page }}</span>
+        <Link v-if="samples.links.next" :href="samples.links.next" aria-label="Página seguinte" preserve-scroll>Seg<ChevronRightIcon aria-hidden="true" /></Link>
+        <span v-else aria-disabled="true">Seg<ChevronRightIcon aria-hidden="true" /></span>
+      </div>
+    </nav>
+
+    <Dialog :open="previewOpen" class="relative z-50" @close="closePreview">
+      <div class="ds-modal-backdrop fixed inset-0" aria-hidden="true"></div>
+      <div class="fixed inset-0 flex justify-end">
+        <DialogPanel class="pl-slideover">
+          <header class="pl-panel-head h-auto py-4">
+            <div><p class="pl-k pl-muted">Consulta · {{ lab.name }}</p><DialogTitle class="pl-d3 mt-2">{{ selected?.code || 'Detalhes da amostra' }}</DialogTitle></div>
+            <button type="button" class="ds-icon-button" aria-label="Fechar consulta" @click="closePreview"><XMarkIcon aria-hidden="true" /></button>
+          </header>
+          <p v-if="previewError" role="alert" class="pl-banner pl-banner-bad m-4">{{ previewError }}</p>
+          <div v-else-if="!selected" class="grid gap-3 p-4" role="status" aria-live="polite"><span class="sr-only">A carregar a amostra…</span><span class="pl-skel h-5 w-2/3" /><span class="pl-skel h-4 w-full" /><span class="pl-skel h-4 w-5/6" /></div>
+          <template v-else>
+            <p class="px-4 pt-4 text-[15px] font-semibold">{{ selected.name }}</p>
+            <dl class="pl-facts mt-3 border-y border-[var(--pl-line)]">
+              <div class="pl-fact"><dt>Estado</dt><dd><StatusChip :tone="tones[selected.status]">{{ sampleStatusLabels[selected.status] || selected.status }}</StatusChip></dd></div>
+              <div class="pl-fact"><dt>Cliente</dt><dd>{{ selected.customer?.name || 'Não associado' }}</dd></div>
+              <div class="pl-fact"><dt>Recepção</dt><dd class="pl-num">{{ date(selected.received_at) }}</dd></div>
+              <div class="pl-fact"><dt>Retenção até</dt><dd class="pl-num">{{ date(selected.retention_due_at) }}</dd></div>
+              <div class="pl-fact"><dt>Início da análise</dt><dd class="pl-num">{{ date(selected.details?.analysis_started_at) }}</dd></div>
+              <div class="pl-fact"><dt>Conclusão</dt><dd class="pl-num">{{ date(selected.details?.analysis_completed_at) }}</dd></div>
+            </dl>
+            <section class="grid gap-2 p-4"><h3 class="pl-k pl-muted">Serviços solicitados</h3><p class="text-sm">{{ requestedServices }}</p></section>
+            <section class="grid gap-2 px-4 pb-4"><h3 class="pl-k pl-muted">Observações de recepção</h3><p class="text-sm">{{ selected.details?.observations || 'Sem observações registadas.' }}</p></section>
+            <div class="mt-auto border-t border-[var(--pl-line)] p-4"><Link :href="route('vap_samples.show', selected.id)" class="ds-button ds-button-primary w-full justify-between">Abrir ficha completa<ArrowRightIcon aria-hidden="true" /></Link></div>
+          </template>
+        </DialogPanel>
+      </div>
     </Dialog>
   </div>
 </template>

@@ -453,7 +453,7 @@ import {
   CircleX as XCircleIcon,
   X as XMarkIcon,
 } from '@lucide/vue'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 
 const props = defineProps({
   transfers: {

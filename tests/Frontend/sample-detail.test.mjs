@@ -39,8 +39,8 @@ test('result summary uses actual result counts, not analysis count', () => {
   assert.match(page, /info.qc_decision/)
 })
 
-test('detail preserves approved geometry and keyboard accessible tabs', () => {
-  for (const token of ['lab-page-head', 'lab-metrics', 'lab-record-grid', 'lab-record-rail', 'TabGroup', 'TabList', 'TabPanel']) assert.ok(page.includes(token), token)
+test('detail follows the Plano dossier template with keyboard accessible tabs', () => {
+  for (const token of ['PageHeader', 'Journey', 'pl-dossier-grid', 'pl-facts', 'NextStepBar', 'TabGroup', 'TabList', 'TabPanel']) assert.ok(page.includes(token), token)
   assert.doesNotMatch(page, /ds-card|ds-panel|font-black|transition-all|<Transition/)
   assert.match(page, /route\('vap_samples.queue'\)/)
   assert.match(page, /A análise começa aqui/)

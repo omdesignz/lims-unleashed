@@ -1,9 +1,9 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { AnimatePresence, motion } from 'motion-v'
 import { ChevronDown } from '@lucide/vue'
-import { easeOut } from '@/Support/motion'
+import { easeOut, springPlane } from '@/Support/motion'
 
 const props = defineProps({
   area: { type: Object, default: null },
@@ -11,6 +11,7 @@ const props = defineProps({
 
 const emit = defineEmits(['open-command-palette', 'navigate'])
 const page = usePage()
+const planeId = `pl-side-plane-${useId()}`
 
 const currentPath = computed(() => String(page.url || '').split(/[?#]/)[0])
 const matches = (path) => Boolean(path) && (currentPath.value === path || currentPath.value.startsWith(`${path}/`))
@@ -21,8 +22,14 @@ const activeHref = computed(() => (props.area?.sections ?? [])
   .filter((item) => matches(item.path))
   .sort((first, second) => second.path.length - first.path.length)[0]?.href ?? null)
 
+// Catalogues and configuration fold away; they open by themselves when you are inside them.
+const holdsActive = (section) => section.items.some((item) => item.href === activeHref.value)
 const closed = ref(new Set())
-const isOpen = (section) => !closed.value.has(section.key)
+const isOpen = (section) => !section.collapsible || holdsActive(section) || !closed.value.has(section.key)
+
+function resetClosed() {
+  closed.value = new Set((props.area?.sections ?? []).filter((section) => section.collapsible).map((section) => section.key))
+}
 
 function toggle(section) {
   const next = new Set(closed.value)
@@ -36,41 +43,42 @@ function toggle(section) {
   closed.value = next
 }
 
-watch(() => props.area?.key, () => { closed.value = new Set() })
+watch(() => props.area?.key, resetClosed, { immediate: true })
 </script>
 
 <template>
-  <nav class="app-nav" :aria-label="props.area?.label || 'Navegação'">
-    <p v-if="props.area" class="app-nav-title">{{ props.area.label }}</p>
-    <section v-for="section in props.area?.sections ?? []" :key="section.key" class="app-nav-group">
+  <nav class="pl-side-nav" :aria-label="props.area?.label || 'Navegação'">
+    <section v-for="section in props.area?.sections ?? []" :key="section.key" class="pl-side-group">
       <button
-        v-if="section.label"
+        v-if="section.collapsible"
         type="button"
-        class="app-nav-label"
+        class="pl-side-head pl-side-head-toggle"
         :aria-expanded="isOpen(section)"
         @click="toggle(section)"
       >
-        <ChevronDown aria-hidden="true" />{{ section.label }}
+        <span>{{ section.label }}</span><ChevronDown aria-hidden="true" />
       </button>
+      <p v-else-if="section.label" class="pl-side-head">{{ section.label }}</p>
       <AnimatePresence :initial="false">
         <motion.div
           v-if="isOpen(section)"
-          class="app-nav-group overflow-hidden"
+          class="pl-side-links"
           :initial="{ height: 0, opacity: 0 }"
           :animate="{ height: 'auto', opacity: 1 }"
-          :exit="{ height: 0, opacity: 0, transition: { duration: 0.14, ease: easeOut } }"
-          :transition="{ duration: 0.2, ease: easeOut }"
+          :exit="{ height: 0, opacity: 0, transition: { duration: 0.1, ease: easeOut } }"
+          :transition="{ duration: 0.16, ease: easeOut }"
         >
           <Link
             v-for="item in section.items"
             :key="item.href"
             :href="item.href"
-            class="ds-nav-item app-nav-item"
+            class="pl-side-link"
             :aria-current="activeHref === item.href ? 'page' : undefined"
             @click="emit('navigate')"
           >
-            <span class="app-nav-glyph" aria-hidden="true" />
-            <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
+            <motion.span v-if="activeHref === item.href" :layout-id="planeId" class="pl-side-plane" :transition="springPlane" aria-hidden="true" />
+            <span class="pl-side-link-label">{{ item.label }}</span>
+            <span v-if="item.count" class="pl-side-count">{{ item.count > 99 ? '99+' : item.count }}</span>
           </Link>
         </motion.div>
       </AnimatePresence>

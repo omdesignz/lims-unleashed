@@ -59,8 +59,9 @@ class ErrorPagesTest extends TestCase
 
         $this->assertStringContainsString('data-error-page="vap"', $html);
         $this->assertStringContainsString('Erro '.$code, $html);
-        $this->assertStringContainsString('/brand/svg/VAP_Master.svg', $html);
-        $this->assertStringContainsString('font-family: "Inter"', $html);
+        $this->assertStringContainsString('/brand/svg/VAP_Small_Black.svg', $html);
+        $this->assertStringContainsString('font-family: "TASA Orbiter"', $html);
+        $this->assertStringContainsString('font-family: "Geist Mono"', $html);
         $this->assertStringNotContainsString('font-weight: 100', $html);
         $this->assertDoesNotMatchRegularExpression('/Not Found|Service Unavailable|Page Expired|Too Many Requests|Server Error|Forbidden|Unauthorized/', $html);
     }

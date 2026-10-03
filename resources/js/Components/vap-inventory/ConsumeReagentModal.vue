@@ -310,7 +310,7 @@ import {
   X as XMarkIcon,
   TriangleAlert as ExclamationTriangleIcon,
 } from '@lucide/vue'
-import Modal from '@/Components/Modal.vue'
+import Modal from '@/Components/modal.vue'
 
 const props = defineProps({
   show: Boolean,

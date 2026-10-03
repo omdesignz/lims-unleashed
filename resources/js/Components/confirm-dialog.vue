@@ -19,56 +19,41 @@
           <TransitionChild
             as="template"
             enter="ease-out duration-200"
-            enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]"
-            enter-to="opacity-100 translate-y-0 sm:scale-100"
-            leave="ease-out duration-200"
-            leave-from="opacity-100 translate-y-0 sm:scale-100"
-            leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]"
+            enter-from="opacity-0 translate-y-1"
+            enter-to="opacity-100 translate-y-0"
+            leave="ease-out duration-100"
+            leave-from="opacity-100 translate-y-0"
+            leave-to="opacity-0 translate-y-1"
           >
             <DialogPanel
               class="ds-modal-panel relative w-full transform overflow-hidden transition-[opacity,transform] sm:my-8"
               :class="size"
             >
-              <!-- Content -->
-              <div class="px-6 pb-5 pt-6">
-                <div class="sm:flex sm:items-start gap-4">
-                  <!-- Icon -->
-                  <div
-                    class="mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:mx-0"
-                    :class="iconContainerClass"
-                  >
-                    <component :is="iconComponent" class="h-5 w-5" :class="iconColorClass" />
-                  </div>
-
-                  <div class="mt-3 text-center sm:mt-0 sm:text-left flex-1">
-                    <DialogTitle
-                      as="h3"
-                      class="ds-heading text-base leading-6"
-                    >
-                      {{ props.title }}
-                    </DialogTitle>
-                    <div v-if="props.description" class="mt-2">
-                      <p class="ds-copy text-sm">
-                        {{ props.description }}
-                      </p>
-                    </div>
-                    <slot />
-                  </div>
-                </div>
+              <!-- Plano: a colour strip names the kind of decision; red only for the irreversible. -->
+              <div class="pl-strip" :class="{ 'pl-strip-bad': isIrreversible }">{{ stripLabel }}</div>
+              <div class="grid gap-3 px-[22px] pb-5 pt-[22px] text-left">
+                <DialogTitle as="h3" class="pl-d3">
+                  {{ props.title }}
+                </DialogTitle>
+                <p v-if="props.description" class="text-sm leading-6 text-[var(--pl-muted)]">
+                  {{ props.description }}
+                </p>
+                <slot />
               </div>
 
               <!-- Footer -->
               <div
                 v-if="!hideButtons"
-                class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-6 py-3 sm:flex-row sm:justify-end"
+                class="flex flex-col-reverse gap-2 border-t border-[var(--pl-line)] px-[22px] py-3.5 sm:flex-row sm:justify-end"
               >
                 <button
                   type="button"
-                  class="ds-button ds-button-secondary w-full sm:w-auto"
+                  class="ds-button ds-button-ghost w-full sm:w-auto"
                   :disabled="props.disabled"
                   @click="cancelDialog"
                 >
                   {{ props.cancel }}
+                  <kbd class="pl-kbd hidden sm:inline-flex">Esc</kbd>
                 </button>
                 <button
                   type="button"
@@ -91,14 +76,6 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
-import {
-  TriangleAlert as ExclamationTriangleIcon,
-  CircleAlert as ExclamationCircleIcon,
-  CircleHelp as QuestionMarkCircleIcon,
-  ShieldAlert as ShieldExclamationIcon,
-  RefreshCw as ArrowPathIcon,
-  CircleCheck as CheckCircleIcon,
-} from '@lucide/vue'
 
 const props = defineProps({
   disabled: Boolean,
@@ -155,48 +132,17 @@ function confirmDialog() {
 
 const variantConfig = computed(() => {
   const variants = {
-    danger: {
-      icon: ExclamationTriangleIcon,
-      iconBg: 'bg-red-50 dark:bg-red-500/10',
-      iconColor: 'text-red-600 dark:text-red-400',
-      buttonBg: 'bg-red-600 hover:bg-red-500 focus-visible:outline-red-600',
-    },
-    warning: {
-      icon: ExclamationCircleIcon,
-      iconBg: 'bg-amber-50 dark:bg-amber-500/10',
-      iconColor: 'text-amber-600 dark:text-amber-400',
-      buttonBg: 'bg-amber-600 hover:bg-amber-500 focus-visible:outline-amber-600',
-    },
-    question: {
-      icon: QuestionMarkCircleIcon,
-      iconBg: 'bg-[rgb(var(--primary-50-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)]',
-      iconColor: 'text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]',
-      buttonBg: 'ds-button-primary',
-    },
-    security: {
-      icon: ShieldExclamationIcon,
-      iconBg: 'bg-orange-50 dark:bg-orange-500/10',
-      iconColor: 'text-orange-600 dark:text-orange-400',
-      buttonBg: 'bg-orange-600 hover:bg-orange-500 focus-visible:outline-orange-600',
-    },
-    info: {
-      icon: ArrowPathIcon,
-      iconBg: 'bg-[rgb(var(--primary-50-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)]',
-      iconColor: 'text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]',
-      buttonBg: 'ds-button-primary',
-    },
-    success: {
-      icon: CheckCircleIcon,
-      iconBg: 'bg-emerald-50 dark:bg-emerald-500/10',
-      iconColor: 'text-emerald-600 dark:text-emerald-400',
-      buttonBg: 'bg-emerald-600 hover:bg-emerald-500 focus-visible:outline-emerald-600',
-    },
+    danger: { strip: 'Acção irreversível', irreversible: true, button: 'ds-button-danger' },
+    security: { strip: 'Segurança', irreversible: true, button: 'ds-button-danger' },
+    warning: { strip: 'Atenção', irreversible: false, button: 'ds-button-primary' },
+    question: { strip: 'Confirmação', irreversible: false, button: 'ds-button-primary' },
+    info: { strip: 'Confirmação', irreversible: false, button: 'ds-button-primary' },
+    success: { strip: 'Confirmação', irreversible: false, button: 'ds-button-primary' },
   }
   return variants[props.variant] || variants.danger
 })
 
-const iconComponent = computed(() => variantConfig.value.icon)
-const iconColorClass = computed(() => variantConfig.value.iconColor)
-const iconContainerClass = computed(() => variantConfig.value.iconBg)
-const confirmButtonClass = computed(() => variantConfig.value.buttonBg)
+const stripLabel = computed(() => variantConfig.value.strip)
+const isIrreversible = computed(() => variantConfig.value.irreversible)
+const confirmButtonClass = computed(() => variantConfig.value.button)
 </script>

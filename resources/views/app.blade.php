@@ -31,14 +31,12 @@
     <script>
         (function () {
             try {
+                // Plano is light by default; dark is an explicit, remembered choice.
                 var theme = window.localStorage.getItem('theme');
-                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var dark = theme === 'dark';
 
-                if (theme === 'dark' || (! theme && prefersDark)) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
+                document.documentElement.classList.toggle('dark', dark);
+                document.documentElement.dataset.theme = dark ? 'dark' : 'light';
             } catch (error) {
                 // Theme boot should never block the application shell.
             }

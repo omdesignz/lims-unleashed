@@ -22,13 +22,14 @@ onUnmounted(removeFinishEventListener)
 </script>
 
 <template>
-  <div class="pointer-events-none fixed inset-x-0 top-0 z-[90] flex justify-end p-3 sm:p-5" aria-live="polite" aria-atomic="false">
-    <div class="flex w-full max-w-[26rem] flex-col items-stretch gap-2">
+  <!-- Plano: toasts rise from the bottom-right corner and leave the same way. -->
+  <div class="pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex justify-end p-3 pb-[4.5rem] sm:p-6 md:pb-6" aria-live="polite" aria-atomic="false">
+    <div class="flex w-full max-w-[26rem] flex-col-reverse items-stretch gap-2">
       <TransitionGroup
-        enter-from-class="translate-y-[-0.5rem] opacity-0"
+        enter-from-class="translate-y-2 opacity-0"
         enter-active-class="transition-[opacity,translate] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
-        leave-active-class="transition-opacity duration-150 ease-out"
-        leave-to-class="opacity-0"
+        leave-active-class="transition-[opacity,translate] duration-150 ease-out"
+        leave-to-class="translate-y-2 opacity-0"
         move-class="transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
       >
         <ToastListItem

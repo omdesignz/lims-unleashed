@@ -21,10 +21,10 @@ let lastTick = null
 let remaining = props.item.duration
 
 const configurations = {
-  success: { icon: CheckCircleIcon, rail: 'bg-[var(--lims-release)]', iconClass: 'text-[var(--lims-release)]', label: 'Concluído' },
-  error: { icon: XCircleIcon, rail: 'bg-[var(--lims-critical)]', iconClass: 'text-[var(--lims-critical)]', label: 'Atenção' },
-  warning: { icon: ExclamationTriangleIcon, rail: 'bg-[var(--lims-hold)]', iconClass: 'text-[var(--lims-hold)]', label: 'Aviso' },
-  info: { icon: InformationCircleIcon, rail: 'bg-[var(--lims-instrument)]', iconClass: 'text-[var(--lims-instrument)]', label: 'Informação' },
+  success: { icon: CheckCircleIcon, tone: 'var(--pl-ok)', label: 'Concluído' },
+  error: { icon: XCircleIcon, tone: 'var(--pl-bad)', label: 'Atenção' },
+  warning: { icon: ExclamationTriangleIcon, tone: 'var(--pl-warn)', label: 'Aviso' },
+  info: { icon: InformationCircleIcon, tone: 'var(--pl-accent-text)', label: 'Informação' },
 }
 
 const configuration = computed(() => configurations[props.item.variant] || configurations.info)
@@ -65,7 +65,8 @@ const followAction = () => {
 
 <template>
   <article
-    class="ds-floating-panel pointer-events-auto relative"
+    class="pl-toast pointer-events-auto relative"
+    :style="{ '--c': configuration.tone }"
     :role="item.variant === 'error' || item.priority === 'urgent' ? 'alert' : 'status'"
     @mouseenter="paused = true"
     @mouseleave="paused = false"
@@ -73,19 +74,20 @@ const followAction = () => {
     @focusout="paused = false"
   >
     <div class="flex items-start gap-3 py-3 pl-3.5 pr-2.5">
-      <component :is="configuration.icon" class="mt-0.5 h-5 w-5 shrink-0" :class="configuration.iconClass" aria-hidden="true" />
+      <component :is="configuration.icon" class="mt-0.5 h-4 w-4 shrink-0 text-[var(--c)]" aria-hidden="true" />
 
       <div class="min-w-0 flex-1">
-        <p class="text-sm font-medium leading-5 text-[var(--ds-text)]">
+        <p class="pl-k mb-1.5 text-[var(--c)]" aria-hidden="true">{{ configuration.label }}</p>
+        <p class="text-sm font-semibold leading-5 text-[var(--pl-fg)]">
           <span class="sr-only">{{ configuration.label }}: </span>{{ item.title }}
           <span v-if="item.priority === 'high' || item.priority === 'urgent'" class="ds-badge ds-badge-danger ml-1.5 align-middle">
             {{ item.priority === 'urgent' ? 'Urgente' : 'Prioridade alta' }}
           </span>
         </p>
-        <p v-if="item.message" class="mt-0.5 text-[0.8125rem] leading-5 text-[var(--ds-text-muted)]">{{ item.message }}</p>
+        <p v-if="item.message" class="mt-0.5 text-[13px] leading-5 text-[var(--pl-muted)]">{{ item.message }}</p>
 
-        <button v-if="actionLabel && actionUrl" type="button" class="ds-link mt-1.5 text-[0.8125rem]" @click="followAction">
-          {{ actionLabel }}
+        <button v-if="actionLabel && actionUrl" type="button" class="pl-k pl-acc mt-2.5" @click="followAction">
+          {{ actionLabel }} →
         </button>
       </div>
 
@@ -94,8 +96,8 @@ const followAction = () => {
       </button>
     </div>
 
-    <div v-if="!isPersistent" class="h-0.5 bg-[var(--ds-panel-muted)]">
-      <div class="h-full opacity-60 transition-[width] duration-100 ease-linear" :class="configuration.rail" :style="{ width: `${progress}%` }" />
+    <div v-if="!isPersistent" class="h-0.5 bg-[var(--pl-raised)]">
+      <div class="h-full bg-[var(--c)] opacity-60 transition-[width] duration-100 ease-linear" :style="{ width: `${progress}%` }" />
     </div>
   </article>
 </template>

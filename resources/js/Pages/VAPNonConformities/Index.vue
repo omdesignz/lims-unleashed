@@ -337,7 +337,7 @@
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 import { Link, router } from '@inertiajs/vue3'
 import {
   Download as ArrowDownTrayIcon,

@@ -1,5 +1,5 @@
 <script setup>
-import Modal from "@/Components/Modal.vue";
+import Modal from "@/Components/modal.vue";
 import { computed } from "vue";
 import { router } from "@inertiajs/vue3";
 import {

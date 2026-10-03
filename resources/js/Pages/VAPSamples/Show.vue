@@ -2,9 +2,13 @@
 import { computed, watch } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
-import { ArrowLeft as ArrowLeftIcon, ArrowRight as ArrowRightIcon, FlaskConical as BeakerIcon, FileDown as DocumentArrowDownIcon, ShieldCheck as ShieldCheckIcon } from '@lucide/vue'
+import { ArrowRight as ArrowRightIcon, FileDown as DocumentArrowDownIcon } from '@lucide/vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { usePermission } from '@/Composables/usePermissions'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import Journey from '@/Components/plano/Journey.vue'
+import NextStepBar from '@/Components/plano/NextStepBar.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import { approvedResultCounts, finalDecisionLabels, sampleDate, sampleStatusLabels, sampleStatusTones, sampleText, sampleTypeLabels } from '@/Utils/samplePresentation'
 
 defineOptions({ layout: Layout })
@@ -23,7 +27,31 @@ const isInternalQcSample = computed(() => props.sample.client_submitted_info?.re
   && ['MATERIA_PRIMA', 'RAW_MATERIAL'].includes(props.sample.sample_type))
 const qcDecisionForm = useForm({ decision: '', notes: '' })
 const releaseDecisionBlocked = computed(() => qcDecisionForm.decision === 'released' && !releaseGate.value.can_release)
-const gateTone = computed(() => ({ ready_for_release: 'complete', requires_review: 'hold', awaiting_approval: 'analysis' }[releaseGate.value.status] || 'review'))
+const gateTone = computed(() => ({ ready_for_release: 'ok', requires_review: 'wait', awaiting_approval: 'run' }[releaseGate.value.status] || 'neutral'))
+const chipTones = { received: 'neutral', analysis: 'run', review: 'wait', complete: 'ok', hold: 'done' }
+const statusTone = computed(() => chipTones[sampleStatusTones[props.sample.status]] || 'neutral')
+
+// The journey from the sample's own evidence: reception, the slowest analysis stage, the certificate.
+const stageOrder = ['pending_results', 'insertion', 'verification', 'approval', 'approved']
+const slowestStage = computed(() => props.analyses
+  .map((analysis) => analysis.workflow_stage)
+  .filter((stage) => stageOrder.includes(stage))
+  .sort((first, second) => stageOrder.indexOf(first) - stageOrder.indexOf(second))[0] ?? null)
+const journey = computed(() => {
+  const certified = Boolean(props.sample.quality_certificate)
+  const received = Boolean(props.sample.received_at)
+  const position = certified ? 5 : !received ? 0 : ({ verification: 2, approval: 3, approved: 4 }[slowestStage.value] ?? 1)
+  const state = (index) => (index < position ? 'done' : index === position ? 'current' : 'todo')
+  const counts = resultCounts.value
+
+  return [
+    { label: 'Recepção', state: state(0), title: props.sample.received_by?.name || (received ? 'Recebida' : 'Por receber'), note: sampleDate(props.sample.received_at, true) },
+    { label: 'Análise', state: state(1), title: props.analyses.length ? `${props.analyses.length} ${props.analyses.length === 1 ? 'análise' : 'análises'}` : 'Por atribuir', note: props.analyses.length ? (resultStages[slowestStage.value] || 'Em curso') : '—' },
+    { label: 'Verificação', state: state(2), title: position === 2 ? 'À espera' : position > 2 ? 'Verificada' : 'Verificador', note: '—' },
+    { label: 'Aprovação', state: state(3), title: position === 3 ? 'À espera' : position > 3 ? 'Aprovada' : 'Resp. técnico', note: counts.total ? `${counts.approved} / ${counts.total} aprovados` : '—' },
+    { label: 'Certificado', state: state(4), title: certified ? (props.sample.quality_certificate.code || 'Emitido') : 'Emissão', note: certified ? 'Disponível' : '—' },
+  ]
+})
 const resultStages = { pending_results: 'Aguardar resultados', insertion: 'Inserção pendente', verification: 'Verificação pendente', approval: 'Aprovação pendente', approved: 'Resultados aprovados' }
 const receptionFields = computed(() => [
   ['Cliente', props.sample.customer?.name], ['Laboratório', props.sample.lab?.name],
@@ -66,78 +94,103 @@ function submitQcDecision() {
 </script>
 
 <template>
-  <div class="workbench-page lab-sample-detail">
+  <div class="pl-page" data-template="dossier">
     <Head :title="sample.code || sample.name" />
-    <header class="app-page-header lab-page-head lab-record-top">
-      <Link :href="route('vap_samples.queue')" class="lab-link lab-detail-back"><ArrowLeftIcon />Todas as amostras</Link>
-      <div class="app-page-header-row">
-        <div class="lab-detail-title">
-          <h1 class="app-page-title"><span class="font-mono text-[1.375rem] tracking-tight">{{ sample.code || 'Código por atribuir' }}</span><span class="lab-pill" :data-tone="sampleStatusTones[sample.status]"><span class="lab-dot"></span>{{ sampleStatusLabels[sample.status] || sample.status }}</span></h1>
-          <p class="app-page-meta lab-record-meta lab-detail-meta">{{ sample.name }} · {{ sample.lab?.name || 'Laboratório por associar' }} · Recepção · {{ sampleDate(sample.received_at) }}</p>
-        </div>
-        <div class="app-page-actions"><a :href="route('vap_samples.samples.pdf', sample.id)" class="lab-btn" target="_blank" rel="noopener"><DocumentArrowDownIcon />PDF da entrada<span class="sr-only"> (abre noutra janela)</span></a></div>
-      </div>
-    </header>
-    <section class="lab-metrics" aria-label="Resumo da amostra">
-      <div class="lab-metric"><p class="lab-metric-title"><BeakerIcon />Análises ligadas</p><strong class="lab-metric-value lab-number">{{ analyses.length }}</strong><span class="lab-metric-note">{{ linkedSampleIds.length }} amostras internas</span></div>
-      <div class="lab-metric"><p class="lab-metric-title"><ShieldCheckIcon />Resultados aprovados</p><strong class="lab-metric-value lab-number">{{ resultCounts.approved }}<span class="lab-detail-total"> / {{ resultCounts.total }}</span></strong><span class="lab-metric-note">{{ resultCounts.total ? 'Aprovação técnica dos resultados' : 'Sem resultados registados' }}</span></div>
-      <div class="lab-metric"><p class="lab-metric-title">Código laboratorial</p><strong class="lab-detail-code">{{ workflowSummary.linked_lab_code || sample.collection_product?.code || 'Por atribuir' }}</strong><span class="lab-metric-note">{{ sample.quality_certificate ? 'Certificado disponível' : 'Certificado ainda não emitido' }}</span></div>
-    </section>
-    <div class="lab-record-grid">
-      <div class="lab-detail-main">
-        <section v-if="workflowSummary.next_action" class="lab-panel lab-detail-next" aria-labelledby="next-action-title">
-          <div><p class="lab-kicker">Próximo passo</p><h2 id="next-action-title">{{ workflowSummary.next_action.label }}</h2><p class="lab-muted">{{ workflowSummary.next_action.description }}</p></div>
-          <Link v-if="workflowSummary.next_action.url" :href="workflowSummary.next_action.url" class="lab-btn lab-primary">Continuar<ArrowRightIcon /></Link>
-        </section>
+    <PageHeader
+      :crumbs="[{ title: 'Amostras' }, { title: 'Fila', url: route('vap_samples.queue') }, { title: sample.code || 'Por atribuir' }]"
+      :title="sample.code || 'Código por atribuir'"
+    >
+      <template #badges>
+        <StatusChip :tone="statusTone">{{ sampleStatusLabels[sample.status] || sample.status }}</StatusChip>
+        <StatusChip v-if="isInternalQcSample" :tone="gateTone">{{ releaseGate.label || 'Aguardar avaliação' }}</StatusChip>
+      </template>
+      <template #lede>{{ sample.customer?.name || 'Cliente por associar' }} — {{ sample.name }}. {{ sample.lab?.name || 'Laboratório por associar' }} · recepção {{ sampleDate(sample.received_at) }}.</template>
+      <template #actions>
+        <a :href="route('vap_samples.samples.pdf', sample.id)" class="ds-button ds-button-quiet" target="_blank" rel="noopener"><span>PDF da entrada</span><DocumentArrowDownIcon aria-hidden="true" /><span class="sr-only"> (abre noutra janela)</span></a>
+      </template>
+    </PageHeader>
+
+    <Journey class="mb-10" :steps="journey" />
+
+    <div class="pl-dossier-grid">
+      <div class="min-w-0">
         <TabGroup>
-          <TabList class="lab-tabs app-tabs" aria-label="Detalhes da amostra">
-            <Tab v-slot="{ selected }" as="template"><button class="lab-tab app-tab" :aria-pressed="selected">Análises<span>{{ analyses.length }}</span></button></Tab>
-            <Tab v-slot="{ selected }" as="template"><button class="lab-tab app-tab" :aria-pressed="selected">Recepção</button></Tab>
-            <Tab v-slot="{ selected }" as="template"><button class="lab-tab app-tab" :aria-pressed="selected">Rastreabilidade</button></Tab>
+          <TabList class="pl-tabs mb-6" aria-label="Detalhes da amostra">
+            <Tab v-slot="{ selected }" as="template"><button class="pl-tab" :aria-selected="selected">Análises<span class="pl-num">{{ analyses.length }}</span></button></Tab>
+            <Tab v-slot="{ selected }" as="template"><button class="pl-tab" :aria-selected="selected">Recepção</button></Tab>
+            <Tab v-slot="{ selected }" as="template"><button class="pl-tab" :aria-selected="selected">Rastreabilidade</button></Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
-              <div v-if="analyses.length" class="lab-table-wrap" tabindex="0" aria-label="Análises da amostra">
-                <DataTable class="lab-table"><thead><tr><th scope="col">Análise / perfil</th><th scope="col">Departamento</th><th scope="col">Resultados</th><th scope="col">Contra-análise</th></tr></thead><tbody>
+              <div v-if="analyses.length" class="pl-panel" tabindex="0" aria-label="Análises da amostra">
+                <DataTable><thead><tr><th scope="col">Análise / perfil</th><th scope="col">Departamento</th><th scope="col">Resultados</th><th scope="col">Contra-análise</th></tr></thead><tbody>
                   <tr v-for="analysis in analyses" :key="analysis.id">
-                    <td><Link :href="analysis.analysis_url" class="lab-link">#{{ analysis.id }}<ArrowRightIcon /></Link><small>{{ analysis.profile || 'Perfil por associar' }}</small></td>
+                    <td><Link :href="analysis.analysis_url" class="pl-num font-medium hover:text-[var(--pl-accent-text)]">#{{ analysis.id }}</Link><span class="block text-[12.5px] text-[var(--pl-muted)]">{{ analysis.profile || 'Perfil por associar' }}</span></td>
                     <td>{{ analysis.department || 'Não associado' }}</td>
-                    <td>{{ resultStages[analysis.workflow_stage] || 'Estado por definir' }}<small v-if="analysis.results_summary?.total">{{ analysis.results_summary.approved }}/{{ analysis.results_summary.total }} aprovados · {{ analysis.results_summary.with_uncertainty }} com incerteza</small></td>
-                    <td><div v-for="item in analysis.counter_analysis_items || []" :key="item.result_id" class="lab-detail-counter"><Link v-if="item.counter_analysis_url" :href="item.counter_analysis_url" class="lab-link">#{{ item.counter_analysis_id }}</Link><span v-else class="lab-pill" data-tone="review">Solicitada</span><small>{{ item.parameter || `Resultado #${item.result_id}` }}</small></div><span v-if="!analysis.counter_analysis_items?.length" class="lab-muted">Não solicitada</span></td>
+                    <td><StatusChip :tone="analysis.workflow_stage === 'approved' ? 'ok' : analysis.workflow_stage === 'pending_results' ? 'neutral' : 'wait'">{{ resultStages[analysis.workflow_stage] || 'Estado por definir' }}</StatusChip><span v-if="analysis.results_summary?.total" class="pl-num mt-1 block text-[12px] text-[var(--pl-muted)]">{{ analysis.results_summary.approved }}/{{ analysis.results_summary.total }} aprovados · {{ analysis.results_summary.with_uncertainty }} com incerteza</span></td>
+                    <td><div v-for="item in analysis.counter_analysis_items || []" :key="item.result_id"><Link v-if="item.counter_analysis_url" :href="item.counter_analysis_url" class="pl-num pl-acc">#{{ item.counter_analysis_id }}</Link><StatusChip v-else tone="wait">Solicitada</StatusChip><span class="block text-[12px] text-[var(--pl-muted)]">{{ item.parameter || `Resultado #${item.result_id}` }}</span></div><span v-if="!analysis.counter_analysis_items?.length" class="text-[var(--pl-faint)]">Não solicitada</span></td>
                   </tr>
                 </tbody></DataTable>
               </div>
-              <div v-else class="lab-empty"><BeakerIcon class="lab-empty-icon" /><strong>A análise começa aqui.</strong>Esta entrada ainda não tem análises ligadas. Consulte a recepção e o próximo passo.</div>
+              <div v-else class="ds-empty-state grid justify-items-start gap-2 p-6"><span class="pl-k">A análise começa aqui.</span><p class="text-sm text-[var(--pl-muted)]">Esta entrada ainda não tem análises ligadas. Consulte a recepção e o próximo passo.</p></div>
             </TabPanel>
-            <TabPanel class="lab-detail-stack">
-              <section class="lab-panel"><h2>Recepção e enquadramento</h2><dl class="lab-detail-list lab-detail-fields"><div v-for="[label, value] in receptionFields" :key="label"><dt>{{ label }}</dt><dd>{{ sampleText(value) }}</dd></div></dl><div class="lab-detail-notes"><h3>Serviços solicitados</h3><p>{{ sampleText(sample.requested_services, 'Sem serviços registados.') }}</p><h3>Observações</h3><p>{{ sample.obs || 'Sem observações de recepção.' }}</p></div></section>
-              <section class="lab-panel"><h2>Origem e condições de colheita</h2><dl class="lab-detail-list lab-detail-fields"><div v-for="[label, value] in contextFields" :key="label"><dt>{{ label }}</dt><dd>{{ sampleText(value) }}</dd></div></dl><div v-if="sample.client_submitted_info?.chain_of_custody_notes" class="lab-detail-notes"><h3>Cadeia de custódia</h3><p>{{ sample.client_submitted_info.chain_of_custody_notes }}</p></div></section>
+            <TabPanel class="grid gap-7">
+              <section class="pl-panel"><div class="pl-panel-head"><h2 class="pl-k">Recepção e enquadramento</h2></div><dl class="pl-facts pl-facts-2"><div v-for="[label, value] in receptionFields" :key="label" class="pl-fact"><dt>{{ label }}</dt><dd>{{ sampleText(value) }}</dd></div></dl><div class="grid gap-2 border-t border-[var(--pl-line)] p-4"><h3 class="pl-k pl-muted">Serviços solicitados</h3><p class="text-sm">{{ sampleText(sample.requested_services, 'Sem serviços registados.') }}</p><h3 class="pl-k pl-muted mt-3">Observações</h3><p class="text-sm">{{ sample.obs || 'Sem observações de recepção.' }}</p></div></section>
+              <section class="pl-panel"><div class="pl-panel-head"><h2 class="pl-k">Origem e condições de colheita</h2></div><dl class="pl-facts pl-facts-2"><div v-for="[label, value] in contextFields" :key="label" class="pl-fact"><dt>{{ label }}</dt><dd>{{ sampleText(value) }}</dd></div></dl><div v-if="sample.client_submitted_info?.chain_of_custody_notes" class="grid gap-2 border-t border-[var(--pl-line)] p-4"><h3 class="pl-k pl-muted">Cadeia de custódia</h3><p class="text-sm">{{ sample.client_submitted_info.chain_of_custody_notes }}</p></div></section>
             </TabPanel>
-            <TabPanel class="lab-detail-stack">
-              <section class="lab-panel"><h2>Retenção e rastreabilidade</h2><dl class="lab-detail-list lab-detail-fields"><div v-for="[label, value] in retentionFields" :key="label"><dt>{{ label }}</dt><dd>{{ sampleText(value) }}</dd></div></dl></section>
-              <section class="lab-panel"><h2>Histórico de descarte</h2><div v-if="sample.discards?.length" class="lab-detail-history"><article v-for="discard in sample.discards" :key="discard.id" class="lab-event"><strong>{{ discard.discard_method }}</strong><p>{{ sampleDate(discard.discarded_at, true) }}</p><p>{{ discard.qty }} · {{ discard.discarded_by || 'Operador por registar' }}</p><a :href="route('vap_samples.discards.pdf', discard.id)" class="lab-link" target="_blank" rel="noopener">Certificado de descarte<DocumentArrowDownIcon /><span class="sr-only"> (abre noutra janela)</span></a></article></div><p v-else class="lab-muted lab-detail-copy">Nenhum descarte registado. A custódia continua acompanhada neste laboratório.</p></section>
+            <TabPanel class="grid gap-7">
+              <section class="pl-panel"><div class="pl-panel-head"><h2 class="pl-k">Retenção e rastreabilidade</h2></div><dl class="pl-facts pl-facts-2"><div v-for="[label, value] in retentionFields" :key="label" class="pl-fact"><dt>{{ label }}</dt><dd>{{ sampleText(value) }}</dd></div></dl></section>
+              <section class="pl-panel"><div class="pl-panel-head"><h2 class="pl-k">Histórico de descarte</h2></div><div v-if="sample.discards?.length"><article v-for="discard in sample.discards" :key="discard.id" class="pl-row"><span><strong class="font-semibold">{{ discard.discard_method }}</strong><span class="pl-num block text-[12.5px] text-[var(--pl-muted)]">{{ sampleDate(discard.discarded_at, true) }} · {{ discard.qty }} · {{ discard.discarded_by || 'Operador por registar' }}</span></span><a :href="route('vap_samples.discards.pdf', discard.id)" class="pl-k pl-acc" target="_blank" rel="noopener">Certificado →<span class="sr-only"> (abre noutra janela)</span></a></article></div><p v-else class="p-4 text-sm text-[var(--pl-muted)]">Nenhum descarte registado. A custódia continua acompanhada neste laboratório.</p></section>
             </TabPanel>
           </TabPanels>
         </TabGroup>
-        <section v-if="isInternalQcSample" class="lab-panel lab-detail-qc" aria-labelledby="qc-title">
-          <div class="lab-section-head"><div><p class="lab-kicker">Controlo interno de matéria-prima</p><h2 id="qc-title">Decisão de qualidade</h2></div><span class="lab-pill" :data-tone="gateTone">{{ releaseGate.label || 'Aguardar avaliação' }}</span></div>
-          <p class="lab-muted">{{ releaseGate.message || 'Valide os resultados antes de registar a decisão operacional.' }}</p>
-          <dl class="lab-detail-list lab-detail-fields"><div><dt>Resultados aprovados</dt><dd>{{ releaseGate.totals?.approved || 0 }} / {{ releaseGate.totals?.results || 0 }}</dd></div><div><dt>Resultados com incerteza</dt><dd>{{ releaseGate.totals?.with_uncertainty || 0 }}</dd></div><div><dt>Contra-análises solicitadas</dt><dd>{{ releaseGate.totals?.counter_analysis_requested || 0 }}</dd></div><div><dt>Lote / fornecedor</dt><dd>{{ sampleText(sample.client_submitted_info?.lot) }} · {{ sampleText(sample.client_submitted_info?.supplier_name) }}</dd></div></dl>
-          <div v-if="latestDecision" class="lab-detail-notes"><h3>Última decisão · {{ finalDecisionLabels[latestDecision.decision] || latestDecision.decision }}</h3><p>{{ latestDecision.notes || 'Sem notas adicionais.' }}</p><p class="lab-muted lab-small">{{ latestDecision.decided_by_name || 'Operador' }} · {{ sampleDate(latestDecision.decided_at, true) }}</p></div>
-          <form v-if="canEdit" class="lab-detail-form" :aria-busy="qcDecisionForm.processing" @submit.prevent="submitQcDecision">
+
+        <section v-if="isInternalQcSample" class="pl-panel mt-7" aria-labelledby="qc-title">
+          <div class="pl-panel-head"><h2 id="qc-title" class="pl-k">Decisão de qualidade · controlo interno</h2><StatusChip :tone="gateTone">{{ releaseGate.label || 'Aguardar avaliação' }}</StatusChip></div>
+          <p class="px-4 pt-4 text-sm text-[var(--pl-muted)]">{{ releaseGate.message || 'Valide os resultados antes de registar a decisão operacional.' }}</p>
+          <dl class="pl-facts pl-facts-2 mt-3 border-y border-[var(--pl-line)]"><div class="pl-fact"><dt>Resultados aprovados</dt><dd class="pl-num">{{ releaseGate.totals?.approved || 0 }} / {{ releaseGate.totals?.results || 0 }}</dd></div><div class="pl-fact"><dt>Com incerteza</dt><dd class="pl-num">{{ releaseGate.totals?.with_uncertainty || 0 }}</dd></div><div class="pl-fact"><dt>Contra-análises</dt><dd class="pl-num">{{ releaseGate.totals?.counter_analysis_requested || 0 }}</dd></div><div class="pl-fact"><dt>Lote / fornecedor</dt><dd>{{ sampleText(sample.client_submitted_info?.lot) }} · {{ sampleText(sample.client_submitted_info?.supplier_name) }}</dd></div></dl>
+          <div v-if="latestDecision" class="grid gap-1 border-b border-[var(--pl-line)] p-4"><h3 class="pl-k">Última decisão · {{ finalDecisionLabels[latestDecision.decision] || latestDecision.decision }}</h3><p class="text-sm">{{ latestDecision.notes || 'Sem notas adicionais.' }}</p><p class="pl-k pl-faint">{{ latestDecision.decided_by_name || 'Operador' }} · {{ sampleDate(latestDecision.decided_at, true) }}</p></div>
+          <form v-if="canEdit" class="grid gap-4 p-4" :aria-busy="qcDecisionForm.processing" @submit.prevent="submitQcDecision">
             <BaseSelect id="sample-qc-decision" v-model="qcDecisionForm.decision" label="Decisão final" placeholder="Seleccionar decisão" required :options="Object.entries(finalDecisionLabels).map(([value, label]) => ({ value, label }))" aria-describedby="sample-qc-decision-help" />
-            <p id="sample-qc-decision-help" :class="qcDecisionForm.errors.decision || releaseDecisionBlocked ? 'lab-field-error' : 'lab-muted'" :role="qcDecisionForm.errors.decision ? 'alert' : undefined">{{ qcDecisionForm.errors.decision || (releaseDecisionBlocked ? 'A libertação exige resultados aprovados e ausência de revisão pendente.' : 'A decisão fica associada ao seu utilizador no histórico da amostra.') }}</p>
-            <label for="sample-qc-notes">Notas da decisão<textarea id="sample-qc-notes" v-model="qcDecisionForm.notes" class="lab-field" rows="3" maxlength="2000" :aria-invalid="Boolean(qcDecisionForm.errors.notes)" :aria-describedby="qcDecisionForm.errors.notes ? 'sample-qc-notes-error' : undefined" placeholder="Fundamente a decisão e indique as acções necessárias."></textarea></label>
-            <p v-if="qcDecisionForm.errors.notes" id="sample-qc-notes-error" class="lab-field-error" role="alert">{{ qcDecisionForm.errors.notes }}</p>
-            <div class="lab-detail-form-actions"><p v-if="qcDecisionForm.recentlySuccessful" role="status">Decisão registada.</p><button type="submit" class="lab-btn lab-primary" :disabled="qcDecisionForm.processing || !qcDecisionForm.decision || releaseDecisionBlocked">{{ qcDecisionForm.processing ? 'A registar…' : 'Guardar decisão' }}</button></div>
+            <p id="sample-qc-decision-help" :class="qcDecisionForm.errors.decision || releaseDecisionBlocked ? 'ds-field-error' : 'ds-field-hint'" :role="qcDecisionForm.errors.decision ? 'alert' : undefined">{{ qcDecisionForm.errors.decision || (releaseDecisionBlocked ? 'A libertação exige resultados aprovados e ausência de revisão pendente.' : 'A decisão fica associada ao seu utilizador no histórico da amostra.') }}</p>
+            <div class="ds-field-group"><label for="sample-qc-notes" class="ds-field-label">Notas da decisão</label><textarea id="sample-qc-notes" v-model="qcDecisionForm.notes" class="ds-field" rows="3" maxlength="2000" :aria-invalid="Boolean(qcDecisionForm.errors.notes)" :aria-describedby="qcDecisionForm.errors.notes ? 'sample-qc-notes-error' : undefined" placeholder="Fundamente a decisão e indique as acções necessárias."></textarea></div>
+            <p v-if="qcDecisionForm.errors.notes" id="sample-qc-notes-error" class="ds-field-error" role="alert">{{ qcDecisionForm.errors.notes }}</p>
+            <div class="flex items-center justify-end gap-4"><p v-if="qcDecisionForm.recentlySuccessful" class="pl-k text-[var(--pl-ok)]" role="status">Decisão registada.</p><button type="submit" class="ds-button ds-button-primary" :disabled="qcDecisionForm.processing || !qcDecisionForm.decision || releaseDecisionBlocked">{{ qcDecisionForm.processing ? 'A registar…' : 'Guardar decisão' }}</button></div>
           </form>
-          <p v-else class="lab-detail-copy lab-muted">Consulta apenas. É necessária permissão de edição para registar uma decisão.</p>
+          <p v-else class="p-4 text-sm text-[var(--pl-muted)]">Consulta apenas. É necessária permissão de edição para registar uma decisão.</p>
         </section>
       </div>
-      <aside class="lab-record-rail lab-detail-rail" aria-label="Contexto e documentos">
-        <section><p class="lab-kicker">Contexto da amostra</p><dl class="lab-detail-list"><div><dt>Cliente</dt><dd>{{ sampleText(sample.customer?.name) }}</dd></div><div><dt>Produto</dt><dd>{{ sampleText(sample.collection_product?.product || sample.client_submitted_info?.product_name) }}</dd></div><div><dt>Lote</dt><dd>{{ sampleText(sample.client_submitted_info?.lot) }}</dd></div><div><dt>Retenção até</dt><dd>{{ sampleDate(sample.retention_due_at) }}</dd></div></dl></section>
-        <section class="lab-note"><p class="lab-kicker">Documentos e ligações</p><div class="lab-detail-documents"><Link v-if="sample.collection_product?.workflow_url" :href="sample.collection_product.workflow_url" class="lab-link">Fluxo de colheita<ArrowRightIcon /></Link><Link v-if="sample.quality_certificate?.show_url" :href="sample.quality_certificate.show_url" class="lab-link">{{ sample.quality_certificate.code || 'Certificado' }}<ArrowRightIcon /></Link><a v-if="sample.quality_certificate?.pdf_url" :href="sample.quality_certificate.pdf_url" class="lab-link" target="_blank" rel="noopener">PDF do certificado<DocumentArrowDownIcon /><span class="sr-only"> (abre noutra janela)</span></a><p v-if="!sample.quality_certificate" class="lab-muted">O certificado ficará disponível após a conclusão do fluxo técnico.</p><Link v-if="workflowSummary.counter_analysis_count && sample.workflow_links?.counter_analysis_url" :href="sample.workflow_links.counter_analysis_url" class="lab-link">Contra-análises<ArrowRightIcon /></Link></div></section>
+
+      <aside class="grid content-start gap-7" aria-label="Contexto e documentos">
+        <section class="pl-panel">
+          <div class="pl-panel-head"><h2 class="pl-k">Dossier</h2><span class="pl-k pl-faint">{{ workflowSummary.linked_lab_code || sample.collection_product?.code || 'Sem código' }}</span></div>
+          <dl class="pl-facts">
+            <div class="pl-fact"><dt>Cliente</dt><dd>{{ sampleText(sample.customer?.name) }}</dd></div>
+            <div class="pl-fact"><dt>Produto</dt><dd>{{ sampleText(sample.collection_product?.product || sample.client_submitted_info?.product_name) }}</dd></div>
+            <div class="pl-fact"><dt>Lote</dt><dd>{{ sampleText(sample.client_submitted_info?.lot) }}</dd></div>
+            <div class="pl-fact"><dt>Retenção até</dt><dd class="pl-num">{{ sampleDate(sample.retention_due_at) }}</dd></div>
+            <div class="pl-fact"><dt>Análises</dt><dd class="pl-num">{{ analyses.length }} · {{ linkedSampleIds.length }} internas</dd></div>
+            <div class="pl-fact"><dt>Aprovados</dt><dd class="pl-num">{{ resultCounts.approved }} / {{ resultCounts.total }}</dd></div>
+          </dl>
+        </section>
+        <section class="pl-panel">
+          <div class="pl-panel-head"><h2 class="pl-k">Documentos e ligações</h2></div>
+          <Link v-if="sample.collection_product?.workflow_url" :href="sample.collection_product.workflow_url" class="pl-row"><span>Fluxo de colheita</span><ArrowRightIcon class="h-4 w-4" aria-hidden="true" /></Link>
+          <Link v-if="sample.quality_certificate?.show_url" :href="sample.quality_certificate.show_url" class="pl-row"><span class="pl-num">{{ sample.quality_certificate.code || 'Certificado' }}</span><ArrowRightIcon class="h-4 w-4" aria-hidden="true" /></Link>
+          <a v-if="sample.quality_certificate?.pdf_url" :href="sample.quality_certificate.pdf_url" class="pl-row" target="_blank" rel="noopener"><span>PDF do certificado<span class="sr-only"> (abre noutra janela)</span></span><DocumentArrowDownIcon class="h-4 w-4" aria-hidden="true" /></a>
+          <Link v-if="workflowSummary.counter_analysis_count && sample.workflow_links?.counter_analysis_url" :href="sample.workflow_links.counter_analysis_url" class="pl-row"><span>Contra-análises</span><ArrowRightIcon class="h-4 w-4" aria-hidden="true" /></Link>
+          <p v-if="!sample.quality_certificate" class="p-4 text-sm text-[var(--pl-muted)]">O certificado ficará disponível após a conclusão do fluxo técnico.</p>
+        </section>
       </aside>
     </div>
+
+    <NextStepBar v-if="workflowSummary.next_action">
+      <strong class="font-semibold">{{ workflowSummary.next_action.label }}.</strong> <span class="text-[var(--pl-muted)]">{{ workflowSummary.next_action.description }}</span>
+      <template #actions>
+        <Link :href="route('vap_samples.queue')" class="ds-button ds-button-quiet">Voltar à fila</Link>
+        <Link v-if="workflowSummary.next_action.url" :href="workflowSummary.next_action.url" class="ds-button ds-button-primary"><span>Continuar</span><ArrowRightIcon aria-hidden="true" /></Link>
+      </template>
+    </NextStepBar>
+    <p v-else class="mt-10"><Link :href="route('vap_samples.queue')" class="pl-k pl-acc">← Todas as amostras</Link></p>
   </div>
 </template>

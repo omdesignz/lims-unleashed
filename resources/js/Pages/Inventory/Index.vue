@@ -1,5 +1,5 @@
 <script setup>
-import { useRecordArchive } from '@/composables/useRecordArchive'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
 import { useInventoryCatalogueOptions } from '@/Composables/useInventoryCatalogueOptions'
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";

@@ -496,7 +496,7 @@
   </div>
 </template>
 <script setup>
-import { useRecordArchive } from '@/composables/useRecordArchive'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
 import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import {

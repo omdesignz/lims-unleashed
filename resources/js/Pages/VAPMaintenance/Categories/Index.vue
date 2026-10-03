@@ -266,8 +266,8 @@ import {
   X as XMarkIcon,
 } from '@lucide/vue'
 import { debounce } from 'lodash'
-import Modal from '@/Components/Modal.vue'
-import Pagination from '@/Components/Pagination.vue'
+import Modal from '@/Components/modal.vue'
+import Pagination from '@/Components/pagination.vue'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
 const props = defineProps({

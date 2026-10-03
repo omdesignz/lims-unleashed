@@ -3,11 +3,6 @@ import { ref, watch, onMounted } from 'vue'
 const STORAGE_KEY = 'theme'
 const DARK_CLASS = 'dark'
 
-function getSystemPreference() {
-    if (typeof window === 'undefined') return false
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-}
-
 function readStorage() {
     if (typeof window === 'undefined') return null
     try { return window.localStorage.getItem(STORAGE_KEY) } catch { return null }
@@ -18,25 +13,35 @@ function writeStorage(value) {
     try { window.localStorage.setItem(STORAGE_KEY, value) } catch { /* Theme still works without storage. */ }
 }
 
+/**
+ * Plano is light by default. Dark is an explicit choice (account menu or Shift+D),
+ * remembered per user on the server and per browser in storage.
+ */
+export function resolveInitialDark(userTheme = null, stored = null) {
+    if (userTheme === 'dark' || userTheme === 'light') {
+        return userTheme === 'dark'
+    }
+
+    return stored === 'dark'
+}
+
+export function applyThemeToDocument(dark) {
+    if (typeof document === 'undefined') return
+    const root = document.documentElement
+    root.classList.toggle(DARK_CLASS, dark)
+    root.dataset.theme = dark ? 'dark' : 'light'
+}
+
 export function useTheme(userTheme = null, persistToServer = false) {
-    const stored = readStorage()
+    const isDark = ref(resolveInitialDark(userTheme, readStorage()))
 
-    const isDark = ref(
-        userTheme === 'dark' || userTheme === 'light'
-            ? userTheme === 'dark'
-            : stored === 'dark' || (stored === null && getSystemPreference())
-    )
-
+    // The theme change is instant: transitions are suspended for the swap.
     function applyTheme() {
         if (typeof document === 'undefined') return
         const style = document.createElement('style')
         style.textContent = '*,*::before,*::after{transition:none !important}'
         document.head.append(style)
-        if (isDark.value) {
-            document.documentElement.classList.add(DARK_CLASS)
-        } else {
-            document.documentElement.classList.remove(DARK_CLASS)
-        }
+        applyThemeToDocument(isDark.value)
         void document.body.offsetHeight
         requestAnimationFrame(() => requestAnimationFrame(() => style.remove()))
     }
@@ -76,4 +81,16 @@ export function useTheme(userTheme = null, persistToServer = false) {
     })
 
     return { isDark, toggle }
+}
+
+/** Shift+D toggles the theme, except while the person is typing. */
+export function isThemeShortcut(event) {
+    if (!event.shiftKey || event.metaKey || event.ctrlKey || event.altKey || event.key?.toLowerCase() !== 'd') {
+        return false
+    }
+
+    const target = event.target
+    const tag = target?.tagName?.toLowerCase?.()
+
+    return !(target?.isContentEditable || ['input', 'textarea', 'select'].includes(tag) || target?.closest?.('[contenteditable="true"], math-field'))
 }

@@ -1,34 +1,70 @@
 <template>
-  <div class="lims-app-shell min-h-dvh" :data-collapsed="!desktopSidebarOpen" :style="brandingCssVariables" :data-theme-preset="themePreset">
+  <div class="lims-app-shell pl-shell" :data-theme-preset="themePreset">
     <backend-modal />
     <ToastList />
 
-    <div v-if="impersonation" class="ds-impersonation-banner relative z-[60] flex flex-wrap items-center justify-center gap-3 px-4 py-2 text-sm">
-      <span><strong class="font-semibold">{{ trans('gestlab.general.labels.impersonation.title') }}</strong> {{ trans('gestlab.general.labels.impersonation.description') }} {{ auth?.user?.name }}.</span>
-      <button type="button" class="rounded-md bg-white/15 px-2.5 py-1 text-xs font-medium text-white transition-colors duration-150 hover:bg-white/25" @click="router.post(route('users.stopimpersonating'), {}, { preserveState: false, replace: true })">
+    <div v-if="impersonation" class="ds-impersonation-banner relative z-[60] flex flex-wrap items-center justify-center gap-3 px-4 py-2">
+      <span>{{ trans('gestlab.general.labels.impersonation.title') }} · {{ trans('gestlab.general.labels.impersonation.description') }} {{ auth?.user?.name }}</span>
+      <button type="button" class="ds-button ds-button-ghost h-7 min-h-7 text-[var(--pl-bg)]" @click="router.post(route('users.stopimpersonating'), {}, { preserveState: false, replace: true })">
         {{ trans('gestlab.general.buttons.leave_impersonation') }}
       </button>
     </div>
 
+    <area-bar
+      :areas="navAreas"
+      :active-area-key="activeAreaKey"
+      :unread-count="unreadNotificationCount"
+      :is-dark="isDark"
+      :can-manage-branding="Boolean(activeLab?.can_manage_branding)"
+      @open-command-palette="openCommandPalette"
+      @open-menu="sidebarOpen = true"
+      @toggle-theme="toggleTheme"
+      @switch-language="switchLanguage"
+      @open-branding="openBranding"
+    />
+
+    <div class="pl-body">
+      <aside id="area-column" class="pl-side" :aria-label="activeArea?.label || 'Navegação'">
+        <app-sidebar :areas="navAreas" :active-area-key="activeAreaKey" />
+      </aside>
+
+      <main ref="stageContent" class="pl-main" :data-template="pageTemplate">
+        <nav v-if="!planoPages.includes(page.component)" class="pl-crumbs pl-page-crumbs" aria-label="Localização">
+          <template v-for="(crumb, index) in crumbs" :key="`${crumb.title}-${index}`">
+            <span v-if="index" aria-hidden="true">/</span>
+            <Link v-if="crumb.url && !crumb.current" :href="crumb.url">{{ crumb.title }}</Link>
+            <span v-else :aria-current="crumb.current ? 'page' : undefined">{{ crumb.title }}</span>
+          </template>
+        </nav>
+        <div :class="{ 'lims-backoffice-content': !planoPages.includes(page.component) }" :data-module-family="moduleFamily">
+          <confirm-dialog v-if="showSessionModal" :open="showSessionModal" :title="$t('Session Expiring Soon')" :description="$t('You will be logged out due to inactivity')" variant="warning" :hide-buttons="true" size="sm:max-w-xl" @canceled="showSessionModal = false">
+            <p class="mt-4 text-sm text-[var(--pl-muted)]">{{ $t('For your security, this session will end in :seconds seconds.', { seconds: remainingTime }) }} {{ $t('Move your mouse or press any key to continue working.') }}</p>
+          </confirm-dialog>
+          <slot />
+        </div>
+      </main>
+    </div>
+
+    <!-- Below 768px the areas move to a bottom bar of five: four areas and the menu. -->
+    <nav class="pl-bottom" aria-label="Áreas">
+      <Link v-for="area in navAreas.slice(0, 4)" :key="area.key" :href="area.href" class="pl-bottom-item" :aria-current="area.key === activeAreaKey ? 'page' : undefined">{{ area.label }}</Link>
+      <button type="button" class="pl-bottom-item" aria-controls="area-drawer" @click="sidebarOpen = true">Menu</button>
+    </nav>
+
     <TransitionRoot as="template" :show="sidebarOpen">
-      <Dialog as="div" class="relative z-50 lg:hidden" @close="sidebarOpen = false">
+      <Dialog as="div" class="relative z-50" @close="sidebarOpen = false">
         <TransitionChild as="template" enter="transition-opacity duration-200 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="transition-opacity duration-150 ease-out" leave-from="opacity-100" leave-to="opacity-0">
-          <div class="fixed inset-0 bg-[var(--color-surface-overlay)]" />
+          <div class="ds-modal-backdrop fixed inset-0" />
         </TransitionChild>
         <div class="fixed inset-0 flex">
-          <TransitionChild as="template" enter="transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]" enter-from="-translate-x-full" enter-to="translate-x-0" leave="transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]" leave-from="translate-x-0" leave-to="-translate-x-full">
-            <DialogPanel class="app-drawer" :style="brandingCssVariables">
+          <TransitionChild as="template" enter="transition-transform duration-[220ms] ease-[cubic-bezier(0.32,0.72,0,1)]" enter-from="-translate-x-full" enter-to="translate-x-0" leave="transition-transform duration-150 ease-[cubic-bezier(0.32,0.72,0,1)]" leave-from="translate-x-0" leave-to="-translate-x-full">
+            <DialogPanel id="area-drawer" class="pl-drawer">
               <app-sidebar
                 mobile
                 :areas="navAreas"
                 :active-area-key="activeAreaKey"
-                :unread-count="unreadNotificationCount"
-                :is-dark="isDark"
                 @close="sidebarOpen = false"
                 @navigate="sidebarOpen = false"
-                @open-command-palette="openCommandPaletteFromMobile"
-                @toggle-theme="toggleTheme"
-                @switch-language="switchLanguage"
               />
             </DialogPanel>
           </TransitionChild>
@@ -36,64 +72,22 @@
       </Dialog>
     </TransitionRoot>
 
-    <div id="desktop-navigation" class="app-sheet">
-      <app-sidebar
-        :areas="navAreas"
-        :active-area-key="activeAreaKey"
-        :unread-count="unreadNotificationCount"
-        :is-dark="isDark"
-        @open-command-palette="openCommandPalette"
-        @toggle-theme="toggleTheme"
-        @switch-language="switchLanguage"
-      />
-
-      <div class="app-work">
-        <header class="app-topbar">
-          <button type="button" class="app-topbar-action lg:hidden" aria-label="Abrir navegação" @click="sidebarOpen = true"><Bars3Icon aria-hidden="true" /></button>
-          <button type="button" class="app-topbar-action -ml-2 hidden lg:inline-grid" :aria-label="desktopSidebarOpen ? 'Recolher painel de navegação' : 'Expandir painel de navegação'" :aria-expanded="desktopSidebarOpen" aria-controls="desktop-navigation" @click="toggleDesktopSidebar">
-            <PanelLeft aria-hidden="true" />
-          </button>
-          <nav class="app-crumb" aria-label="Localização">
-            <template v-for="(crumb, index) in crumbs" :key="`${crumb.title}-${index}`">
-              <span v-if="index" class="app-crumb-separator hidden sm:inline" aria-hidden="true">/</span>
-              <Link v-if="crumb.url && !crumb.current" :href="crumb.url" class="hidden sm:inline">{{ crumb.title }}</Link>
-              <span v-else :aria-current="crumb.current ? 'page' : undefined" :class="crumb.current ? '' : 'hidden sm:inline'">{{ crumb.title }}</span>
-            </template>
-          </nav>
-          <div class="flex-1" />
-          <button type="button" class="app-topbar-action lg:hidden" aria-label="Pesquisar módulos e registos" @click="openCommandPalette"><MagnifyingGlassIcon aria-hidden="true" /></button>
-          <button v-if="activeLab?.can_manage_branding" type="button" class="app-topbar-action" aria-label="Personalizar cores do laboratório" @click="openBranding"><SwatchIcon aria-hidden="true" /></button>
-          <button type="button" class="app-topbar-action" :aria-label="isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'" @click="toggleTheme"><SunIcon v-if="isDark" aria-hidden="true" /><MoonIcon v-else aria-hidden="true" /></button>
-          <Link :href="route('notifications.index')" class="app-topbar-action" :aria-label="unreadNotificationCount ? `Ver notificações, ${unreadNotificationCount} por ler` : 'Ver notificações'"><BellIcon aria-hidden="true" /><span v-if="unreadNotificationCount" class="app-topbar-dot" aria-hidden="true" /></Link>
-        </header>
-
-        <main ref="stageContent" class="app-content" scroll-region>
-          <div :class="{ 'lims-backoffice-content': !['LaboratoryWorkbench', 'LabNetwork/Index', 'VAPSamples/Queue', 'VAPSamples/Show'].includes(page.component) }" :data-module-family="moduleFamily">
-            <confirm-dialog v-if="showSessionModal" :open="showSessionModal" :title="$t('Session Expiring Soon')" :description="$t('You will be logged out due to inactivity')" variant="warning" :hide-buttons="true" size="sm:max-w-xl" @canceled="showSessionModal = false">
-              <p class="mt-4 text-sm text-[var(--ds-text-muted)]">{{ $t('For your security, this session will end in :seconds seconds.', { seconds: remainingTime }) }} {{ $t('Move your mouse or press any key to continue working.') }}</p>
-            </confirm-dialog>
-            <slot />
-          </div>
-        </main>
-      </div>
-    </div>
-
     <Dialog :open="brandingOpen" class="relative z-[80]" @close="brandingOpen = false">
       <div class="ds-modal-backdrop fixed inset-0" aria-hidden="true" />
-      <div class="fixed inset-0 flex items-center justify-center p-4"><DialogPanel class="ds-modal-panel w-full max-w-md p-6" :style="brandingCssVariables">
-        <DialogTitle class="text-lg font-semibold tracking-tight text-[var(--ds-text)]">Identidade do laboratório</DialogTitle>
-        <p class="mt-1.5 text-sm leading-6 text-[var(--ds-text-muted)]">{{ activeLab?.name }}. A cor escolhida aplica-se às acções principais; as cores de alerta mantêm o seu significado.</p>
+      <div class="fixed inset-0 flex items-center justify-center p-4"><DialogPanel class="ds-modal-panel w-full max-w-md p-6">
+        <DialogTitle class="pl-d3">Selo do laboratório</DialogTitle>
+        <p class="mt-2 text-sm leading-6 text-[var(--pl-muted)]">{{ activeLab?.name }}. A cor identifica o laboratório no seu selo da coluna; acções e estados mantêm as cores VAP.</p>
         <form class="mt-5 space-y-4" @submit.prevent="saveBranding">
-          <div class="flex items-center justify-between gap-4 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3">
+          <div class="flex items-center justify-between gap-4 border border-[var(--pl-line)] px-4 py-3">
             <div>
-              <p class="text-sm font-medium text-[var(--ds-text)]">Cor principal</p>
-              <p class="mt-0.5 font-mono text-xs uppercase text-[var(--ds-text-soft)]">{{ brandingForm.primary_color }}</p>
+              <p class="pl-k">Cor do selo</p>
+              <p class="mt-1.5 font-mono text-xs uppercase text-[var(--pl-faint)]">{{ brandingForm.primary_color }}</p>
             </div>
-            <ColorInput v-model="brandingForm.primary_color" aria-label="Cor principal" />
+            <ColorInput v-model="brandingForm.primary_color" aria-label="Cor do selo" />
           </div>
           <p v-if="brandingForm.errors.primary_color" class="ds-field-error" role="alert">{{ brandingForm.errors.primary_color }}</p>
-          <p class="text-xs text-[var(--ds-text-soft)]">{{ activeLab?.inherited_color ? 'Actualmente herdada da rede.' : 'Cor personalizada para este laboratório.' }}</p>
-          <div class="flex flex-wrap justify-end gap-2 pt-1"><button type="button" class="ds-button ds-button-ghost mr-auto" :disabled="brandingForm.processing" @click="saveBranding(true)">Herdar da rede</button><button type="button" class="ds-button ds-button-secondary" @click="brandingOpen = false">Cancelar</button><button type="submit" class="ds-button ds-button-primary" :disabled="brandingForm.processing">{{ brandingForm.processing ? 'A guardar…' : 'Guardar' }}</button></div>
+          <p class="text-xs text-[var(--pl-faint)]">{{ activeLab?.inherited_color ? 'Actualmente herdada da rede.' : 'Cor própria deste laboratório.' }}</p>
+          <div class="flex flex-wrap justify-end gap-2 pt-1"><button type="button" class="ds-button ds-button-ghost mr-auto" :disabled="brandingForm.processing" @click="saveBranding(true)">Herdar da rede</button><button type="button" class="ds-button ds-button-quiet" @click="brandingOpen = false">Cancelar</button><button type="submit" class="ds-button ds-button-primary" :disabled="brandingForm.processing">{{ brandingForm.processing ? 'A guardar…' : 'Guardar' }}</button></div>
         </form>
       </DialogPanel></div>
     </Dialog>
@@ -102,31 +96,30 @@
     <Dialog :open="commandPaletteOpen" as="div" class="relative z-[70]" @close="commandPaletteOpen = false">
       <div class="ds-modal-backdrop fixed inset-0" aria-hidden="true" />
       <div class="fixed inset-0 z-[70] overflow-y-auto p-4 sm:p-8 md:p-[12vh]">
-        <DialogPanel class="ds-command-palette mx-auto max-w-xl overflow-hidden" :style="brandingCssVariables">
-          <div class="flex items-center gap-3 border-b border-[var(--ds-border)] px-4">
-            <MagnifyingGlassIcon class="h-[1.125rem] w-[1.125rem] shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
-            <BaseInput ref="commandPaletteInput" v-model="commandPaletteQuery" type="search" class="h-12 min-w-0 flex-1 border-0 bg-transparent px-0 text-sm text-[var(--ds-text)] shadow-none outline-none placeholder:text-[var(--ds-text-soft)] focus:ring-0" placeholder="Pesquisar módulos e registos…" aria-label="Pesquisar módulos e registos" role="combobox" aria-expanded="true" aria-controls="command-palette-results" :aria-activedescendant="activeCommand ? `command-${activeCommandIndex}` : undefined" @keydown.enter.prevent="activateCommandPaletteResult" @keydown.down.prevent="moveCommandSelection(1)" @keydown.up.prevent="moveCommandSelection(-1)" />
-            <kbd class="app-kbd">Esc</kbd>
+        <DialogPanel class="ds-command-palette mx-auto max-w-xl overflow-hidden">
+          <div class="flex items-center gap-3 border-b border-[var(--pl-line)] px-4">
+            <MagnifyingGlassIcon class="h-4 w-4 shrink-0 text-[var(--pl-faint)]" aria-hidden="true" />
+            <BaseInput ref="commandPaletteInput" v-model="commandPaletteQuery" type="search" data-bare class="h-12 min-w-0 flex-1 border-0 bg-transparent px-0 text-sm text-[var(--pl-fg)] outline-none placeholder:text-[var(--pl-faint)] focus:ring-0" placeholder="Procurar módulos e registos…" aria-label="Procurar módulos e registos" role="combobox" aria-expanded="true" aria-controls="command-palette-results" :aria-activedescendant="activeCommand ? `command-${activeCommandIndex}` : undefined" @keydown.enter.prevent="activateCommandPaletteResult" @keydown.down.prevent="moveCommandSelection(1)" @keydown.up.prevent="moveCommandSelection(-1)" />
+            <kbd class="pl-kbd">Esc</kbd>
           </div>
-          <div id="command-palette-results" ref="commandPaletteResults" class="max-h-[60vh] overflow-y-auto p-1.5 sm:max-h-[26rem]" role="listbox" aria-label="Resultados">
+          <div id="command-palette-results" ref="commandPaletteResults" class="max-h-[60vh] overflow-y-auto p-1 sm:max-h-[26rem]" role="listbox" aria-label="Resultados">
             <template v-if="filteredCommandGroups.length">
-              <section v-for="group in filteredCommandGroups" :key="group.label" class="pb-1">
-                <p class="px-2.5 pb-1 pt-2 text-xs text-[var(--ds-text-soft)]">{{ group.label }}</p>
-                <button v-for="command in group.items" :id="`command-${command.index}`" :key="`${group.label}-${command.href}-${command.label}`" type="button" role="option" class="ds-command-palette-item" :class="command.index === activeCommandIndex ? 'bg-[var(--ds-panel-muted)]' : ''" :aria-selected="command.index === activeCommandIndex" @click="visitCommand(command)" @mousemove="activeCommandIndex = command.index">
-                  <component :is="command.icon" class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
-                  <span class="min-w-0 flex-1 truncate text-left text-sm text-[var(--ds-text)]">{{ command.label }}</span>
-                  <span class="hidden truncate font-mono text-xs text-[var(--ds-text-soft)] sm:block">{{ command.path }}</span>
+              <section v-for="group in filteredCommandGroups" :key="group.label">
+                <p class="pl-menu-heading">{{ group.label }}</p>
+                <button v-for="command in group.items" :id="`command-${command.index}`" :key="`${group.label}-${command.href}-${command.label}`" type="button" role="option" class="ds-command-palette-item" :aria-selected="command.index === activeCommandIndex" @click="visitCommand(command)" @mousemove="activeCommandIndex = command.index">
+                  <span class="min-w-0 flex-1 truncate text-left">{{ command.label }}</span>
+                  <span class="hidden truncate font-mono text-[11px] text-[var(--pl-faint)] sm:block">{{ command.path }}</span>
                 </button>
               </section>
             </template>
             <div v-else class="px-6 py-12 text-center">
-              <p class="text-sm font-medium text-[var(--ds-text)]">Nenhum módulo encontrado</p>
-              <p class="mt-1 text-sm text-[var(--ds-text-muted)]">Experimente outro termo ou verifique as suas permissões.</p>
+              <p class="pl-k">Nenhum módulo encontrado</p>
+              <p class="mt-2 text-sm text-[var(--pl-muted)]">Experimente outro termo ou verifique as suas permissões.</p>
             </div>
           </div>
-          <div class="flex items-center gap-4 border-t border-[var(--ds-border)] px-4 py-2 text-xs text-[var(--ds-text-soft)]">
-            <span class="flex items-center gap-1.5"><kbd class="app-kbd">↑</kbd><kbd class="app-kbd">↓</kbd>Navegar</span>
-            <span class="flex items-center gap-1.5"><kbd class="app-kbd">↵</kbd>Abrir</span>
+          <div class="flex items-center gap-4 border-t border-[var(--pl-line)] px-4 py-2.5">
+            <span class="pl-k flex items-center gap-1.5"><kbd class="pl-kbd">↑</kbd><kbd class="pl-kbd">↓</kbd>Navegar</span>
+            <span class="pl-k flex items-center gap-1.5"><kbd class="pl-kbd">↵</kbd>Abrir</span>
           </div>
         </DialogPanel>
       </div>
@@ -138,6 +131,7 @@
 import { computed, nextTick, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useIdle, useCounter } from '@vueuse/core'
 import appSidebar from '../Navigation/app-sidebar.vue'
+import areaBar from '../Navigation/area-bar.vue'
 import ToastList from '@/Components/toast-list.vue'
 import confirmDialog from '@/Components/confirm-dialog.vue'
 import {
@@ -147,44 +141,15 @@ import {
   TransitionChild,
   TransitionRoot,
 } from '@headlessui/vue'
-import {
-  Menu as Bars3Icon,
-  Bell as BellIcon,
-  House as HomeIcon,
-  ShieldCheck as ShieldCheckIcon,
-  Megaphone as MegaphoneIcon,
-  Users as UsersIcon,
-  FolderOpen as FolderOpenIcon,
-  Banknote as BanknotesIcon,
-  Layers as Square3Stack3DIcon,
-  FileText as DocumentTextIcon,
-  Layers as RectangleStackIcon,
-  Users as UserGroupIcon,
-  User as UserIcon,
-  Fingerprint as FingerPrintIcon,
-  Square as StopIcon,
-  Wrench as WrenchScrewdriverIcon,
-  Server as ServerIcon,
-  Package as InboxStackIcon,
-  TriangleAlert as ExclamationTriangleIcon,
-  Palette as SwatchIcon,
-  Settings as Cog6ToothIcon,
-  FlaskConical as BeakerIcon,
-  ArrowLeftRight as ArrowsRightLeftIcon,
-  Download as ArrowDownTrayIcon,
-  Search as MagnifyingGlassIcon,
-} from '@lucide/vue'
-import { Sun as SunIcon, Moon as MoonIcon } from '@lucide/vue'
+import { Search as MagnifyingGlassIcon } from '@lucide/vue'
 import { Link, router, usePage, useForm } from '@inertiajs/vue3'
 import { animate } from 'motion-v'
 import { usePermission } from '@/Composables/usePermissions'
-import { useTheme } from '@/Composables/useTheme'
+import { isThemeShortcut, useTheme } from '@/Composables/useTheme'
 import { trans, loadLanguageAsync } from 'laravel-vue-i18n'
 import backendModal from '@/Components/backend-modal.vue'
 import { getEcho } from '@/lib/echo'
 import toast from '@/Stores/toast'
-import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
-import { ClipboardCheck, FileCheck, FlaskConical, LayoutGrid, Package, PanelLeft, Users } from '@lucide/vue'
 import { durations, easeOut, prefersReducedMotion } from '@/Support/motion'
 
 const { hasPermission } = usePermission()
@@ -201,7 +166,6 @@ let realtimeNotificationChannel = null
 const settings = computed(() => page.props?.settings ?? {})
 const laboratory = computed(() => page.props.laboratory ?? { labs: [], active_lab: null })
 const activeLab = computed(() => laboratory.value.active_lab)
-const brandingCssVariables = computed(() => buildBrandingCssVariables({ ...settings.value, ...(activeLab.value ? { primary_color: activeLab.value.primary_color } : {}) }))
 const brandingOpen = ref(false)
 const brandingForm = useForm({ primary_color: '#0757b5' })
 function openBranding() {
@@ -334,9 +298,11 @@ const pageCrumbs = {
   'VAPSamples/Queue': 'Amostras',
 }
 
-// The server describes where a page sits; pages without a trail fall back to their module family.
+// The server describes where a page sits; pages without a trail fall back to their area.
 const crumbs = computed(() => {
-  const root = { title: activeLab.value?.name || settings.value.lab_name || 'Laboratório', url: route('dashboard'), current: false }
+  const root = activeArea.value
+    ? { title: activeArea.value.label, url: activeArea.value.href, current: false }
+    : { title: activeLab.value?.name || settings.value.lab_name || 'Laboratório', url: route('dashboard'), current: false }
 
   if (pageCrumbs[page.component]) {
     return [root, { title: pageCrumbs[page.component], current: true }]
@@ -397,10 +363,10 @@ const canUseExportHub = exportHubPermissions.some((permission) => hasPermission(
   || ['view_analysis', 'view_results', 'view_samples', 'view_inventory', 'view_maintenance_tasks'].some((permission) => hasPermission(permission))
 
 const navigation = [
-  { title: 'gestlab.menu.dashboard', name: '/dashboard', href: route('dashboard'), icon: HomeIcon, show: true },
-  { title: 'gestlab.menu.notifications', name: '/notifications', href: route('notifications.index'), icon: BellIcon, show: true },
+  { title: 'Hoje', name: '/dashboard', href: route('dashboard'), show: true },
+  { title: 'gestlab.menu.notifications', name: '/notifications', href: route('notifications.index'), show: true },
   {
-    title: 'gestlab.menu.admin_processes', name: 'Processos ADM.', icon: FolderOpenIcon, show: true,
+    title: 'gestlab.menu.admin_processes', name: 'Processos ADM.', show: true,
     children: [
       { title: 'gestlab.menu.products', name: '/products', href: route('products.index'), show: hasPermission('view_products') },
       { title: 'gestlab.menu.phytosanitary_products', name: '/phytosanitary-products', href: route('phytosanitary_products.index'), show: hasPermission('view_phytosanitary_products') },
@@ -424,7 +390,7 @@ const navigation = [
     ],
   },
   {
-    title: 'gestlab.menu.customers', name: 'customers', icon: UserGroupIcon, show: true,
+    title: 'gestlab.menu.customers', name: 'customers', show: true,
     children: [
       { title: 'gestlab.menu.customer_categories', name: '/customercategories', href: route('customercategories.index'), show: hasPermission('view_customer_categories') },
       { title: 'gestlab.menu.contact_categories', name: '/contactcategories', href: route('contactcategories.index'), show: hasPermission('view_contact_categories') },
@@ -433,7 +399,7 @@ const navigation = [
     ],
   },
   {
-    title: 'gestlab.menu.invoicing', name: 'Invoicing', icon: BanknotesIcon, show: true,
+    title: 'gestlab.menu.invoicing', name: 'Invoicing', show: true,
     children: [
       { title: 'gestlab.menu.invoice_categories', name: '/invoicecategories', href: route('invoicecategories.index'), show: hasPermission('view_invoice_categories') },
       { title: 'gestlab.menu.proposal_templates', name: '/vap-proposals/templates', href: route('vap-proposals.templates.index'), show: hasPermission('view_proposal_templates') },
@@ -450,14 +416,14 @@ const navigation = [
     ],
   },
   {
-    title: 'gestlab.menu.tax_authority', name: 'AGT', icon: SwatchIcon, show: true,
+    title: 'gestlab.menu.tax_authority', name: 'AGT', show: true,
     children: [
       { title: 'gestlab.menu.tax_exemptions', name: '/taxexemptions', href: route('taxexemptions.index'), show: hasPermission('view_tax_exemptions') },
       { title: 'Consulta de NIF', name: '/customers/tax-identification', href: route('customers.taxIdentification'), show: hasPermission('view_tax_exemptions') },
     ],
   },
   {
-    title: 'gestlab.menu.analytical_processes', name: 'Processos Analíticos', icon: Square3Stack3DIcon, show: true,
+    title: 'gestlab.menu.analytical_processes', name: 'Processos Analíticos', show: true,
     children: [
       { title: 'Fluxo laboratorial', name: '/laboratory-workflow', href: route('laboratory-workflow.index'), show: hasPermission('view_proposals') || hasPermission('view_samples') || hasPermission('view_analysis') || hasPermission('view_quality_certificates') },
       { title: 'gestlab.menu.parameters', name: '/parameters', href: route('parameters.index'), show: hasPermission('view_parameters') },
@@ -479,7 +445,7 @@ const navigation = [
     ],
   },
   {
-    title: 'gestlab.menu.analysis_reports', name: 'Boletins', icon: DocumentTextIcon, show: true,
+    title: 'gestlab.menu.analysis_reports', name: 'Boletins', show: true,
     children: [
       { title: 'gestlab.menu.quality_certificates', name: '/qualitycertificates', href: route('qualitycertificates.index'), show: hasPermission('view_quality_certificates') },
       { title: 'gestlab.menu.import_certificates', name: '/import-certificates', href: route('importcertificates.index'), show: hasPermission('view_import_certificates') },
@@ -488,7 +454,7 @@ const navigation = [
     ],
   },
   {
-    title: 'gestlab.menu.occurrences', name: 'Ocorrências', icon: ExclamationTriangleIcon, show: true,
+    title: 'gestlab.menu.occurrences', name: 'Ocorrências', show: true,
     children: [
       { title: 'gestlab.menu.occurrence_categories', name: '/occcurrencecategories', href: route('occurrencecategories.index'), show: hasPermission('view_occurrence_categories') },
       { title: 'gestlab.menu.occurrence_origins', name: '/occcurrenceorigins', href: route('occurrenceorigins.index'), show: hasPermission('view_occurrence_origins') },
@@ -498,12 +464,12 @@ const navigation = [
     ],
   },
   {
-    title: 'gestlab.menu.inventory', name: 'Inventário', icon: InboxStackIcon, show: true,
+    title: 'gestlab.menu.inventory', name: 'Inventário', show: true,
     children: [
       { title: 'gestlab.menu.inventory', name: '/vap-inventory/items', href: route('vap-inventory.items.index'), show: hasPermission('view_inventory') },
       { title: 'gestlab.menu.reagent_consumption', name: '/vap-inventory/reagents/consumption', href: route('vap-inventory.reagents.consumption.index'), show: hasPermission('view_inventory') },
       { title: 'gestlab.menu.iequipments', name: '/vap-inventory/items', href: route('vap-inventory.items.index', { category_id: 1 }), show: hasPermission('view_iequipments') },
-      { title: 'Integration Hub', name: '/integration-hub', href: route('integration-hub.index'), icon: ArrowsRightLeftIcon, show: hasPermission('view_iequipments') || hasPermission('view_settings') },
+      { title: 'Integration Hub', name: '/integration-hub', href: route('integration-hub.index'), show: hasPermission('view_iequipments') || hasPermission('view_settings') },
       { title: 'gestlab.menu.iitems', name: '/vap-inventory/items', href: route('vap-inventory.items.index', { category_id: 2 }), show: hasPermission('view_inventory') },
       { title: 'gestlab.menu.item_categories', name: '/itemcategories', href: route('itemcategories.index'), show: hasPermission('view_item_categories') },
       { title: 'gestlab.menu.equipment_categories', name: '/equipmentcategories', href: route('equipmentcategories.index'), show: hasPermission('view_equipment_categories') },
@@ -521,14 +487,14 @@ const navigation = [
     ],
   },
   {
-    title: 'gestlab.menu.maintenance_tasks', name: 'Manutenção', icon: WrenchScrewdriverIcon, show: true,
+    title: 'gestlab.menu.maintenance_tasks', name: 'Manutenção', show: true,
     children: [
       { title: 'gestlab.menu.maintenance_categories', name: '/maintenance/categories', href: route('vap-maintenance.categories'), show: hasPermission('view_maintenance_categories') },
       { title: 'gestlab.menu.maintenance_tasks', name: '/maintenance/tasks', href: route('vap-maintenance.tasks'), show: hasPermission('view_maintenance_tasks') },
     ],
   },
   {
-    title: 'gestlab.menu.quality_compliance', name: 'qualidade', icon: ShieldCheckIcon, show: true,
+    title: 'gestlab.menu.quality_compliance', name: 'qualidade', show: true,
     children: [
       { title: 'gestlab.menu.qms', name: '/qms', href: route('qms.index'), show: hasPermission('view_activity_log') },
       { title: 'gestlab.menu.staff_competence', name: '/users', href: route('users.index'), show: hasPermission('view_users') },
@@ -541,27 +507,26 @@ const navigation = [
     ],
   },
   {
-    title: 'gestlab.menu.lab_operations', name: 'operacoes-laboratoriais', icon: BeakerIcon, show: true,
+    title: 'gestlab.menu.lab_operations', name: 'operacoes-laboratoriais', show: true,
     children: [
       { title: 'gestlab.menu.labs', name: '/vap-labs/labs', href: route('vap-labs.labs.index'), show: hasPermission('view_departments') },
       { title: 'gestlab.menu.labels', name: '/vap-labels/labels', href: route('vap_labels.labels.index'), show: hasPermission('view_inventory') },
       { title: 'gestlab.menu.document_manager', name: '/file-manager', href: route('file-manager'), show: hasPermission('view_documents') || hasPermission('view_activity_log') },
     ],
   },
-  { title: 'gestlab.menu.users', name: '/users', href: route('users.index'), icon: UsersIcon, show: hasPermission('view_users') },
-  { title: 'gestlab.menu.departments', name: '/departments', href: route('departments.index'), icon: RectangleStackIcon, show: hasPermission('view_departments') },
-  { title: 'gestlab.menu.adverts', name: '/announcements', href: '#', icon: MegaphoneIcon, show: hasPermission('view_announcements') },
-  { title: 'gestlab.menu.settings', name: '/general-settings', href: route('generalsettings.index'), icon: Cog6ToothIcon, show: hasPermission('view_settings') },
-  { title: 'gestlab.menu.roles', name: '/roles', href: route('roles.index'), icon: UserIcon, show: hasPermission('view_roles') },
-  { title: 'gestlab.menu.permissions', name: '/permissions', href: route('permissions.index'), icon: FingerPrintIcon, show: hasPermission('view_permissions') },
-  { title: 'gestlab.menu.security', name: '/security', href: route('security'), icon: ShieldCheckIcon, show: true },
-  { title: 'gestlab.menu.activity_log', name: '/system-activity', href: route('systemactivity.index'), icon: StopIcon, show: hasPermission('view_activity_log') },
-  { title: 'Central de exportações', name: '/exports', href: route('exports.index'), icon: ArrowDownTrayIcon, show: canUseExportHub },
-  { title: 'gestlab.menu.backups', name: '/system-backups/backups', href: route('systembackups.backups'), icon: ServerIcon, show: hasPermission('view_backups') },
+  { title: 'gestlab.menu.users', name: '/users', href: route('users.index'), show: hasPermission('view_users') },
+  { title: 'gestlab.menu.departments', name: '/departments', href: route('departments.index'), show: hasPermission('view_departments') },
+  { title: 'gestlab.menu.adverts', name: '/announcements', href: '#', show: hasPermission('view_announcements') },
+  { title: 'gestlab.menu.settings', name: '/general-settings', href: route('generalsettings.index'), show: hasPermission('view_settings') },
+  { title: 'gestlab.menu.roles', name: '/roles', href: route('roles.index'), show: hasPermission('view_roles') },
+  { title: 'gestlab.menu.permissions', name: '/permissions', href: route('permissions.index'), show: hasPermission('view_permissions') },
+  { title: 'gestlab.menu.security', name: '/security', href: route('security'), show: true },
+  { title: 'gestlab.menu.activity_log', name: '/system-activity', href: route('systemactivity.index'), show: hasPermission('view_activity_log') },
+  { title: 'Central de exportações', name: '/exports', href: route('exports.index'), show: canUseExportHub },
+  { title: 'gestlab.menu.backups', name: '/system-backups/backups', href: route('systembackups.backups'), show: hasPermission('view_backups') },
 ]
 
 const sidebarOpen = ref(false)
-const desktopSidebarOpen = ref(true)
 const commandPaletteOpen = ref(false)
 const commandPaletteQuery = ref('')
 const commandPaletteInput = ref(null)
@@ -591,10 +556,8 @@ const commandGroups = computed(() => navigation
 
     return {
       label: navLabel(item),
-      icon: item.icon,
       items: items.map((command) => ({
         href: command.href,
-        icon: command.icon || item.icon,
         label: navLabel(command),
         path: command.name || item.name || '',
       })),
@@ -633,19 +596,22 @@ const filteredCommandGroups = computed(() => {
 const flatCommands = computed(() => filteredCommandGroups.value.flatMap((group) => group.items))
 const activeCommand = computed(() => flatCommands.value[activeCommandIndex.value] ?? flatCommands.value[0] ?? null)
 
-// Every menu entry belongs to exactly one rail area; anything unmatched lands in
-// Administração, so no page is ever left without a place in the navigation.
+// Eight areas across the top. Every menu entry belongs to exactly one area; anything
+// unmatched lands in Admin, so no page is ever left without a place in the navigation.
+// Each area lists its daily pages under named groups; catalogues and settings fold
+// away under one heading.
 const areaDefinitions = [
-  { key: 'home', primary: ['/dashboard', '/lab-networks'], label: 'Início', icon: LayoutGrid, animation: 'pop', match: ['/dashboard', '/lab-networks'] },
-  { key: 'samples', primary: ['/vap-samples', '/vap-samples/reports', '/directcollections', '/programmedcollections'], label: 'Amostras', icon: FlaskConical, animation: 'wobble', match: ['/vap-samples', '/samples', '/directcollections', '/programmedcollections', '/collectionreasons', '/collectioncollaborations', '/collectionendresults', '/packagingcategories'] },
-  { key: 'analysis', primary: ['/laboratory-workflow', '/analysis', '/analysis/data-exports', '/counter-analysis'], label: 'Análises', icon: ClipboardCheck, animation: 'draw', match: ['/laboratory-workflow', '/analysis', '/counter-analysis', '/counteranalysis', '/multiple-sample-analysis', '/parameters', '/analysiscategories', '/profiles', '/matrixes', '/protocols', '/standards', '/nwps', '/units', '/temperatures', '/environmental-conditions', '/resultcategories', '/worksheets', '/formulas', '/variables'] },
-  { key: 'certificates', primary: ['/qualitycertificates', '/import-certificates', '/export-certificates', '/report-studios'], label: 'Certificados', icon: FileCheck, animation: 'draw', match: ['/qualitycertificates', '/import-certificates', '/export-certificates', '/report-studios'] },
-  { key: 'commercial', primary: ['/vap-proposals', '/quotes', '/invoices', '/creditnotes', '/receipts', '/contractguides'], label: 'Comercial', icon: BanknotesIcon, animation: 'lift', match: ['/vap-proposals', '/invoices', '/quotes', '/creditnotes', '/receipts', '/invoicecategories', '/currencies', '/paymentcategories', '/discountcategories', '/taxtypes', '/taxexemptions', '/customers/tax-identification', '/products', '/phytosanitary-products', '/paid-services', '/contractguides'] },
-  { key: 'customers', primary: ['/customers', '/warehouses', '/customerrequests'], label: 'Clientes', icon: Users, animation: 'pop', match: ['/customers', '/customercategories', '/contactcategories', '/warehouses', '/customerrequests', '/customerrequestcategories', '/faqs', '/faqcategories', '/faqanswers', '/countries', '/transportcategories', '/vehicles', '/ratings', '/complaints'] },
-  { key: 'inventory', primary: ['/vap-inventory/items', '/vap-inventory/reagents/consumption', '/vap-inventory/orders', '/vap-inventory/needs', '/vap-inventory/transfers', '/vap-inventory/analytics', '/maintenance/tasks', '/integration-hub', '/vap-labels/labels'], label: 'Inventário', icon: Package, animation: 'lift', match: ['/vap-inventory', '/inventory', '/itemcategories', '/equipmentcategories', '/itemstatuses', '/iunits', '/itypes', '/ilocations', '/ideliveries', '/isuppliers', '/iwarehouses', '/integration-hub', '/maintenance', '/vap-labels'] },
-  { key: 'quality', primary: ['/qms', '/occurrences', '/vap-non-conformities', '/supplier-assessments', '/proficiency-tests', '/responsibility-matrix', '/uncertainty-sources', '/users'], label: 'Qualidade', icon: ShieldCheckIcon, animation: 'draw', match: ['/qms', '/occurrences', '/occurrencecategories', '/occurrenceorigins', '/occurrencestatuses', '/occcurrencecategories', '/occcurrenceorigins', '/vap-non-conformities', '/supplier-assessments', '/responsibility-matrix', '/uncertainty-sources', '/proficiency-tests', '/management-reviews'] },
-  { key: 'admin', primary: ['/users', '/departments', '/vap-labs/labs', '/file-manager', '/exports', '/general-settings'], label: 'Administração', icon: Cog6ToothIcon, animation: 'spin', match: [] },
+  { key: 'home', label: 'Início', groups: [{ label: 'O meu dia', paths: ['/dashboard', '/notifications', '/lab-networks'] }], match: ['/dashboard', '/notifications', '/lab-networks'] },
+  { key: 'samples', label: 'Amostras', groups: [{ label: 'Fluxo', paths: ['/vap-samples', '/directcollections', '/programmedcollections'] }, { label: 'Indicadores', paths: ['/vap-samples/reports'] }], match: ['/vap-samples', '/samples', '/directcollections', '/programmedcollections', '/collectionreasons', '/collectioncollaborations', '/collectionendresults', '/packagingcategories'] },
+  { key: 'analysis', label: 'Análise', groups: [{ label: 'Bancada', paths: ['/laboratory-workflow', '/analysis', '/counter-analysis', '/analysis/data-exports'] }], match: ['/laboratory-workflow', '/analysis', '/counter-analysis', '/counteranalysis', '/multiple-sample-analysis', '/parameters', '/analysiscategories', '/profiles', '/matrixes', '/protocols', '/standards', '/nwps', '/units', '/temperatures', '/environmental-conditions', '/resultcategories', '/worksheets', '/formulas', '/variables'] },
+  { key: 'certificates', label: 'Certificados', groups: [{ label: 'Emissão', paths: ['/qualitycertificates', '/import-certificates', '/export-certificates'] }, { label: 'Modelos', paths: ['/report-studios'] }], match: ['/qualitycertificates', '/import-certificates', '/export-certificates', '/report-studios'] },
+  { key: 'commercial', label: 'Comercial', groups: [{ label: 'Clientes', paths: ['/customers', '/warehouses', '/customerrequests'] }, { label: 'Vendas', paths: ['/vap-proposals', '/quotes', '/invoices', '/creditnotes', '/receipts', '/contractguides'] }], match: ['/vap-proposals', '/invoices', '/quotes', '/creditnotes', '/receipts', '/invoicecategories', '/currencies', '/paymentcategories', '/discountcategories', '/taxtypes', '/taxexemptions', '/customers/tax-identification', '/products', '/phytosanitary-products', '/paid-services', '/contractguides', '/customers', '/customercategories', '/contactcategories', '/warehouses', '/customerrequests', '/customerrequestcategories', '/faqs', '/faqcategories', '/faqanswers', '/countries', '/transportcategories', '/vehicles', '/ratings', '/complaints'] },
+  { key: 'inventory', label: 'Inventário', groups: [{ label: 'Existências', paths: ['/vap-inventory/items', '/vap-inventory/reagents/consumption', '/vap-inventory/transfers', '/vap-inventory/analytics'] }, { label: 'Equipamento', paths: ['/integration-hub', '/maintenance/tasks', '/vap-labels/labels'] }, { label: 'Compras', paths: ['/vap-inventory/needs', '/vap-inventory/orders'] }], match: ['/vap-inventory', '/inventory', '/itemcategories', '/equipmentcategories', '/itemstatuses', '/iunits', '/itypes', '/ilocations', '/ideliveries', '/isuppliers', '/iwarehouses', '/integration-hub', '/maintenance', '/vap-labels'] },
+  { key: 'quality', label: 'Qualidade', groups: [{ label: 'Sistema', paths: ['/qms', '/occurrences', '/vap-non-conformities', '/supplier-assessments'] }, { label: 'Controlo', paths: ['/proficiency-tests', '/responsibility-matrix', '/uncertainty-sources', '/users'] }], match: ['/qms', '/occurrences', '/occurrencecategories', '/occurrenceorigins', '/occurrencestatuses', '/occcurrencecategories', '/occcurrenceorigins', '/vap-non-conformities', '/supplier-assessments', '/responsibility-matrix', '/uncertainty-sources', '/proficiency-tests', '/management-reviews'] },
+  { key: 'admin', label: 'Admin', groups: [{ label: 'Organização', paths: ['/vap-labs/labs', '/users', '/departments', '/roles', '/permissions'] }, { label: 'Sistema', paths: ['/general-settings', '/file-manager', '/exports', '/system-activity', '/system-backups/backups', '/security'] }], match: [] },
 ]
+
+const catalogueLabel = 'Catálogos'
 
 const pathMatches = (path, prefix) => path === prefix || path.startsWith(`${prefix}/`)
 const areaKeyForPath = (path) => areaDefinitions
@@ -655,46 +621,53 @@ const areaKeyForPath = (path) => areaDefinitions
 
 const navAreas = computed(() => {
   const buckets = Object.fromEntries(areaDefinitions.map((area) => [area.key, new Map()]))
-  const place = (leaf, sectionLabel) => {
-    if (!leaf.show || !leaf.href || leaf.href === '#' || leaf.name === '/notifications') {
+  const groupFor = (area, path) => area.groups.find((group) => group.paths.includes(path))?.label ?? catalogueLabel
+  const place = (leaf) => {
+    if (!leaf.show || !leaf.href || leaf.href === '#') {
       return
     }
 
-    const sections = buckets[areaKeyForPath(leaf.name) ?? 'admin']
-    const section = sections.get(sectionLabel) ?? []
+    const area = areaDefinitions.find((definition) => definition.key === (areaKeyForPath(leaf.name) ?? 'admin'))
+    const sections = buckets[area.key]
+    const label = groupFor(area, leaf.name)
+    const section = sections.get(label) ?? []
 
     if (![...sections.values()].flat().some((item) => item.href === leaf.href)) {
-      section.push({ label: navLabel(leaf), href: leaf.href, path: leaf.name })
+      section.push({
+        label: navLabel(leaf),
+        href: leaf.href,
+        path: leaf.name,
+        count: leaf.name === '/notifications' ? unreadNotificationCount.value : 0,
+      })
     }
 
-    sections.set(sectionLabel, section)
-  }
-
-  // Daily pages lead each area; catalogues and settings follow under one heading.
-  const sectionFor = (leaf) => {
-    const area = areaDefinitions.find((definition) => definition.key === (areaKeyForPath(leaf.name) ?? 'admin'))
-
-    return area.primary.includes(leaf.name) ? '' : 'Catálogos e configuração'
+    sections.set(label, section)
   }
 
   navigation.filter((item) => item.show).forEach((item) => {
-    (item.children?.length ? item.children : [item]).forEach((leaf) => place(leaf, sectionFor(leaf)))
+    (item.children?.length ? item.children : [item]).forEach(place)
   })
 
   if (activeLab.value?.network_id) {
-    place({ show: true, title: 'Rede de laboratórios', name: '/lab-networks', href: route('lab-network.index', activeLab.value.network_id) }, '')
+    place({ show: true, title: 'Rede de laboratórios', name: '/lab-networks', href: route('lab-network.index', activeLab.value.network_id) })
   }
 
   return areaDefinitions
     .map((area) => {
+      const order = [...area.groups.map((group) => group.label), catalogueLabel]
       const sections = [...buckets[area.key].entries()]
         .filter(([, items]) => items.length)
-        .sort(([first], [second]) => first.length - second.length)
-        .map(([label, items]) => ({
-          key: `${area.key}-${label || 'main'}`,
-          label,
-          items: label ? items : [...items].sort((first, second) => area.primary.indexOf(first.path) - area.primary.indexOf(second.path)),
-        }))
+        .sort(([first], [second]) => order.indexOf(first) - order.indexOf(second))
+        .map(([label, items]) => {
+          const paths = area.groups.find((group) => group.label === label)?.paths ?? []
+
+          return {
+            key: `${area.key}-${label}`,
+            label,
+            collapsible: label === catalogueLabel,
+            items: paths.length ? [...items].sort((first, second) => paths.indexOf(first.path) - paths.indexOf(second.path)) : items,
+          }
+        })
 
       return { ...area, sections, href: sections[0]?.items[0]?.href ?? null }
     })
@@ -710,6 +683,28 @@ const activeAreaKey = computed(() => {
 
   return areaKeyForPath(path) ?? leaf?.key ?? (navAreas.value.some((area) => area.key === 'admin') ? 'admin' : navAreas.value[0]?.key ?? null)
 })
+
+const activeArea = computed(() => navAreas.value.find((area) => area.key === activeAreaKey.value) ?? null)
+
+// Rebuilt Plano screens own their whole canvas; older screens get the content gutter.
+const planoPages = ['LaboratoryWorkbench', 'LabNetwork/Index', 'VAPSamples/Queue', 'VAPSamples/Show']
+const pageTemplate = computed(() => ({
+  LaboratoryWorkbench: 'today',
+  'VAPSamples/Queue': 'queue',
+  'VAPSamples/Show': 'dossier',
+}[page.component] ?? 'page'))
+
+const openCommandPalette = () => {
+  commandPaletteQuery.value = ''
+  activeCommandIndex.value = 0
+  commandPaletteOpen.value = true
+  nextTick(() => commandPaletteInput.value?.focus?.())
+}
+
+const visitCommand = (command) => {
+  commandPaletteOpen.value = false
+  router.visit(command.href)
+}
 
 const activateCommandPaletteResult = () => {
   if (activeCommand.value) {
@@ -760,21 +755,16 @@ const handleCommandPaletteShortcut = (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
     event.preventDefault()
     openCommandPalette()
+    return
   }
-}
 
-const toggleDesktopSidebar = () => {
-  desktopSidebarOpen.value = !desktopSidebarOpen.value
-  try { window.localStorage.setItem('desktop-sidebar-open', desktopSidebarOpen.value ? '1' : '0') } catch { /* Storage may be unavailable in private browsing. */ }
+  if (isThemeShortcut(event)) {
+    event.preventDefault()
+    toggleTheme()
+  }
 }
 
 onMounted(() => {
-  let savedSidebarState = null
-  try { savedSidebarState = window.localStorage.getItem('desktop-sidebar-open') } catch { /* Use the expanded default when storage is unavailable. */ }
-  if (savedSidebarState !== null) {
-    desktopSidebarOpen.value = savedSidebarState === '1'
-  }
-
   window.addEventListener('keydown', handleCommandPaletteShortcut)
 
   startCountdown()

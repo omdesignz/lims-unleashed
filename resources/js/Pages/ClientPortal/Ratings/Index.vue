@@ -1,7 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
 import PortalLayout from '@/Shared/Layouts/PortalLayout.vue'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 
 defineOptions({ layout: PortalLayout })
 defineProps({ invitations: { type: Object, required: true } })

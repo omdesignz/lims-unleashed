@@ -1,22 +1,21 @@
 <template>
-  <div class="auth-canvas min-h-dvh bg-[var(--ds-canvas)] text-[var(--ds-text)]">
+  <div class="auth-canvas min-h-dvh">
     <Head :title="title" />
     <header class="auth-bar">
-      <Link :href="route('dashboard')" class="flex items-center gap-3 rounded-lg" aria-label="Voltar à visão geral">
-        <BrandMark :width="54" />
+      <Link :href="route('dashboard')" aria-label="Voltar ao início">
+        <img src="/brand/svg/VAP_Small_Black.svg" alt="VAP Sistemas" />
       </Link>
+      <span class="pl-k auth-bar-label">LIMS · {{ title }}</span>
     </header>
 
     <main class="auth-main">
       <section class="auth-sheet">
-        <div class="mx-auto flex max-w-xl flex-col items-start px-6 py-12 sm:px-10 sm:py-16">
-          <p class="font-mono text-[0.8125rem] text-[var(--ds-text-soft)]">Erro {{ status }}</p>
-          <h1 class="mt-3 text-3xl font-medium tracking-[-0.03em] text-[var(--ds-text)] sm:text-4xl">{{ description }}</h1>
-          <p class="mt-4 text-[0.9375rem] leading-7 text-[var(--ds-text-muted)]">{{ paragraph }}</p>
-          <div class="mt-8 flex flex-wrap gap-2">
-            <Link :href="route('dashboard')" class="ds-button ds-button-primary">Ir para a visão geral</Link>
-            <button type="button" class="ds-button ds-button-secondary" @click="goBack">Voltar à página anterior</button>
-          </div>
+        <div class="mb-9 flex justify-between gap-4"><span class="pl-k pl-muted">Erro {{ status }}</span><span class="pl-k pl-muted">{{ title }}</span></div>
+        <h1 class="auth-title"><span class="auth-title-accent">{{ status }}.</span>{{ description }}</h1>
+        <p class="mt-5 max-w-[52ch] text-[15px] leading-6 text-[var(--pl-muted)]">{{ paragraph }}</p>
+        <div class="mt-9 flex flex-wrap gap-3">
+          <Link :href="route('dashboard')" class="ds-button ds-button-primary min-h-12 justify-between">Ir para o início<ChevronRightIcon class="h-4 w-4" aria-hidden="true" /></Link>
+          <button type="button" class="ds-button ds-button-secondary min-h-12" @click="goBack">Voltar à página anterior</button>
         </div>
       </section>
     </main>
@@ -25,7 +24,7 @@
 
 <script setup>
 import EmptyLayout from '@/Shared/Layouts/empty-layout.vue'
-import BrandMark from '@/Components/brand/BrandMark.vue'
+import { ChevronRight as ChevronRightIcon } from '@lucide/vue'
 import { computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 
