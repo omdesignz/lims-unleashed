@@ -1,103 +1,70 @@
 <template>
   <div class="lims-app-shell ds-app-canvas" :style="brandingCssVariables" :data-theme-preset="themePreset">
-    <header class="ds-topbar sticky top-0 z-40 border-b">
-      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <div class="flex items-center gap-4">
-          <button
-            type="button"
-            class="ds-icon-button lg:hidden"
-            @click="sidebarOpen = true"
-          >
-            <Bars3Icon class="h-5 w-5" />
+    <header class="sticky top-0 z-40 bg-[var(--ds-canvas)]">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-3">
+          <button type="button" class="ds-icon-button lg:hidden" :aria-label="labels.navigation" @click="sidebarOpen = true">
+            <Bars3Icon class="h-5 w-5" aria-hidden="true" />
           </button>
-          <Link :href="route('portal.home')" class="flex items-center gap-3">
-            <img
-              v-if="brandLogoUrl"
-              class="h-10 w-auto max-w-40 object-contain"
-              :src="brandLogoUrl"
-              :alt="brandAppName"
-            >
-            <span v-else class="grid h-10 w-10 place-items-center rounded-lg bg-[var(--brand-secondary)] text-xs font-bold text-white">{{ brandInitials }}</span>
-            <div>
-              <div class="text-sm font-extrabold uppercase tracking-[0.2em] text-primary-700 dark:text-accent-200">{{ brandAppName }}</div>
-              <div class="text-sm text-slate-500 dark:text-slate-400">{{ labels.portalArea }}</div>
-            </div>
+          <Link :href="route('portal.home')" class="flex items-center gap-3 rounded-lg">
+            <img v-if="brandLogoUrl" class="h-8 w-auto max-w-40 object-contain" :src="brandLogoUrl" :alt="brandAppName">
+            <BrandMark v-else :width="52" :data-initials="brandInitials" />
+            <span class="h-5 w-px bg-[var(--ds-border-strong)]" aria-hidden="true" />
+            <span>
+              <span class="block text-[0.9375rem] font-semibold leading-tight tracking-tight text-[var(--ds-text)]">{{ brandAppName }}</span>
+              <span class="block text-xs leading-tight text-[var(--ds-text-soft)]">{{ labels.portalArea }}</span>
+            </span>
           </Link>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
           <div class="relative">
-            <button
-              type="button"
-              class="ds-button ds-button-secondary min-h-0 px-3 py-2"
-              @click="languageMenuOpen = !languageMenuOpen"
-            >
+            <button type="button" class="ds-button ds-button-ghost" :aria-expanded="languageMenuOpen" @click="languageMenuOpen = !languageMenuOpen">
               <span>{{ activeLanguageLabel }}</span>
-              <ChevronDownIcon class="h-4 w-4 text-slate-400" />
+              <ChevronDownIcon class="h-4 w-4 text-[var(--ds-text-soft)]" aria-hidden="true" />
             </button>
 
-            <div v-if="languageMenuOpen" class="ds-floating-panel absolute right-0 z-10 mt-2 w-40 p-2">
+            <div v-if="languageMenuOpen" class="ds-floating-panel absolute right-0 z-10 mt-1.5 w-44 p-1.5">
               <button
                 v-for="language in page.props?.languages?.data ?? []"
                 :key="language.value"
                 type="button"
-                class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition"
-                :class="language.value === page.props?.language ? 'bg-primary-50 text-primary-800 dark:bg-primary-950/60 dark:text-primary-200' : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800'"
+                class="app-menu-item hover:bg-[var(--ds-panel-muted)]"
                 @click="switchLanguage(language.value)"
               >
-                <span>{{ language.label }}</span>
-                <span v-if="language.value === page.props?.language" class="h-2 w-2 rounded-full bg-primary-600" />
+                <span class="flex-1">{{ language.label }}</span>
+                <span v-if="language.value === page.props?.language" class="h-1.5 w-1.5 rounded-full bg-[var(--vap-blue)]" aria-hidden="true" />
               </button>
             </div>
           </div>
 
-          <Link
-            :href="route('portal.requests.index', { new: 1 })"
-            class="ds-button ds-button-primary hidden md:inline-flex"
-          >
+          <Link :href="route('portal.requests.index', { new: 1 })" class="ds-button ds-button-primary hidden md:inline-flex">
             {{ labels.newRequest }}
           </Link>
 
           <div class="relative">
-            <button
-              type="button"
-              class="ds-button ds-button-secondary min-h-0 px-3 py-2"
-              @click="profileMenuOpen = !profileMenuOpen"
-            >
-              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-primary-700 text-sm font-bold text-white">
-                {{ page.props?.auth?.user?.name?.charAt(0)?.toUpperCase() || 'C' }}
-              </div>
-              <div class="hidden text-left md:block">
-                <div class="text-sm font-bold text-slate-900 dark:text-slate-100">{{ page.props?.auth?.user?.name || labels.customer }}</div>
-                <div class="text-xs text-slate-500">{{ page.props?.auth?.user?.email }}</div>
-              </div>
-              <ChevronDownIcon class="h-4 w-4 text-slate-400" />
+            <button type="button" class="ds-button ds-button-secondary gap-2.5 py-1 pl-1 pr-2.5" :aria-expanded="profileMenuOpen" @click="profileMenuOpen = !profileMenuOpen">
+              <span class="app-avatar h-7 w-7">{{ page.props?.auth?.user?.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
+              <span class="hidden max-w-40 truncate md:block">{{ page.props?.auth?.user?.name || labels.customer }}</span>
+              <ChevronDownIcon class="h-4 w-4 text-[var(--ds-text-soft)]" aria-hidden="true" />
             </button>
 
-            <div v-if="profileMenuOpen" class="ds-floating-panel absolute right-0 mt-2 w-56 p-2">
-              <Link
-                :href="route('portal.profile')"
-                class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                @click="profileMenuOpen = false"
-              >
-                <UserCircleIcon class="h-4 w-4" />
+            <div v-if="profileMenuOpen" class="ds-floating-panel absolute right-0 mt-1.5 w-60 p-1.5">
+              <p class="truncate px-2.5 pb-1.5 pt-1 text-xs text-[var(--ds-text-soft)]">{{ page.props?.auth?.user?.email }}</p>
+              <Link :href="route('portal.profile')" class="app-menu-item hover:bg-[var(--ds-panel-muted)]" @click="profileMenuOpen = false">
+                <UserCircleIcon aria-hidden="true" />
                 {{ labels.portalProfile }}
               </Link>
-              <Link
-                :href="route('portal.security')"
-                class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                @click="profileMenuOpen = false"
-              >
-                <ShieldCheckIcon class="h-4 w-4" />
+              <Link :href="route('portal.security')" class="app-menu-item hover:bg-[var(--ds-panel-muted)]" @click="profileMenuOpen = false">
+                <ShieldCheckIcon aria-hidden="true" />
                 {{ labels.portalSecurity }}
               </Link>
-              <button
-                class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40"
-                @click="logout"
-              >
-                <PowerIcon class="h-4 w-4" />
-                {{ labels.logout }}
-              </button>
+              <div class="mt-1 border-t border-[var(--ds-border)] pt-1">
+                <button type="button" class="app-menu-item app-menu-item-danger hover:bg-[var(--ds-panel-muted)]" @click="logout">
+                  <PowerIcon aria-hidden="true" />
+                  {{ labels.logout }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -106,27 +73,28 @@
 
     <Dialog as="div" class="lg:hidden" :open="sidebarOpen" @close="sidebarOpen = false">
       <div class="fixed inset-0 z-50">
-        <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" @click="sidebarOpen = false" />
-        <DialogPanel class="ds-sidebar-panel fixed inset-y-0 left-0 flex w-full max-w-xs flex-col border-r shadow-xl">
-          <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div class="ds-modal-backdrop fixed inset-0" @click="sidebarOpen = false" />
+        <DialogPanel class="ds-sidebar-panel fixed inset-y-0 left-0 flex w-full max-w-xs flex-col rounded-none border-0 border-r">
+          <div class="flex items-center justify-between px-4 py-3">
             <div>
-              <div class="text-sm font-bold text-white">{{ labels.navigation }}</div>
-              <div class="text-xs text-slate-400">{{ labels.portalArea }}</div>
+              <div class="text-sm font-semibold text-[var(--ds-text)]">{{ labels.navigation }}</div>
+              <div class="text-xs text-[var(--ds-text-soft)]">{{ labels.portalArea }}</div>
             </div>
-            <button type="button" class="ds-icon-button text-slate-300 hover:bg-white/10 hover:text-white" @click="sidebarOpen = false">
-              <XMarkIcon class="h-5 w-5" />
+            <button type="button" class="ds-icon-button" @click="sidebarOpen = false">
+              <XMarkIcon class="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
-          <nav class="flex-1 space-y-1 overflow-y-auto px-4 py-6">
+          <nav class="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
             <Link
               v-for="item in navigation"
               :key="item.href"
               :href="item.href"
-              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition"
-              :class="isActive(item) ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'"
+              class="ds-nav-item"
+              :class="isActive(item) ? 'ds-nav-item-active' : ''"
+              :aria-current="isActive(item) ? 'page' : undefined"
               @click="sidebarOpen = false"
             >
-              <component :is="item.icon" class="h-5 w-5" />
+              <component :is="item.icon" class="h-[1.125rem] w-[1.125rem] shrink-0" aria-hidden="true" />
               {{ labels[item.key] }}
             </Link>
           </nav>
@@ -134,23 +102,27 @@
       </div>
     </Dialog>
 
-    <div class="mx-auto flex max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:px-8">
-      <aside class="hidden w-72 shrink-0 lg:block">
-        <div class="ds-sidebar-panel sticky top-24 p-4">
-          <div class="rounded-lg border border-white/10 bg-slate-950/70 p-4 text-white">
-            <div class="text-sm font-bold">{{ page.props?.auth?.user?.name || labels.customer }}</div>
-            <div class="mt-1 text-xs text-slate-300">{{ page.props?.auth?.user?.customer || page.props?.auth?.user?.email }}</div>
+    <div class="mx-auto flex max-w-7xl gap-6 px-4 pb-10 pt-2 sm:px-6 lg:px-8">
+      <aside class="hidden w-60 shrink-0 lg:block">
+        <div class="sticky top-20">
+          <div class="flex items-center gap-2.5 px-2.5 pb-3">
+            <span class="app-avatar">{{ page.props?.auth?.user?.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
+            <span class="min-w-0">
+              <span class="block truncate text-[0.8125rem] font-medium leading-tight text-[var(--ds-text)]">{{ page.props?.auth?.user?.name || labels.customer }}</span>
+              <span class="block truncate text-xs leading-tight text-[var(--ds-text-soft)]">{{ page.props?.auth?.user?.customer || page.props?.auth?.user?.email }}</span>
+            </span>
           </div>
 
-          <nav class="mt-4 space-y-1">
+          <nav class="space-y-0.5" :aria-label="labels.navigation">
             <Link
               v-for="item in navigation"
               :key="item.href"
               :href="item.href"
-              class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition"
-              :class="isActive(item) ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'"
+              class="ds-nav-item"
+              :class="isActive(item) ? 'ds-nav-item-active' : ''"
+              :aria-current="isActive(item) ? 'page' : undefined"
             >
-              <component :is="item.icon" class="h-5 w-5" />
+              <component :is="item.icon" class="h-[1.125rem] w-[1.125rem] shrink-0" aria-hidden="true" />
               {{ labels[item.key] }}
             </Link>
           </nav>
@@ -172,24 +144,25 @@ import { Link, router, useForm, usePage } from '@inertiajs/vue3'
 import ToastList from '@/Components/toast-list.vue'
 import { loadLanguageAsync } from 'laravel-vue-i18n'
 import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
+import BrandMark from '@/Components/brand/BrandMark.vue'
 import {
-  ArchiveBoxIcon,
-  ArrowUpOnSquareIcon,
-  Bars3Icon,
-  BanknotesIcon,
-  BeakerIcon,
-  ClipboardDocumentCheckIcon,
-  ChevronDownIcon,
-  DocumentTextIcon,
-  HomeModernIcon,
-  PowerIcon,
-  QuestionMarkCircleIcon,
-  ShieldCheckIcon,
-  TruckIcon,
-  UserCircleIcon,
-  WrenchScrewdriverIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Archive as ArchiveBoxIcon,
+  Share as ArrowUpOnSquareIcon,
+  Menu as Bars3Icon,
+  Banknote as BanknotesIcon,
+  FlaskConical as BeakerIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  ChevronDown as ChevronDownIcon,
+  FileText as DocumentTextIcon,
+  House as HomeModernIcon,
+  Power as PowerIcon,
+  CircleHelp as QuestionMarkCircleIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Truck as TruckIcon,
+  CircleUser as UserCircleIcon,
+  Wrench as WrenchScrewdriverIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 
 const page = usePage()
 const sidebarOpen = ref(false)

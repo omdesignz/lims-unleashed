@@ -1,17 +1,17 @@
 <template>
-    <div class="md:col-span-1 flex justify-between">
-        <div class="px-4 sm:px-0">
-            <h3 class="ds-heading text-lg">
-                <slot name="title" />
-            </h3>
+  <div class="flex justify-between gap-4 lg:col-span-1">
+    <div>
+      <h3 class="ds-heading text-base">
+        <slot name="title" />
+      </h3>
 
-            <p class="ds-copy mt-1 max-w-3xl text-sm">
-                <slot name="description" />
-            </p>
-        </div>
-
-        <div class="px-4 sm:px-0">
-            <slot name="aside" />
-        </div>
+      <p class="ds-copy mt-1 max-w-md text-sm">
+        <slot name="description" />
+      </p>
     </div>
+
+    <div>
+      <slot name="aside" />
+    </div>
+  </div>
 </template>

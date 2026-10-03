@@ -1,6 +1,6 @@
 <script setup>
 import { router } from "@inertiajs/vue3";
-import { ArrowPathIcon, FingerPrintIcon, TrashIcon } from "@heroicons/vue/24/outline";
+import { RefreshCw as ArrowPathIcon, Fingerprint as FingerPrintIcon, Trash2 as TrashIcon } from "@lucide/vue";
 import { startRegistration } from "@simplewebauthn/browser";
 import { ref } from "vue";
 import ConfirmDialog from "@/Components/confirm-dialog.vue";

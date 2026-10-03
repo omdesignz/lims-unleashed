@@ -26,7 +26,7 @@
       <p class="ds-copy mt-1 text-sm">Use o email de uma conta do portal verificada. Convite privado deste laboratório, válido por 30 dias.</p>
       <form class="mt-4 space-y-3" :aria-busy="invitationForm.processing" @submit.prevent="issueInvitation">
         <label for="rating-recipient" class="block text-sm font-semibold text-[var(--ds-text)]">Email do destinatário</label>
-        <input id="rating-recipient" v-model="invitationForm.recipient_email" type="email" required maxlength="255" class="ds-input w-full" :disabled="invitationForm.processing" :aria-invalid="Boolean(invitationForm.errors.recipient_email)" :aria-describedby="invitationForm.hasErrors ? 'invitation-errors' : undefined" />
+        <BaseInput id="rating-recipient" v-model="invitationForm.recipient_email" type="email" required maxlength="255" class="ds-input w-full" :disabled="invitationForm.processing" :aria-invalid="Boolean(invitationForm.errors.recipient_email)" :aria-describedby="invitationForm.hasErrors ? 'invitation-errors' : undefined" />
         <div v-if="invitationForm.hasErrors" id="invitation-errors" role="alert" class="text-sm text-red-600">
           <p v-for="(message, field) in invitationForm.errors" :key="field">{{ message }}</p>
         </div>
@@ -155,8 +155,8 @@ const metrics = computed(() => [
 ])
 
 const baseOptions = {
-  chart: { foreColor: '#64748b' },
-  grid: { borderColor: '#e2e8f0' },
+  chart: { foreColor: '#6b7482' },
+  grid: { borderColor: '#eef0f3' },
   tooltip: { theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' },
 }
 

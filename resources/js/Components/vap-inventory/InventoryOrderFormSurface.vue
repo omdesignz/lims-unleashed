@@ -327,17 +327,17 @@
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import { router, useForm } from '@inertiajs/vue3'
 import {
-  ArrowLeftIcon,
-  BuildingStorefrontIcon,
-  CheckCircleIcon,
-  ClipboardDocumentListIcon,
-  CubeIcon,
-  PlusCircleIcon,
-  RectangleStackIcon,
-  ShoppingBagIcon,
-  TagIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  Store as BuildingStorefrontIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Box as CubeIcon,
+  CirclePlus as PlusCircleIcon,
+  Layers as RectangleStackIcon,
+  ShoppingBag as ShoppingBagIcon,
+  Tag as TagIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 
 const props = defineProps({

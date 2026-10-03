@@ -1,5 +1,6 @@
 @extends('errors::minimal')
 
-@section('title', __('Page Expired'))
+@section('title', 'Sessão expirada')
 @section('code', '419')
-@section('message', __('Page Expired'))
+@section('message', 'A página expirou por inactividade.')
+@section('description', 'Por segurança, os formulários deixam de ser válidos ao fim de algum tempo. Volte à página anterior, actualize-a e repita a operação.')

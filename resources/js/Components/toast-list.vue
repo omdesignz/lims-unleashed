@@ -25,11 +25,11 @@ onUnmounted(removeFinishEventListener)
   <div class="pointer-events-none fixed inset-x-0 top-0 z-[90] flex justify-end p-3 sm:p-5" aria-live="polite" aria-atomic="false">
     <div class="flex w-full max-w-[26rem] flex-col items-stretch gap-2">
       <TransitionGroup
-        enter-from-class="translate-x-8 opacity-0"
-        enter-active-class="transition duration-200 ease-out"
-        leave-active-class="transition duration-150 ease-in"
-        leave-to-class="translate-x-8 opacity-0"
-        move-class="transition-transform duration-200"
+        enter-from-class="translate-y-[-0.5rem] opacity-0"
+        enter-active-class="transition-[opacity,translate] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
+        leave-active-class="transition-opacity duration-150 ease-out"
+        leave-to-class="opacity-0"
+        move-class="transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
       >
         <ToastListItem
           v-for="item in toast.items"

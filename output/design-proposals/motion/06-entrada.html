@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar — VAP LIMS</title>
+<link rel="stylesheet" href="system.css">
+<script src="ui.js"></script>
+<style>
+  body { background: var(--band); min-height: 100vh; display: grid; grid-template-rows: 88px 1fr auto; }
+  .nav { padding: 0 72px; display: flex; align-items: center; justify-content: space-between; color: var(--band-ink); }
+  .nav img { height: 26px; }
+  .stage { padding: 4px 72px 40px; display: grid; grid-template-columns: 520px 1fr; }
+  .card { background: #070f1c; color: #edf2f8; padding: 44px 48px; display: grid; gap: 26px; align-content: start; --bg: #070f1c; --layer: #0b1728; --raised: #11213a; --line: #1a2a43; --line-strong: #2c405f; --fg: #edf2f8; --muted: #8c9cb3; --faint: #5c6e88; --accent: #087cf0; --accent-ink: #04101f; --accent-hover: #70b5ff; --accent-hover-ink: #04101f; --accent-text: #70b5ff; }
+  .aside { color: var(--band-ink); display: grid; align-content: end; justify-items: end; padding-bottom: 6px; }
+  .rail { background: var(--band); color: var(--band-ink); border-top: 1px solid rgb(4 16 31 / 0.35); padding: 0 72px; height: 42px; display: flex; justify-content: space-between; align-items: center; }
+  .facts { background: #070f1c; padding: 0 72px; }
+  .facts > div { display: grid; grid-template-columns: repeat(5, 1fr); background: #0b1728; }
+  .fact { padding: 22px; border-right: 1px solid #1a2a43; display: grid; gap: 9px; }
+  .fact:last-child { border-right: 0; }
+  .fact p { color: #8c9cb3; font-size: 13px; line-height: 1.5; }
+  .fact .k { color: #70b5ff; }
+</style>
+</head>
+<body>
+  <header class="nav">
+    <img data-logo="black">
+    <span class="k">LIMS · Laboratório Central</span>
+    <span style="display:flex;gap:22px;align-items:center"><span class="k">PT</span><span class="k" style="opacity:.6">EN</span><a class="btn" style="background:#070f1c;border-color:#070f1c;color:#edf2f8;height:48px" href="#">Portal do cliente <i data-i="out"></i></a></span>
+  </header>
+
+  <main class="stage">
+    <form class="card">
+      <div style="display:flex;justify-content:space-between"><span class="k muted">Acesso do laboratório</span><span class="k muted">v 2.0</span></div>
+      <h1 class="d1"><span class="acc">Entrar.</span><br>Do balcão<br>ao certificado.</h1>
+      <div style="display:grid;gap:18px">
+        <label class="field"><span class="label">Email</span><span class="input is-focus">m.kiala@labcentral.ao<span class="caret"></span></span></label>
+        <label class="field"><span class="label">Palavra-passe <a class="acc" href="#">Recuperar</a></span><span class="input"><span class="ph">••••••••••••</span></span></label>
+        <span class="opt on"><span class="check"><i data-i="check"></i></span>Manter sessão neste posto</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <button class="btn btn-primary btn-lg" type="button">Entrar <i data-i="go" class="go"></i></button>
+        <button class="btn btn-lg" type="button">Entrar com SSO <i data-i="go" class="go"></i></button>
+      </div>
+      <p class="k muted prompt" style="letter-spacing:.14em">Sessão registada na pista de auditoria</p>
+    </form>
+    <div class="aside">
+      <p class="k" style="text-align:right;line-height:1.9">ISO/IEC 17025<br>Rastreabilidade completa<br>Assinatura electrónica</p>
+    </div>
+  </main>
+
+  <div>
+    <div class="rail"><span class="k">Receção</span><span class="k">Análise</span><span class="k">Verificação</span><span class="k">Aprovação</span><span class="k">Certificado</span></div>
+    <div class="facts"><div>
+      <div class="fact"><span class="k">Registo único</span><p>Uma amostra, um dossier. Sem folhas paralelas.</p></div>
+      <div class="fact"><span class="k">Quatro olhos</span><p>Quem analisa não verifica. Quem verifica não aprova.</p></div>
+      <div class="fact"><span class="k">Prazos visíveis</span><p>Cada fila mostra o que vence primeiro.</p></div>
+      <div class="fact"><span class="k">Auditável</span><p>Toda a alteração guarda autor, hora e motivo.</p></div>
+      <div class="fact"><span class="k">Certificado assinado</span><p>Emitido só depois da aprovação técnica.</p></div>
+    </div></div>
+  </div>
+</body>
+</html>

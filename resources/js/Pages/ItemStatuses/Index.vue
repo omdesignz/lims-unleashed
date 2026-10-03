@@ -1,7 +1,7 @@
 <script setup>
 import ReferenceCatalogManager from '@/Components/catalogs/ReferenceCatalogManager.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { SignalIcon } from '@heroicons/vue/24/outline'
+import { Signal as SignalIcon } from '@lucide/vue'
 
 defineOptions({ layout: Layout })
 defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) }, fields: { type: Array, default: () => [] }, model: String, abilities: { type: Array, default: () => [] }, query: { type: Object, default: () => ({}) }, slideOverEdit: { type: Boolean, default: false } })

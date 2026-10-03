@@ -1,5 +1,5 @@
 <script setup>
-import { BookOpenIcon, DocumentTextIcon } from "@heroicons/vue/24/outline";
+import { BookOpen as BookOpenIcon, FileText as DocumentTextIcon } from "@lucide/vue";
 
 defineProps({
   form: {

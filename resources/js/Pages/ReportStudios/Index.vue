@@ -7,11 +7,11 @@ import { computed, ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
-  DocumentPlusIcon,
-  FolderOpenIcon,
-  MagnifyingGlassIcon,
-  PhotoIcon,
-} from '@heroicons/vue/24/outline'
+  FilePlus as DocumentPlusIcon,
+  FolderOpen as FolderOpenIcon,
+  Search as MagnifyingGlassIcon,
+  Image as PhotoIcon,
+} from '@lucide/vue'
 
 defineOptions({
   layout: Layout,
@@ -87,7 +87,7 @@ const documentTypeCards = computed(() => [
   { key: 'invoice', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.invoice', value: props.summary.invoice, accent: 'bg-[rgb(var(--accent-500-rgb))]' },
   { key: 'receipt', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.receipt', value: props.summary.receipt, accent: 'bg-lime-500' },
   { key: 'credit_note', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.credit_note', value: props.summary.credit_note, accent: 'bg-rose-500' },
-  { key: 'canva', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.canva', value: props.summary.canva, accent: 'bg-[#d9b05f]' },
+  { key: 'canva', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.canva', value: props.summary.canva, accent: 'bg-[rgb(var(--accent-500-rgb))]' },
   { key: 'chrome', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.chrome', value: props.summary.chrome, accent: 'bg-orange-500' },
 ])
 

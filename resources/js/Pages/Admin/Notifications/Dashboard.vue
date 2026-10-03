@@ -8,16 +8,16 @@ import {
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link } from '@inertiajs/vue3'
 import {
-  ArrowRightIcon,
-  BellAlertIcon,
-  BellIcon,
-  CalendarDaysIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  EyeIcon,
-  PaperAirplaneIcon,
-  UserGroupIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowRight as ArrowRightIcon,
+  BellRing as BellAlertIcon,
+  Bell as BellIcon,
+  CalendarDays as CalendarDaysIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  Eye as EyeIcon,
+  Send as PaperAirplaneIcon,
+  Users as UserGroupIcon,
+} from '@lucide/vue'
 import { computed } from 'vue'
 
 defineOptions({ layout: Layout })

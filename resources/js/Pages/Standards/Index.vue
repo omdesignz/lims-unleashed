@@ -7,12 +7,12 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
-  ArchiveBoxIcon,
-  BookOpenIcon,
-  CheckBadgeIcon,
-  DocumentTextIcon,
-  PlusIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  BookOpen as BookOpenIcon,
+  BadgeCheck as CheckBadgeIcon,
+  FileText as DocumentTextIcon,
+  Plus as PlusIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 import { trans } from "laravel-vue-i18n";
 

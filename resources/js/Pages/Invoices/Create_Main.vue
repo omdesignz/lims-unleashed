@@ -4,7 +4,7 @@ import { ref, computed, reactive, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import combobox from '@/Components/combobox.vue';
 import {throttle} from "lodash";
-import { TrashIcon, PlusCircleIcon, ClipboardDocumentCheckIcon } from "@heroicons/vue/24/outline";
+import { Trash2 as TrashIcon, CirclePlus as PlusCircleIcon, ClipboardCheck as ClipboardDocumentCheckIcon } from "@lucide/vue";
 import { trans } from 'laravel-vue-i18n';
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 import confirmDialog from "@/Components/confirm-dialog.vue";

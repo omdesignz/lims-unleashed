@@ -7,12 +7,12 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
-  ArchiveBoxIcon,
-  BuildingOffice2Icon,
-  ClipboardDocumentListIcon,
-  InboxStackIcon,
-  PlusIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  Building2 as BuildingOffice2Icon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Package as InboxStackIcon,
+  Plus as PlusIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 import { trans } from "laravel-vue-i18n";
 

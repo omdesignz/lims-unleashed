@@ -1,6 +1,6 @@
 <script setup>
 import { store } from '@/Stores/store.js'
-import { Bars2Icon, CheckIcon, PencilIcon, UserGroupIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { Equal as Bars2Icon, Check as CheckIcon, Pencil as PencilIcon, Users as UserGroupIcon, X as XMarkIcon } from '@lucide/vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import { computed, nextTick, ref } from 'vue'
 

@@ -2,11 +2,11 @@
 import { nextTick, ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import {
-  ArrowPathIcon,
-  ExclamationTriangleIcon,
-  TrashIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  RefreshCw as ArrowPathIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Trash2 as TrashIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import DialogModal from '@/Components/dialog-modal.vue'
 
 const confirmingUserDeletion = ref(false)

@@ -4,10 +4,10 @@ import combobox from "@/Components/combobox-enhanced.vue";
 import { computed } from "vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  CheckBadgeIcon,
-  ShieldCheckIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  BadgeCheck as CheckBadgeIcon,
+  ShieldCheck as ShieldCheckIcon,
+} from "@lucide/vue";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 
 defineOptions({

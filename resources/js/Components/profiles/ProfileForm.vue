@@ -4,17 +4,17 @@ import Combobox from "@/Components/combobox.vue";
 import { createEmptyProfileParameter } from "@/Components/profiles/profileFormData";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 import {
-  BeakerIcon,
-  CalculatorIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  DocumentCheckIcon,
-  ExclamationTriangleIcon,
-  IdentificationIcon,
-  PlusIcon,
-  ScaleIcon,
-  TrashIcon,
-} from "@heroicons/vue/24/outline";
+  FlaskConical as BeakerIcon,
+  Calculator as CalculatorIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  FileCheck as DocumentCheckIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  IdCard as IdentificationIcon,
+  Plus as PlusIcon,
+  Scale as ScaleIcon,
+  Trash2 as TrashIcon,
+} from "@lucide/vue";
 import { computed, watch } from "vue";
 
 const props = defineProps({

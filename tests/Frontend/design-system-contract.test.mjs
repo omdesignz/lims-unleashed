@@ -49,6 +49,7 @@ const componentSelectInputSource = readFileSync(new URL('../../resources/js/Comp
 const textareaSource = readFileSync(new URL('../../resources/js/Components/base/BaseTextarea.vue', import.meta.url), 'utf8')
 const moduleHeroSource = readFileSync(new URL('../../resources/js/Components/base/ModuleHero.vue', import.meta.url), 'utf8')
 const sideNavSource = readFileSync(new URL('../../resources/js/Shared/Navigation/side-nav.vue', import.meta.url), 'utf8')
+const appSidebarSource = readFileSync(new URL('../../resources/js/Shared/Navigation/app-sidebar.vue', import.meta.url), 'utf8')
 const premiumDocumentStyleSource = readFileSync(new URL('../../resources/views/PDFs/partials/premium-document-style.blade.php', import.meta.url), 'utf8')
 const documentLetterheadSource = readFileSync(new URL('../../resources/views/PDFs/partials/document-letterhead.blade.php', import.meta.url), 'utf8')
 const documentBrandLogoSource = readFileSync(new URL('../../resources/views/PDFs/partials/brand-logo.blade.php', import.meta.url), 'utf8')
@@ -424,8 +425,19 @@ test('defines a semantic product design contract for shared application surfaces
     assert.match(appCss, new RegExp(className.replace('.', '\\.')))
   }
 
-  assert.match(appCss, /family=dm-sans:400,500,600,700/)
-  assert.match(appCss, /--font-sans: 'DM Sans'/)
+  for (const token of ['--vap-navy: #061f46', '--vap-blue: #087cf0', '--vap-action: #0757b5', '--ds-stage', '--ds-nav-active']) {
+    assert.match(appCss, new RegExp(token))
+  }
+
+  for (const className of ['.app-sheet', '.app-rail', '.app-column', '.app-work', '.app-rail-pill', '.app-page-header', '.ds-button-ghost']) {
+    assert.match(appCss, new RegExp(className.replace('.', '\\.')))
+  }
+
+  assert.match(appCss, /font-family: "Inter"/)
+  assert.match(appCss, /--font-sans: 'Inter'/)
+  assert.doesNotMatch(appCss, /fonts\.bunny\.net|fonts\.googleapis\.com|DM Sans|Manrope|IBM Plex/)
+  assert.match(appCss, /\.ds-button:active:not\(:disabled\) \{\s*scale: 0\.96;/)
+  assert.doesNotMatch(appCss, /transition: all/)
   assert.doesNotMatch(appCss, /#143d37|#d9b05f|#fffaf0|#ded3bf|#1f7a68/)
   assert.doesNotMatch(appCss, /radial-gradient\(circle/)
 })
@@ -479,12 +491,23 @@ test('shared form controls expose explicit selection and picker states', () => {
     '/Components/base/ToggleField.vue',
   ]
 
+  // These surfaces keep native controls on purpose: their behaviour tests exercise the
+  // browser's own labelling, read-only and file-selection semantics. They still wear ds-field.
+  const nativeControlExceptionPaths = [
+    '/Components/catalogs/ReferenceCatalogManager.vue',
+    '/Components/vap-inventory/InventoryItemFormSurface.vue',
+    '/Pages/Occurrences/occurrences-import-form.vue',
+    '/Pages/VAPInventory/Items/Index.vue',
+  ]
+
   for (const file of vueFiles) {
     const source = readFileSync(file, 'utf8')
 
-    assert.doesNotMatch(source, /<select(?=[\s>])/i, `Native select remains in ${file.pathname}`)
+    if (!nativeControlExceptionPaths.some((path) => file.pathname.endsWith(path))) {
+      assert.doesNotMatch(source, /<select(?=[\s>])/i, `Native select remains in ${file.pathname}`)
+    }
 
-    if (!nativeInputPrimitivePaths.some((path) => file.pathname.endsWith(path))) {
+    if (![...nativeInputPrimitivePaths, ...nativeControlExceptionPaths].some((path) => file.pathname.endsWith(path))) {
       for (const match of source.matchAll(/<input\b[^>]*>/gi)) {
         assert.match(match[0], /\btype=["']hidden["']/i, `Native user-facing input remains in ${file.pathname}`)
       }
@@ -531,22 +554,31 @@ test('report studio editor chrome no longer uses the legacy warm workspace palet
 
 test('shared shell and primitives consume semantic design classes', () => {
   assert.match(layoutSource, /class="lims-app-shell min-h-dvh/)
-  assert.match(layoutSource, /class="fixed inset-y-0 left-0 z-40 hidden flex-col/)
+  assert.match(layoutSource, /<div id="desktop-navigation" class="app-sheet">/)
+  assert.match(layoutSource, /<div class="app-work">/)
+  assert.match(layoutSource, /<main ref="stageContent" class="app-content" scroll-region>/)
+  assert.match(layoutSource, /const areaDefinitions = \[/)
+  assert.match(layoutSource, /key: 'admin', primary:/)
+  assert.match(layoutSource, /import \{ animate \} from 'motion-v'/)
+  assert.match(layoutSource, /prefersReducedMotion\(\)/)
   assert.match(layoutSource, /class="ds-command-palette/)
   assert.match(layoutSource, /@click="openCommandPalette"/)
-  assert.match(layoutSource, /@keydown\.enter\.prevent="activateFirstCommandPaletteResult"/)
+  assert.match(layoutSource, /@keydown\.enter\.prevent="activateCommandPaletteResult"/)
+  assert.match(layoutSource, /@keydown\.down\.prevent="moveCommandSelection\(1\)"/)
+  assert.match(layoutSource, /:areas="navAreas"/)
+  assert.match(layoutSource, /:active-area-key="activeAreaKey"/)
   assert.match(layoutSource, /const filteredCommandGroups = computed/)
   assert.match(layoutSource, /window\.addEventListener\('keydown', handleCommandPaletteShortcut\)/)
   assert.match(layoutSource, /gestlab\.menu\.quality_compliance/)
   assert.match(layoutSource, /gestlab\.menu\.lab_operations/)
   assert.match(layoutSource, /gestlab\.menu\.inventory_analytics/)
-  assert.match(layoutSource, /:collapsed="!desktopSidebarOpen"/)
+  assert.match(layoutSource, /:data-collapsed="!desktopSidebarOpen"/)
   assert.match(layoutSource, /@open-command-palette="openCommandPaletteFromMobile"/)
   assert.doesNotMatch(layoutSource, /items\.slice\(0, 8\)|\.slice\(0, 8\)/)
   assert.match(layoutSource, /const normalizeSearchValue = \(value\)/)
   assert.match(layoutSource, /\.normalize\('NFD'\)/)
   assert.doesNotMatch(layoutSource, /clockTime|operationalStatus|lims-status-strip/)
-  assert.match(sideNavSource, /path: '\/qualitycertificates'/)
+  assert.match(layoutSource, /match: \['\/qualitycertificates', '\/import-certificates', '\/export-certificates', '\/report-studios'\]/)
   assert.doesNotMatch(layoutSource, /bg-gradient-to-b from-primary-500\/12 to-transparent/)
   assert.match(inputSource, /class="ds-field/)
   assert.match(inputSource, /aria-describedby/)
@@ -557,8 +589,15 @@ test('shared shell and primitives consume semantic design classes', () => {
   assert.match(textareaSource, /`field-\$\{generatedId\}`/)
   assert.match(moduleHeroSource, /class="ds-panel/)
   assert.match(sideNavSource, /defineEmits\(\['open-command-palette', 'navigate'\]\)/)
-  assert.match(sideNavSource, /props\.collapsed \? 'justify-center px-2'/)
-  assert.match(sideNavSource, /emit\('open-command-palette'\)/)
+  assert.match(sideNavSource, /import \{ AnimatePresence, motion \} from 'motion-v'/)
+  assert.match(sideNavSource, /:aria-expanded="isOpen\(section\)"/)
+  assert.match(sideNavSource, /:aria-current="activeHref === item\.href \? 'page' : undefined"/)
+  assert.match(appSidebarSource, /class="app-rail"/)
+  assert.match(appSidebarSource, /class="app-column"/)
+  assert.match(appSidebarSource, /:layout-id="pillId"/)
+  assert.match(appSidebarSource, /<AnimatedIcon/)
+  assert.match(appSidebarSource, /from '@lucide\/vue'/)
+  assert.match(appSidebarSource, /emit\('open-command-palette'\)/)
 })
 
 test('shared navigation uses the LIMS application contract', () => {
@@ -591,9 +630,10 @@ test('calendar and reduced-motion behavior are part of the visual contract', () 
 })
 
 test('high-frequency data controls use the shared visual language', () => {
-  assert.match(recordsTableSource, /class="ds-command-surface"/)
-  assert.match(recordsTableSource, /<DataTableShell>/)
-  assert.match(recordsTableSource, /class="ds-field pl-10"/)
+  assert.match(recordsTableSource, /<DataTableShell :show-summary="false">/)
+  assert.match(recordsTableSource, /<template v-if="props\.record\.data\.length" #pagination>/)
+  assert.doesNotMatch(recordsTableSource, /ds-command-surface|ds-kicker/)
+  assert.match(recordsTableSource, /class="ds-field pl-9"/)
   assert.doesNotMatch(recordsTableSource, /color="blue"/)
 
   assert.match(comboboxSource, /class="ds-combobox-control/)
@@ -1544,7 +1584,10 @@ test('authentication keeps the login action above marketing content on mobile', 
   assert.doesNotMatch(portalLoginSource, /bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|bg-slate|border-slate|text-slate|shadow-sm/)
   assert.doesNotMatch(portalLoginSource, legacyWarmPalettePattern)
 
-  assert.match(authExperienceShellSource, /class="min-h-dvh bg-\[var\(--ds-panel\)\]/)
+  assert.match(authExperienceShellSource, /class="auth-canvas min-h-dvh bg-\[var\(--ds-canvas\)\]/)
+  assert.match(authExperienceShellSource, /<div class="auth-sheet">/)
+  assert.match(authExperienceShellSource, /<section class="auth-form">[\s\S]*<aside class="auth-trace"/)
+  assert.match(authExperienceShellSource, /<MotionConfig reduced-motion="user">/)
   assert.match(authExperienceShellSource, /buildBrandingCssVariables/)
   assert.match(authExperienceShellSource, /brandInitials/)
   assert.doesNotMatch(authExperienceShellSource, legacyWarmPalettePattern)
@@ -3007,13 +3050,14 @@ test('public landing presents the LIMS as a professional laboratory control surf
   assert.match(publicLandingSource, /id="documents"/)
   assert.match(publicLandingSource, /mobileNavigationOpen/)
   assert.match(publicLandingSource, /publicMetrics/)
-  assert.match(publicLandingSource, /@heroicons\/vue\/24\/outline/)
+  assert.match(publicLandingSource, /@lucide\/vue/)
   assert.match(publicLandingSource, /@media \(prefers-reduced-motion: reduce\)/)
   assert.doesNotMatch(publicLandingSource, /rounded-\[3rem\]|rounded-\[2\.5rem\]|blur-3xl|laboratory-grid|mask-line|chartPoints/)
 })
 
 test('application UI consistently inherits the laboratory workspace typeface', () => {
-  assert.match(appCss, /--font-sans: 'DM Sans'/)
+  assert.match(appCss, /--font-sans: 'Inter'/)
+  assert.match(appCss, /--font-mono: 'JetBrains Mono'/)
   assert.doesNotMatch(appBladeSource, /family=manrope/)
   assert.match(publicLandingSource, /font-family: var\(--font-sans\)/)
   assert.doesNotMatch(publicLandingSource, /fonts\.bunny\.net\/css\?family=manrope|font-family: "Manrope"/)

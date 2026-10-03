@@ -1,17 +1,17 @@
 <script setup>
 import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
 import {
-  BuildingOffice2Icon,
-  CheckCircleIcon,
-  ClipboardDocumentListIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  GlobeAltIcon,
-  PlusIcon,
-  ShieldCheckIcon,
-  TrashIcon,
-  TruckIcon,
-} from "@heroicons/vue/24/outline";
+  Building2 as BuildingOffice2Icon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  FileText as DocumentTextIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Globe as GlobeAltIcon,
+  Plus as PlusIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Trash2 as TrashIcon,
+  Truck as TruckIcon,
+} from "@lucide/vue";
 import { computed, watch } from "vue";
 
 const props = defineProps({

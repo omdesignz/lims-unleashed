@@ -12,6 +12,7 @@
 </template>
 
 <script setup>
+import { chartFontFamily, chartPalette, chartTokens } from '@/Support/charts'
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const ApexChart = defineAsyncComponent(async () => (await import('vue3-apexcharts')).default)
@@ -80,28 +81,27 @@ const mergedOptions = computed(() => ({
   ...props.options,
   chart: {
     background: 'transparent',
-    foreColor: isDarkMode.value ? '#d7e2dd' : '#31413b',
+    foreColor: isDarkMode.value ? '#f3f5f7' : '#111827',
     fontFamily: 'inherit',
     toolbar: { show: false },
+    fontFamily: chartFontFamily,
     animations: {
       enabled: true,
-      easing: 'easeinout',
-      speed: 800,
+      speed: 420,
       animateGradually: {
-        enabled: true,
-        delay: 150
+        enabled: false,
       },
       dynamicAnimation: {
         enabled: true,
-        speed: 350
+        speed: 240
       }
     },
     ...props.options.chart
   },
-  colors: props.options.colors ?? ['#143d37', '#1f7a68', '#d6a43a', '#b54747', '#5b6f63', '#6aa99b'],
+  colors: props.options.colors ?? chartPalette,
   grid: {
-    borderColor: isDarkMode.value ? '#25443c' : '#e8ddcd',
-    strokeDashArray: 4,
+    borderColor: chartTokens(isDarkMode.value).grid,
+    strokeDashArray: 3,
     padding: {
       top: 0,
       right: 20,
@@ -114,20 +114,20 @@ const mergedOptions = computed(() => ({
     enabled: false,
     style: {
       fontSize: '12px',
-      fontWeight: 600,
-      colors: [isDarkMode.value ? '#f7f1e7' : '#15231f'],
+      fontWeight: 500,
+      colors: [chartTokens(isDarkMode.value).text],
     },
     ...props.options.dataLabels
   },
   stroke: {
     curve: 'smooth',
-    width: 3,
+    width: 2,
     ...props.options.stroke
   },
   xaxis: {
     labels: {
       style: {
-        colors: isDarkMode.value ? '#a9bbb4' : '#5f6f68',
+        colors: chartTokens(isDarkMode.value).muted,
         fontSize: '12px',
         fontWeight: 400
       }
@@ -137,7 +137,7 @@ const mergedOptions = computed(() => ({
   yaxis: {
     labels: {
       style: {
-        colors: isDarkMode.value ? '#a9bbb4' : '#5f6f68',
+        colors: chartTokens(isDarkMode.value).muted,
         fontSize: '12px',
         fontWeight: 400
       },
@@ -158,11 +158,12 @@ const mergedOptions = computed(() => ({
     horizontalAlign: 'left',
     fontSize: '12px',
     labels: {
-      colors: isDarkMode.value ? '#d7e2dd' : '#31413b',
+      colors: chartTokens(isDarkMode.value).text,
       ...props.options.legend?.labels,
     },
     markers: {
-      radius: 12
+      size: 5,
+      shape: 'circle'
     },
     itemMargin: {
       horizontal: 10,

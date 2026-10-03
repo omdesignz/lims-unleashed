@@ -130,7 +130,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { DatePicker as VDatePicker } from 'v-calendar';
 import { vMaska } from "maska/vue"
 import 'v-calendar/dist/style.css';
-import { CalendarIcon, ArrowLongRightIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import { Calendar as CalendarIcon, ArrowRight as ArrowLongRightIcon, X as XMarkIcon } from '@lucide/vue';
 
 const props = defineProps({
   modelValue: [String, Date, Object, Array],

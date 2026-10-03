@@ -2,16 +2,16 @@
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import Pagination from '@/Components/pagination.vue'
 import {
-  BeakerIcon,
-  BuildingLibraryIcon,
-  CheckCircleIcon,
-  EyeIcon,
-  MagnifyingGlassIcon,
-  PencilSquareIcon,
-  PlusIcon,
-  TrashIcon,
-  UserGroupIcon,
-} from '@heroicons/vue/24/outline'
+  FlaskConical as BeakerIcon,
+  Landmark as BuildingLibraryIcon,
+  CircleCheck as CheckCircleIcon,
+  Eye as EyeIcon,
+  Search as MagnifyingGlassIcon,
+  SquarePen as PencilSquareIcon,
+  Plus as PlusIcon,
+  Trash2 as TrashIcon,
+  Users as UserGroupIcon,
+} from '@lucide/vue'
 import { Link, router } from '@inertiajs/vue3'
 import debounce from 'lodash/debounce'
 import { ref } from 'vue'

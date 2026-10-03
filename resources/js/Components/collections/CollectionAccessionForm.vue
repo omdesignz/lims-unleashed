@@ -4,17 +4,17 @@ import ComboboxMultipleEnhanced from "@/Components/combobox-multiple-enhanced.vu
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  BeakerIcon,
-  CalendarDaysIcon,
-  CheckBadgeIcon,
-  ClipboardDocumentCheckIcon,
-  CubeIcon,
-  MapPinIcon,
-  ShieldCheckIcon,
-  TruckIcon,
-  UserGroupIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  FlaskConical as BeakerIcon,
+  CalendarDays as CalendarDaysIcon,
+  BadgeCheck as CheckBadgeIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Box as CubeIcon,
+  MapPin as MapPinIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Truck as TruckIcon,
+  Users as UserGroupIcon,
+} from "@lucide/vue";
 import { computed } from "vue";
 
 const props = defineProps({

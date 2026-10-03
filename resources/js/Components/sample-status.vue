@@ -260,17 +260,17 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { 
-  CheckIcon,
-  PlayIcon,
-  BeakerIcon,
-  CircleStackIcon,
-  InboxIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  DocumentCheckIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/vue/24/solid';
+import {
+  Check as CheckIcon,
+  Play as PlayIcon,
+  FlaskConical as BeakerIcon,
+  Database as CircleStackIcon,
+  Inbox as InboxIcon,
+  Clock as ClockIcon,
+  CircleCheck as CheckCircleIcon,
+  FileCheck as DocumentCheckIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+} from '@lucide/vue';
 import { usePage } from '@inertiajs/vue3';
 
 const props = defineProps({

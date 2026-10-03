@@ -119,7 +119,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
-import { CalculatorIcon, PlusIcon, VariableIcon } from '@heroicons/vue/24/outline'
+import { Calculator as CalculatorIcon, Plus as PlusIcon, Variable as VariableIcon } from '@lucide/vue'
 import { trans } from 'laravel-vue-i18n'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import RecordsTable from '@/Components/records-table.vue'

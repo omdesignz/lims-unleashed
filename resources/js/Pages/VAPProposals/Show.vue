@@ -524,25 +524,25 @@ import { computed, defineComponent, h, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
-  ArrowDownTrayIcon,
-  ArrowRightIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  Cog6ToothIcon,
-  CurrencyDollarIcon,
-  DocumentArrowDownIcon,
-  DocumentDuplicateIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  LinkIcon,
-  ListBulletIcon,
-  PaperAirplaneIcon,
-  PencilSquareIcon,
-  ShieldCheckIcon,
-  UserIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  ArrowRight as ArrowRightIcon,
+  Calendar as CalendarIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  Settings as Cog6ToothIcon,
+  CircleDollarSign as CurrencyDollarIcon,
+  FileDown as DocumentArrowDownIcon,
+  Copy as DocumentDuplicateIcon,
+  FileText as DocumentTextIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Link as LinkIcon,
+  List as ListBulletIcon,
+  Send as PaperAirplaneIcon,
+  SquarePen as PencilSquareIcon,
+  ShieldCheck as ShieldCheckIcon,
+  User as UserIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import ConfirmationModal from '@/Components/dialog-modal.vue'
 import Modal from '@/Components/modal.vue'
 

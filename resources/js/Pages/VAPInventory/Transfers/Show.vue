@@ -201,12 +201,12 @@
 
     <TransitionRoot as="template" :show="isReceiveModalOpen">
       <Dialog class="relative z-50" @close="closeReceiveModal">
-        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-150" leave-from="opacity-100" leave-to="opacity-0">
           <div class="ds-modal-backdrop fixed inset-0" />
         </TransitionChild>
         <div class="fixed inset-0 z-50 overflow-y-auto">
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
-            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-out duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]">
               <DialogPanel class="ds-modal-panel w-full max-w-xl p-0 text-left">
                 <form @submit.prevent="submitReceive">
                   <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] p-5">
@@ -269,12 +269,12 @@
 
     <TransitionRoot as="template" :show="isCancelModalOpen">
       <Dialog class="relative z-50" @close="closeCancelModal">
-        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-150" leave-from="opacity-100" leave-to="opacity-0">
           <div class="ds-modal-backdrop fixed inset-0" />
         </TransitionChild>
         <div class="fixed inset-0 z-50 overflow-y-auto">
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
-            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-out duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]">
               <DialogPanel class="ds-modal-panel w-full max-w-lg p-0 text-left">
                 <form @submit.prevent="submitCancel">
                   <div class="border-b border-[var(--ds-border)] p-5">
@@ -312,19 +312,19 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  ArrowsRightLeftIcon,
-  BoltIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  CubeIcon,
-  MapPinIcon,
-  PrinterIcon,
-  TruckIcon,
-  XCircleIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  ArrowLeft as ArrowLeftIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  Zap as BoltIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  Box as CubeIcon,
+  MapPin as MapPinIcon,
+  Printer as PrinterIcon,
+  Truck as TruckIcon,
+  CircleX as XCircleIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   transfer: {
@@ -369,8 +369,8 @@ const cancelForm = useForm({
   notes: '',
 })
 
-const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
+const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
+const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
 const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
 const transferStatus = computed(() => {
@@ -514,7 +514,7 @@ const quantityFlowChartOptions = computed(() => ({
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   plotOptions: { bar: { borderRadius: 4, distributed: true, columnWidth: '48%' } },
-  colors: ['#0e7490', '#be123c', '#047857'],
+  colors: ['#14a3a8', '#e5484d', '#047857'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.quantity_flow?.labels || [],
@@ -533,7 +533,7 @@ const timingPressureChartOptions = computed(() => ({
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.timing_pressure?.labels || [],
-  colors: ['#0e7490', '#d97706', '#be123c'],
+  colors: ['#14a3a8', '#e0902b', '#e5484d'],
   dataLabels: { enabled: true, formatter: (value) => `${Math.round(value)}%` },
   legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
   stroke: { colors: [isDarkMode.value ? '#020617' : '#ffffff'] },
@@ -545,7 +545,7 @@ const executionPulseChartOptions = computed(() => ({
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   plotOptions: { bar: { borderRadius: 4, distributed: true, columnWidth: '42%' } },
-  colors: ['#7c3aed', '#0e7490', '#475569'],
+  colors: ['#7c5ce0', '#14a3a8', '#6b7482'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.execution_pulse?.labels || [],

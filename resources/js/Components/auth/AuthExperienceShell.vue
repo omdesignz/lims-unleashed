@@ -1,8 +1,12 @@
 <script setup>
 import { usePage } from '@inertiajs/vue3'
-import { ShieldCheckIcon } from '@heroicons/vue/24/outline'
+import { ShieldCheck as ShieldCheckIcon } from '@lucide/vue'
 import { computed } from 'vue'
 import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
+import BrandMark from '@/Components/brand/BrandMark.vue'
+import RevealGroup from '@/Components/motion/RevealGroup.vue'
+import { MotionConfig, motion } from 'motion-v'
+import { easeOut } from '@/Support/motion'
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -29,87 +33,95 @@ const brandInitials = computed(() => brandAppName.value
   .join('') || 'LW')
 const modeLabel = computed(() => props.mode === 'portal' ? 'Portal do cliente' : 'Área interna')
 const currentYear = new Date().getFullYear()
+
+// The journey every sample takes through the system, traced once on arrival.
+const lifecycle = [
+  { label: 'Recepção', note: 'Registo e numeração por laboratório.' },
+  { label: 'Análise', note: 'Resultados inseridos por parâmetro.' },
+  { label: 'Verificação', note: 'Segunda leitura antes de avançar.' },
+  { label: 'Aprovação', note: 'Libertação pelo responsável técnico.' },
+  { label: 'Certificado', note: 'Documento emitido e assinado.' },
+]
+const stepNumber = (index) => String(index + 1).padStart(2, '0')
 </script>
 
 <template>
   <div
-    class="min-h-dvh bg-[var(--ds-panel)] text-[var(--ds-text)]"
+    class="auth-canvas min-h-dvh bg-[var(--ds-canvas)] text-[var(--ds-text)]"
     :style="brandingCssVariables"
     :data-theme-preset="themePreset"
   >
-    <main class="grid min-h-dvh lg:grid-cols-[minmax(0,0.9fr)_minmax(28rem,0.62fr)]">
-      <section class="relative hidden overflow-hidden bg-[var(--brand-secondary)] p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
-        <div class="absolute inset-y-0 right-0 w-px bg-white/10" aria-hidden="true" />
-        <div class="absolute inset-x-10 top-32 border-t border-white/10 xl:inset-x-14" aria-hidden="true" />
-        <div class="absolute inset-x-10 bottom-32 border-t border-white/10 xl:inset-x-14" aria-hidden="true" />
+    <header class="auth-bar">
+      <div class="flex min-w-0 items-center gap-3">
+        <BrandMark v-if="!brandLogoUrl" :width="54" />
+        <img v-else class="max-h-9 max-w-40 object-contain" :src="brandLogoUrl" :alt="brandAppName" />
+        <span class="h-5 w-px shrink-0 bg-[var(--ds-border-strong)]" aria-hidden="true" />
+        <p class="min-w-0 truncate text-[0.9375rem] font-semibold tracking-tight" :data-initials="brandInitials">{{ brandAppName }}</p>
+      </div>
+      <p class="flex shrink-0 items-center gap-2 text-[0.8125rem] text-[var(--ds-text-muted)]">
+        <span class="h-1.5 w-1.5 rounded-full bg-[var(--lims-release)]" aria-hidden="true" />
+        {{ modeLabel }}
+      </p>
+    </header>
 
-        <div class="relative flex min-w-0 items-center gap-4">
-          <span v-if="!brandLogoUrl" class="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-white text-sm font-bold text-[var(--brand-secondary)]">
-            {{ brandInitials }}
-          </span>
-          <span v-else class="flex h-12 max-w-52 items-center rounded-lg bg-white px-3 py-2">
-            <img class="max-h-8 max-w-44 object-contain" :src="brandLogoUrl" :alt="brandAppName" />
-          </span>
-          <div class="min-w-0">
-            <p class="truncate text-base font-semibold">{{ brandAppName }}</p>
-            <p class="mt-0.5 truncate text-sm text-white/60">{{ brandLabName }}</p>
-          </div>
-        </div>
-
-        <div class="relative max-w-2xl py-20">
-          <p class="font-mono text-xs font-semibold uppercase text-[var(--brand-accent)]">{{ eyebrow }}</p>
-          <h1 class="mt-5 max-w-xl text-4xl font-semibold leading-tight text-white xl:text-5xl">{{ title }}</h1>
-          <p class="mt-5 max-w-xl text-base leading-7 text-white/70">{{ description }}</p>
-
-          <div class="mt-10 grid max-w-xl grid-cols-4 gap-2" aria-hidden="true">
-            <span class="h-1 bg-[var(--brand-accent)]" />
-            <span class="h-1 bg-white/60" />
-            <span class="h-1 bg-white/30" />
-            <span class="h-1 bg-white/15" />
-          </div>
-        </div>
-
-        <div class="relative flex items-start gap-3 border-t border-white/10 pt-6">
-          <ShieldCheckIcon class="mt-0.5 h-5 w-5 shrink-0 text-[var(--brand-accent)]" aria-hidden="true" />
-          <div>
-            <p class="text-sm font-semibold text-white">{{ contextTitle }}</p>
-            <p class="mt-1 max-w-xl text-sm leading-6 text-white/60">{{ contextDescription }}</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="flex min-h-dvh flex-col bg-[var(--ds-panel)]">
-        <header class="flex min-h-16 items-center justify-between gap-4 border-b border-[var(--ds-border)] px-5 sm:px-8 lg:border-b-0 lg:px-10">
-          <div class="flex min-w-0 flex-1 items-center gap-3 lg:hidden">
-            <span v-if="!brandLogoUrl" class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--brand-secondary)] text-xs font-bold text-white">
-              {{ brandInitials }}
-            </span>
-            <img v-else class="max-h-9 max-w-36 object-contain" :src="brandLogoUrl" :alt="brandAppName" />
-            <p class="min-w-0 flex-1 truncate text-sm font-semibold">{{ brandAppName }}</p>
-          </div>
-          <span class="ml-auto inline-flex shrink-0 items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-            {{ modeLabel }}
-          </span>
-        </header>
-
-        <div class="flex flex-1 items-center px-5 py-10 sm:px-8 lg:px-10 lg:py-14 xl:px-16">
-          <div class="mx-auto w-full max-w-sm">
-            <div class="mb-8 lg:hidden">
-              <p class="ds-kicker">{{ eyebrow }}</p>
-              <h1 class="ds-heading mt-2 text-2xl">{{ title }}</h1>
-              <p class="ds-copy mt-2 text-sm leading-6">{{ description }}</p>
+    <main class="auth-main">
+      <div class="auth-sheet">
+        <section class="auth-form">
+          <RevealGroup :step="0.06">
+            <div class="mb-7">
+              <h1 class="auth-title">{{ title }}</h1>
+              <p class="mt-2 text-[0.9375rem] leading-6 text-[var(--ds-text-muted)]">{{ description }}</p>
             </div>
 
             <slot />
-          </div>
-        </div>
+          </RevealGroup>
+        </section>
 
-        <footer class="flex items-center justify-between gap-4 border-t border-[var(--ds-border)] px-5 py-4 text-xs font-medium text-[var(--ds-text-soft)] sm:px-8 lg:px-10">
-          <span>{{ brandAppName }} &copy; {{ currentYear }}</span>
-          <span class="hidden sm:inline">{{ brandSlogan }}</span>
-        </footer>
-      </section>
+        <MotionConfig reduced-motion="user">
+          <aside class="auth-trace" :aria-label="`Percurso de uma amostra em ${brandLabName}`">
+            <div>
+              <p class="text-[0.8125rem] text-[#70b5ff]">{{ brandLabName }}</p>
+              <p class="mt-2 max-w-[18rem] text-[1.375rem] font-medium leading-[1.2] tracking-[-0.02em] text-white">Da recepção ao certificado, cada amostra deixa rasto.</p>
+            </div>
+
+            <ol class="auth-trace-steps">
+              <motion.span
+                class="auth-trace-line"
+                aria-hidden="true"
+                :initial="{ scaleY: 0 }"
+                :animate="{ scaleY: 1 }"
+                :transition="{ duration: 1.2, ease: [0.4, 0, 0.2, 1], delay: 0.3 }"
+              />
+              <motion.li
+                v-for="(step, index) in lifecycle"
+                :key="step.label"
+                class="auth-trace-step"
+                :data-final="index === lifecycle.length - 1"
+                :initial="{ opacity: 0, transform: 'translateY(6px)' }"
+                :animate="{ opacity: 1, transform: 'translateY(0px)' }"
+                :transition="{ duration: 0.4, ease: easeOut, delay: 0.35 + index * 0.2 }"
+              >
+                <span class="auth-trace-node" aria-hidden="true" />
+                <span class="auth-trace-index">{{ stepNumber(index) }}</span>
+                <span>
+                  <span class="block text-sm font-medium text-white">{{ step.label }}</span>
+                  <span class="block text-[0.8125rem] leading-5 text-white/60">{{ step.note }}</span>
+                </span>
+              </motion.li>
+            </ol>
+
+            <div class="flex items-start gap-2.5 border-t border-white/10 pt-4">
+              <ShieldCheckIcon class="mt-0.5 h-4 w-4 shrink-0 text-[#70b5ff]" aria-hidden="true" />
+              <p class="text-[0.8125rem] leading-5 text-white/60"><span class="font-medium text-white">{{ contextTitle }}.</span> {{ contextDescription }}</p>
+            </div>
+          </aside>
+        </MotionConfig>
+      </div>
     </main>
+
+    <footer class="auth-bar text-xs text-[var(--ds-text-soft)]">
+      <span>{{ brandAppName }} &copy; {{ currentYear }}</span>
+      <span class="hidden sm:inline">{{ brandSlogan }}</span>
+    </footer>
   </div>
 </template>

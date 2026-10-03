@@ -4,13 +4,13 @@ import RecordsTable from "@/Components/records-table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  ArchiveBoxIcon,
-  ArrowDownTrayIcon,
-  CalendarDaysIcon,
-  ClipboardDocumentListIcon,
-  EyeIcon,
-  PlusIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  Download as ArrowDownTrayIcon,
+  CalendarDays as CalendarDaysIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Eye as EyeIcon,
+  Plus as PlusIcon,
+} from "@lucide/vue";
 import { Link, router } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

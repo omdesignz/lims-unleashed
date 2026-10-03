@@ -397,12 +397,12 @@ import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocum
 import Modal from "@/Components/modal.vue";
 import comboboxEnhanced from "@/Components/combobox-enhanced.vue";
 import {
-  CheckBadgeIcon,
-  ArrowPathIcon,
-  CreditCardIcon,
-  CurrencyEuroIcon,
-  InformationCircleIcon,
-} from '@heroicons/vue/24/outline';
+  BadgeCheck as CheckBadgeIcon,
+  RefreshCw as ArrowPathIcon,
+  CreditCard as CreditCardIcon,
+  Euro as CurrencyEuroIcon,
+  Info as InformationCircleIcon,
+} from '@lucide/vue';
 
 const props = defineProps({
   record: Object,

@@ -425,19 +425,19 @@ import { computed, ref } from 'vue'
 import { useForm, usePage } from '@inertiajs/vue3'
 import { ColorPicker } from 'vue3-colorpicker'
 import {
-  ArrowUpOnSquareIcon,
-  BellIcon,
-  BuildingOfficeIcon,
-  ChevronRightIcon,
-  Cog6ToothIcon,
-  CreditCardIcon,
-  EnvelopeIcon,
-  LanguageIcon,
-  PencilSquareIcon,
-  PhotoIcon,
-  ShieldCheckIcon,
-  SwatchIcon,
-} from '@heroicons/vue/24/outline'
+  Share as ArrowUpOnSquareIcon,
+  Bell as BellIcon,
+  Building as BuildingOfficeIcon,
+  ChevronRight as ChevronRightIcon,
+  Settings as Cog6ToothIcon,
+  CreditCard as CreditCardIcon,
+  Mail as EnvelopeIcon,
+  Languages as LanguageIcon,
+  SquarePen as PencilSquareIcon,
+  Image as PhotoIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Palette as SwatchIcon,
+} from '@lucide/vue'
 import SettingsField from '@/Components/settings/SettingsField.vue'
 
 const props = defineProps({

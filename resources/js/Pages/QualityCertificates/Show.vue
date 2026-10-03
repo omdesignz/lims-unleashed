@@ -5,19 +5,19 @@ import { computed, ref } from "vue";
 import { Link, router } from "@inertiajs/vue3";
 import { usePermission } from "@/Composables/usePermissions";
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  ArrowPathRoundedSquareIcon,
-  CheckBadgeIcon,
-  ClockIcon,
-  DocumentIcon,
-  DocumentMagnifyingGlassIcon,
-  DocumentTextIcon,
-  EyeIcon,
-  EnvelopeIcon,
-  PencilIcon,
-  UserIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Repeat as ArrowPathRoundedSquareIcon,
+  BadgeCheck as CheckBadgeIcon,
+  Clock as ClockIcon,
+  File as DocumentIcon,
+  FileSearch as DocumentMagnifyingGlassIcon,
+  FileText as DocumentTextIcon,
+  Eye as EyeIcon,
+  Mail as EnvelopeIcon,
+  Pencil as PencilIcon,
+  User as UserIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   record: {

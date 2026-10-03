@@ -4,12 +4,12 @@ import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  CalendarDaysIcon,
-  CheckBadgeIcon,
-  ExclamationTriangleIcon,
-  ShieldCheckIcon,
-  TruckIcon,
-} from "@heroicons/vue/24/outline";
+  CalendarDays as CalendarDaysIcon,
+  BadgeCheck as CheckBadgeIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Truck as TruckIcon,
+} from "@lucide/vue";
 import { router, useForm } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 

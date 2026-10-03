@@ -102,10 +102,10 @@
   <script setup>
   import { ref } from 'vue'
   import {
-    ChatBubbleBottomCenterTextIcon,
-    DocumentPlusIcon,
-    TrashIcon
-  } from '@heroicons/vue/24/outline'
+  MessageSquareText as ChatBubbleBottomCenterTextIcon,
+  FilePlus as DocumentPlusIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 
   const props = defineProps({
     modelValue: String,

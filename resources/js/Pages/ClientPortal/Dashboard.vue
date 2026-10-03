@@ -2,21 +2,21 @@
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
 import { Link } from "@inertiajs/vue3";
 import {
-  ArrowRightIcon,
-  BanknotesIcon,
-  BeakerIcon,
-  BuildingOffice2Icon,
-  CheckBadgeIcon,
-  ClipboardDocumentCheckIcon,
-  ClockIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  PlusIcon,
-  ReceiptPercentIcon,
-  ShieldExclamationIcon,
-  TruckIcon,
-  WrenchScrewdriverIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowRight as ArrowRightIcon,
+  Banknote as BanknotesIcon,
+  FlaskConical as BeakerIcon,
+  Building2 as BuildingOffice2Icon,
+  BadgeCheck as CheckBadgeIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Clock as ClockIcon,
+  FileText as DocumentTextIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Plus as PlusIcon,
+  BadgePercent as ReceiptPercentIcon,
+  ShieldAlert as ShieldExclamationIcon,
+  Truck as TruckIcon,
+  Wrench as WrenchScrewdriverIcon,
+} from "@lucide/vue";
 import { computed } from "vue";
 
 defineOptions({ layout: PortalLayout });

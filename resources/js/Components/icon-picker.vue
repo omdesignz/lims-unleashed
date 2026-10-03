@@ -1,6 +1,6 @@
 <script setup>
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
-import { CheckIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { Check as CheckIcon, Search as MagnifyingGlassIcon, X as XMarkIcon } from '@lucide/vue'
 import * as OutlinedIcons from '@heroicons/vue/24/outline'
 import { computed, ref } from 'vue'
 
@@ -100,7 +100,7 @@ function selectIcon(iconName) {
         enter="ease-out duration-200"
         enter-from="opacity-0"
         enter-to="opacity-100"
-        leave="ease-in duration-150"
+        leave="ease-out duration-150"
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
@@ -112,11 +112,11 @@ function selectIcon(iconName) {
           <TransitionChild
             as="template"
             enter="ease-out duration-200"
-            enter-from="translate-y-3 opacity-0 sm:translate-y-0 sm:scale-95"
+            enter-from="translate-y-3 opacity-0 sm:translate-y-0 sm:scale-[0.97]"
             enter-to="translate-y-0 opacity-100 sm:scale-100"
-            leave="ease-in duration-150"
+            leave="ease-out duration-150"
             leave-from="translate-y-0 opacity-100 sm:scale-100"
-            leave-to="translate-y-3 opacity-0 sm:translate-y-0 sm:scale-95"
+            leave-to="translate-y-3 opacity-0 sm:translate-y-0 sm:scale-[0.97]"
           >
             <DialogPanel class="ds-modal-panel relative flex max-h-[min(44rem,calc(100vh-2rem))] w-full max-w-3xl transform flex-col overflow-hidden">
               <header class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">

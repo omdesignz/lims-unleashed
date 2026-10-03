@@ -5,19 +5,19 @@ import RestoreRevisionModal from "./Partials/RestoreRevisionModal.vue";
 import { computed, ref } from "vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  ArrowsRightLeftIcon,
-  CheckCircleIcon,
-  ClipboardDocumentListIcon,
-  ClockIcon,
-  DocumentCheckIcon,
-  DocumentDuplicateIcon,
-  DocumentPlusIcon,
-  EyeIcon,
-  UserIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Clock as ClockIcon,
+  FileCheck as DocumentCheckIcon,
+  Copy as DocumentDuplicateIcon,
+  FilePlus as DocumentPlusIcon,
+  Eye as EyeIcon,
+  User as UserIcon,
+} from "@lucide/vue";
 
 defineOptions({
   layout: Layout,

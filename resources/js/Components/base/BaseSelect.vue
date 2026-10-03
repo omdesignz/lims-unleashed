@@ -16,7 +16,7 @@
       <ListboxButton
         v-bind="controlAttrs"
         :id="controlId"
-        class="ds-combobox-control group flex min-h-11 w-full items-center justify-between gap-3 px-3.5 py-2 text-left text-sm font-semibold focus:outline-none"
+        class="ds-combobox-control group flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm focus:outline-none"
         :class="attrs.class"
         :data-invalid="Boolean(error)"
         :data-disabled="disabled"
@@ -26,19 +26,19 @@
         <span class="block min-w-0 flex-1 truncate" :class="hasSelection ? 'text-[var(--ds-text)]' : 'text-[var(--ds-text-soft)]'">
           {{ selectionLabel }}
         </span>
-        <ChevronUpDownIcon class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)] transition group-hover:text-[var(--ds-text-muted)]" aria-hidden="true" />
+        <ChevronUpDownIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)] transition group-hover:text-[var(--ds-text-muted)]" aria-hidden="true" />
       </ListboxButton>
 
       <transition
         enter-active-class="transition duration-100 ease-out"
-        enter-from-class="scale-95 opacity-0"
+        enter-from-class="scale-[0.97] opacity-0"
         enter-to-class="scale-100 opacity-100"
-        leave-active-class="transition duration-75 ease-in"
+        leave-active-class="transition duration-100 ease-out"
         leave-from-class="scale-100 opacity-100"
-        leave-to-class="scale-95 opacity-0"
+        leave-to-class="scale-[0.97] opacity-0"
       >
-        <ListboxOptions class="ds-floating-panel absolute z-50 mt-2 max-h-72 w-full min-w-52 origin-top overflow-auto p-1.5 text-sm focus:outline-none">
-          <li v-if="!normalizedOptions.length" class="px-3 py-3 text-sm font-semibold text-[var(--ds-text-soft)]">
+        <ListboxOptions class="ds-floating-panel absolute z-50 mt-1.5 max-h-72 w-full min-w-52 origin-top overflow-auto p-1.5 text-sm focus:outline-none">
+          <li v-if="!normalizedOptions.length" class="px-3 py-3 text-sm text-[var(--ds-text-soft)]">
             {{ emptyText }}
           </li>
           <ListboxOption
@@ -56,7 +56,7 @@
                 option.disabled ? 'cursor-not-allowed opacity-50' : '',
               ]"
             >
-              <span class="block min-w-0 flex-1 truncate" :class="selected ? 'font-bold' : 'font-medium'">
+              <span class="block min-w-0 flex-1 truncate" :class="selected ? 'font-medium' : ''">
                 {{ option.label }}
               </span>
               <CheckIcon v-if="selected" class="h-4 w-4 shrink-0 text-[rgb(var(--primary-700-rgb))]" aria-hidden="true" />
@@ -80,7 +80,7 @@
 </template>
 
 <script setup>
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
+import { Check as CheckIcon, ChevronsUpDown as ChevronUpDownIcon } from '@lucide/vue'
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { Fragment, computed, useAttrs, useId, useSlots } from 'vue'
 

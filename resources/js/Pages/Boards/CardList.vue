@@ -2,7 +2,7 @@
 import CardListItem from '@/Pages/Boards/CardListItem.vue'
 import CardListItemCreateForm from '@/Pages/Boards/CardListItemCreateForm.vue'
 import { store } from '@/Stores/store.js'
-import { EllipsisHorizontalIcon, PlusIcon, RectangleStackIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { Ellipsis as EllipsisHorizontalIcon, Plus as PlusIcon, Layers as RectangleStackIcon, Trash2 as TrashIcon } from '@lucide/vue'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import { Link, router } from '@inertiajs/vue3'
 import { VueDraggableNext } from 'vue-draggable-next'

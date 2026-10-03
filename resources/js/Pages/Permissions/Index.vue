@@ -6,12 +6,12 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
-  FingerPrintIcon,
-  KeyIcon,
-  PlusIcon,
-  ShieldCheckIcon,
-  TagIcon,
-} from "@heroicons/vue/24/outline";
+  Fingerprint as FingerPrintIcon,
+  KeyRound as KeyIcon,
+  Plus as PlusIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Tag as TagIcon,
+} from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
 

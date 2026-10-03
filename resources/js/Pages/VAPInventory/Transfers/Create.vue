@@ -265,13 +265,13 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import {
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  CalendarDaysIcon,
-  CubeIcon,
-  PaperAirplaneIcon,
-  TruckIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  CalendarDays as CalendarDaysIcon,
+  Box as CubeIcon,
+  Send as PaperAirplaneIcon,
+  Truck as TruckIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   items: {

@@ -92,9 +92,9 @@ import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocum
 import Modal from "@/Components/modal.vue";
 import comboboxEnhanced from "@/Components/combobox-enhanced.vue";
 import {
-  CheckBadgeIcon,
-  ArrowPathIcon,
-} from '@heroicons/vue/24/outline';
+  BadgeCheck as CheckBadgeIcon,
+  RefreshCw as ArrowPathIcon,
+} from '@lucide/vue';
 
 const props = defineProps({
   record: Object,

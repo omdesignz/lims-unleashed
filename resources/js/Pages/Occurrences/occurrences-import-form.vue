@@ -1,6 +1,6 @@
 <script setup>
 import { useForm } from "@inertiajs/vue3";
-import { ArrowUpTrayIcon, DocumentArrowUpIcon } from "@heroicons/vue/24/outline";
+import { Upload as ArrowUpTrayIcon, FileUp as DocumentArrowUpIcon } from "@lucide/vue";
 import { ref } from "vue";
 
 const fileInput = ref(null);

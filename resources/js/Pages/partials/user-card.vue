@@ -79,10 +79,10 @@
 
 <script setup>
 import {
-  CalendarIcon,
-  BuildingOfficeIcon,
-  PencilSquareIcon
-} from '@heroicons/vue/24/outline';
+  Calendar as CalendarIcon,
+  Building as BuildingOfficeIcon,
+  SquarePen as PencilSquareIcon,
+} from '@lucide/vue';
 import { trans } from 'laravel-vue-i18n';
 
 const props = defineProps({

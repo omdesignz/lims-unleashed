@@ -306,10 +306,10 @@
 import { ref, computed } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import {
-  BeakerIcon,
-  XMarkIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/vue/24/outline'
+  FlaskConical as BeakerIcon,
+  X as XMarkIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+} from '@lucide/vue'
 import Modal from '@/Components/Modal.vue'
 
 const props = defineProps({

@@ -9,7 +9,7 @@
                 <span :class="[stepIdx !== 0 ? 'lg:pl-9' : '', 'flex items-start px-6 py-5 text-sm font-medium']">
                   <span class="shrink-0">
                     <span class="flex size-10 items-center justify-center rounded-full bg-[rgb(var(--primary-800-rgb))] shadow-sm dark:bg-[rgb(var(--primary-500-rgb))]">
-                      <CheckIcon class="size-6 text-white dark:text-[#07110f]" aria-hidden="true" />
+                      <CheckIcon class="size-6 text-white dark:text-[var(--ds-panel)]" aria-hidden="true" />
                     </span>
                   </span>
                   <span class="ml-4 mt-0.5 flex min-w-0 flex-col">
@@ -62,7 +62,7 @@
   </template>
   
   <script setup>
-  import { CheckIcon } from '@heroicons/vue/24/solid'
+  import { Check as CheckIcon } from '@lucide/vue'
 
   defineProps({
     steps: {

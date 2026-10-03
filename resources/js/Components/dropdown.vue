@@ -7,7 +7,7 @@
         </MenuButton>
       </div>
   
-      <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
+      <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-[0.97]" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-out duration-100" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-[0.97]">
         <MenuItems class="ds-card absolute right-0 z-10 mt-2 w-56 origin-top-right p-1.5 focus:outline-none">
           <div class="space-y-1">
             <slot name="options" />

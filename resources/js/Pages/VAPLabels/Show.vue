@@ -430,16 +430,16 @@ import { Link, router } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import { useToast } from 'vue-toastification'
 import {
-  ArrowRightIcon,
-  DocumentDuplicateIcon,
-  EyeIcon,
-  PencilIcon,
-  PlusCircleIcon,
-  PowerIcon,
-  PrinterIcon,
-  TagIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowRight as ArrowRightIcon,
+  Copy as DocumentDuplicateIcon,
+  Eye as EyeIcon,
+  Pencil as PencilIcon,
+  CirclePlus as PlusCircleIcon,
+  Power as PowerIcon,
+  Printer as PrinterIcon,
+  Tag as TagIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'

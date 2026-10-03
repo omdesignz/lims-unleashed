@@ -366,15 +366,15 @@ import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Pagination from '@/Components/Pagination.vue'
 import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import {
-  BeakerIcon,
-  ChartBarSquareIcon,
-  ClipboardDocumentListIcon,
-  FireIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  TrophyIcon,
-  UsersIcon,
-} from '@heroicons/vue/24/outline'
+  FlaskConical as BeakerIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Flame as FireIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  Trophy as TrophyIcon,
+  Users as UsersIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   consumptions: { type: Object, default: () => ({ data: [] }) },
@@ -410,8 +410,8 @@ const itemOptions = computed(() => props.items.map((item) => ({
 })))
 const selectedItem = ref(itemOptions.value.find((option) => String(option.value) === String(filters.item_id)) || null)
 const consumptionRows = computed(() => props.consumptions?.data || [])
-const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
+const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
+const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
 const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
 const summaryCards = computed(() => [
@@ -474,7 +474,7 @@ const itemConsumptionChartOptions = computed(() => ({
   chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#be123c'],
+  colors: ['#e5484d'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
   plotOptions: { bar: { borderRadius: 4, horizontal: true } },
@@ -494,7 +494,7 @@ const userConsumptionChartOptions = computed(() => ({
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.user_consumption?.labels || [],
-  colors: ['#0f766e', '#1d4ed8', '#7c3aed', '#d97706', '#be123c', '#475569'],
+  colors: ['#0f766e', '#1d4ed8', '#7c5ce0', '#e0902b', '#e5484d', '#6b7482'],
   legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
   dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
   stroke: { width: 0 },
@@ -505,7 +505,7 @@ const dailyConsumptionChartOptions = computed(() => ({
   chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#0e7490'],
+  colors: ['#14a3a8'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
   stroke: { curve: 'straight', width: 3 },

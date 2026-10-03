@@ -5,12 +5,12 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArchiveBoxIcon,
-  DocumentCheckIcon,
-  DocumentIcon,
-  FolderOpenIcon,
-  PlusIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  FileCheck as DocumentCheckIcon,
+  File as DocumentIcon,
+  FolderOpen as FolderOpenIcon,
+  Plus as PlusIcon,
+} from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
 

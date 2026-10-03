@@ -8,15 +8,15 @@ import { ResultsDataService } from "@/Services/ResultsDataService.js";
 import { computed, onMounted, ref } from "vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
-  ArrowTopRightOnSquareIcon,
-  BeakerIcon,
-  CalculatorIcon,
-  CheckCircleIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  QueueListIcon,
-} from "@heroicons/vue/24/outline";
+  ExternalLink as ArrowTopRightOnSquareIcon,
+  FlaskConical as BeakerIcon,
+  Calculator as CalculatorIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  FileText as DocumentTextIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Rows3 as QueueListIcon,
+} from "@lucide/vue";
 
 defineOptions({
   layout: Layout,

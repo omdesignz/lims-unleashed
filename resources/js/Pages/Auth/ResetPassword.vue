@@ -2,7 +2,7 @@
 import AuthExperienceShell from '@/Components/auth/AuthExperienceShell.vue'
 import EmptyLayout from '../../Shared/EmptyLayout.vue'
 import { Head, useForm } from '@inertiajs/vue3'
-import { EyeIcon, EyeSlashIcon, KeyIcon } from '@heroicons/vue/24/outline'
+import { Eye as EyeIcon, EyeOff as EyeSlashIcon, KeyRound as KeyIcon } from '@lucide/vue'
 import { ref } from 'vue'
 
 defineOptions({ layout: EmptyLayout })
@@ -16,7 +16,7 @@ const submit = () => form.post('/reset-password', { onFinish: () => form.reset('
   <Head title="Redefinir palavra-passe" />
   <AuthExperienceShell title="Defina uma nova palavra-passe" eyebrow="Área interna" description="Finalize a recuperação com uma credencial robusta para proteger dados e documentos laboratoriais." context-title="Seguranca operacional" context-description="A nova palavra-passe passa a proteger todas as areas autorizadas para o utilizador.">
     <div>
-      <p class="ds-kicker">Seguranca</p><h2 class="ds-heading mt-2 text-xl">Nova palavra-passe</h2><p class="ds-copy mt-2 text-sm">Use uma credencial forte e exclusiva para este sistema.</p>
+      <p class="ds-copy text-sm">Use uma credencial forte e exclusiva para este sistema.</p>
       <form class="mt-6 space-y-4" @submit.prevent="submit">
         <input v-model="form.token" type="hidden" />
         <div class="ds-field-group"><label for="email" class="ds-field-label">Correio electrónico</label><BaseInput id="email" v-model="form.email" name="email" type="email" autocomplete="email" readonly class="ds-field cursor-not-allowed bg-[var(--ds-panel-muted)]" /><p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p></div>

@@ -4,12 +4,12 @@ import EmptyLayout from '@/Shared/EmptyLayout.vue'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import {
-  ArrowRightIcon,
-  ArrowRightStartOnRectangleIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  FingerPrintIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowRight as ArrowRightIcon,
+  LogOut as ArrowRightStartOnRectangleIcon,
+  Eye as EyeIcon,
+  EyeOff as EyeSlashIcon,
+  Fingerprint as FingerPrintIcon,
+} from '@lucide/vue'
 import { ref } from 'vue'
 
 defineOptions({ layout: EmptyLayout })
@@ -78,9 +78,7 @@ const loginWithPasskey = async () => {
     mode="portal"
   >
     <div>
-      <p class="ds-kicker">Portal do cliente</p>
-      <h2 class="ds-heading mt-2 text-2xl">Iniciar sessão</h2>
-      <p class="ds-copy mt-2 text-sm leading-6">Use o correio electrónico ou NIF atribuido pelo laboratório.</p>
+      <p class="ds-copy text-sm leading-6">Use o correio electrónico ou NIF atribuido pelo laboratório.</p>
 
       <div
         v-if="status"

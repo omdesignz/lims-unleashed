@@ -3,11 +3,11 @@ import Modal from "@/Components/Modal.vue";
 import { ResultsDataService } from "@/Services/ResultsDataService.js";
 import { computed, ref, watch } from "vue";
 import {
-  CalculatorIcon,
-  CheckIcon,
-  ScaleIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Calculator as CalculatorIcon,
+  Check as CheckIcon,
+  Scale as ScaleIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   sampleId: {

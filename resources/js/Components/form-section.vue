@@ -1,43 +1,31 @@
 <template>
-    <div class="md:grid md:grid-cols-1 md:gap-6">
-        <SectionTitle>
-            <template #title>
-                <slot name="title" />
-            </template>
-            <template #description>
-                <slot name="description" />
-            </template>
-        </SectionTitle>
+  <div class="grid gap-4 lg:grid-cols-3 lg:gap-8">
+    <SectionTitle>
+      <template #title>
+        <slot name="title" />
+      </template>
+      <template #description>
+        <slot name="description" />
+      </template>
+    </SectionTitle>
 
-        <div class="mt-5 md:mt-0 md:col-span-2">
-            <form @submit.prevent="$emit('submitted')">
-                <div
-                    class="ds-card px-4 py-5 sm:p-6"
-                    :class="hasActions ? 'sm:rounded-t-[1.75rem] sm:rounded-b-none' : 'sm:rounded-[1.75rem]'"
-                >
-                    <div class="grid grid-cols-1 gap-6">
-                        <slot name="form" />
-                    </div>
-                </div>
+    <form class="ds-card overflow-hidden lg:col-span-2" @submit.prevent="$emit('submitted')">
+      <div class="grid grid-cols-1 gap-5 p-5 sm:p-6">
+        <slot name="form" />
+      </div>
 
-                <div v-if="hasActions" class="flex items-center justify-end border-x border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-4 text-right shadow-[var(--ds-shadow-card)] sm:rounded-b-[1.75rem] sm:px-6">
-                    <slot name="actions" />
-                </div>
-            </form>
-        </div>
-    </div>
+      <div v-if="hasActions" class="flex items-center justify-end gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-3 sm:px-6">
+        <slot name="actions" />
+      </div>
+    </form>
+  </div>
 </template>
 
 <script setup>
-import { computed, useSlots } from 'vue';
-import SectionTitle from './section-title.vue';
+import { computed, useSlots } from 'vue'
+import SectionTitle from './section-title.vue'
 
-defineEmits(['submitted']);
+defineEmits(['submitted'])
 
-const hasActions = computed(() => !! useSlots().actions);
-
+const hasActions = computed(() => !! useSlots().actions)
 </script>
-
-<style scoped>
-
-</style>

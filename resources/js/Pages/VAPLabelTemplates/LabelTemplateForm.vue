@@ -4,11 +4,11 @@ import BaseSelect from '@/Components/base/BaseSelect.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import {
-  ArrowLeftIcon,
-  CheckIcon,
-  DocumentTextIcon,
-  EyeIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  Check as CheckIcon,
+  FileText as DocumentTextIcon,
+  Eye as EyeIcon,
+} from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 
 const props = defineProps({

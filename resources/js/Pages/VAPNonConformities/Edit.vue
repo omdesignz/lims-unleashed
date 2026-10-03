@@ -50,7 +50,7 @@
 <script setup>
 import NonConformityForm from '@/Pages/VAPNonConformities/NonConformityForm.vue'
 import { Link } from '@inertiajs/vue3'
-import { ArrowLeftIcon, ExclamationTriangleIcon, EyeIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeft as ArrowLeftIcon, TriangleAlert as ExclamationTriangleIcon, Eye as EyeIcon } from '@lucide/vue'
 import { computed } from 'vue'
 
 const props = defineProps({

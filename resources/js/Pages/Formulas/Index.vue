@@ -153,14 +153,14 @@ import { computed, reactive, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import debounce from 'lodash/debounce'
 import {
-  ArchiveBoxXMarkIcon,
-  ArrowUturnLeftIcon,
-  CalculatorIcon,
-  MagnifyingGlassIcon,
-  PencilSquareIcon,
-  PlusIcon,
-  VariableIcon,
-} from '@heroicons/vue/24/outline'
+  ArchiveX as ArchiveBoxXMarkIcon,
+  Undo2 as ArrowUturnLeftIcon,
+  Calculator as CalculatorIcon,
+  Search as MagnifyingGlassIcon,
+  SquarePen as PencilSquareIcon,
+  Plus as PlusIcon,
+  Variable as VariableIcon,
+} from '@lucide/vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import FormulaDisplay from '@/Components/formula-display.vue'
 import Pagination from '@/Components/pagination.vue'

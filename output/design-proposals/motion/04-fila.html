@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fila de amostras — VAP LIMS</title>
+<link rel="stylesheet" href="system.css">
+<script src="ui.js"></script>
+<style>
+  .filter { display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 16px; border: 1px solid var(--line); border-bottom: 0; }
+  .filter .q { flex: 1; font: 400 13px/1 var(--mono); color: var(--faint); }
+  .tools { display: flex; align-items: center; gap: 8px; }
+  .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; }
+  .bulk { margin: 28px auto 0; width: max-content; display: flex; align-items: center; gap: 0; background: var(--fg); color: var(--bg); }
+  .bulk > * { height: 44px; padding: 0 16px; display: inline-flex; align-items: center; gap: 10px; border-right: 1px solid color-mix(in srgb, var(--bg) 22%, transparent); }
+  .bulk > *:last-child { border-right: 0; }
+  .bulk button:hover { background: var(--accent); color: var(--accent-ink); }
+  .due-late { color: var(--bad); }
+  .cell .d2 { font-size: 28px; }
+  .tbl td.cl { max-width: 250px; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top" data-area="Amostras"></header>
+
+  <aside class="side tx-dots">
+    <button class="lab">
+      <span class="lab-mark">LC</span>
+      <span style="flex:1;text-align:left"><span style="display:block;font-weight:600;font-size:13.5px">Laboratório Central</span><span class="k faint" style="font-size:10px">ISO 17025</span></span>
+      <i data-i="updown" class="muted"></i>
+    </button>
+    <div class="side-group">
+      <p class="side-head">Fluxo</p>
+      <a class="side-link" href="#">Receção <span class="num">12</span></a>
+      <a class="side-link on" href="#">Fila de amostras <span class="num">148</span></a>
+      <a class="side-link" href="#">Em análise <span class="num">64</span></a>
+      <a class="side-link" href="#">Por verificar <span class="num">23</span></a>
+      <a class="side-link" href="#">Por aprovar <span class="num">9</span></a>
+    </div>
+    <div class="side-group">
+      <p class="side-head">Organização</p>
+      <a class="side-link" href="#">Lotes</a>
+      <a class="side-link" href="#">Cadeia de custódia</a>
+      <a class="side-link" href="#">Armazenamento</a>
+      <a class="side-link" href="#">Etiquetas</a>
+      <a class="side-link" href="#">Subcontratação</a>
+    </div>
+    <div class="side-group">
+      <p class="side-head">Vistas guardadas</p>
+      <a class="side-link" href="#">Urgentes hoje <span class="num">5</span></a>
+      <a class="side-link" href="#">Águas de Luanda</a>
+      <a class="side-link" href="#">Microbiologia</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <nav class="crumbs"><a href="#">Amostras</a><span>/</span><span>Fila</span></nav>
+    <div class="page-head">
+      <div>
+        <h1 class="d1">Fila de amostras</h1>
+        <p class="lede" style="margin-top:10px">148 amostras em curso no Laboratório Central. 5 vencem hoje.</p>
+      </div>
+      <div class="tools">
+        <button class="btn btn-quiet">Exportar <i data-i="out"></i></button>
+        <button class="btn btn-quiet">Imprimir etiquetas <i data-i="print"></i></button>
+      </div>
+    </div>
+
+    <div class="cells" style="margin-bottom:28px">
+      <button class="cell on"><span class="k">Todas</span><span class="d2 num">148</span></button>
+      <button class="cell"><span class="k muted">Recebidas</span><span class="d2 num">52</span></button>
+      <button class="cell"><span class="k muted">Em análise</span><span class="d2 num">64</span></button>
+      <button class="cell"><span class="k muted">Por verificar</span><span class="d2 num">23</span></button>
+      <button class="cell"><span class="k muted">Por aprovar</span><span class="d2 num">9</span></button>
+      <button class="cell"><span class="k" style="color:var(--bad)">Atrasadas</span><span class="d2 num">5</span></button>
+    </div>
+
+    <div class="filter">
+      <span class="k acc">Filtro://</span>
+      <span class="q">código, cliente, matriz, método</span>
+      <button class="btn btn-quiet btn-sm">Matriz <i data-i="down"></i></button>
+      <button class="btn btn-quiet btn-sm">Cliente <i data-i="down"></i></button>
+      <button class="btn btn-quiet btn-sm">Prazo <i data-i="cal"></i></button>
+      <span class="chip c-run c-plain">Prioridade: urgente <i data-i="x" style="width:10px;height:10px"></i></span>
+    </div>
+    <div class="panel">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:44px"><span class="check"></span></th>
+            <th class="sorted">Código ▾</th>
+            <th>Cliente</th>
+            <th>Matriz</th>
+            <th>Ensaios</th>
+            <th>Estado</th>
+            <th>Analista</th>
+            <th class="r">Prazo</th>
+            <th style="width:48px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="check"></span></td><td class="id">AM-26-004812</td><td class="cl">Águas de Luanda, E.P.<span class="sub"> · ETA Kifangondo</span></td><td>Água de consumo</td><td class="num">6 / 14</td><td><span class="chip c-run">Em análise</span></td><td>M. Kiala</td><td class="r num due-late">Hoje 16:00</td><td class="r"><span class="acts"><button class="btn btn-ghost btn-icon btn-sm" aria-label="Mais"><i data-i="more"></i></button></span></td></tr>
+          <tr class="is-hover"><td><span class="check"></span></td><td class="id">AM-26-004811</td><td>Refriango<span class="sub"> · Linha 3</span></td><td>Bebida não alcoólica</td><td class="num">9 / 9</td><td><span class="chip c-wait">Por verificar</span></td><td>A. Domingos</td><td class="r num">Hoje 18:00</td><td class="r"><span class="acts"><button class="btn btn-primary btn-icon btn-sm" aria-label="Abrir"><i data-i="go"></i></button></span></td></tr>
+          <tr class="sel"><td><span class="opt on"><span class="check"><i data-i="check"></i></span></span></td><td class="id">AM-26-004809</td><td>Nova Cimangola<span class="sub"> · Pedreira Sul</span></td><td>Efluente industrial</td><td class="num">0 / 11</td><td><span class="chip">Recebida</span></td><td class="sub">Por atribuir</td><td class="r num">04 Out</td><td></td></tr>
+          <tr class="sel"><td><span class="opt on"><span class="check"><i data-i="check"></i></span></span></td><td class="id">AM-26-004808</td><td>Nova Cimangola<span class="sub"> · Pedreira Sul</span></td><td>Efluente industrial</td><td class="num">0 / 11</td><td><span class="chip">Recebida</span></td><td class="sub">Por atribuir</td><td class="r num">04 Out</td><td></td></tr>
+          <tr><td><span class="check"></span></td><td class="id">AM-26-004805</td><td>Biocom<span class="sub"> · Cacuso</span></td><td>Solo agrícola</td><td class="num">12 / 12</td><td><span class="chip c-ok">Aprovada</span></td><td>J. Teixeira</td><td class="r num">05 Out</td><td></td></tr>
+          <tr><td><span class="check"></span></td><td class="id">AM-26-004801</td><td>Sonangol Distribuidora<span class="sub"> · Terminal Boavista</span></td><td>Água residual</td><td class="num">7 / 8</td><td><span class="chip c-bad">Fora de especificação</span></td><td>M. Kiala</td><td class="r num">05 Out</td><td></td></tr>
+          <tr><td><span class="check"></span></td><td class="id">AM-26-004798</td><td class="cl">Águas de Luanda, E.P.<span class="sub"> · Reservatório Maianga</span></td><td>Água de consumo</td><td class="num">14 / 14</td><td><span class="chip c-done">Certificada</span></td><td>A. Domingos</td><td class="r num">06 Out</td><td></td></tr>
+          <tr><td><span class="check"></span></td><td class="id">AM-26-004795</td><td>Hotel Presidente<span class="sub"> · Cozinha</span></td><td>Alimento pronto</td><td class="num">3 / 7</td><td><span class="chip c-run">Em análise</span></td><td>L. Cardoso</td><td class="r num">06 Out</td><td></td></tr>
+          <tr><td><span class="check"></span></td><td class="id">AM-26-004790</td><td>Refriango<span class="sub"> · Linha 1</span></td><td>Água de processo</td><td class="num">5 / 5</td><td><span class="chip c-wait">Por aprovar</span></td><td>J. Teixeira</td><td class="r num">07 Out</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="foot">
+      <span class="k muted">1–25 de 148 · 25 por página</span>
+      <div class="pager"><a href="#"><i data-i="back" style="width:12px;height:12px"></i>Ant</a><a class="on" href="#">1</a><a href="#">2</a><a href="#">3</a><a href="#">…</a><a href="#">6</a><a href="#">Seg<i data-i="go" style="width:12px;height:12px"></i></a></div>
+    </div>
+
+    <div class="bulk k">
+      <span>2 seleccionadas</span>
+      <button class="k">Atribuir analista</button>
+      <button class="k">Criar lote</button>
+      <button class="k">Etiquetas</button>
+      <button class="k" aria-label="Limpar"><i data-i="x"></i></button>
+    </div>
+  </main>
+</div>
+</body>
+</html>

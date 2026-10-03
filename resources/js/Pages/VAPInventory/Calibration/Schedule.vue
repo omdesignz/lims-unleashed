@@ -342,20 +342,20 @@ import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import Pagination from '@/Components/Pagination.vue'
 import {
-  ArrowLeftIcon,
-  CalendarDaysIcon,
-  CheckCircleIcon,
-  ClipboardDocumentListIcon,
-  ClockIcon,
-  CpuChipIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  PencilSquareIcon,
-  ShieldCheckIcon,
-  WrenchScrewdriverIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  CalendarDays as CalendarDaysIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Clock as ClockIcon,
+  Cpu as CpuChipIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Eye as EyeIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  SquarePen as PencilSquareIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Wrench as WrenchScrewdriverIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   items: { type: Object, default: () => ({ data: [] }) },

@@ -60,7 +60,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import ChartWrapper from './ChartWrapper.vue'
-import { WrenchScrewdriverIcon } from '@heroicons/vue/24/outline'
+import { Wrench as WrenchScrewdriverIcon } from '@lucide/vue'
 import Spinner from '@/Components/Spinner.vue'
 
 const props = defineProps({

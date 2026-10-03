@@ -5,11 +5,11 @@ import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  BuildingOffice2Icon,
-  CheckIcon,
-  IdentificationIcon,
-  TruckIcon,
-} from "@heroicons/vue/24/outline";
+  Building2 as BuildingOffice2Icon,
+  Check as CheckIcon,
+  IdCard as IdentificationIcon,
+  Truck as TruckIcon,
+} from "@lucide/vue";
 import { router, useForm } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

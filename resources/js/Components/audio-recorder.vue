@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { MicrophoneIcon, PlayIcon } from '@heroicons/vue/24/outline';
+import { Mic as MicrophoneIcon, Play as PlayIcon } from '@lucide/vue';
 
 const props = defineProps({
     record: {

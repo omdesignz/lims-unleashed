@@ -2,19 +2,19 @@
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  BeakerIcon,
-  BellIcon,
-  BookOpenIcon,
-  ChartBarSquareIcon,
-  CheckBadgeIcon,
-  ChevronRightIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentTextIcon,
-  HomeIcon,
-  IdentificationIcon,
-  ShieldCheckIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  FlaskConical as BeakerIcon,
+  Bell as BellIcon,
+  BookOpen as BookOpenIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  BadgeCheck as CheckBadgeIcon,
+  ChevronRight as ChevronRightIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  FileText as DocumentTextIcon,
+  House as HomeIcon,
+  IdCard as IdentificationIcon,
+  ShieldCheck as ShieldCheckIcon,
+} from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

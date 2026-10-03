@@ -2,11 +2,11 @@
 import { ref } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import {
-  ArrowPathIcon,
-  CheckCircleIcon,
-  EnvelopeIcon,
-  PhotoIcon,
-} from '@heroicons/vue/24/outline'
+  RefreshCw as ArrowPathIcon,
+  CircleCheck as CheckCircleIcon,
+  Mail as EnvelopeIcon,
+  Image as PhotoIcon,
+} from '@lucide/vue'
 import SignaturePad from '@/Components/signature-pad.vue'
 
 const props = defineProps({

@@ -2,17 +2,17 @@
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  DocumentCheckIcon,
-  ExclamationTriangleIcon,
-  MinusIcon,
-  PlusIcon,
-  QueueListIcon,
-  TableCellsIcon,
-  TrashIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  FileCheck as DocumentCheckIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Minus as MinusIcon,
+  Plus as PlusIcon,
+  Rows3 as QueueListIcon,
+  Table as TableCellsIcon,
+  Trash2 as TrashIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 
 defineOptions({

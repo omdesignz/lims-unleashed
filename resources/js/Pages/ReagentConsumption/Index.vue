@@ -9,7 +9,7 @@ import { useForm, router } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
 import combobox from '@/Components/combobox.vue';
 import datePicker from '@/Components/date-picker.vue'
-import { TrashIcon, PencilIcon, ArrowPathRoundedSquareIcon } from '@heroicons/vue/24/outline';
+import { Trash2 as TrashIcon, Pencil as PencilIcon, Repeat as ArrowPathRoundedSquareIcon } from '@lucide/vue';
 import VapTable from '@/Components/vap-table/table.vue';
 import { usePermission } from "@/Composables/usePermissions";
 import ReagentDashboard from "@/Pages/ReagentConsumption/Dashboard.vue";

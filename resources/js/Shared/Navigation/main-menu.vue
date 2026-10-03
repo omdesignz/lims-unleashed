@@ -10,7 +10,7 @@
       <span class="sr-only">Abrir menu rápido</span>
     </PopoverButton>
 
-    <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
+    <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-out duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
       <PopoverPanel class="absolute left-1/2 z-10 mt-3 w-screen max-w-md -translate-x-1/2 transform px-5 sm:px-0">
         <div class="ds-command-palette overflow-hidden p-2">
           <div class="border-b border-[var(--ds-border)] px-3 py-2">
@@ -43,14 +43,14 @@
 import { Link } from '@inertiajs/vue3'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 import {
-  Bars4Icon,
-  BeakerIcon,
-  BellAlertIcon,
-  ChartBarIcon,
-  DocumentTextIcon,
-  FolderOpenIcon,
-  ShieldCheckIcon,
-} from '@heroicons/vue/24/outline'
+  AlignJustify as Bars4Icon,
+  FlaskConical as BeakerIcon,
+  BellRing as BellAlertIcon,
+  ChartColumn as ChartBarIcon,
+  FileText as DocumentTextIcon,
+  FolderOpen as FolderOpenIcon,
+  ShieldCheck as ShieldCheckIcon,
+} from '@lucide/vue'
 
 const solutions = [
   {

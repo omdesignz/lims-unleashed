@@ -2,7 +2,7 @@
 import { computed, onUnmounted, ref, watch } from 'vue'
 import { Head, Link, useForm, useHttp } from '@inertiajs/vue3'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue'
-import { ArrowRightIcon, BeakerIcon, ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon, PlusIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { ArrowRight as ArrowRightIcon, FlaskConical as BeakerIcon, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Search as MagnifyingGlassIcon, Plus as PlusIcon, X as XMarkIcon } from '@lucide/vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { sampleDate as date } from '@/Utils/samplePresentation'
 
@@ -65,12 +65,27 @@ onUnmounted(() => { requestVersion++; detail.cancel() })
 <template>
   <div class="workbench-page">
     <Head title="Amostras" />
-    <header class="lab-page-head"><div><h1>Cada amostra, no seu lugar.</h1><p>{{ lab.name }} · Da recepção ao próximo passo.</p></div><Link :href="route('vap_samples.index')" class="lab-btn lab-primary"><PlusIcon />Receber amostra</Link></header>
-    <nav class="lab-tabs" aria-label="Filtrar estado das amostras"><button type="button" class="lab-tab" :aria-pressed="!filter.status" @click="search('')">Todas</button><button v-for="(label, status) in states" :key="status" type="button" class="lab-tab" :aria-pressed="filter.status === status" @click="search(status)">{{ label }}</button></nav>
-    <form class="lab-toolbar" @submit.prevent="search()"><label class="lab-inline-search"><MagnifyingGlassIcon /><input v-model="filter.search" type="search" maxlength="100" aria-label="Pesquisar amostras" placeholder="Pesquisar nome ou código" /></label><button class="lab-btn" type="submit" :disabled="filter.processing">{{ filter.processing ? 'A pesquisar…' : 'Pesquisar' }}</button><button v-if="hasFilters" class="lab-link lab-small" type="button" @click="clearFilters">Limpar filtros</button><div class="lab-spacer"></div><label class="lab-flex lab-small">Por página<select v-model="filter.per_page" class="lab-field" @change="search()"><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option></select></label></form>
+    <header class="app-page-header lab-page-head">
+      <div class="app-page-header-row">
+        <div><h1 class="app-page-title">Amostras</h1><p class="app-page-meta">{{ lab.name }} · Cada amostra, no seu lugar · {{ samples.meta.total }} nesta vista</p></div>
+        <div class="app-page-actions"><Link :href="route('vap_samples.index')" class="lab-btn lab-primary"><PlusIcon aria-hidden="true" />Receber amostra</Link></div>
+      </div>
+      <nav class="app-tabs" aria-label="Filtrar estado das amostras"><button type="button" class="app-tab" :aria-pressed="!filter.status" @click="search('')">Todas</button><button v-for="(label, status) in states" :key="status" type="button" class="app-tab" :aria-pressed="filter.status === status" @click="search(status)">{{ label }}</button></nav>
+    </header>
+    <form class="lab-toolbar" @submit.prevent="search()">
+      <div class="min-w-44 max-w-xs flex-1">
+        <BaseInput v-model="filter.search" type="search" maxlength="100" aria-label="Pesquisar amostras" placeholder="Pesquisar nome ou código">
+          <template #leading><MagnifyingGlassIcon aria-hidden="true" /></template>
+        </BaseInput>
+      </div>
+      <button class="lab-btn" type="submit" :disabled="filter.processing">{{ filter.processing ? 'A pesquisar…' : 'Pesquisar' }}</button>
+      <button v-if="hasFilters" class="lab-link lab-small" type="button" @click="clearFilters">Limpar filtros</button>
+      <div class="lab-spacer"></div>
+      <div class="lab-flex lab-small"><span id="queue-per-page">Por página</span><div class="w-24"><BaseSelect :model-value="filter.per_page" :options="[25, 50, 100]" aria-labelledby="queue-per-page" @update:model-value="filter.per_page = $event; search()" /></div></div>
+    </form>
     <p v-if="filter.hasErrors" class="lab-field-error" role="alert">{{ Object.values(filter.errors)[0] }}</p>
-    <section aria-label="Fila de amostras" :aria-busy="filter.processing">
-      <div v-if="samples.data.length" class="lab-table-wrap"><table class="lab-table"><thead><tr><th scope="col">Amostra</th><th scope="col">Cliente</th><th scope="col">Estado</th><th scope="col">Recepção</th><th scope="col">Retenção até</th><th scope="col"><span class="sr-only">Consulta</span></th></tr></thead><tbody><tr v-for="sample in samples.data" :key="sample.id"><td><button type="button" class="lab-link" @click="preview(sample)">{{ sample.code || 'Código por atribuir' }}</button><small>{{ sample.name }}</small></td><td>{{ sample.customer?.name || 'Não associado' }}<small>{{ sample.sample_type || 'Tipo por definir' }}</small></td><td><span class="lab-pill" :data-tone="tones[sample.status]"><span class="lab-dot"></span>{{ states[sample.status] || sample.status }}</span></td><td>{{ date(sample.received_at) }}</td><td>{{ date(sample.retention_due_at) }}</td><td><button type="button" class="lab-link" :aria-label="`Consultar ${sample.name}`" @click="preview(sample)">Consultar <ArrowRightIcon /></button></td></tr></tbody></table></div>
+    <section class="lab-queue" aria-label="Fila de amostras" :aria-busy="filter.processing">
+      <div v-if="samples.data.length" class="lab-table-wrap"><DataTable class="lab-table"><thead><tr><th scope="col">Amostra</th><th scope="col">Cliente</th><th scope="col">Estado</th><th scope="col">Recepção</th><th scope="col">Retenção até</th><th scope="col"><span class="sr-only">Consulta</span></th></tr></thead><tbody><tr v-for="sample in samples.data" :key="sample.id"><td><button type="button" class="lab-link" @click="preview(sample)">{{ sample.code || 'Código por atribuir' }}</button><small>{{ sample.name }}</small></td><td>{{ sample.customer?.name || 'Não associado' }}<small>{{ sample.sample_type || 'Tipo por definir' }}</small></td><td><span class="lab-pill" :data-tone="tones[sample.status]"><span class="lab-dot"></span>{{ states[sample.status] || sample.status }}</span></td><td>{{ date(sample.received_at) }}</td><td>{{ date(sample.retention_due_at) }}</td><td><button type="button" class="lab-link" :aria-label="`Consultar ${sample.name}`" @click="preview(sample)">Consultar <ArrowRightIcon /></button></td></tr></tbody></DataTable></div>
       <div v-else class="lab-empty"><BeakerIcon class="lab-empty-icon" /><strong>{{ hasFilters ? 'Nenhuma amostra encontrada' : 'Uma bancada pronta para começar' }}</strong>{{ hasFilters ? 'Experimente outro nome, código ou estado.' : 'As amostras recebidas neste laboratório aparecerão aqui.' }}<div v-if="hasFilters" class="lab-empty-action"><button type="button" class="lab-btn" @click="clearFilters">Limpar filtros</button></div></div>
       <nav class="lab-pagination" aria-label="Paginação de amostras"><p role="status">{{ samples.meta.from ?? 0 }}–{{ samples.meta.to ?? 0 }} de {{ samples.meta.total }} amostras</p><div class="lab-flex"><Link v-if="samples.links.prev" :href="samples.links.prev" class="lab-btn lab-icon-btn" aria-label="Página anterior" preserve-scroll><ChevronLeftIcon /></Link><button v-else type="button" class="lab-btn lab-icon-btn" aria-label="Página anterior" disabled><ChevronLeftIcon /></button><span>Página {{ samples.meta.current_page }} de {{ samples.meta.last_page }}</span><Link v-if="samples.links.next" :href="samples.links.next" class="lab-btn lab-icon-btn" aria-label="Página seguinte" preserve-scroll><ChevronRightIcon /></Link><button v-else type="button" class="lab-btn lab-icon-btn" aria-label="Página seguinte" disabled><ChevronRightIcon /></button></div></nav>
     </section>

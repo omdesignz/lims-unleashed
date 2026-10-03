@@ -9,7 +9,7 @@ import {
   ComboboxOption,
   TransitionRoot,
 } from '@headlessui/vue'
-import { CheckIcon, ChevronUpDownIcon, XMarkIcon } from '@heroicons/vue/20/solid'
+import { Check as CheckIcon, ChevronsUpDown as ChevronUpDownIcon, X as XMarkIcon } from '@lucide/vue'
 
 const emit = defineEmits(['update:modelValue'])
 
@@ -187,7 +187,7 @@ function clear() {
         </div>
 
         <TransitionRoot
-          leave="transition ease-in duration-100"
+          leave="transition ease-out duration-100"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
           @after-leave="query = ''"

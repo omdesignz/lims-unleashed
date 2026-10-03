@@ -2,15 +2,15 @@
 import { computed, ref, watch } from 'vue'
 import { router, useForm, usePage } from '@inertiajs/vue3'
 import {
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
-  CheckBadgeIcon,
-  ClipboardDocumentIcon,
-  KeyIcon,
-  LockClosedIcon,
-  ShieldCheckIcon,
-  ShieldExclamationIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  RefreshCw as ArrowPathIcon,
+  BadgeCheck as CheckBadgeIcon,
+  ClipboardCopy as ClipboardDocumentIcon,
+  KeyRound as KeyIcon,
+  Lock as LockClosedIcon,
+  ShieldCheck as ShieldCheckIcon,
+  ShieldAlert as ShieldExclamationIcon,
+} from '@lucide/vue'
 import ConfirmsPassword from '@/Components/confirms-password.vue'
 
 const props = defineProps({

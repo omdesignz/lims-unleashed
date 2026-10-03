@@ -4,12 +4,12 @@ import EmptyLayout from '../../Shared/EmptyLayout.vue'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import {
-  ArrowRightStartOnRectangleIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  FingerPrintIcon,
-  LockClosedIcon,
-} from '@heroicons/vue/24/outline'
+  LogOut as ArrowRightStartOnRectangleIcon,
+  Eye as EyeIcon,
+  EyeOff as EyeSlashIcon,
+  Fingerprint as FingerPrintIcon,
+  Lock as LockClosedIcon,
+} from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 defineOptions({ layout: EmptyLayout })
@@ -82,9 +82,6 @@ const loginWithPasskey = async () => {
     context-description="A identificação do utilizador mantém operações, revisoes e documentos associados ao responsável correcto."
   >
     <div>
-      <p class="ds-kicker">Autenticação</p>
-      <h2 class="ds-heading mt-2 text-2xl">Iniciar sessão</h2>
-      <p class="ds-copy mt-2 text-sm leading-6">Use as credenciais da sua conta interna.</p>
 
       <div
         v-if="status"
@@ -93,7 +90,7 @@ const loginWithPasskey = async () => {
         {{ status }}
       </div>
 
-      <form class="mt-7 space-y-5" @submit.prevent="submit">
+      <form class="space-y-4" @submit.prevent="submit">
         <div class="ds-field-group">
           <label for="email" class="ds-field-label">{{ $t('gestlab.pages.login.email_input_title') }}</label>
           <BaseInput
@@ -168,7 +165,7 @@ const loginWithPasskey = async () => {
       </form>
 
       <div v-if="socialProviders.length" class="mt-6 border-t border-[var(--ds-border)] pt-5">
-        <p class="mb-3 text-center font-mono text-[0.68rem] font-semibold uppercase text-[var(--ds-text-soft)]">Single sign-on</p>
+        <p class="mb-3 text-center text-xs text-[var(--ds-text-soft)]">Ou continue com</p>
         <div class="grid gap-2">
           <a
             v-for="provider in socialProviders"

@@ -2,11 +2,11 @@
 import { computed, ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import {
-  ArrowPathIcon,
-  CheckCircleIcon,
-  EyeIcon,
-  EyeSlashIcon,
-} from '@heroicons/vue/24/outline'
+  RefreshCw as ArrowPathIcon,
+  CircleCheck as CheckCircleIcon,
+  Eye as EyeIcon,
+  EyeOff as EyeSlashIcon,
+} from '@lucide/vue'
 
 const currentPasswordInput = ref(null)
 const passwordInput = ref(null)

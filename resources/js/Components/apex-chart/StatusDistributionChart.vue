@@ -24,7 +24,7 @@
 <script setup>
 import { computed } from 'vue'
 import ChartWrapper from './ChartWrapper.vue'
-import { ChartBarIcon } from '@heroicons/vue/24/outline'
+import { ChartColumn as ChartBarIcon } from '@lucide/vue'
 import Spinner from '@/Components/Spinner.vue'
 
 const props = defineProps({

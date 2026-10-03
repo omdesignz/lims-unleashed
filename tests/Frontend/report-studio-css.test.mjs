@@ -366,7 +366,7 @@ test('proposal studio media picker is searchable, filtered, and target aware', (
   assert.match(proposalStudioWorkbenchSource, /const mediaPickerTargetLabel = computed\(\(\) =>/)
   assert.match(mediaPickerSource, /bg-\[#06100e\]\/80/)
   assert.match(mediaPickerSource, /max-w-6xl/)
-  assert.match(mediaPickerSource, /border-\[#ded3bf\]/)
+  assert.match(mediaPickerSource, /border-\[var\(--ds-border\)\]/)
   assert.match(mediaPickerSource, /media_picker\.search_placeholder/)
   assert.match(mediaPickerSource, /media_picker\.target_label/)
   assert.match(mediaPickerSource, /v-for="option in mediaKindOptions"/)

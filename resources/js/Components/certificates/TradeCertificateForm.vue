@@ -3,19 +3,19 @@ import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
 import FinancialObservationForm from "@/Components/documents/FinancialObservationForm.vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  BanknotesIcon,
-  BuildingOfficeIcon,
-  CheckBadgeIcon,
-  CubeIcon,
-  DocumentCheckIcon,
-  GlobeAltIcon,
-  MapPinIcon,
-  PlusIcon,
-  ShieldCheckIcon,
-  TrashIcon,
-  TruckIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  Banknote as BanknotesIcon,
+  Building as BuildingOfficeIcon,
+  BadgeCheck as CheckBadgeIcon,
+  Box as CubeIcon,
+  FileCheck as DocumentCheckIcon,
+  Globe as GlobeAltIcon,
+  MapPin as MapPinIcon,
+  Plus as PlusIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Trash2 as TrashIcon,
+  Truck as TruckIcon,
+} from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 const props = defineProps({

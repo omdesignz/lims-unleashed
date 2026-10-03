@@ -7,7 +7,7 @@ import combobox from "@/Components/combobox-enhanced.vue";
 import { computed, ref } from "vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
-import { EyeIcon } from "@heroicons/vue/24/outline";
+import { Eye as EyeIcon } from "@lucide/vue";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 
 const props = defineProps({

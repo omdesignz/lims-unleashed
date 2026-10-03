@@ -9,17 +9,17 @@ import { submitStaffAccountMutation } from "@/Composables/useStaffAccountPayload
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
-  ArrowPathIcon,
-  ArrowsRightLeftIcon,
-  CheckBadgeIcon,
-  ExclamationTriangleIcon,
-  LockClosedIcon,
-  LockOpenIcon,
-  PlusIcon,
-  ShieldCheckIcon,
-  UsersIcon,
-  UserMinusIcon,
-} from "@heroicons/vue/24/outline";
+  RefreshCw as ArrowPathIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  BadgeCheck as CheckBadgeIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Lock as LockClosedIcon,
+  LockOpen as LockOpenIcon,
+  Plus as PlusIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Users as UsersIcon,
+  UserMinus as UserMinusIcon,
+} from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
 

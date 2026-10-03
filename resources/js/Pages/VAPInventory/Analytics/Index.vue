@@ -97,7 +97,7 @@
           enter="ease-out duration-200"
           enter-from="opacity-0"
           enter-to="opacity-100"
-          leave="ease-in duration-150"
+          leave="ease-out duration-150"
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
@@ -109,11 +109,11 @@
             <TransitionChild
               as="template"
               enter="ease-out duration-200"
-              enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]"
               enter-to="opacity-100 translate-y-0 sm:scale-100"
-              leave="ease-in duration-150"
+              leave="ease-out duration-150"
               leave-from="opacity-100 translate-y-0 sm:scale-100"
-              leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]"
             >
               <DialogPanel class="ds-modal-panel w-full max-w-2xl overflow-hidden text-left transition-all">
                 <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
@@ -189,18 +189,18 @@ import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import InventoryAnalytics from '@/Components/charts/inventory-analytics.vue'
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  ArrowRightIcon,
-  ArrowsUpDownIcon,
-  BanknotesIcon,
-  BeakerIcon,
-  CalendarDaysIcon,
-  ChartBarSquareIcon,
-  ExclamationTriangleIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  ArrowRight as ArrowRightIcon,
+  ArrowUpDown as ArrowsUpDownIcon,
+  Banknote as BanknotesIcon,
+  FlaskConical as BeakerIcon,
+  CalendarDays as CalendarDaysIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   initialData: { type: Object, default: () => ({}) },

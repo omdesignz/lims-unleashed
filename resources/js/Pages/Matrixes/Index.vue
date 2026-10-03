@@ -5,13 +5,13 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArchiveBoxIcon,
-  BanknotesIcon,
-  EyeIcon,
-  PlusIcon,
-  RectangleGroupIcon,
-  ReceiptPercentIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  Banknote as BanknotesIcon,
+  Eye as EyeIcon,
+  Plus as PlusIcon,
+  LayoutDashboard as RectangleGroupIcon,
+  BadgePercent as ReceiptPercentIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 import { trans } from "laravel-vue-i18n";
 

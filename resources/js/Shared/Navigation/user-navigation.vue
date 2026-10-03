@@ -6,7 +6,7 @@
       :href="item.href"
       :method="item.method"
       :as="item.method ? 'button' : undefined"
-      class="block w-full rounded-xl px-3 py-2 text-left text-base font-semibold text-slate-800 transition hover:bg-[#ede5d6] hover:text-primary-800 dark:text-slate-200 dark:hover:bg-[#10231f] dark:hover:text-accent-100"
+      class="block w-full rounded-xl px-3 py-2 text-left text-base font-semibold text-slate-800 transition hover:bg-[var(--ds-panel-muted)] hover:text-primary-800 dark:text-slate-200 dark:hover:bg-[var(--ds-panel)] dark:hover:text-accent-100"
     >
       {{ item.name }}
     </Link>

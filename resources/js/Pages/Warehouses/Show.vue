@@ -3,23 +3,23 @@ import BaseInput from '@/Components/base/BaseInput.vue'
 import { usePermission } from '@/Composables/usePermissions'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import {
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  BeakerIcon,
-  BuildingOffice2Icon,
-  CheckCircleIcon,
-  ClockIcon,
-  Cog6ToothIcon,
-  EnvelopeIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  InformationCircleIcon,
-  KeyIcon,
-  MapPinIcon,
-  PencilSquareIcon,
-  PhoneIcon,
-  UserCircleIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  FlaskConical as BeakerIcon,
+  Building2 as BuildingOffice2Icon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  Settings as Cog6ToothIcon,
+  Mail as EnvelopeIcon,
+  Eye as EyeIcon,
+  EyeOff as EyeSlashIcon,
+  Info as InformationCircleIcon,
+  KeyRound as KeyIcon,
+  MapPin as MapPinIcon,
+  SquarePen as PencilSquareIcon,
+  Phone as PhoneIcon,
+  CircleUser as UserCircleIcon,
+} from '@lucide/vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 

@@ -1,16 +1,16 @@
 <script setup>
 import { Dialog, DialogPanel } from '@headlessui/vue'
 import {
-  CheckCircleIcon,
-  ComputerDesktopIcon,
-  DevicePhoneMobileIcon,
-  EnvelopeIcon,
-  ExclamationTriangleIcon,
-  FingerPrintIcon,
-  KeyIcon,
-  LockClosedIcon,
-  ShieldCheckIcon,
-} from '@heroicons/vue/24/outline'
+  CircleCheck as CheckCircleIcon,
+  Monitor as ComputerDesktopIcon,
+  Smartphone as DevicePhoneMobileIcon,
+  Mail as EnvelopeIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Fingerprint as FingerPrintIcon,
+  KeyRound as KeyIcon,
+  Lock as LockClosedIcon,
+  ShieldCheck as ShieldCheckIcon,
+} from '@lucide/vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import PasskeyManagementForm from '@/Pages/Profile/Partials/passkey-management-form.vue'

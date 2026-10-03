@@ -2,7 +2,7 @@
 import ArchivedDocumentForm from "@/Pages/ArchivedDocument/ArchivedDocumentForm.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, useForm } from "@inertiajs/vue3";
-import { ArchiveBoxIcon, ArrowLeftIcon, CheckIcon } from "@heroicons/vue/24/outline";
+import { Archive as ArchiveBoxIcon, ArrowLeft as ArrowLeftIcon, Check as CheckIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

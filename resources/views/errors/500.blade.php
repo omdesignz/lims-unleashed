@@ -1,5 +1,6 @@
 @extends('errors::minimal')
 
-@section('title', __('Server Error'))
+@section('title', 'Erro interno')
 @section('code', '500')
-@section('message', __('Server Error'))
+@section('message', 'Algo falhou do nosso lado.')
+@section('description', 'O erro foi registado. Tente novamente dentro de instantes; os dados que já guardou não foram afectados.')

@@ -52,7 +52,7 @@ class LabNetworkAccess
             'name' => $lab->name,
             'network_id' => $lab->network_id,
             'network_name' => $lab->network?->name,
-            'primary_color' => $lab->primary_color ?? $lab->network?->primary_color ?? '#24664f',
+            'primary_color' => $lab->primary_color ?? $lab->network?->primary_color ?? '#0757b5',
             'inherited_color' => $lab->primary_color === null,
             'can_manage_branding' => $this->canManageBranding($user, $lab),
             'can_view_network' => $lab->network !== null && $this->canViewNetwork($user, $lab->network),

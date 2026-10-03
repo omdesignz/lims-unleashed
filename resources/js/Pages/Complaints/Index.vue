@@ -3,12 +3,12 @@ import Pagination from "@/Components/pagination.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router } from "@inertiajs/vue3";
 import {
-  CheckCircleIcon,
-  ClockIcon,
-  ExclamationTriangleIcon,
-  MagnifyingGlassIcon,
-  ShieldExclamationIcon,
-} from "@heroicons/vue/24/outline";
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Search as MagnifyingGlassIcon,
+  ShieldAlert as ShieldExclamationIcon,
+} from "@lucide/vue";
 import { computed, reactive } from "vue";
 
 defineOptions({ layout: Layout });

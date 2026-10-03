@@ -124,7 +124,7 @@ class LabNetworkAccessTest extends TestCase
         $this->assertSame('#336699', $main->fresh()->primary_color);
         $this->put(route('lab-branding.update', $main), ['primary_color' => null])->assertRedirect();
         $this->assertNull($main->fresh()->primary_color);
-        $this->get(route('lab-network.index', $network))->assertInertia(fn (Assert $page) => $page->where('laboratory.active_lab.primary_color', '#24664f'));
+        $this->get(route('lab-network.index', $network))->assertInertia(fn (Assert $page) => $page->where('laboratory.active_lab.primary_color', '#0757b5'));
     }
 
     public function test_context_switch_requires_direct_membership_not_network_visibility(): void

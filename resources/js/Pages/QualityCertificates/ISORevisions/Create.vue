@@ -3,14 +3,14 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import { computed, ref } from "vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  CheckIcon,
-  DocumentMagnifyingGlassIcon,
-  DocumentPlusIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  UserIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  Check as CheckIcon,
+  FileSearch as DocumentMagnifyingGlassIcon,
+  FilePlus as DocumentPlusIcon,
+  FileText as DocumentTextIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  User as UserIcon,
+} from "@lucide/vue";
 
 defineOptions({
   layout: Layout,

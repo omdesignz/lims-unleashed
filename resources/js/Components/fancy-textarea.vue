@@ -168,7 +168,7 @@
                         </MenuButton>
                       </div>
 
-                        <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
+                        <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-[0.97]" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-out duration-100" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-[0.97]">
                           <MenuItems class="absolute right-0 z-10 mt-2 w-64 origin-top-right divide-y divide-slate-100 rounded-2xl bg-white shadow-xl ring-1 ring-black/5 focus:outline-none dark:divide-slate-800 dark:bg-slate-900 dark:ring-white/10">
                             <div class="py-1">
                               <MenuItem v-slot="{ active }">
@@ -379,7 +379,7 @@
                         <!-- <ChevronDownIcon class="size-5" aria-hidden="true" /> -->
                       </PopoverButton>
 
-                      <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
+                      <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-out duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
                         <PopoverPanel class="absolute left-1/2 z-10 mt-5 flex w-screen max-w-max -translate-x-1/2 px-4">
                           <div class="max-w-md flex-auto overflow-hidden rounded-3xl text-sm/6">
                             <div class="p-4">
@@ -402,7 +402,7 @@
                         <!-- <ChevronDownIcon class="size-5" aria-hidden="true" /> -->
                       </PopoverButton>
 
-                      <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-in duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
+                      <transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 translate-y-1" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition ease-out duration-150" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 translate-y-1">
                         <PopoverPanel class="absolute left-1/2 z-10 mt-5 flex w-screen max-w-max -translate-x-1/2 px-4">
                           <div class="max-w-md flex-auto overflow-hidden rounded-3xl text-sm/6">
                             <div class="p-4">
@@ -603,7 +603,7 @@
                         enter-active-class="transition ease-out duration-100"
                         enter-from-class="opacity-0 scale-90"
                         enter-to-class="opacity-100 scale-100"
-                        leave-active-class="transition ease-in duration-75"
+                        leave-active-class="transition ease-out duration-100"
                         leave-from-class="opacity-100 scale-100"
                         leave-to-class="opacity-0 scale-90"
                       >
@@ -743,7 +743,7 @@
   import StarterKit from '@tiptap/starter-kit'
   // import { CustomHighlight } from '@/Extensions/Tiptap/CustomHighlight'
   import { fileToBase64 } from '@/Extensions/Tiptap/utils'
-  import { HeartIcon } from '@heroicons/vue/20/solid'
+  import { Heart as HeartIcon } from '@lucide/vue'
   import { Menu, MenuButton, MenuItem, MenuItems, Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
   
   const props = defineProps({

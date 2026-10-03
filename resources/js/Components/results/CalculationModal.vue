@@ -1,7 +1,7 @@
 <script setup>
 import CalculationResultEntry from "@/Components/results/CalculationResultEntry.vue";
 import Modal from "@/Components/Modal.vue";
-import { CalculatorIcon, XMarkIcon } from "@heroicons/vue/24/outline";
+import { Calculator as CalculatorIcon, X as XMarkIcon } from "@lucide/vue";
 
 const props = defineProps({
   sampleId: {

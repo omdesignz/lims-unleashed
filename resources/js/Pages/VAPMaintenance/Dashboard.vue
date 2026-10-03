@@ -347,23 +347,23 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Link, router } from '@inertiajs/vue3'
 import {
-  WrenchScrewdriverIcon,
-  PlusIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  TagIcon,
-  ArrowsUpDownIcon,
-  ClipboardDocumentListIcon,
-  ArrowRightIcon,
-  EyeIcon,
-  CurrencyEuroIcon,
-  BoltIcon,
-  ChevronRightIcon,
-  ArrowDownTrayIcon,
-  ChartBarIcon,
-} from '@heroicons/vue/24/outline'
+  Wrench as WrenchScrewdriverIcon,
+  Plus as PlusIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Clock as ClockIcon,
+  Calendar as CalendarIcon,
+  CircleCheck as CheckCircleIcon,
+  Tag as TagIcon,
+  ArrowUpDown as ArrowsUpDownIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  ArrowRight as ArrowRightIcon,
+  Eye as EyeIcon,
+  Euro as CurrencyEuroIcon,
+  Zap as BoltIcon,
+  ChevronRight as ChevronRightIcon,
+  Download as ArrowDownTrayIcon,
+  ChartColumn as ChartBarIcon,
+} from '@lucide/vue'
 import Pagination from '@/Components/Pagination.vue'
 import { debounce } from 'lodash'
 import simpleChart from '@/Components/apex-chart/simple-chart.vue'

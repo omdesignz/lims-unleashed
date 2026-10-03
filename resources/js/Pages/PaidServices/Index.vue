@@ -4,7 +4,7 @@ import RecordsTable from '@/Components/records-table.vue'
 import { usePermission } from '@/Composables/usePermissions'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, router } from '@inertiajs/vue3'
-import { ArchiveBoxIcon, CheckBadgeIcon, CubeIcon, PlusIcon, ReceiptPercentIcon } from '@heroicons/vue/24/outline'
+import { Archive as ArchiveBoxIcon, BadgeCheck as CheckBadgeIcon, Box as CubeIcon, Plus as PlusIcon, BadgePercent as ReceiptPercentIcon } from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 defineOptions({ layout: Layout })

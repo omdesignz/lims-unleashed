@@ -248,12 +248,12 @@ import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import { router, useForm } from '@inertiajs/vue3'
 import {
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  BeakerIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  FlaskConical as BeakerIcon,
+  CircleCheck as CheckCircleIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+} from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 const props = defineProps({

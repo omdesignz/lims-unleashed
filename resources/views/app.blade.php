@@ -3,15 +3,15 @@
         $whiteLabelSettings = app(\App\Settings\GeneralSettings::class);
         $whiteLabelAppName = $whiteLabelSettings->app_name ?: config('app.name', 'LIMS Unleashed');
         $whiteLabelLogoUrl = $whiteLabelSettings->app_logo_url ?: null;
-        $whiteLabelPrimaryColor = $whiteLabelSettings->app_primary_color ?: '#143d37';
+        $whiteLabelPrimaryColor = $whiteLabelSettings->app_primary_color ?: '#061f46';
     } catch (\Throwable) {
         $whiteLabelAppName = config('app.name', 'LIMS Unleashed');
         $whiteLabelLogoUrl = null;
-        $whiteLabelPrimaryColor = '#143d37';
+        $whiteLabelPrimaryColor = '#061f46';
     }
 @endphp
 <!DOCTYPE html>
-<html class="h-full bg-white dark:bg-gray-800">
+<html class="h-full">
 <head>
     <meta charset="utf-8" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -23,8 +23,11 @@
     <title>{{ $whiteLabelAppName }}</title>
     @if($whiteLabelLogoUrl)
         <link rel="icon" href="{{ $whiteLabelLogoUrl }}">
+    @else
+        <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg">
+        <link rel="icon" type="image/png" sizes="32x32" href="/brand/icons/favicon-32.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/brand/icons/apple-touch-icon.png">
     @endif
-    <link rel="preconnect" href="https://fonts.bunny.net">
     <script>
         (function () {
             try {

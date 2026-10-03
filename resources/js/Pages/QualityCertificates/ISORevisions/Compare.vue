@@ -3,15 +3,15 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import { computed, ref } from "vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  ArrowsRightLeftIcon,
-  ChevronDownIcon,
-  ClockIcon,
-  ExclamationTriangleIcon,
-  PrinterIcon,
-  UserIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  ArrowLeft as ArrowLeftIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  ChevronDown as ChevronDownIcon,
+  Clock as ClockIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Printer as PrinterIcon,
+  User as UserIcon,
+} from "@lucide/vue";
 
 defineOptions({
   layout: Layout,

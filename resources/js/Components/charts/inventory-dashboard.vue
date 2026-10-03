@@ -214,17 +214,17 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
-  BeakerIcon,
-  BellAlertIcon,
-  ClockIcon,
-  WrenchScrewdriverIcon,
-  ArrowPathIcon,
-  ArrowDownTrayIcon,
-  ArrowUpTrayIcon,
-  PlusIcon,
-  MinusIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/vue/24/outline'
+  FlaskConical as BeakerIcon,
+  BellRing as BellAlertIcon,
+  Clock as ClockIcon,
+  Wrench as WrenchScrewdriverIcon,
+  RefreshCw as ArrowPathIcon,
+  Download as ArrowDownTrayIcon,
+  Upload as ArrowUpTrayIcon,
+  Plus as PlusIcon,
+  Minus as MinusIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+} from '@lucide/vue'
 import axios from 'axios'
 import { getEcho } from '@/lib/echo'
 
@@ -272,7 +272,7 @@ const stockGauges = ref([
           },
         },
       },
-      colors: ['#1e3a8a'],
+      colors: ['#061f46'],
       labels: ['Nível de existências'],
     },
   },
@@ -292,7 +292,7 @@ const stockGauges = ref([
           },
         },
       },
-      colors: ['#10b981'],
+      colors: ['#22a45d'],
       labels: ['Nível de existências'],
     },
   },
@@ -312,7 +312,7 @@ const stockGauges = ref([
           },
         },
       },
-      colors: ['#f59e0b'],
+      colors: ['#e0902b'],
       labels: ['Nível de existências'],
     },
   },
@@ -334,7 +334,7 @@ const realtimeChartOptions = computed(() => ({
       },
     },
   },
-  colors: ['#1e3a8a'],
+  colors: ['#061f46'],
   stroke: {
     curve: 'smooth',
     width: 3,
@@ -362,7 +362,7 @@ const realtimeChartOptions = computed(() => ({
     },
   },
   grid: {
-    borderColor: '#f1f5f9',
+    borderColor: '#f1f3f6',
   },
   tooltip: {
     x: {

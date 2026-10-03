@@ -1,7 +1,7 @@
 <script setup>
 import PortalDocumentLibrary from "@/Components/portal/PortalDocumentLibrary.vue";
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
-import { BanknotesIcon } from "@heroicons/vue/24/outline";
+import { Banknote as BanknotesIcon } from "@lucide/vue";
 
 defineOptions({ layout: PortalLayout });
 

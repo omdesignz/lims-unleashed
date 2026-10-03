@@ -1,13 +1,13 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
 import {
-  BellAlertIcon,
-  ChartBarSquareIcon,
-  Cog6ToothIcon,
-  ListBulletIcon,
-  PaperAirplaneIcon,
-  Squares2X2Icon,
-} from '@heroicons/vue/24/outline'
+  BellRing as BellAlertIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  Settings as Cog6ToothIcon,
+  List as ListBulletIcon,
+  Send as PaperAirplaneIcon,
+  LayoutGrid as Squares2X2Icon,
+} from '@lucide/vue'
 
 defineProps({
   title: {

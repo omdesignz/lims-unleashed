@@ -1,13 +1,13 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  ArrowLeftIcon,
-  ArrowTopRightOnSquareIcon,
-  BuildingStorefrontIcon,
-  CubeIcon,
-  ExclamationTriangleIcon,
-  MapPinIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  ExternalLink as ArrowTopRightOnSquareIcon,
+  Store as BuildingStorefrontIcon,
+  Box as CubeIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  MapPin as MapPinIcon,
+} from "@lucide/vue";
 import { Link } from "@inertiajs/vue3";
 import { computed } from "vue";
 

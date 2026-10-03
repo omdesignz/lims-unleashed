@@ -62,7 +62,7 @@
                   <PlusIcon class="h-5 w-5" aria-hidden="true" />
                 </MenuButton>
               </div>
-              <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
+              <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-[0.97]" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-out duration-100" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-[0.97]">
                 <MenuItems class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <MenuItem v-slot="{ active }">
                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-900 hover:text-white" @click="showCreateFolderForm = true">{{ $t('gestlab.general.labels.files.create_folder') }}</a>
@@ -204,7 +204,7 @@
                         <span class="sr-only">Abrir opções</span>
                         <EllipsisVerticalIcon class="h-5 w-5" aria-hidden="true" />
                       </MenuButton>
-                      <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95" v-if="!selectedFiles.includes(file.id)">
+                      <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-[0.97]" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-out duration-100" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-[0.97]" v-if="!selectedFiles.includes(file.id)">
                         <MenuItems class="absolute right-0 z-10 mt-0.5 w-48 origin-top-right rounded-full bg-white py-1 shadow-lg ring-1 ring-gray-900/5 focus:outline-none flex space-x-3 justify-center default-cursor-pointer">
                           
                           <MenuItem as="button" v-slot="{ active }">
@@ -403,7 +403,7 @@
               <ChevronUpDownIcon class="col-start-1 row-start-1 size-5 self-center justify-self-end text-gray-500 sm:size-4" aria-hidden="true" />
             </ListboxButton>
 
-            <transition leave-active-class="transition ease-in duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
+            <transition leave-active-class="transition ease-out duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
               <ListboxOptions class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-2 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm">
                 <ListboxOption as="template" v-for="permission in permissions" :key="permission.id" :value="permission" v-slot="{ active, selectedPermission }">
                   <li :class="[active ? 'bg-blue-900 text-white outline-none' : 'text-gray-900', 'relative cursor-default select-none py-1 pl-3 pr-9']">
@@ -465,7 +465,7 @@
                   <ChevronUpDownIcon class="col-start-1 row-start-1 size-5 self-center justify-self-end text-gray-500 sm:size-4" aria-hidden="true" />
                 </ListboxButton>
 
-                <transition leave-active-class="transition ease-in duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
+                <transition leave-active-class="transition ease-out duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
                   <ListboxOptions class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-2 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm">
                     <ListboxOption as="template" v-for="permission in permissions" :key="permission.id" :value="permission" v-slot="{ active, user }">
                       <li :class="[active ? 'bg-blue-900 text-white outline-none' : 'text-gray-900', 'relative cursor-default select-none py-1 pl-3 pr-9']">
@@ -508,35 +508,35 @@
   } from '@headlessui/vue'
 
   import {
-    Bars3BottomLeftIcon,
-    CogIcon,
-    HeartIcon,
-    HomeIcon,
-    PhotoIcon,
-    FolderPlusIcon,
-    DocumentPlusIcon,
-    RectangleStackIcon,
-    Squares2X2Icon as Squares2X2IconOutline,
-    UserGroupIcon,
-    CloudArrowDownIcon,
-    FolderIcon,
-    PencilIcon,
-    EyeIcon,
-    ArrowsRightLeftIcon,
-    CheckCircleIcon,
-    XMarkIcon,
-    EllipsisVerticalIcon,
-    TrashIcon
-  } from '@heroicons/vue/24/outline'
+  AlignLeft as Bars3BottomLeftIcon,
+  Cog as CogIcon,
+  Heart as HeartIcon,
+  House as HomeIcon,
+  Image as PhotoIcon,
+  FolderPlus as FolderPlusIcon,
+  FilePlus as DocumentPlusIcon,
+  Layers as RectangleStackIcon,
+  LayoutGrid as Squares2X2IconOutline,
+  Users as UserGroupIcon,
+  CloudDownload as CloudArrowDownIcon,
+  Folder as FolderIcon,
+  Pencil as PencilIcon,
+  Eye as EyeIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  CircleCheck as CheckCircleIcon,
+  X as XMarkIcon,
+  EllipsisVertical as EllipsisVerticalIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 
   import {
-    Bars4Icon,
-    MagnifyingGlassIcon,
-    PlusIcon,
-    Squares2X2Icon as Squares2X2IconMini,
-    CheckIcon,
-    ChevronUpDownIcon
-  } from '@heroicons/vue/20/solid'
+  AlignJustify as Bars4Icon,
+  Search as MagnifyingGlassIcon,
+  Plus as PlusIcon,
+  LayoutGrid as Squares2X2IconMini,
+  Check as CheckIcon,
+  ChevronsUpDown as ChevronUpDownIcon,
+} from '@lucide/vue'
 
   import breadcrumbs from '@/Components/breadcrumbs.vue';
   import folderItem from '@/Pages/Folders/folder-item.vue';

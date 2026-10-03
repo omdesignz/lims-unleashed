@@ -287,19 +287,19 @@
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import { Link, router } from '@inertiajs/vue3'
 import {
-  ArrowDownTrayIcon,
-  ClipboardDocumentCheckIcon,
-  ClockIcon,
-  DocumentArrowDownIcon,
-  ExclamationCircleIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
-  LinkIcon,
-  PaperClipIcon,
-  PencilSquareIcon,
-  TrashIcon,
-  WrenchScrewdriverIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Clock as ClockIcon,
+  FileDown as DocumentArrowDownIcon,
+  CircleAlert as ExclamationCircleIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Info as InformationCircleIcon,
+  Link as LinkIcon,
+  Paperclip as PaperClipIcon,
+  SquarePen as PencilSquareIcon,
+  Trash2 as TrashIcon,
+  Wrench as WrenchScrewdriverIcon,
+} from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 const props = defineProps({

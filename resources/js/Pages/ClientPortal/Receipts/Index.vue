@@ -1,7 +1,7 @@
 <script setup>
 import PortalDocumentLibrary from "@/Components/portal/PortalDocumentLibrary.vue";
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
-import { ReceiptPercentIcon } from "@heroicons/vue/24/outline";
+import { BadgePercent as ReceiptPercentIcon } from "@lucide/vue";
 
 defineOptions({ layout: PortalLayout });
 

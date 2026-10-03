@@ -3,7 +3,7 @@ import ProfileForm from "@/Components/profiles/ProfileForm.vue";
 import { createEmptyProfileData } from "@/Components/profiles/profileFormData";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
-import { ArrowLeftIcon, ClipboardDocumentCheckIcon } from "@heroicons/vue/24/outline";
+import { ArrowLeft as ArrowLeftIcon, ClipboardCheck as ClipboardDocumentCheckIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

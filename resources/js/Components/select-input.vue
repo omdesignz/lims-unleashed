@@ -28,11 +28,11 @@
 
       <transition
         enter-active-class="transition duration-100 ease-out"
-        enter-from-class="scale-95 opacity-0"
+        enter-from-class="scale-[0.97] opacity-0"
         enter-to-class="scale-100 opacity-100"
-        leave-active-class="transition duration-75 ease-in"
+        leave-active-class="transition duration-100 ease-out"
         leave-from-class="scale-100 opacity-100"
-        leave-to-class="scale-95 opacity-0"
+        leave-to-class="scale-[0.97] opacity-0"
       >
         <ListboxOptions class="ds-floating-panel absolute z-50 mt-2 max-h-72 w-full origin-top overflow-auto p-1.5 text-sm focus:outline-none">
           <li v-if="!options.length" class="px-3 py-3 text-sm font-semibold text-[var(--ds-text-soft)]">
@@ -57,8 +57,8 @@
 <script setup>
 import { computed, useAttrs, useId } from 'vue'
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue'
-import { ChevronUpDownIcon } from '@heroicons/vue/16/solid'
-import { CheckIcon } from '@heroicons/vue/20/solid'
+import { ChevronsUpDown as ChevronUpDownIcon } from '@lucide/vue'
+import { Check as CheckIcon } from '@lucide/vue'
 
 const emit = defineEmits(['update:modelValue'])
 const attrs = useAttrs()

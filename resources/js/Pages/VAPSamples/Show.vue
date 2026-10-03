@@ -2,7 +2,7 @@
 import { computed, watch } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
-import { ArrowLeftIcon, ArrowRightIcon, BeakerIcon, DocumentArrowDownIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeft as ArrowLeftIcon, ArrowRight as ArrowRightIcon, FlaskConical as BeakerIcon, FileDown as DocumentArrowDownIcon, ShieldCheck as ShieldCheckIcon } from '@lucide/vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { usePermission } from '@/Composables/usePermissions'
 import { approvedResultCounts, finalDecisionLabels, sampleDate, sampleStatusLabels, sampleStatusTones, sampleText, sampleTypeLabels } from '@/Utils/samplePresentation'
@@ -68,12 +68,16 @@ function submitQcDecision() {
 <template>
   <div class="workbench-page lab-sample-detail">
     <Head :title="sample.code || sample.name" />
-    <Link :href="route('vap_samples.queue')" class="lab-link lab-detail-back"><ArrowLeftIcon />Todas as amostras</Link>
-    <header class="lab-page-head lab-record-top">
-      <div class="lab-detail-title"><p class="lab-kicker">Entrada de amostra</p><h1>{{ sample.code || 'Código por atribuir' }}</h1><p>{{ sample.name }}</p></div>
-      <a :href="route('vap_samples.samples.pdf', sample.id)" class="lab-btn" target="_blank" rel="noopener"><DocumentArrowDownIcon />PDF da entrada<span class="sr-only"> (abre noutra janela)</span></a>
+    <header class="app-page-header lab-page-head lab-record-top">
+      <Link :href="route('vap_samples.queue')" class="lab-link lab-detail-back"><ArrowLeftIcon />Todas as amostras</Link>
+      <div class="app-page-header-row">
+        <div class="lab-detail-title">
+          <h1 class="app-page-title"><span class="font-mono text-[1.375rem] tracking-tight">{{ sample.code || 'Código por atribuir' }}</span><span class="lab-pill" :data-tone="sampleStatusTones[sample.status]"><span class="lab-dot"></span>{{ sampleStatusLabels[sample.status] || sample.status }}</span></h1>
+          <p class="app-page-meta lab-record-meta lab-detail-meta">{{ sample.name }} · {{ sample.lab?.name || 'Laboratório por associar' }} · Recepção · {{ sampleDate(sample.received_at) }}</p>
+        </div>
+        <div class="app-page-actions"><a :href="route('vap_samples.samples.pdf', sample.id)" class="lab-btn" target="_blank" rel="noopener"><DocumentArrowDownIcon />PDF da entrada<span class="sr-only"> (abre noutra janela)</span></a></div>
+      </div>
     </header>
-    <div class="lab-record-meta lab-detail-meta"><span class="lab-pill" :data-tone="sampleStatusTones[sample.status]"><span class="lab-dot"></span>{{ sampleStatusLabels[sample.status] || sample.status }}</span><span>{{ sample.lab?.name || 'Laboratório por associar' }}</span><span>Recepção · {{ sampleDate(sample.received_at) }}</span></div>
     <section class="lab-metrics" aria-label="Resumo da amostra">
       <div class="lab-metric"><p class="lab-metric-title"><BeakerIcon />Análises ligadas</p><strong class="lab-metric-value lab-number">{{ analyses.length }}</strong><span class="lab-metric-note">{{ linkedSampleIds.length }} amostras internas</span></div>
       <div class="lab-metric"><p class="lab-metric-title"><ShieldCheckIcon />Resultados aprovados</p><strong class="lab-metric-value lab-number">{{ resultCounts.approved }}<span class="lab-detail-total"> / {{ resultCounts.total }}</span></strong><span class="lab-metric-note">{{ resultCounts.total ? 'Aprovação técnica dos resultados' : 'Sem resultados registados' }}</span></div>
@@ -86,22 +90,22 @@ function submitQcDecision() {
           <Link v-if="workflowSummary.next_action.url" :href="workflowSummary.next_action.url" class="lab-btn lab-primary">Continuar<ArrowRightIcon /></Link>
         </section>
         <TabGroup>
-          <TabList class="lab-tabs" aria-label="Detalhes da amostra">
-            <Tab v-slot="{ selected }" as="template"><button class="lab-tab" :aria-pressed="selected">Análises<span>{{ analyses.length }}</span></button></Tab>
-            <Tab v-slot="{ selected }" as="template"><button class="lab-tab" :aria-pressed="selected">Recepção</button></Tab>
-            <Tab v-slot="{ selected }" as="template"><button class="lab-tab" :aria-pressed="selected">Rastreabilidade</button></Tab>
+          <TabList class="lab-tabs app-tabs" aria-label="Detalhes da amostra">
+            <Tab v-slot="{ selected }" as="template"><button class="lab-tab app-tab" :aria-pressed="selected">Análises<span>{{ analyses.length }}</span></button></Tab>
+            <Tab v-slot="{ selected }" as="template"><button class="lab-tab app-tab" :aria-pressed="selected">Recepção</button></Tab>
+            <Tab v-slot="{ selected }" as="template"><button class="lab-tab app-tab" :aria-pressed="selected">Rastreabilidade</button></Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
               <div v-if="analyses.length" class="lab-table-wrap" tabindex="0" aria-label="Análises da amostra">
-                <table class="lab-table"><thead><tr><th scope="col">Análise / perfil</th><th scope="col">Departamento</th><th scope="col">Resultados</th><th scope="col">Contra-análise</th></tr></thead><tbody>
+                <DataTable class="lab-table"><thead><tr><th scope="col">Análise / perfil</th><th scope="col">Departamento</th><th scope="col">Resultados</th><th scope="col">Contra-análise</th></tr></thead><tbody>
                   <tr v-for="analysis in analyses" :key="analysis.id">
                     <td><Link :href="analysis.analysis_url" class="lab-link">#{{ analysis.id }}<ArrowRightIcon /></Link><small>{{ analysis.profile || 'Perfil por associar' }}</small></td>
                     <td>{{ analysis.department || 'Não associado' }}</td>
                     <td>{{ resultStages[analysis.workflow_stage] || 'Estado por definir' }}<small v-if="analysis.results_summary?.total">{{ analysis.results_summary.approved }}/{{ analysis.results_summary.total }} aprovados · {{ analysis.results_summary.with_uncertainty }} com incerteza</small></td>
                     <td><div v-for="item in analysis.counter_analysis_items || []" :key="item.result_id" class="lab-detail-counter"><Link v-if="item.counter_analysis_url" :href="item.counter_analysis_url" class="lab-link">#{{ item.counter_analysis_id }}</Link><span v-else class="lab-pill" data-tone="review">Solicitada</span><small>{{ item.parameter || `Resultado #${item.result_id}` }}</small></div><span v-if="!analysis.counter_analysis_items?.length" class="lab-muted">Não solicitada</span></td>
                   </tr>
-                </tbody></table>
+                </tbody></DataTable>
               </div>
               <div v-else class="lab-empty"><BeakerIcon class="lab-empty-icon" /><strong>A análise começa aqui.</strong>Esta entrada ainda não tem análises ligadas. Consulte a recepção e o próximo passo.</div>
             </TabPanel>
@@ -121,7 +125,7 @@ function submitQcDecision() {
           <dl class="lab-detail-list lab-detail-fields"><div><dt>Resultados aprovados</dt><dd>{{ releaseGate.totals?.approved || 0 }} / {{ releaseGate.totals?.results || 0 }}</dd></div><div><dt>Resultados com incerteza</dt><dd>{{ releaseGate.totals?.with_uncertainty || 0 }}</dd></div><div><dt>Contra-análises solicitadas</dt><dd>{{ releaseGate.totals?.counter_analysis_requested || 0 }}</dd></div><div><dt>Lote / fornecedor</dt><dd>{{ sampleText(sample.client_submitted_info?.lot) }} · {{ sampleText(sample.client_submitted_info?.supplier_name) }}</dd></div></dl>
           <div v-if="latestDecision" class="lab-detail-notes"><h3>Última decisão · {{ finalDecisionLabels[latestDecision.decision] || latestDecision.decision }}</h3><p>{{ latestDecision.notes || 'Sem notas adicionais.' }}</p><p class="lab-muted lab-small">{{ latestDecision.decided_by_name || 'Operador' }} · {{ sampleDate(latestDecision.decided_at, true) }}</p></div>
           <form v-if="canEdit" class="lab-detail-form" :aria-busy="qcDecisionForm.processing" @submit.prevent="submitQcDecision">
-            <label for="sample-qc-decision">Decisão final<select id="sample-qc-decision" v-model="qcDecisionForm.decision" class="lab-field" required :aria-invalid="Boolean(qcDecisionForm.errors.decision)" aria-describedby="sample-qc-decision-help"><option value="" disabled>Seleccionar decisão</option><option v-for="(label, value) in finalDecisionLabels" :key="value" :value="value">{{ label }}</option></select></label>
+            <BaseSelect id="sample-qc-decision" v-model="qcDecisionForm.decision" label="Decisão final" placeholder="Seleccionar decisão" required :options="Object.entries(finalDecisionLabels).map(([value, label]) => ({ value, label }))" aria-describedby="sample-qc-decision-help" />
             <p id="sample-qc-decision-help" :class="qcDecisionForm.errors.decision || releaseDecisionBlocked ? 'lab-field-error' : 'lab-muted'" :role="qcDecisionForm.errors.decision ? 'alert' : undefined">{{ qcDecisionForm.errors.decision || (releaseDecisionBlocked ? 'A libertação exige resultados aprovados e ausência de revisão pendente.' : 'A decisão fica associada ao seu utilizador no histórico da amostra.') }}</p>
             <label for="sample-qc-notes">Notas da decisão<textarea id="sample-qc-notes" v-model="qcDecisionForm.notes" class="lab-field" rows="3" maxlength="2000" :aria-invalid="Boolean(qcDecisionForm.errors.notes)" :aria-describedby="qcDecisionForm.errors.notes ? 'sample-qc-notes-error' : undefined" placeholder="Fundamente a decisão e indique as acções necessárias."></textarea></label>
             <p v-if="qcDecisionForm.errors.notes" id="sample-qc-notes-error" class="lab-field-error" role="alert">{{ qcDecisionForm.errors.notes }}</p>

@@ -295,13 +295,13 @@ import BaseSelect from '@/Components/base/BaseSelect.vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import {
-  ArrowPathIcon,
-  FunnelIcon,
-  ListBulletIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-  ShoppingCartIcon,
-} from '@heroicons/vue/24/outline'
+  RefreshCw as ArrowPathIcon,
+  Funnel as FunnelIcon,
+  List as ListBulletIcon,
+  Search as MagnifyingGlassIcon,
+  Plus as PlusIcon,
+  ShoppingCart as ShoppingCartIcon,
+} from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 
 const props = defineProps({

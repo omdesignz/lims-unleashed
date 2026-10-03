@@ -127,13 +127,13 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import {
-  ArrowPathIcon,
-  CircleStackIcon,
-  ExclamationTriangleIcon,
-  FolderIcon,
-  ShieldCheckIcon,
-  TableCellsIcon,
-} from '@heroicons/vue/24/outline'
+  RefreshCw as ArrowPathIcon,
+  Database as CircleStackIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Folder as FolderIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Table as TableCellsIcon,
+} from '@lucide/vue'
 import BackupStatusesList from '@/Components/backup-statuses-list.vue'
 import Backups from '@/Components/backups.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'

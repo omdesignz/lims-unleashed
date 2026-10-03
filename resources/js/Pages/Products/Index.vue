@@ -3,7 +3,7 @@ import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ArrowDownTrayIcon, BeakerIcon, CubeIcon, ReceiptPercentIcon } from "@heroicons/vue/24/outline";
+import { Download as ArrowDownTrayIcon, FlaskConical as BeakerIcon, Box as CubeIcon, BadgePercent as ReceiptPercentIcon } from "@lucide/vue";
 import { Link, router } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

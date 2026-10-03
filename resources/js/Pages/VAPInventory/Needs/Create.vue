@@ -278,14 +278,14 @@ import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import {
-  ArrowLeftIcon,
-  BuildingOffice2Icon,
-  ClipboardDocumentListIcon,
-  CubeIcon,
-  PaperAirplaneIcon,
-  PlusIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  Building2 as BuildingOffice2Icon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Box as CubeIcon,
+  Send as PaperAirplaneIcon,
+  Plus as PlusIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 
 defineOptions({ layout: Layout })
 

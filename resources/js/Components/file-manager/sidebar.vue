@@ -35,6 +35,6 @@
   </template>
   
   <script setup>
-  import { FolderIcon, ShareIcon, TrashIcon } from "@heroicons/vue/24/solid";
+  import { Folder as FolderIcon, Share2 as ShareIcon, Trash2 as TrashIcon } from "@lucide/vue";
   </script>
   

@@ -426,14 +426,14 @@ import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import DatePickerEnhanced from '@/Components/date-picker-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import {
-  ArchiveBoxIcon,
-  BeakerIcon,
-  BellAlertIcon,
-  CheckBadgeIcon,
-  ExclamationTriangleIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-} from '@heroicons/vue/24/outline'
+  Archive as ArchiveBoxIcon,
+  FlaskConical as BeakerIcon,
+  BellRing as BellAlertIcon,
+  BadgeCheck as CheckBadgeIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Search as MagnifyingGlassIcon,
+  Plus as PlusIcon,
+} from '@lucide/vue'
 import { Dialog, DialogPanel, TransitionRoot } from '@headlessui/vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
@@ -549,28 +549,28 @@ const selectedFormOutcome = optionProxy('outcome', outcomeFormOptions, form)
 const editorTitle = computed(() => editingRecordId.value ? 'Editar programa' : 'Novo programa')
 
 const chartTheme = computed(() => ({
-  chart: { toolbar: { show: false }, foreColor: isDarkMode.value ? '#cbd5e1' : '#475569' },
-  grid: { borderColor: isDarkMode.value ? '#334155' : '#e2e8f0' },
-  legend: { labels: { colors: isDarkMode.value ? '#cbd5e1' : '#475569' } },
+  chart: { toolbar: { show: false }, foreColor: isDarkMode.value ? '#d7dbe0' : '#6b7482' },
+  grid: { borderColor: isDarkMode.value ? '#334155' : '#eef0f3' },
+  legend: { labels: { colors: isDarkMode.value ? '#d7dbe0' : '#6b7482' } },
 }))
 
 const statusChartSeries = computed(() => [{ name: 'Programas', data: props.charts?.status?.series ?? [] }])
 const statusChartOptions = computed(() => ({
   ...chartTheme.value,
   xaxis: { categories: props.charts?.status?.labels ?? [] },
-  colors: ['#0ea5e9'],
+  colors: ['#087cf0'],
 }))
 const outcomeChartSeries = computed(() => props.charts?.outcome?.series ?? [])
 const outcomeChartOptions = computed(() => ({
   ...chartTheme.value,
   labels: props.charts?.outcome?.labels ?? [],
-  colors: ['#94a3b8', '#10b981', '#f59e0b', '#ef4444'],
+  colors: ['#98a1ae', '#22a45d', '#e0902b', '#e5484d'],
 }))
 const roleChartSeries = computed(() => props.charts?.role?.series ?? [])
 const roleChartOptions = computed(() => ({
   ...chartTheme.value,
   labels: props.charts?.role?.labels ?? [],
-  colors: ['#6366f1', '#14b8a6'],
+  colors: ['#7c5ce0', '#14a3a8'],
 }))
 
 function schemeLabel(value) {

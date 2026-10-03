@@ -4,14 +4,14 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import WarehouseComponent from "@/Pages/Warehouses/warehouse-component.vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  BuildingOffice2Icon,
-  CheckBadgeIcon,
-  EyeIcon,
-  MapPinIcon,
-  PlusIcon,
-  UserCircleIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  Building2 as BuildingOffice2Icon,
+  BadgeCheck as CheckBadgeIcon,
+  Eye as EyeIcon,
+  MapPin as MapPinIcon,
+  Plus as PlusIcon,
+  CircleUser as UserCircleIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 
 defineOptions({ layout: Layout });

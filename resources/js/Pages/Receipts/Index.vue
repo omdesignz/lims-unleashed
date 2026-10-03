@@ -11,7 +11,7 @@ import { trans } from 'laravel-vue-i18n';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import ModuleHero from '@/Components/base/ModuleHero.vue'
 import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue'
-import { DocumentArrowDownIcon, EnvelopeIcon } from '@heroicons/vue/24/outline'
+import { FileDown as DocumentArrowDownIcon, Mail as EnvelopeIcon } from '@lucide/vue'
 
 
 const { hasPermission } = usePermission();

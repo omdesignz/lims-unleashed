@@ -243,23 +243,23 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import {
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
-  BanknotesIcon,
-  ChartBarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  DocumentDuplicateIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  ListBulletIcon,
-  MagnifyingGlassIcon,
-  PencilSquareIcon,
-  PlusCircleIcon,
-  TrashIcon,
-  XCircleIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  RefreshCw as ArrowPathIcon,
+  Banknote as BanknotesIcon,
+  ChartColumn as ChartBarIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  Copy as DocumentDuplicateIcon,
+  FileText as DocumentTextIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Eye as EyeIcon,
+  List as ListBulletIcon,
+  Search as MagnifyingGlassIcon,
+  SquarePen as PencilSquareIcon,
+  CirclePlus as PlusCircleIcon,
+  Trash2 as TrashIcon,
+  CircleX as XCircleIcon,
+} from '@lucide/vue'
 import debounce from 'lodash/debounce'
 import { trans } from 'laravel-vue-i18n'
 import Pagination from '@/Components/Pagination.vue'
@@ -323,7 +323,7 @@ const chartOptions = computed(() => ({
     height: 350,
     toolbar: { show: false },
     zoom: { enabled: false },
-    foreColor: isDark.value ? '#cbd5e1' : '#64748b',
+    foreColor: isDark.value ? '#d7dbe0' : '#6b7482',
   },
   colors: ['#0f766e', '#4f46e5'],
   dataLabels: { enabled: false },
@@ -337,13 +337,13 @@ const chartOptions = computed(() => ({
     },
   },
   grid: {
-    borderColor: isDark.value ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
+    borderColor: isDark.value ? 'rgba(255,255,255,0.1)' : '#eef0f3',
     strokeDashArray: 5,
   },
   markers: {
     size: 4,
     strokeWidth: 2,
-    strokeColors: isDark.value ? '#0f172a' : '#ffffff',
+    strokeColors: isDark.value ? '#061f46' : '#ffffff',
   },
   stroke: {
     curve: 'smooth',
@@ -357,7 +357,7 @@ const chartOptions = computed(() => ({
     type: 'datetime',
     labels: {
       style: {
-        colors: isDark.value ? '#94a3b8' : '#64748b',
+        colors: isDark.value ? '#98a1ae' : '#6b7482',
         fontWeight: 700,
       },
     },
@@ -366,7 +366,7 @@ const chartOptions = computed(() => ({
     labels: {
       formatter: (value) => Number(value || 0).toFixed(0),
       style: {
-        colors: isDark.value ? '#94a3b8' : '#64748b',
+        colors: isDark.value ? '#98a1ae' : '#6b7482',
         fontWeight: 700,
       },
     },

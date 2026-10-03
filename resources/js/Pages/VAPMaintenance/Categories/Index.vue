@@ -255,16 +255,16 @@
 import { computed, ref, watch } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import {
-  CheckIcon,
-  HashtagIcon,
-  MagnifyingGlassIcon,
-  PencilIcon,
-  PlusIcon,
-  TagIcon,
-  TrashIcon,
-  WrenchScrewdriverIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Check as CheckIcon,
+  Hash as HashtagIcon,
+  Search as MagnifyingGlassIcon,
+  Pencil as PencilIcon,
+  Plus as PlusIcon,
+  Tag as TagIcon,
+  Trash2 as TrashIcon,
+  Wrench as WrenchScrewdriverIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import { debounce } from 'lodash'
 import Modal from '@/Components/Modal.vue'
 import Pagination from '@/Components/Pagination.vue'

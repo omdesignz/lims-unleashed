@@ -1,7 +1,7 @@
 <script setup>
 import ContractGuideForm from "@/Pages/ContractGuides/ContractGuideForm.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ArrowLeftIcon, ClipboardDocumentCheckIcon } from "@heroicons/vue/24/outline";
+import { ArrowLeft as ArrowLeftIcon, ClipboardCheck as ClipboardDocumentCheckIcon } from "@lucide/vue";
 import { Link, useForm } from "@inertiajs/vue3";
 
 defineOptions({ layout: Layout });

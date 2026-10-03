@@ -4,15 +4,15 @@ import Combobox from "@/Components/combobox.vue";
 import { createEmptyMatrixProfile } from "@/Components/matrixes/matrixFormData";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 import {
-  BanknotesIcon,
-  BuildingOffice2Icon,
-  CheckBadgeIcon,
-  ClipboardDocumentListIcon,
-  ExclamationTriangleIcon,
-  IdentificationIcon,
-  PlusIcon,
-  TrashIcon,
-} from "@heroicons/vue/24/outline";
+  Banknote as BanknotesIcon,
+  Building2 as BuildingOffice2Icon,
+  BadgeCheck as CheckBadgeIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  IdCard as IdentificationIcon,
+  Plus as PlusIcon,
+  Trash2 as TrashIcon,
+} from "@lucide/vue";
 import { computed, watch } from "vue";
 
 const props = defineProps({

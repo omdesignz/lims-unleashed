@@ -354,20 +354,20 @@ import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocum
 import { ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import {
-  WrenchScrewdriverIcon,
-  ArrowLeftIcon,
-  PencilIcon,
-  InformationCircleIcon,
-  FolderIcon,
-  HashtagIcon,
-  CheckCircleIcon,
-  CalendarIcon,
-  BeakerIcon,
-  TruckIcon,
-  ClockIcon,
-  ChatBubbleLeftRightIcon,
-  TrashIcon
-} from '@heroicons/vue/24/outline'
+  Wrench as WrenchScrewdriverIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Pencil as PencilIcon,
+  Info as InformationCircleIcon,
+  Folder as FolderIcon,
+  Hash as HashtagIcon,
+  CircleCheck as CheckCircleIcon,
+  Calendar as CalendarIcon,
+  FlaskConical as BeakerIcon,
+  Truck as TruckIcon,
+  Clock as ClockIcon,
+  MessagesSquare as ChatBubbleLeftRightIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 
 defineOptions({
   layout: Layout

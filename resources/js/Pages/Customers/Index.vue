@@ -5,15 +5,15 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArchiveBoxIcon,
-  ArrowDownTrayIcon,
-  BuildingOffice2Icon,
-  CheckBadgeIcon,
-  EyeIcon,
-  MapPinIcon,
-  PlusIcon,
-  UserCircleIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  Download as ArrowDownTrayIcon,
+  Building2 as BuildingOffice2Icon,
+  BadgeCheck as CheckBadgeIcon,
+  Eye as EyeIcon,
+  MapPin as MapPinIcon,
+  Plus as PlusIcon,
+  CircleUser as UserCircleIcon,
+} from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
 

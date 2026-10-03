@@ -11,16 +11,16 @@ import {
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, router } from '@inertiajs/vue3'
 import {
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  CheckIcon,
-  CodeBracketIcon,
-  EnvelopeIcon,
-  InformationCircleIcon,
-  PaperAirplaneIcon,
-  TrashIcon,
-  UserIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  Check as CheckIcon,
+  Code as CodeBracketIcon,
+  Mail as EnvelopeIcon,
+  Info as InformationCircleIcon,
+  Send as PaperAirplaneIcon,
+  Trash2 as TrashIcon,
+  User as UserIcon,
+} from '@lucide/vue'
 import { ref } from 'vue'
 
 defineOptions({ layout: Layout })

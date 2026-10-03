@@ -274,17 +274,17 @@
 import { computed, ref, watch } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import {
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  ArrowsRightLeftIcon,
-  BeakerIcon,
-  CalculatorIcon,
-  CheckIcon,
-  PlayIcon,
-  PlusIcon,
-  TrashIcon,
-  VariableIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  FlaskConical as BeakerIcon,
+  Calculator as CalculatorIcon,
+  Check as CheckIcon,
+  Play as PlayIcon,
+  Plus as PlusIcon,
+  Trash2 as TrashIcon,
+  Variable as VariableIcon,
+} from '@lucide/vue'
 import ToggleField from '@/Components/base/ToggleField.vue'
 import FormulaDisplay from '@/Components/formula-display.vue'
 

@@ -104,7 +104,7 @@ async function renderEditor({ editable = false, processing = false, errors = {},
   const code = compileScript(descriptor, { id: 'worksheet-editor', inlineTemplate: true }).content
     .replace(/import Layout[^\n]+\n/, '')
     .replace(/import \{ Link, useForm \} from [^;]+;/, '')
-    .replace(/import \{([^}]+)\} from "@heroicons\/vue\/24\/outline";/, (_, icons) => `const {${icons}} = iconStubs;`)
+    .replace(/import \{([^}]+)\} from "@lucide\/vue";/, (_, icons) => `const {${icons.replace(/ as /g, ': ')}} = iconStubs;`)
     .replace(/import \{([^}]+)\} from ['"]vue['"];?/g, (_, imports) => `const {${imports.replace(/\bas\b/g, ':')}} = Vue;`)
     .replace('export default', 'return');
   const iconStubs = new Proxy({}, { get: () => ({ render: () => null }) });
@@ -173,7 +173,7 @@ async function renderIndex({ canRestore = true, processing = false, errors = {},
   const code = compileScript(descriptor, { id: 'worksheet-index', inlineTemplate: true }).content
     .replace(/import Layout[^\n]+\n/, '')
     .replace(/import \{ Link, useForm \} from [^;]+;/, '')
-    .replace(/import \{([^}]+)\} from "@heroicons\/vue\/24\/outline";/, (_, icons) => `const {${icons}} = iconStubs;`)
+    .replace(/import \{([^}]+)\} from "@lucide\/vue";/, (_, icons) => `const {${icons.replace(/ as /g, ': ')}} = iconStubs;`)
     .replace(/import \{([^}]+)\} from ['"]vue['"];?/g, (_, imports) => `const {${imports.replace(/\bas\b/g, ':')}} = Vue;`)
     .replace('export default', 'return');
   const iconStubs = new Proxy({}, { get: () => ({ render: () => null }) });

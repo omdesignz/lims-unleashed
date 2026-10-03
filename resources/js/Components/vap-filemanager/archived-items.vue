@@ -141,7 +141,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue'
-import { XMarkIcon, FolderIcon, DocumentIcon } from '@heroicons/vue/24/outline'
+import { X as XMarkIcon, Folder as FolderIcon, File as DocumentIcon } from '@lucide/vue'
 import { useFileStore }  from "../../Stores/fileStore"
 
 defineProps<{

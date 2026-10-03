@@ -2,12 +2,12 @@
 import { nextTick, ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import {
-  ArrowPathIcon,
-  CheckCircleIcon,
-  ComputerDesktopIcon,
-  DevicePhoneMobileIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  RefreshCw as ArrowPathIcon,
+  CircleCheck as CheckCircleIcon,
+  Monitor as ComputerDesktopIcon,
+  Smartphone as DevicePhoneMobileIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import DialogModal from '@/Components/dialog-modal.vue'
 
 defineProps({

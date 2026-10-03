@@ -4,7 +4,7 @@
       <!-- Backdrop -->
       <TransitionChild
         as="template"
-        enter="ease-out duration-300"
+        enter="ease-out duration-200"
         enter-from="opacity-0"
         enter-to="opacity-100"
         leave="ease-out duration-200"
@@ -18,12 +18,12 @@
         <div class="flex min-h-full items-end justify-center p-4 text-center sm:p-0" :class="alignment">
           <TransitionChild
             as="template"
-            enter="ease-out duration-300"
-            enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            enter="ease-out duration-200"
+            enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]"
             enter-to="opacity-100 translate-y-0 sm:scale-100"
             leave="ease-out duration-200"
             leave-from="opacity-100 translate-y-0 sm:scale-100"
-            leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]"
           >
             <DialogPanel
               class="ds-modal-panel relative w-full transform overflow-hidden transition-[opacity,transform] sm:my-8"
@@ -34,19 +34,16 @@
                 <div class="sm:flex sm:items-start gap-4">
                   <!-- Icon -->
                   <div
-                    class="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--ds-border)] shadow-sm sm:mx-0 sm:h-11 sm:w-11"
+                    class="mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:mx-0"
                     :class="iconContainerClass"
                   >
-                    <component :is="iconComponent" class="h-6 w-6" :class="iconColorClass" />
+                    <component :is="iconComponent" class="h-5 w-5" :class="iconColorClass" />
                   </div>
 
                   <div class="mt-3 text-center sm:mt-0 sm:text-left flex-1">
-                    <p class="ds-kicker">
-                      Confirmação
-                    </p>
                     <DialogTitle
                       as="h3"
-                      class="ds-heading mt-1 text-lg leading-6"
+                      class="ds-heading text-base leading-6"
                     >
                       {{ props.title }}
                     </DialogTitle>
@@ -63,7 +60,7 @@
               <!-- Footer -->
               <div
                 v-if="!hideButtons"
-                class="flex flex-col-reverse gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-6 py-4 sm:flex-row sm:justify-end"
+                class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-6 py-3 sm:flex-row sm:justify-end"
               >
                 <button
                   type="button"
@@ -95,13 +92,13 @@
 import { computed, ref } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
-  ExclamationTriangleIcon,
-  ExclamationCircleIcon,
-  QuestionMarkCircleIcon,
-  ShieldExclamationIcon,
-  ArrowPathIcon,
-  CheckCircleIcon,
-} from '@heroicons/vue/24/outline'
+  TriangleAlert as ExclamationTriangleIcon,
+  CircleAlert as ExclamationCircleIcon,
+  CircleHelp as QuestionMarkCircleIcon,
+  ShieldAlert as ShieldExclamationIcon,
+  RefreshCw as ArrowPathIcon,
+  CircleCheck as CheckCircleIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   disabled: Boolean,

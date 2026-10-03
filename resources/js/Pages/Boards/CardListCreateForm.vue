@@ -1,5 +1,5 @@
 <script setup>
-import { CheckIcon, PlusIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { Check as CheckIcon, Plus as PlusIcon, X as XMarkIcon } from '@lucide/vue'
 import { useForm } from '@inertiajs/vue3'
 import { nextTick, ref } from 'vue'
 

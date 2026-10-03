@@ -411,19 +411,19 @@ import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Pagination from '@/Components/Pagination.vue'
 import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import {
-  ArrowDownCircleIcon,
-  ArrowLeftIcon,
-  ArrowUpCircleIcon,
-  ArrowsUpDownIcon,
-  ChartBarSquareIcon,
-  ClipboardDocumentListIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  MapPinIcon,
-  ShieldCheckIcon,
-  TrophyIcon,
-  UserIcon,
-} from '@heroicons/vue/24/outline'
+  CircleArrowDown as ArrowDownCircleIcon,
+  ArrowLeft as ArrowLeftIcon,
+  CircleArrowUp as ArrowUpCircleIcon,
+  ArrowUpDown as ArrowsUpDownIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  MapPin as MapPinIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Trophy as TrophyIcon,
+  User as UserIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   transactions: { type: Object, default: () => ({ data: [] }) },
@@ -459,8 +459,8 @@ const itemOptions = computed(() => props.items.map((item) => ({
 const selectedItem = ref(itemOptions.value.find((option) => String(option.value) === String(filters.item_id)) || null)
 const transactionRows = computed(() => props.transactions?.data || [])
 const summaryRows = computed(() => props.summary || [])
-const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
+const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
+const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
 const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
 const summaryCards = computed(() => [
@@ -529,7 +529,7 @@ const directionBreakdownChartOptions = computed(() => ({
   chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#0e7490'],
+  colors: ['#14a3a8'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
   plotOptions: { bar: { borderRadius: 4, columnWidth: '52%' } },
@@ -549,7 +549,7 @@ const typeMixChartOptions = computed(() => ({
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.type_mix?.labels || [],
-  colors: ['#059669', '#e11d48', '#d97706', '#0891b2'],
+  colors: ['#22a45d', '#e5484d', '#e0902b', '#14a3a8'],
   legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
   dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
   stroke: { width: 0 },
@@ -560,7 +560,7 @@ const dailyActivityChartOptions = computed(() => ({
   chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#059669', '#e11d48', '#0e7490'],
+  colors: ['#22a45d', '#e5484d', '#14a3a8'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
   stroke: { curve: 'straight', width: [3, 3, 2] },

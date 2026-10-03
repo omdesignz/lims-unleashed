@@ -10,17 +10,17 @@ import {
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, useForm, usePage } from '@inertiajs/vue3'
 import {
-  ArrowLeftIcon,
-  CheckIcon,
-  ClockIcon,
-  DocumentDuplicateIcon,
-  EnvelopeIcon,
-  MagnifyingGlassIcon,
-  PaperAirplaneIcon,
-  UserGroupIcon,
-  UserIcon,
-  UsersIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  Check as CheckIcon,
+  Clock as ClockIcon,
+  Copy as DocumentDuplicateIcon,
+  Mail as EnvelopeIcon,
+  Search as MagnifyingGlassIcon,
+  Send as PaperAirplaneIcon,
+  Users as UserGroupIcon,
+  User as UserIcon,
+  Users as UsersIcon,
+} from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 defineOptions({ layout: Layout })

@@ -3,20 +3,20 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  BeakerIcon,
-  BuildingOffice2Icon,
-  CalculatorIcon,
-  CheckBadgeIcon,
-  ClipboardDocumentCheckIcon,
-  ClockIcon,
-  CurrencyDollarIcon,
-  DocumentDuplicateIcon,
-  ExclamationTriangleIcon,
-  PencilSquareIcon,
-  PlusIcon,
-  ScaleIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  FlaskConical as BeakerIcon,
+  Building2 as BuildingOffice2Icon,
+  Calculator as CalculatorIcon,
+  BadgeCheck as CheckBadgeIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Clock as ClockIcon,
+  CircleDollarSign as CurrencyDollarIcon,
+  Copy as DocumentDuplicateIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  SquarePen as PencilSquareIcon,
+  Plus as PlusIcon,
+  Scale as ScaleIcon,
+} from "@lucide/vue";
 import { computed } from "vue";
 
 defineOptions({ layout: Layout });

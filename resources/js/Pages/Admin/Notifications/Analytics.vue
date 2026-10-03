@@ -8,13 +8,13 @@ import {
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, router } from '@inertiajs/vue3'
 import {
-  ArrowDownTrayIcon,
-  ChartBarSquareIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  PaperAirplaneIcon,
-  UserGroupIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  Send as PaperAirplaneIcon,
+  Users as UserGroupIcon,
+} from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 defineOptions({ layout: Layout })

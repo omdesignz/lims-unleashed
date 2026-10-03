@@ -1,7 +1,7 @@
 <script setup>
 import ContractGuideForm from "@/Pages/ContractGuides/ContractGuideForm.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ArchiveBoxArrowDownIcon, ArrowLeftIcon } from "@heroicons/vue/24/outline";
+import { ArchiveRestore as ArchiveBoxArrowDownIcon, ArrowLeft as ArrowLeftIcon } from "@lucide/vue";
 import { Link, useForm } from "@inertiajs/vue3";
 
 defineOptions({ layout: Layout });

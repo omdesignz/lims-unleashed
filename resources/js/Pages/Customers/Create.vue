@@ -2,7 +2,7 @@
 import CustomerForm from "@/Components/customers/CustomerForm.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, useForm } from "@inertiajs/vue3";
-import { ArrowLeftIcon, BuildingOffice2Icon } from "@heroicons/vue/24/outline";
+import { ArrowLeft as ArrowLeftIcon, Building2 as BuildingOffice2Icon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

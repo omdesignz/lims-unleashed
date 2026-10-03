@@ -3,13 +3,13 @@ import Combobox from "@/Components/combobox.vue";
 import ToggleField from "@/Components/base/ToggleField.vue";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 import {
-  BanknotesIcon,
-  BeakerIcon,
-  CalculatorIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  IdentificationIcon,
-} from "@heroicons/vue/24/outline";
+  Banknote as BanknotesIcon,
+  FlaskConical as BeakerIcon,
+  Calculator as CalculatorIcon,
+  CircleCheck as CheckCircleIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  IdCard as IdentificationIcon,
+} from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 const props = defineProps({

@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ChevronRightIcon, HomeIcon } from '@heroicons/vue/24/outline'
+import { ChevronRight as ChevronRightIcon, House as HomeIcon } from '@lucide/vue'
 import { Link } from '@inertiajs/vue3'
 
 defineProps({

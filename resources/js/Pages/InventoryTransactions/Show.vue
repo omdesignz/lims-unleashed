@@ -1,13 +1,13 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  ArrowLeftIcon,
-  ArrowsRightLeftIcon,
-  CalendarDaysIcon,
-  CubeIcon,
-  MapPinIcon,
-  UserCircleIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  CalendarDays as CalendarDaysIcon,
+  Box as CubeIcon,
+  MapPin as MapPinIcon,
+  CircleUser as UserCircleIcon,
+} from "@lucide/vue";
 import { Link } from "@inertiajs/vue3";
 import { computed } from "vue";
 

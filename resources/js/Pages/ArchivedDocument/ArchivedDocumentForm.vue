@@ -1,5 +1,5 @@
 <script setup>
-import { ArchiveBoxIcon, DocumentArrowUpIcon, InformationCircleIcon } from "@heroicons/vue/24/outline";
+import { Archive as ArchiveBoxIcon, FileUp as DocumentArrowUpIcon, Info as InformationCircleIcon } from "@lucide/vue";
 
 defineProps({
   form: { type: Object, required: true },

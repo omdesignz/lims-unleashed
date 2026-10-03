@@ -1,0 +1,22 @@
+/* Layout for the proposal sheets only (not part of the product system). */
+.sheet-band { background: var(--band); color: var(--band-ink); padding: 26px 56px 0; height: 190px; display: flex; justify-content: space-between; align-items: flex-start; }
+.sheet-band img { height: 24px; }
+.sheet-hero { margin: -96px 56px 0; width: 860px; background: var(--bg); padding: 30px 36px 34px; display: grid; gap: 22px; }
+.sheet-hero .row { display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: end; }
+.sheet { padding: 20px 56px 80px; }
+.sec { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 32px; padding: 44px 0; border-bottom: 1px solid var(--line); }
+.sec:last-child { border-bottom: 0; }
+.sec > header { display: grid; gap: 12px; align-content: start; position: sticky; top: 24px; }
+.sec > header p { font-size: 13px; color: var(--muted); line-height: 1.55; }
+.stack { display: grid; gap: 28px; }
+.specs { display: grid; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); border: 1px solid var(--line); }
+.spec { padding: 18px 16px 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; display: grid; gap: 14px; align-content: space-between; justify-items: start; min-height: 96px; }
+.spec > .cap { font: 500 10px/1.2 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
+.spec.wide { grid-column: span 2; }
+.spec.full { grid-column: 1 / -1; }
+.spec .field, .spec .input, .spec .select { width: 100%; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.sub-k { font: 500 11px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.sw { height: 56px; display: flex; align-items: flex-end; padding: 8px; font: 500 10px/1.2 var(--mono); letter-spacing: 0.06em; border: 1px solid var(--line); }
+.note { font-size: 13px; color: var(--muted); line-height: 1.55; max-width: 62ch; }
+.scrimbox { position: relative; background: var(--scrim); padding: 36px; display: grid; place-items: center; width: 100%; }

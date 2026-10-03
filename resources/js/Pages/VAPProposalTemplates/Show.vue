@@ -511,14 +511,28 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { Link, router, useHttp } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
-  ArrowLeftIcon, DocumentTextIcon, DocumentPlusIcon,
-  CodeBracketIcon, DocumentDuplicateIcon, ChartBarIcon,
-  ArrowRightIcon, UserIcon, PencilSquareIcon,
-  ArrowPathIcon, ArrowDownTrayIcon, DocumentArrowDownIcon,
-  VariableIcon, TrashIcon, ExclamationTriangleIcon,
-  BeakerIcon, BugAntIcon, CpuChipIcon,
-  GlobeAltIcon, CakeIcon, DocumentChartBarIcon
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  FileText as DocumentTextIcon,
+  FilePlus as DocumentPlusIcon,
+  Code as CodeBracketIcon,
+  Copy as DocumentDuplicateIcon,
+  ChartColumn as ChartBarIcon,
+  ArrowRight as ArrowRightIcon,
+  User as UserIcon,
+  SquarePen as PencilSquareIcon,
+  RefreshCw as ArrowPathIcon,
+  Download as ArrowDownTrayIcon,
+  FileDown as DocumentArrowDownIcon,
+  Variable as VariableIcon,
+  Trash2 as TrashIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  FlaskConical as BeakerIcon,
+  Bug as BugAntIcon,
+  Cpu as CpuChipIcon,
+  Globe as GlobeAltIcon,
+  Cake as CakeIcon,
+  FileChartColumn as DocumentChartBarIcon,
+} from '@lucide/vue'
 import ConfirmationModal from '@/Components/confirm-dialog.vue'
 import { useToast } from 'vue-toastification'
 import { useRecordArchive } from '@/Composables/useRecordArchive'

@@ -517,21 +517,21 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 import {
-  ArrowsRightLeftIcon,
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
-  ArrowTopRightOnSquareIcon,
-  ChartBarIcon,
-  CubeIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  PencilSquareIcon,
-  PlusCircleIcon,
-  ShoppingCartIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  Download as ArrowDownTrayIcon,
+  RefreshCw as ArrowPathIcon,
+  ExternalLink as ArrowTopRightOnSquareIcon,
+  ChartColumn as ChartBarIcon,
+  Box as CubeIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Eye as EyeIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  SquarePen as PencilSquareIcon,
+  CirclePlus as PlusCircleIcon,
+  ShoppingCart as ShoppingCartIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 import Pagination from '@/Components/Pagination.vue'
 import ConfirmationModal from '@/Components/confirm-dialog.vue'
 import ArchiveMutationFeedback from '@/Components/archive-mutation-feedback.vue'

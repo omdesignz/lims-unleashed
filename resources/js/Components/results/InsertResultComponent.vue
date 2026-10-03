@@ -5,19 +5,19 @@ import ResultItem from "@/Components/results/ResultItem.vue";
 import { ResultsDataService } from "@/Services/ResultsDataService.js";
 import { computed, ref } from "vue";
 import {
-  BeakerIcon,
-  CalculatorIcon,
-  CheckCircleIcon,
-  CheckIcon,
-  ClockIcon,
-  DocumentIcon,
-  DocumentPlusIcon,
-  DocumentTextIcon,
-  InformationCircleIcon,
-  PencilIcon,
-  PlusCircleIcon,
-  VariableIcon,
-} from "@heroicons/vue/24/outline";
+  FlaskConical as BeakerIcon,
+  Calculator as CalculatorIcon,
+  CircleCheck as CheckCircleIcon,
+  Check as CheckIcon,
+  Clock as ClockIcon,
+  File as DocumentIcon,
+  FilePlus as DocumentPlusIcon,
+  FileText as DocumentTextIcon,
+  Info as InformationCircleIcon,
+  Pencil as PencilIcon,
+  CirclePlus as PlusCircleIcon,
+  Variable as VariableIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   form: {

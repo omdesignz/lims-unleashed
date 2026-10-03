@@ -31,13 +31,13 @@
 
 <script setup>
 import {
-    AcademicCapIcon,
-    BanknotesIcon,
-    CheckBadgeIcon,
-    ClockIcon,
-    ReceiptRefundIcon,
-    UsersIcon
-} from "@heroicons/vue/24/outline";
+  GraduationCap as AcademicCapIcon,
+  Banknote as BanknotesIcon,
+  BadgeCheck as CheckBadgeIcon,
+  Clock as ClockIcon,
+  Receipt as ReceiptRefundIcon,
+  Users as UsersIcon,
+} from "@lucide/vue";
 
 const actions = [
     {

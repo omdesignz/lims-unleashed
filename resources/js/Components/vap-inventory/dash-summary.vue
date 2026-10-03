@@ -27,7 +27,7 @@
 
 <script setup>
 import { router } from '@inertiajs/vue3'
-import { ExclamationTriangleIcon, ShoppingCartIcon, TruckIcon } from '@heroicons/vue/24/outline'
+import { TriangleAlert as ExclamationTriangleIcon, ShoppingCart as ShoppingCartIcon, Truck as TruckIcon } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 
 const props = defineProps({

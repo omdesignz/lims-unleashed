@@ -3,22 +3,22 @@ import { usePermission } from "@/Composables/usePermissions";
 import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue';
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  BanknotesIcon,
-  BuildingOfficeIcon,
-  CheckBadgeIcon,
-  CubeIcon,
-  DocumentCheckIcon,
-  EnvelopeIcon,
-  GlobeAltIcon,
-  MapPinIcon,
-  PaperClipIcon,
-  PencilSquareIcon,
-  ShieldCheckIcon,
-  TruckIcon,
-  UserCircleIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Banknote as BanknotesIcon,
+  Building as BuildingOfficeIcon,
+  BadgeCheck as CheckBadgeIcon,
+  Box as CubeIcon,
+  FileCheck as DocumentCheckIcon,
+  Mail as EnvelopeIcon,
+  Globe as GlobeAltIcon,
+  MapPin as MapPinIcon,
+  Paperclip as PaperClipIcon,
+  SquarePen as PencilSquareIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Truck as TruckIcon,
+  CircleUser as UserCircleIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 
 const props = defineProps({

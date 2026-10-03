@@ -1,13 +1,13 @@
 <script setup>
 import {
-  ArrowDownTrayIcon,
-  BeakerIcon,
-  DocumentTextIcon,
-  MapPinIcon,
-  PlusIcon,
-  TrashIcon,
-  UserCircleIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  FlaskConical as BeakerIcon,
+  FileText as DocumentTextIcon,
+  MapPin as MapPinIcon,
+  Plus as PlusIcon,
+  Trash2 as TrashIcon,
+  CircleUser as UserCircleIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   form: { type: Object, required: true },

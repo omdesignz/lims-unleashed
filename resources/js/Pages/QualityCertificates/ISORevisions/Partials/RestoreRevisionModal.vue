@@ -3,11 +3,11 @@ import Modal from "@/Components/Modal.vue";
 import { computed, watch } from "vue";
 import { useForm } from "@inertiajs/vue3";
 import {
-  ArrowPathIcon,
-  CheckIcon,
-  ExclamationTriangleIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  RefreshCw as ArrowPathIcon,
+  Check as CheckIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   show: Boolean,

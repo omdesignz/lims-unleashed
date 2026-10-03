@@ -500,23 +500,23 @@ import { useRecordArchive } from '@/composables/useRecordArchive'
 import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import {
-  CubeIcon,
-  PencilSquareIcon,
-  ArrowLeftIcon,
-  InformationCircleIcon,
-  BuildingLibraryIcon,
-  ClockIcon,
-  ChartBarIcon,
-  ArrowsUpDownIcon,
-  ArrowsRightLeftIcon,
-  BeakerIcon,
-  WrenchScrewdriverIcon,
-  ShoppingCartIcon,
-  DocumentTextIcon,
-  ArchiveBoxIcon,
-  ArrowUturnLeftIcon,
-  CloudArrowDownIcon,
-} from '@heroicons/vue/24/outline'
+  Box as CubeIcon,
+  SquarePen as PencilSquareIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Info as InformationCircleIcon,
+  Landmark as BuildingLibraryIcon,
+  Clock as ClockIcon,
+  ChartColumn as ChartBarIcon,
+  ArrowUpDown as ArrowsUpDownIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  FlaskConical as BeakerIcon,
+  Wrench as WrenchScrewdriverIcon,
+  ShoppingCart as ShoppingCartIcon,
+  FileText as DocumentTextIcon,
+  Archive as ArchiveBoxIcon,
+  Undo2 as ArrowUturnLeftIcon,
+  CloudDownload as CloudArrowDownIcon,
+} from '@lucide/vue'
 import AdjustStockModal from '@/Components/vap-inventory/AdjustStockModal.vue'
 import TransferStockModal from '@/Components/vap-inventory/TransferStockModal.vue'
 import ConsumeReagentModal from '@/Components/vap-inventory/ConsumeReagentModal.vue'
@@ -561,8 +561,8 @@ const recordCalibrationModal = ref(false)
 const isDarkMode = ref(false)
 let themeObserver
 
-const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
+const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
+const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
 const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
 const syncDarkMode = () => {
@@ -660,7 +660,7 @@ const stockDistributionChartOptions = computed(() => ({
       columnWidth: '48%'
     }
   },
-  colors: ['#0f172a', '#2563eb', '#0f766e', '#f59e0b', '#7c3aed'],
+  colors: ['#061f46', '#087cf0', '#0f766e', '#e0902b', '#7c5ce0'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.stock_distribution?.labels || [],
@@ -693,7 +693,7 @@ const activityMixChartOptions = computed(() => ({
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.activity_mix?.labels || [],
-  colors: ['#2563eb', '#f59e0b', '#14b8a6', '#dc2626'],
+  colors: ['#087cf0', '#e0902b', '#14a3a8', '#e5484d'],
   dataLabels: {
     enabled: true,
     formatter: (value) => `${Math.round(value)}%`
@@ -727,7 +727,7 @@ const compliancePulseChartOptions = computed(() => ({
       columnWidth: '52%'
     }
   },
-  colors: ['#0f766e', '#dc2626', '#f59e0b', '#2563eb'],
+  colors: ['#0f766e', '#e5484d', '#e0902b', '#087cf0'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.compliance_pulse?.labels || [],

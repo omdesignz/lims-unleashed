@@ -3,12 +3,12 @@ import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  ArrowTopRightOnSquareIcon,
-  BeakerIcon,
-  ClipboardDocumentCheckIcon,
-  ExclamationTriangleIcon,
-  LinkIcon,
-} from "@heroicons/vue/24/outline";
+  ExternalLink as ArrowTopRightOnSquareIcon,
+  FlaskConical as BeakerIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Link as LinkIcon,
+} from "@lucide/vue";
 import { Link, router } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

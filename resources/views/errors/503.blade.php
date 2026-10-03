@@ -1,5 +1,6 @@
 @extends('errors::minimal')
 
-@section('title', __('Service Unavailable'))
+@section('title', 'Serviço indisponível')
 @section('code', '503')
-@section('message', __('Service Unavailable'))
+@section('message', 'O serviço está temporariamente indisponível.')
+@section('description', 'Está em curso uma manutenção. Volte a tentar dentro de alguns minutos.')

@@ -3,19 +3,19 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  BanknotesIcon,
-  BeakerIcon,
-  BuildingOffice2Icon,
-  CheckBadgeIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentDuplicateIcon,
-  ExclamationTriangleIcon,
-  PencilSquareIcon,
-  PlusIcon,
-  ReceiptPercentIcon,
-  RectangleGroupIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  Banknote as BanknotesIcon,
+  FlaskConical as BeakerIcon,
+  Building2 as BuildingOffice2Icon,
+  BadgeCheck as CheckBadgeIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Copy as DocumentDuplicateIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  SquarePen as PencilSquareIcon,
+  Plus as PlusIcon,
+  BadgePercent as ReceiptPercentIcon,
+  LayoutDashboard as RectangleGroupIcon,
+} from "@lucide/vue";
 import { computed } from "vue";
 
 defineOptions({ layout: Layout });

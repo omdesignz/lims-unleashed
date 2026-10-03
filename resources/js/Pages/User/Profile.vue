@@ -229,10 +229,10 @@
 <script setup>
 import { computed, ref } from 'vue'
 import {
-  CheckCircleIcon,
-  BuildingOfficeIcon,
-  PlusIcon
-} from '@heroicons/vue/24/outline'
+  CircleCheck as CheckCircleIcon,
+  Building as BuildingOfficeIcon,
+  Plus as PlusIcon,
+} from '@lucide/vue'
 import combobox from "@/Components/combobox.vue";
 import { useForm, usePage } from '@inertiajs/vue3';
 import { trans } from 'laravel-vue-i18n';

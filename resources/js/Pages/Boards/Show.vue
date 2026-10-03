@@ -5,7 +5,7 @@ import CardList from '@/Pages/Boards/CardList.vue'
 import CardListCreateForm from '@/Pages/Boards/CardListCreateForm.vue'
 import CardListItemModal from '@/Pages/Boards/CardListItemModal.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { ArrowLeftIcon, RectangleStackIcon, Squares2X2Icon, TrashIcon, ViewColumnsIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeft as ArrowLeftIcon, Layers as RectangleStackIcon, LayoutGrid as Squares2X2Icon, Trash2 as TrashIcon, Columns3 as ViewColumnsIcon } from '@lucide/vue'
 import { Link, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 

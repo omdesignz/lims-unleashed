@@ -3,14 +3,14 @@ import RecordsTable from "@/Components/records-table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  ArrowDownTrayIcon,
-  ArrowTopRightOnSquareIcon,
-  ArrowUpTrayIcon,
-  ArrowsRightLeftIcon,
-  BuildingStorefrontIcon,
-  EyeIcon,
-  ShieldCheckIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  ExternalLink as ArrowTopRightOnSquareIcon,
+  Upload as ArrowUpTrayIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  Store as BuildingStorefrontIcon,
+  Eye as EyeIcon,
+  ShieldCheck as ShieldCheckIcon,
+} from "@lucide/vue";
 import { Link } from "@inertiajs/vue3";
 import { computed } from "vue";
 

@@ -25,6 +25,9 @@ import "vue3-colorpicker/style.css";
 import { MotionPlugin } from "@vueuse/motion";
 import { i18nVue } from "laravel-vue-i18n";
 import { register } from "swiper/element/bundle";
+import { applyChartDefaults } from "./Support/charts";
+
+applyChartDefaults();
 
 const appName =
   window.document.getElementsByTagName("title")[0]?.innerText || "Espaço laboratorial";

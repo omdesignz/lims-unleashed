@@ -221,10 +221,10 @@ import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocum
 import confirmPasswordModal from '../../Shared/confirm-password-modal.vue'
 import { useForm, usePage, router } from '@inertiajs/vue3';
 import {
-  CheckCircleIcon,
-  OfficeBuildingIcon,
-  PlusIcon
-} from '@heroicons/vue/solid'
+  CircleCheck as CheckCircleIcon,
+  Building as OfficeBuildingIcon,
+  Plus as PlusIcon,
+} from '@lucide/vue'
 import { trans } from 'laravel-vue-i18n';
 
 defineProps({

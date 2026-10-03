@@ -1,7 +1,7 @@
 <script setup>
 import ReferenceCatalogManager from '@/Components/catalogs/ReferenceCatalogManager.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { ArchiveBoxIcon } from '@heroicons/vue/24/outline'
+import { Archive as ArchiveBoxIcon } from '@lucide/vue'
 
 defineOptions({ layout: Layout })
 defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) }, fields: { type: Array, default: () => [] }, model: String, abilities: { type: Array, default: () => [] }, query: { type: Object, default: () => ({}) }, slideOverEdit: { type: Boolean, default: false }, openCreate: Boolean, initialRecord: { type: Object, default: null } })

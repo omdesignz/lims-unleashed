@@ -11,7 +11,7 @@ import { useForm, router } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import combobox from "@/Components/combobox.vue";
 import datePicker from "@/Components/date-picker.vue";
-import { EyeIcon } from "@heroicons/vue/24/outline";
+import { Eye as EyeIcon } from "@lucide/vue";
 import maintenanceTaskImportForm from "@/Pages/MaintenanceTasks/maintenance-tasks-import-form.vue";
 
 const props = defineProps({

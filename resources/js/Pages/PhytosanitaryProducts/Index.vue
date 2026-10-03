@@ -1,7 +1,7 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ShieldCheckIcon } from "@heroicons/vue/24/outline";
+import { ShieldCheck as ShieldCheckIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

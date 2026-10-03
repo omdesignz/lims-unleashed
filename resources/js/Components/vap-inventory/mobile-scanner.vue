@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import { ArrowPathIcon, CheckBadgeIcon, QrCodeIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { RefreshCw as ArrowPathIcon, BadgeCheck as CheckBadgeIcon, QrCode as QrCodeIcon, X as XMarkIcon } from '@lucide/vue'
 import { onMounted, reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 

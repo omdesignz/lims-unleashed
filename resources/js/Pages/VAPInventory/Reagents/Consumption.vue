@@ -372,18 +372,18 @@ import { useConsumptionReversal } from '@/Composables/useConsumptionReversal'
 import { usePermission } from '@/Composables/usePermissions'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import {
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
-  BeakerIcon,
-  ChartBarIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-  QueueListIcon,
-  TrophyIcon,
-  UserIcon,
-  UsersIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  RefreshCw as ArrowPathIcon,
+  FlaskConical as BeakerIcon,
+  ChartColumn as ChartBarIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  Plus as PlusIcon,
+  Rows3 as QueueListIcon,
+  Trophy as TrophyIcon,
+  User as UserIcon,
+  Users as UsersIcon,
+} from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 const props = defineProps({

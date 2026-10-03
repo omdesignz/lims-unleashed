@@ -206,20 +206,20 @@ import { useConsumptionReversal } from '@/Composables/useConsumptionReversal'
 import { usePermission } from '@/Composables/usePermissions'
 import { Link, router } from '@inertiajs/vue3'
 import {
-  ArrowLeftIcon,
-  BeakerIcon,
-  BuildingStorefrontIcon,
-  CheckIcon,
-  ClipboardDocumentListIcon,
-  ClockIcon,
-  CubeIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
-  PencilIcon,
-  PrinterIcon,
-  ArrowUturnLeftIcon,
-  UserIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  FlaskConical as BeakerIcon,
+  Store as BuildingStorefrontIcon,
+  Check as CheckIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Clock as ClockIcon,
+  Box as CubeIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Info as InformationCircleIcon,
+  Pencil as PencilIcon,
+  Printer as PrinterIcon,
+  Undo2 as ArrowUturnLeftIcon,
+  User as UserIcon,
+} from '@lucide/vue'
 import { computed } from 'vue'
 
 const props = defineProps({

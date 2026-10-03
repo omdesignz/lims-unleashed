@@ -7,7 +7,7 @@ import { trans } from 'laravel-vue-i18n';
 import {pickBy} from 'lodash';
 import pagination from "@/Components/media-pagination.vue";
 import emptyState from '@/Components/empty-state.vue';
-import { SquaresPlusIcon } from '@heroicons/vue/24/outline'
+import { Grid2x2Plus as SquaresPlusIcon } from '@lucide/vue'
 import { usePermission } from '@/Composables/usePermissions'
 
 const { hasRole, hasPermission } = usePermission();

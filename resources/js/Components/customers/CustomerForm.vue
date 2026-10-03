@@ -2,10 +2,10 @@
 import Combobox from "@/Components/combobox.vue";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 import {
-  BuildingOffice2Icon,
-  IdentificationIcon,
-  TagIcon,
-} from "@heroicons/vue/24/outline";
+  Building2 as BuildingOffice2Icon,
+  IdCard as IdentificationIcon,
+  Tag as TagIcon,
+} from "@lucide/vue";
 
 defineProps({
   form: { type: Object, required: true },

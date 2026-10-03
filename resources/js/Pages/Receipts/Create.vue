@@ -7,21 +7,21 @@ import { ref, computed, reactive, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
 import {throttle} from "lodash";
-import { 
-  TrashIcon, 
-  PlusCircleIcon, 
-  ClipboardDocumentCheckIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
-  CurrencyEuroIcon,
-  DocumentTextIcon,
-  UserIcon,
-  BuildingOfficeIcon,
-  Cog6ToothIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  QueueListIcon
-} from "@heroicons/vue/24/outline";
+import {
+  Trash2 as TrashIcon,
+  CirclePlus as PlusCircleIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  ChevronUp as ChevronUpIcon,
+  ChevronDown as ChevronDownIcon,
+  Euro as CurrencyEuroIcon,
+  FileText as DocumentTextIcon,
+  User as UserIcon,
+  Building as BuildingOfficeIcon,
+  Settings as Cog6ToothIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  CircleCheck as CheckCircleIcon,
+  Rows3 as QueueListIcon,
+} from "@lucide/vue";
 import { trans } from 'laravel-vue-i18n';
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 import confirmDialog from "@/Components/confirm-dialog.vue";

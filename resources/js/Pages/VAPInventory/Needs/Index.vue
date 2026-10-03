@@ -242,12 +242,12 @@ import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, router } from '@inertiajs/vue3'
 import { computed, reactive } from 'vue'
 import {
-  ArrowTopRightOnSquareIcon,
-  ChartBarSquareIcon,
-  FunnelIcon,
-  PlusIcon,
-  QueueListIcon,
-} from '@heroicons/vue/24/outline'
+  ExternalLink as ArrowTopRightOnSquareIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  Funnel as FunnelIcon,
+  Plus as PlusIcon,
+  Rows3 as QueueListIcon,
+} from '@lucide/vue'
 
 defineOptions({ layout: Layout })
 
@@ -342,7 +342,7 @@ const statusOverviewChartOptions = computed(() => ({
       columnWidth: '48%'
     }
   },
-  colors: ['#f59e0b', '#16a34a', '#0891b2', '#7c3aed'],
+  colors: ['#e0902b', '#22a45d', '#14a3a8', '#7c5ce0'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.status_overview?.labels || [],
@@ -354,7 +354,7 @@ const statusOverviewChartOptions = computed(() => ({
     }
   },
   grid: {
-    borderColor: '#e2e8f0',
+    borderColor: '#eef0f3',
     strokeDashArray: 4
   },
   legend: { show: false }
@@ -366,7 +366,7 @@ const queueReadinessChartOptions = computed(() => ({
     fontFamily: 'inherit'
   },
   labels: props.charts?.queue_readiness?.labels || [],
-  colors: ['#16a34a', '#0891b2', '#f59e0b', '#dc2626'],
+  colors: ['#22a45d', '#14a3a8', '#e0902b', '#e5484d'],
   dataLabels: {
     enabled: true,
     formatter: (value) => `${Math.round(value)}%`
@@ -391,7 +391,7 @@ const procurementPressureChartOptions = computed(() => ({
       columnWidth: '52%'
     }
   },
-  colors: ['#334155', '#dc2626', '#f59e0b', '#0f766e'],
+  colors: ['#334155', '#e5484d', '#e0902b', '#0f766e'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.procurement_pressure?.labels || [],
@@ -403,7 +403,7 @@ const procurementPressureChartOptions = computed(() => ({
     }
   },
   grid: {
-    borderColor: '#e2e8f0',
+    borderColor: '#eef0f3',
     strokeDashArray: 4
   },
   legend: { show: false }

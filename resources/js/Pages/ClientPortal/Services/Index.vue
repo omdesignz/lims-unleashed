@@ -1,7 +1,7 @@
 <script setup>
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
 import { Link } from "@inertiajs/vue3";
-import { ArrowRightIcon, BanknotesIcon, BeakerIcon, DocumentTextIcon, ShieldExclamationIcon, TruckIcon, WrenchScrewdriverIcon } from "@heroicons/vue/24/outline";
+import { ArrowRight as ArrowRightIcon, Banknote as BanknotesIcon, FlaskConical as BeakerIcon, FileText as DocumentTextIcon, ShieldAlert as ShieldExclamationIcon, Truck as TruckIcon, Wrench as WrenchScrewdriverIcon } from "@lucide/vue";
 
 defineOptions({ layout: PortalLayout });
 

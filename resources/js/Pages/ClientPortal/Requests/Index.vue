@@ -5,16 +5,16 @@ import SlideOver from "@/Components/slide-over.vue";
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  BeakerIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  DocumentTextIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-  QueueListIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  FlaskConical as BeakerIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  FileText as DocumentTextIcon,
+  Search as MagnifyingGlassIcon,
+  Plus as PlusIcon,
+  Rows3 as QueueListIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 import debounce from "lodash/debounce";
 import { computed, reactive, ref, watch } from "vue";
 

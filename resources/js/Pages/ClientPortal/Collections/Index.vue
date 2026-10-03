@@ -3,15 +3,15 @@ import Pagination from "@/Components/pagination.vue";
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  BeakerIcon,
-  CheckBadgeIcon,
-  ClockIcon,
-  DocumentArrowDownIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-  TruckIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  FlaskConical as BeakerIcon,
+  BadgeCheck as CheckBadgeIcon,
+  Clock as ClockIcon,
+  FileDown as DocumentArrowDownIcon,
+  Search as MagnifyingGlassIcon,
+  Plus as PlusIcon,
+  Truck as TruckIcon,
+} from "@lucide/vue";
 import debounce from "lodash/debounce";
 import { computed, reactive, watch } from "vue";
 

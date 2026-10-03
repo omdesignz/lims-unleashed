@@ -2,12 +2,12 @@
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router } from "@inertiajs/vue3";
 import {
-  ArrowPathIcon,
-  BoltIcon,
-  CheckCircleIcon,
-  EnvelopeIcon,
-  LinkIcon,
-} from "@heroicons/vue/24/outline";
+  RefreshCw as ArrowPathIcon,
+  Zap as BoltIcon,
+  CircleCheck as CheckCircleIcon,
+  Mail as EnvelopeIcon,
+  Link as LinkIcon,
+} from "@lucide/vue";
 import { computed, reactive, ref } from "vue";
 
 defineOptions({ layout: Layout });

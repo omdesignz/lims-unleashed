@@ -4,15 +4,15 @@ import Pagination from "@/Components/pagination.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  BeakerIcon,
-  CheckBadgeIcon,
-  ClipboardDocumentListIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  ShieldCheckIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  FlaskConical as BeakerIcon,
+  BadgeCheck as CheckBadgeIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  ShieldCheck as ShieldCheckIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 import { computed, reactive } from "vue";
 
 defineOptions({ layout: Layout });
@@ -222,22 +222,22 @@ function valueOrDash(value) {
 
           <label class="block">
             <span class="ds-field-label">Departamento</span>
-            <select v-model="filterState.department_id" class="ds-field mt-1 w-full">
+            <BaseSelect v-model="filterState.department_id" class="ds-field mt-1 w-full">
               <option value="">Todos</option>
               <option v-for="department in departments" :key="department.value" :value="String(department.value)">
                 {{ department.label }}
               </option>
-            </select>
+            </BaseSelect>
           </label>
 
           <label v-if="isAudit" class="block">
             <span class="ds-field-label">Estado</span>
-            <select v-model="filterState.stage" class="ds-field mt-1 w-full">
+            <BaseSelect v-model="filterState.stage" class="ds-field mt-1 w-full">
               <option value="all">Todos os estados</option>
               <option value="inserted">Inseridos</option>
               <option value="verified">Verificados</option>
               <option value="approved">Aprovados</option>
-            </select>
+            </BaseSelect>
           </label>
 
           <label class="block">
@@ -252,12 +252,12 @@ function valueOrDash(value) {
 
           <label class="block" :class="isAudit ? '' : 'xl:col-start-6'">
             <span class="ds-field-label">Linhas</span>
-            <select v-model.number="filterState.per_page" class="ds-field mt-1 w-full">
+            <BaseSelect v-model.number="filterState.per_page" class="ds-field mt-1 w-full">
               <option :value="10">10</option>
               <option :value="25">25</option>
               <option :value="50">50</option>
               <option :value="100">100</option>
-            </select>
+            </BaseSelect>
           </label>
         </div>
 
@@ -280,7 +280,7 @@ function valueOrDash(value) {
       </form>
 
       <div class="overflow-x-auto">
-        <table v-if="records.data?.length" class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+        <DataTable v-if="records.data?.length" class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
           <thead class="bg-[var(--ds-panel-subtle)]">
             <tr v-if="!isAudit">
               <th class="ds-table-heading px-5 py-3">Amostra</th>
@@ -379,7 +379,7 @@ function valueOrDash(value) {
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
 
         <div v-else class="px-6 py-16 text-center">
           <component :is="isAudit ? ShieldCheckIcon : ClipboardDocumentListIcon" class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />

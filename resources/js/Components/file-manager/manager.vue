@@ -61,7 +61,7 @@
                       <PlusIcon class="h-5 w-5" aria-hidden="true" />
                     </MenuButton>
                   </div>
-                  <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
+                  <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-[0.97]" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-out duration-100" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-[0.97]">
                     <MenuItems class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                       <MenuItem v-for="item in userNavigation" :key="item.name" v-slot="{ active }">
                         <a :href="item.href" :class="[active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700']">{{ item.name }}</a>
@@ -193,25 +193,25 @@
     TransitionRoot,
   } from '@headlessui/vue'
   import {
-    Bars3BottomLeftIcon,
-    CogIcon,
-    HeartIcon,
-    HomeIcon,
-    PhotoIcon,
-    RectangleStackIcon,
-    Squares2X2Icon as Squares2X2IconOutline,
-    UserGroupIcon,
-    FolderIcon,
-    XMarkIcon,
-    EllipsisVerticalIcon,
-  } from '@heroicons/vue/24/outline'
+  AlignLeft as Bars3BottomLeftIcon,
+  Cog as CogIcon,
+  Heart as HeartIcon,
+  House as HomeIcon,
+  Image as PhotoIcon,
+  Layers as RectangleStackIcon,
+  LayoutGrid as Squares2X2IconOutline,
+  Users as UserGroupIcon,
+  Folder as FolderIcon,
+  X as XMarkIcon,
+  EllipsisVertical as EllipsisVerticalIcon,
+} from '@lucide/vue'
   import {
-    Bars4Icon,
-    MagnifyingGlassIcon,
-    PencilIcon,
-    PlusIcon,
-    Squares2X2Icon as Squares2X2IconMini,
-  } from '@heroicons/vue/20/solid'
+  AlignJustify as Bars4Icon,
+  Search as MagnifyingGlassIcon,
+  Pencil as PencilIcon,
+  Plus as PlusIcon,
+  LayoutGrid as Squares2X2IconMini,
+} from '@lucide/vue'
 
 import breadcrumbs from '@/Components/breadcrumbs.vue';
 import folderItem from '@/Pages/Folders/folder-item.vue';

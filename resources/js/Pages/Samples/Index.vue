@@ -4,7 +4,7 @@ import VapTable from "@/Components/vap-table/table.vue";
 import ComboboxMultiple from "@/Components/combobox-multiple-enhanced.vue";
 import { loadSelectOptions } from "@/Utils/selectOptions";
 import { Link, router } from "@inertiajs/vue3";
-import { ArrowTopRightOnSquareIcon, BeakerIcon, ClipboardDocumentListIcon, FunnelIcon } from "@heroicons/vue/24/outline";
+import { ExternalLink as ArrowTopRightOnSquareIcon, FlaskConical as BeakerIcon, ClipboardList as ClipboardDocumentListIcon, Funnel as FunnelIcon } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { trans } from "laravel-vue-i18n";
 

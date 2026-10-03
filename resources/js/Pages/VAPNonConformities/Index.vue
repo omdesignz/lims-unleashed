@@ -340,22 +340,22 @@ import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import Pagination from '@/Components/Pagination.vue'
 import { Link, router } from '@inertiajs/vue3'
 import {
-  ArrowDownTrayIcon,
-  ChartBarSquareIcon,
-  ClipboardDocumentCheckIcon,
-  ClockIcon,
-  DocumentArrowDownIcon,
-  DocumentTextIcon,
-  ExclamationCircleIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  PencilSquareIcon,
-  PlusCircleIcon,
-  TrashIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Clock as ClockIcon,
+  FileDown as DocumentArrowDownIcon,
+  FileText as DocumentTextIcon,
+  CircleAlert as ExclamationCircleIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Eye as EyeIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  SquarePen as PencilSquareIcon,
+  CirclePlus as PlusCircleIcon,
+  Trash2 as TrashIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
@@ -431,7 +431,7 @@ const categoryLabels = {
   other: 'Outro',
 }
 
-const chartTextColor = '#64748b'
+const chartTextColor = '#6b7482'
 const chartGridColor = '#dbe3ea'
 
 const nonConformityRows = computed(() => props.nonConformities?.data || [])

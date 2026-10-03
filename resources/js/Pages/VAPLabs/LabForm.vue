@@ -1,15 +1,15 @@
 <script setup>
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import {
-  ArrowLeftIcon,
-  BeakerIcon,
-  BuildingLibraryIcon,
-  CheckCircleIcon,
-  EnvelopeIcon,
-  IdentificationIcon,
-  PhoneIcon,
-  UserGroupIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  FlaskConical as BeakerIcon,
+  Landmark as BuildingLibraryIcon,
+  CircleCheck as CheckCircleIcon,
+  Mail as EnvelopeIcon,
+  IdCard as IdentificationIcon,
+  Phone as PhoneIcon,
+  Users as UserGroupIcon,
+} from '@lucide/vue'
 import { router, useForm } from '@inertiajs/vue3'
 import { computed, ref, watchEffect } from 'vue'
 

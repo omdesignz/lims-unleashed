@@ -2,7 +2,7 @@
 import OccurrenceForm from "@/Pages/Occurrences/OccurrenceForm.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, useForm } from "@inertiajs/vue3";
-import { ArrowLeftIcon, CheckIcon, ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
+import { ArrowLeft as ArrowLeftIcon, Check as CheckIcon, TriangleAlert as ExclamationTriangleIcon } from "@lucide/vue";
 import { computed } from "vue";
 
 defineOptions({ layout: Layout });

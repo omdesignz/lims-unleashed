@@ -1,7 +1,7 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import { ArrowLeftIcon, CheckIcon, ChatBubbleLeftRightIcon, PaperClipIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeft as ArrowLeftIcon, Check as CheckIcon, MessagesSquare as ChatBubbleLeftRightIcon, Paperclip as PaperClipIcon } from '@lucide/vue'
 import { computed } from 'vue'
 
 defineOptions({ layout: Layout })

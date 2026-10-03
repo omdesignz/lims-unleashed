@@ -217,12 +217,12 @@
 import { ref, computed, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import {
-  ArrowsUpDownIcon,
-  XMarkIcon,
-  CubeIcon,
-  PlusIcon,
-  MinusIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowUpDown as ArrowsUpDownIcon,
+  X as XMarkIcon,
+  Box as CubeIcon,
+  Plus as PlusIcon,
+  Minus as MinusIcon,
+} from '@lucide/vue'
 import Modal from '@/Components/Modal.vue'
 
 const props = defineProps({

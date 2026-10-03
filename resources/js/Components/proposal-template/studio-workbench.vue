@@ -17,16 +17,16 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
-  ArrowUturnLeftIcon,
-  DocumentDuplicateIcon,
-  LockClosedIcon,
-  LockOpenIcon,
-  PaintBrushIcon,
-  PhotoIcon,
-  RectangleGroupIcon,
-  SparklesIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
+  Undo2 as ArrowUturnLeftIcon,
+  Copy as DocumentDuplicateIcon,
+  Lock as LockClosedIcon,
+  LockOpen as LockOpenIcon,
+  Paintbrush as PaintBrushIcon,
+  Image as PhotoIcon,
+  LayoutDashboard as RectangleGroupIcon,
+  Sparkles as SparklesIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   title: {
@@ -3242,8 +3242,8 @@ function submit() {
               <BaseInput v-model="props.exportSettings.first_page_margin_top" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </label>
           </div>
-          <div class="mt-5 rounded-2xl border border-[#ded2bb] bg-[#fbfaf6] p-4 dark:border-white/10 dark:bg-white/5">
-            <div class="text-xs font-black uppercase tracking-[0.18em] text-[#c79a43]">
+          <div class="mt-5 rounded-2xl border border-[var(--ds-border)] bg-[#fbfaf6] p-4 dark:border-white/10 dark:bg-white/5">
+            <div class="text-xs font-black uppercase tracking-[0.18em] text-[rgb(var(--accent-500-rgb))]">
               {{ trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.panel_eyebrow') }}
             </div>
             <p class="mt-2 text-sm font-medium leading-6 text-[#59665f] dark:text-slate-300">
@@ -3253,7 +3253,7 @@ function submit() {
               type="button"
               @click="previewDraftPdf"
               :disabled="draftPreviewBusy || props.form.processing"
-              class="mt-4 inline-flex w-full items-center justify-center rounded-2xl border border-[#143d37]/20 bg-white px-4 py-3 text-sm font-black text-[#143d37] transition hover:bg-[#fff7e5] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15"
+              class="mt-4 inline-flex w-full items-center justify-center rounded-2xl border border-[rgb(var(--primary-600-rgb))]/20 bg-white px-4 py-3 text-sm font-black text-[rgb(var(--primary-600-rgb))] transition hover:bg-[#fff7e5] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15"
             >
               {{ draftPreviewBusy ? trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.generating') : trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.action') }}
             </button>
@@ -3332,7 +3332,7 @@ function submit() {
               <div class="mt-2 text-xs font-medium text-primary-700 dark:text-primary-300">
                 {{ previewPages.length }} página<span v-if="previewPages.length !== 1">s</span> na pré-visualização
               </div>
-              <div class="mt-2 inline-flex rounded-full border border-[#ded2bb] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#475a53] dark:border-white/10 dark:bg-white/10 dark:text-[#cbd8cf]">
+              <div class="mt-2 inline-flex rounded-full border border-[var(--ds-border)] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--ds-text-muted)] dark:border-white/10 dark:bg-white/10 dark:text-[#cbd8cf]">
                 {{ previewPageFormatLabel }}
               </div>
             </div>
@@ -3526,17 +3526,17 @@ function submit() {
     </div>
 
     <div v-if="mediaPickerOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#06100e]/80 p-4 backdrop-blur-sm" @click.self="mediaPickerOpen = false">
-      <div class="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[2.4rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_40px_120px_rgba(6,16,14,0.34)] dark:border-[#29483f] dark:bg-[#07110f]">
-        <div class="flex flex-col gap-4 border-b border-[#ded3bf] bg-[linear-gradient(135deg,#fffdf7,#f4efe4)] px-6 py-5 dark:border-[#29483f] dark:bg-[linear-gradient(135deg,#0d1d19,#07110f)] md:flex-row md:items-center md:justify-between">
+      <div class="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[2.4rem] border border-[var(--ds-border)] bg-[var(--ds-panel)] shadow-[0_40px_120px_rgba(6,16,14,0.34)] dark:border-[var(--ds-text)] dark:bg-[var(--ds-panel)]">
+        <div class="flex flex-col gap-4 border-b border-[var(--ds-border)] bg-[linear-gradient(135deg,#fffdf7,#f4efe4)] px-6 py-5 dark:border-[var(--ds-text)] dark:bg-[linear-gradient(135deg,#0d1d19,#07110f)] md:flex-row md:items-center md:justify-between">
           <div>
-            <div class="text-[10px] font-black uppercase tracking-[0.22em] text-[#d9b05f]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.eyebrow') }}</div>
-            <h2 class="mt-1 text-xl font-black tracking-tight text-[#15231f] dark:text-[#fffdf7]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.title') }}</h2>
-            <p class="mt-1 max-w-2xl text-sm font-medium leading-6 text-[#6b7b74] dark:text-[#b8c9c0]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.description') }}</p>
-            <div class="mt-3 inline-flex rounded-full border border-[#ded3bf] bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#143d37] shadow-sm dark:border-[#29483f] dark:bg-[#10231f] dark:text-[#d9b05f]">
+            <div class="text-[10px] font-black uppercase tracking-[0.22em] text-[rgb(var(--accent-500-rgb))]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.eyebrow') }}</div>
+            <h2 class="mt-1 text-xl font-black tracking-tight text-[var(--ds-text)] dark:text-[var(--ds-panel)]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.title') }}</h2>
+            <p class="mt-1 max-w-2xl text-sm font-medium leading-6 text-[var(--ds-text-muted)] dark:text-[#b8c9c0]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.description') }}</p>
+            <div class="mt-3 inline-flex rounded-full border border-[var(--ds-border)] bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[rgb(var(--primary-600-rgb))] shadow-sm dark:border-[var(--ds-text)] dark:bg-[var(--ds-panel)] dark:text-[rgb(var(--accent-500-rgb))]">
               {{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.target_label', { target: mediaPickerTargetLabel }) }}
             </div>
           </div>
-          <button type="button" @click="mediaPickerOpen = false" class="rounded-2xl border border-[#ded3bf] bg-white/80 px-4 py-2 text-sm font-black text-[#20332f] transition hover:bg-[#f4efe4] dark:border-[#29483f] dark:bg-[#10231f] dark:text-[#fffdf7] dark:hover:bg-[#143d37]">
+          <button type="button" @click="mediaPickerOpen = false" class="rounded-2xl border border-[var(--ds-border)] bg-white/80 px-4 py-2 text-sm font-black text-[#20332f] transition hover:bg-[#f4efe4] dark:border-[var(--ds-text)] dark:bg-[var(--ds-panel)] dark:text-[var(--ds-panel)] dark:hover:bg-[rgb(var(--primary-600-rgb))]">
             {{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.close') }}
           </button>
         </div>
@@ -3553,8 +3553,8 @@ function submit() {
             :disabled="mediaPickerUploadBusy"
             class="mb-5 w-full rounded-[2rem] border border-dashed p-5 text-left transition"
             :class="mediaPickerUploadDragging
-              ? 'border-[#d9b05f] bg-[#fff7e1] dark:border-[#d9b05f] dark:bg-[#d9b05f]/10'
-              : 'border-[#d8cbb8] bg-white/70 hover:border-[#d9b05f] hover:bg-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#29483f] dark:bg-[#10231f]/80 dark:hover:border-[#d9b05f]/70 dark:hover:bg-[#d9b05f]/10'"
+              ? 'border-[rgb(var(--accent-500-rgb))] bg-[#fff7e1] dark:border-[rgb(var(--accent-500-rgb))] dark:bg-[rgb(var(--accent-500-rgb))]/10'
+              : 'border-[var(--ds-border)] bg-white/70 hover:border-[rgb(var(--accent-500-rgb))] hover:bg-[var(--ds-panel)] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[var(--ds-text)] dark:bg-[var(--ds-panel)]/80 dark:hover:border-[rgb(var(--accent-500-rgb))]/70 dark:hover:bg-[rgb(var(--accent-500-rgb))]/10'"
             @click="pickMediaPickerUpload"
             @dragenter.prevent="mediaPickerUploadDragging = true"
             @dragover.prevent="mediaPickerUploadDragging = true"
@@ -3563,22 +3563,22 @@ function submit() {
           >
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div class="flex items-start gap-3">
-                <div class="rounded-2xl bg-[#143d37] p-3 text-[#fffdf7] shadow-lg shadow-[#143d37]/20">
+                <div class="rounded-2xl bg-[rgb(var(--primary-600-rgb))] p-3 text-[var(--ds-panel)] shadow-lg shadow-[rgb(var(--primary-600-rgb))]/20">
                   <PhotoIcon class="h-5 w-5" />
                 </div>
                 <div>
-                  <div class="text-sm font-black text-[#15231f] dark:text-[#fffdf7]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.add_title') }}</div>
-                  <p class="mt-1 text-xs font-medium leading-5 text-[#6b7b74] dark:text-[#a9bcb2]">
+                  <div class="text-sm font-black text-[var(--ds-text)] dark:text-[var(--ds-panel)]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.add_title') }}</div>
+                  <p class="mt-1 text-xs font-medium leading-5 text-[var(--ds-text-muted)] dark:text-[#a9bcb2]">
                     {{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.add_description') }}
                   </p>
                 </div>
               </div>
-              <span class="rounded-full border border-[#eadfca] bg-[#fffdf7] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#9a7a2f] shadow-sm dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#d9b05f]">
+              <span class="rounded-full border border-[var(--ds-panel-muted)] bg-[var(--ds-panel)] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#9a7a2f] shadow-sm dark:border-[var(--ds-text)] dark:bg-[var(--ds-panel)] dark:text-[rgb(var(--accent-500-rgb))]">
                 {{ mediaPickerUploadBusy ? trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.upload_progress', { progress: mediaPickerUploadProgress || 0 }) : trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.allowed_badge') }}
               </span>
             </div>
-            <div v-if="mediaPickerUploadBusy" class="mt-4 h-2 overflow-hidden rounded-full bg-[#eadfca] dark:bg-[#29483f]">
-              <div class="h-full rounded-full bg-[#d9b05f] transition-all" :style="{ width: `${mediaPickerUploadProgress || 8}%` }" />
+            <div v-if="mediaPickerUploadBusy" class="mt-4 h-2 overflow-hidden rounded-full bg-[var(--ds-panel-muted)] dark:bg-[var(--ds-text)]">
+              <div class="h-full rounded-full bg-[rgb(var(--accent-500-rgb))] transition-all" :style="{ width: `${mediaPickerUploadProgress || 8}%` }" />
             </div>
             <p v-if="mediaPickerUploadError" class="mt-3 text-xs font-semibold text-red-600 dark:text-red-300">{{ mediaPickerUploadError }}</p>
             <span class="sr-only">
@@ -3586,12 +3586,12 @@ function submit() {
             </span>
           </button>
 
-          <div class="rounded-[2rem] border border-[#ded3bf] bg-white/75 p-4 shadow-sm dark:border-[#29483f] dark:bg-[#0d1d19]/80">
+          <div class="rounded-[2rem] border border-[var(--ds-border)] bg-white/75 p-4 shadow-sm dark:border-[var(--ds-text)] dark:bg-[#0d1d19]/80">
             <BaseInput
               v-model="mediaPickerSearch"
               type="search"
               :placeholder="trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.search_placeholder')"
-              class="block w-full rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-4 py-3 text-sm font-semibold text-[#15231f] shadow-sm placeholder:text-[#8a9a92] focus:border-[#d9b05f] focus:outline-none focus:ring-2 focus:ring-[#d9b05f]/20 dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#fffdf7] dark:placeholder:text-[#789087]"
+              class="block w-full rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel)] px-4 py-3 text-sm font-semibold text-[var(--ds-text)] shadow-sm placeholder:text-[#8a9a92] focus:border-[rgb(var(--accent-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-500-rgb))]/20 dark:border-[var(--ds-text)] dark:bg-[var(--ds-panel)] dark:text-[var(--ds-panel)] dark:placeholder:text-[#789087]"
             />
 
             <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -3601,12 +3601,12 @@ function submit() {
                 type="button"
                 class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-black uppercase tracking-[0.12em] transition"
                 :class="mediaPickerKind === option.value
-                  ? 'border-[#143d37] bg-[#143d37] text-[#fffdf7] shadow-lg shadow-[#143d37]/12 dark:border-[#d9b05f] dark:bg-[#d9b05f] dark:text-[#07110f]'
-                  : 'border-[#ded3bf] bg-[#fffdf7] text-[#6b7b74] hover:border-[#d9b05f] hover:text-[#143d37] dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#b8c9c0] dark:hover:border-[#d9b05f]/70 dark:hover:text-[#fffdf7]'"
+                  ? 'border-[rgb(var(--primary-600-rgb))] bg-[rgb(var(--primary-600-rgb))] text-[var(--ds-panel)] shadow-lg shadow-[rgb(var(--primary-600-rgb))]/12 dark:border-[rgb(var(--accent-500-rgb))] dark:bg-[rgb(var(--accent-500-rgb))] dark:text-[var(--ds-panel)]'
+                  : 'border-[var(--ds-border)] bg-[var(--ds-panel)] text-[var(--ds-text-muted)] hover:border-[rgb(var(--accent-500-rgb))] hover:text-[rgb(var(--primary-600-rgb))] dark:border-[var(--ds-text)] dark:bg-[var(--ds-panel)] dark:text-[#b8c9c0] dark:hover:border-[rgb(var(--accent-500-rgb))]/70 dark:hover:text-[var(--ds-panel)]'"
                 @click="mediaPickerKind = option.value"
               >
                 <span>{{ option.label }}</span>
-                <span class="rounded-full bg-[#f4efe4] px-2 py-0.5 text-[10px] text-[#6b7b74] dark:bg-[#10231f] dark:text-[#b8c9c0]" :class="mediaPickerKind === option.value ? '!bg-white/20 !text-white dark:!bg-[#07110f]/20 dark:!text-[#07110f]' : ''">
+                <span class="rounded-full bg-[#f4efe4] px-2 py-0.5 text-[10px] text-[var(--ds-text-muted)] dark:bg-[var(--ds-panel)] dark:text-[#b8c9c0]" :class="mediaPickerKind === option.value ? '!bg-white/20 !text-white dark:!bg-[var(--ds-panel)]/20 dark:!text-[var(--ds-panel)]' : ''">
                   {{ option.count }}
                 </span>
               </button>
@@ -3619,18 +3619,18 @@ function submit() {
               :key="`picker-${asset.id}`"
               type="button"
               @click="applyMediaPickerAsset(asset)"
-              class="group overflow-hidden rounded-3xl border border-[#ded3bf] bg-[#fffdf7] text-left transition hover:-translate-y-0.5 hover:border-[#d9b05f] hover:shadow-lg dark:border-[#29483f] dark:bg-[#10231f]"
+              class="group overflow-hidden rounded-3xl border border-[var(--ds-border)] bg-[var(--ds-panel)] text-left transition hover:-translate-y-0.5 hover:border-[rgb(var(--accent-500-rgb))] hover:shadow-lg dark:border-[var(--ds-text)] dark:bg-[var(--ds-panel)]"
             >
-              <div class="flex h-44 items-center justify-center bg-[#f4efe4] dark:bg-[#07110f]/80">
+              <div class="flex h-44 items-center justify-center bg-[#f4efe4] dark:bg-[var(--ds-panel)]/80">
                 <img :src="asset.url" :alt="asset.label" class="h-full w-full object-contain p-4 transition group-hover:scale-105" />
               </div>
               <div class="p-4">
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
-                    <div class="truncate text-sm font-black text-[#15231f] dark:text-[#fffdf7]">{{ asset.label }}</div>
-                    <div class="mt-1 text-xs font-medium text-[#6b7b74] dark:text-[#a9bcb2]">{{ asset.source }}</div>
+                    <div class="truncate text-sm font-black text-[var(--ds-text)] dark:text-[var(--ds-panel)]">{{ asset.label }}</div>
+                    <div class="mt-1 text-xs font-medium text-[var(--ds-text-muted)] dark:text-[#a9bcb2]">{{ asset.source }}</div>
                   </div>
-                  <span class="shrink-0 rounded-full border border-[#eadfca] bg-[#fffaf0] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#9a7a2f] dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#d9b05f]">
+                  <span class="shrink-0 rounded-full border border-[var(--ds-panel-muted)] bg-[var(--ds-panel)] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#9a7a2f] dark:border-[var(--ds-text)] dark:bg-[var(--ds-panel)] dark:text-[rgb(var(--accent-500-rgb))]">
                     {{ mediaKindLabel(mediaKindValue(asset)) }}
                   </span>
                 </div>
@@ -3638,7 +3638,7 @@ function submit() {
               </div>
             </button>
           </div>
-          <div v-else class="mt-5 rounded-3xl border border-dashed border-[#ded3bf] bg-white/60 p-8 text-center text-sm font-semibold text-[#6b7b74] dark:border-[#29483f] dark:bg-[#10231f]/60 dark:text-[#a9bcb2]">
+          <div v-else class="mt-5 rounded-3xl border border-dashed border-[var(--ds-border)] bg-white/60 p-8 text-center text-sm font-semibold text-[var(--ds-text-muted)] dark:border-[var(--ds-text)] dark:bg-[var(--ds-panel)]/60 dark:text-[#a9bcb2]">
             {{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.empty') }}
           </div>
         </div>

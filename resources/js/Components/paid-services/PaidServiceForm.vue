@@ -1,7 +1,7 @@
 <script setup>
 import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import ToggleField from '@/Components/base/ToggleField.vue'
-import { CalculatorIcon, CheckCircleIcon, CurrencyDollarIcon, ReceiptPercentIcon } from '@heroicons/vue/24/outline'
+import { Calculator as CalculatorIcon, CircleCheck as CheckCircleIcon, CircleDollarSign as CurrencyDollarIcon, BadgePercent as ReceiptPercentIcon } from '@lucide/vue'
 import { computed } from 'vue'
 
 const props = defineProps({

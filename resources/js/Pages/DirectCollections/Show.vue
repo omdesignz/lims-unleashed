@@ -346,24 +346,24 @@ import { usePermission } from '@/Composables/usePermissions'
 import { Link, router } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import {
-  ArrowLeftIcon,
-  ArrowPathRoundedSquareIcon,
-  ArrowTopRightOnSquareIcon,
-  BeakerIcon,
-  ChartBarIcon,
-  CheckCircleIcon,
-  ClipboardDocumentCheckIcon,
-  CircleStackIcon,
-  DocumentCheckIcon,
-  DocumentIcon,
-  DocumentTextIcon,
-  InboxIcon,
-  PaperClipIcon,
-  PencilIcon,
-  QrCodeIcon,
-  Square2StackIcon,
-  TagIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  Repeat as ArrowPathRoundedSquareIcon,
+  ExternalLink as ArrowTopRightOnSquareIcon,
+  FlaskConical as BeakerIcon,
+  ChartColumn as ChartBarIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Database as CircleStackIcon,
+  FileCheck as DocumentCheckIcon,
+  File as DocumentIcon,
+  FileText as DocumentTextIcon,
+  Inbox as InboxIcon,
+  Paperclip as PaperClipIcon,
+  Pencil as PencilIcon,
+  QrCode as QrCodeIcon,
+  Layers2 as Square2StackIcon,
+  Tag as TagIcon,
+} from '@lucide/vue'
 
 const { hasRole, hasPermission } = usePermission()
 

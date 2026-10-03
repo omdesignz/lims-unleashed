@@ -2,19 +2,19 @@
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  BuildingOffice2Icon,
-  CheckCircleIcon,
-  DocumentMagnifyingGlassIcon,
-  EnvelopeIcon,
-  ExclamationTriangleIcon,
-  IdentificationIcon,
-  InformationCircleIcon,
-  MagnifyingGlassIcon,
-  MapPinIcon,
-  PhoneIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  Building2 as BuildingOffice2Icon,
+  CircleCheck as CheckCircleIcon,
+  FileSearch as DocumentMagnifyingGlassIcon,
+  Mail as EnvelopeIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  IdCard as IdentificationIcon,
+  Info as InformationCircleIcon,
+  Search as MagnifyingGlassIcon,
+  MapPin as MapPinIcon,
+  Phone as PhoneIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 
 defineOptions({ layout: Layout });

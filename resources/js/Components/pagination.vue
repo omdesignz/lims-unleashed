@@ -90,7 +90,7 @@
 <script setup>
 import { watch, computed, reactive } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon } from '@heroicons/vue/24/outline'
+import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, ChevronsLeft as ChevronDoubleLeftIcon, ChevronsRight as ChevronDoubleRightIcon } from '@lucide/vue'
 
 const props = defineProps({
   links: Array,

@@ -1,7 +1,7 @@
 <script setup>
 import Combobox from "@/Components/combobox.vue";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
-import { EnvelopeIcon, MapPinIcon, UserIcon } from "@heroicons/vue/24/outline";
+import { Mail as EnvelopeIcon, MapPin as MapPinIcon, User as UserIcon } from "@lucide/vue";
 
 const props = defineProps({
   form: {

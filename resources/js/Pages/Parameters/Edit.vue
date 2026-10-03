@@ -3,7 +3,7 @@ import ParameterForm from "@/Components/parameters/ParameterForm.vue";
 import { createParameterDataFromRecord } from "@/Components/parameters/parameterFormData";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
-import { ArrowLeftIcon, BeakerIcon } from "@heroicons/vue/24/outline";
+import { ArrowLeft as ArrowLeftIcon, FlaskConical as BeakerIcon } from "@lucide/vue";
 
 defineOptions({
   layout: Layout,

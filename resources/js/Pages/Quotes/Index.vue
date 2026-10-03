@@ -9,7 +9,7 @@ import { router, Link } from "@inertiajs/vue3";
 import { usePermission } from '@/Composables/usePermissions';
 import { trans } from 'laravel-vue-i18n';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { EyeIcon } from "@heroicons/vue/24/outline";
+import { Eye as EyeIcon } from "@lucide/vue";
 import ModuleHero from '@/Components/base/ModuleHero.vue'
 
 

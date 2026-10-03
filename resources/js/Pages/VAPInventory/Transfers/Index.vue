@@ -328,12 +328,12 @@
 
     <TransitionRoot as="template" :show="isReceiveModalOpen">
       <Dialog class="relative z-50" @close="closeReceiveModal">
-        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-150" leave-from="opacity-100" leave-to="opacity-0">
           <div class="ds-modal-backdrop fixed inset-0" />
         </TransitionChild>
         <div class="fixed inset-0 z-50 overflow-y-auto">
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
-            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-out duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]">
               <DialogPanel class="ds-modal-panel w-full max-w-xl p-0 text-left">
                 <form @submit.prevent="submitReceive">
                   <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] p-5">
@@ -396,12 +396,12 @@
 
     <TransitionRoot as="template" :show="isCancelModalOpen">
       <Dialog class="relative z-50" @close="closeCancelModal">
-        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-150" leave-from="opacity-100" leave-to="opacity-0">
           <div class="ds-modal-backdrop fixed inset-0" />
         </TransitionChild>
         <div class="fixed inset-0 z-50 overflow-y-auto">
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
-            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-out duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]">
               <DialogPanel class="ds-modal-panel w-full max-w-lg p-0 text-left">
                 <form @submit.prevent="submitCancel">
                   <div class="border-b border-[var(--ds-border)] p-5">
@@ -440,19 +440,19 @@ import { Link, router, useForm } from '@inertiajs/vue3'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { debounce } from 'lodash'
 import {
-  ArrowDownTrayIcon,
-  ArrowUpTrayIcon,
-  ArrowsRightLeftIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  CubeIcon,
-  EyeIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  PlusCircleIcon,
-  XCircleIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  Upload as ArrowUpTrayIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  Box as CubeIcon,
+  Eye as EyeIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  CirclePlus as PlusCircleIcon,
+  CircleX as XCircleIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import Pagination from '@/Components/Pagination.vue'
 
 const props = defineProps({

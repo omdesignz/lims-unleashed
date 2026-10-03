@@ -3,11 +3,11 @@ import Pagination from "@/Components/pagination.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router } from "@inertiajs/vue3";
 import {
-  CheckBadgeIcon,
-  CheckCircleIcon,
-  ClipboardDocumentListIcon,
-  ClockIcon,
-} from "@heroicons/vue/24/outline";
+  BadgeCheck as CheckBadgeIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Clock as ClockIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 
 defineOptions({ layout: Layout });

@@ -4,16 +4,16 @@ import Pagination from "@/Components/Pagination.vue";
 import { computed, reactive, ref } from "vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  ChevronDownIcon,
-  ClipboardDocumentCheckIcon,
-  ClockIcon,
-  FunnelIcon,
-  UserIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  ChevronDown as ChevronDownIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Clock as ClockIcon,
+  Funnel as FunnelIcon,
+  User as UserIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 
 defineOptions({
   layout: Layout,

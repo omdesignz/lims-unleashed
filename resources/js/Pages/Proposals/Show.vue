@@ -2,7 +2,7 @@
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { computed } from "vue";
 import { usePermission } from "@/Composables/usePermissions";
-import { ArrowPathRoundedSquareIcon, ChartBarSquareIcon, DocumentIcon, DocumentTextIcon, PaperClipIcon, PencilIcon, TagIcon, TrashIcon } from "@heroicons/vue/24/outline";
+import { Repeat as ArrowPathRoundedSquareIcon, ChartColumnBig as ChartBarSquareIcon, File as DocumentIcon, FileText as DocumentTextIcon, Paperclip as PaperClipIcon, Pencil as PencilIcon, Tag as TagIcon, Trash2 as TrashIcon } from "@lucide/vue";
 import sampleStatus from '@/Components/sample-status.vue';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
@@ -52,10 +52,10 @@ const financialBreakdownChartOptions = computed(() => ({
         },
     },
     grid: {
-        borderColor: '#e5e7eb',
+        borderColor: '#eef0f3',
         strokeDashArray: 4,
     },
-    colors: ['#1d4ed8', '#f59e0b', '#0ea5e9', '#ef4444', '#16a34a'],
+    colors: ['#1d4ed8', '#e0902b', '#087cf0', '#e5484d', '#22a45d'],
     legend: { show: false },
 }));
 
@@ -65,7 +65,7 @@ const itemCompositionChartOptions = computed(() => ({
         fontFamily: 'inherit',
     },
     labels: props.charts?.item_composition?.labels || [],
-    colors: ['#0ea5e9', '#f59e0b', '#ef4444', '#64748b'],
+    colors: ['#087cf0', '#e0902b', '#e5484d', '#6b7482'],
     stroke: {
         colors: ['#ffffff'],
     },
@@ -115,10 +115,10 @@ const workflowSummaryChartOptions = computed(() => ({
         },
     },
     grid: {
-        borderColor: '#e5e7eb',
+        borderColor: '#eef0f3',
         strokeDashArray: 4,
     },
-    colors: ['#7c3aed', '#1d4ed8', '#0f766e', '#f59e0b'],
+    colors: ['#7c5ce0', '#1d4ed8', '#0f766e', '#e0902b'],
     legend: { show: false },
 }));
 

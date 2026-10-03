@@ -114,14 +114,14 @@ import { computed, reactive, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import debounce from 'lodash/debounce'
 import {
-  BanknotesIcon,
-  BeakerIcon,
-  ChartBarSquareIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  ExclamationTriangleIcon,
-  QueueListIcon,
-} from '@heroicons/vue/24/outline'
+  Banknote as BanknotesIcon,
+  FlaskConical as BeakerIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Rows3 as QueueListIcon,
+} from '@lucide/vue'
 import datePicker from '@/Components/date-picker.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 

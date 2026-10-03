@@ -3,20 +3,20 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  BeakerIcon,
-  BuildingOffice2Icon,
-  CheckBadgeIcon,
-  ClockIcon,
-  EnvelopeIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
-  MapPinIcon,
-  PencilSquareIcon,
-  PhoneIcon,
-  StarIcon,
-  UserCircleIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  FlaskConical as BeakerIcon,
+  Building2 as BuildingOffice2Icon,
+  BadgeCheck as CheckBadgeIcon,
+  Clock as ClockIcon,
+  Mail as EnvelopeIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Info as InformationCircleIcon,
+  MapPin as MapPinIcon,
+  SquarePen as PencilSquareIcon,
+  Phone as PhoneIcon,
+  Star as StarIcon,
+  CircleUser as UserCircleIcon,
+} from "@lucide/vue";
 import { computed } from "vue";
 
 defineOptions({ layout: Layout });

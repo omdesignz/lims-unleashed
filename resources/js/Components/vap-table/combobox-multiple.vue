@@ -9,7 +9,7 @@ import {
   ComboboxOption,
   TransitionRoot,
 } from "@headlessui/vue";
-import {CheckIcon, ChevronUpDownIcon} from "@heroicons/vue/20/solid";
+import { Check as CheckIcon, ChevronsUpDown as ChevronUpDownIcon } from "@lucide/vue";
 
 const emit = defineEmits(["update:modelValue"]);
 
@@ -201,7 +201,7 @@ function handleUpdateModelValue(selected) {
       </div>
       </div>
       <TransitionRoot
-        leave="transition ease-in duration-100"
+        leave="transition ease-out duration-100"
         leaveFrom="opacity-100"
         leaveTo="opacity-0"
         @after-leave="query = ''"

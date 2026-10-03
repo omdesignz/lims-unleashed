@@ -28,7 +28,8 @@ test('branding changes action colours but never semantic status colours', () => 
 
 test('collapsed navigation retains accessible names and expanded state', () => {
   assert.match(read('Shared/Layouts/Layout.vue'), /:aria-expanded="desktopSidebarOpen"/)
-  assert.match(read('Shared/Navigation/side-nav.vue'), /props.collapsed \? 'sr-only'/)
+  assert.match(read('Shared/Navigation/app-sidebar.vue'), /:title="area\.label"/)
+  assert.match(read('Shared/Navigation/app-sidebar.vue'), /:aria-label="area\.label"/)
 })
 
 test('workbench and network use actual paginated records and explicit empty states', () => {
@@ -52,7 +53,7 @@ test('sample queue uses server pagination and a cancellable Inertia quick view',
   assert.match(page, /role="alert"/)
   assert.match(page, /aria-busy="filter.processing"/)
   assert.doesNotMatch(page, /Transition|transition-all|setTimeout/)
-  assert.match(read('Shared/Navigation/side-nav.vue'), /route\('vap_samples.queue'\)/)
+  assert.match(read('Shared/Layouts/Layout.vue'), /route\('vap_samples.queue'\)/)
 })
 
 test('sample intake leaves automatic numbering to the server', () => {
@@ -64,12 +65,12 @@ test('sample intake leaves automatic numbering to the server', () => {
 
 test('approved workbench geometry is a production design contract', () => {
   const css = readFileSync(new URL('../../resources/css/laboratory-workbench.css', import.meta.url), 'utf8')
-  assert.match(css, /grid-template-columns:183px minmax\(0,1fr\)/)
-  assert.match(css, /min-height:63px/)
-  assert.match(css, /padding:27px 28px 22px/)
-  assert.match(css, /grid-template-columns:minmax\(0,1fr\) 191px;gap:25px/)
-  assert.match(css, /font-size:27px;letter-spacing:-1\.1px;font-weight:650/)
-  assert.match(css, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/)
+  assert.match(css, /\.workbench-page \.lab-metrics\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\);gap:0\.75rem/)
+  assert.match(css, /\.workbench-page \.lab-overview-grid\{display:grid;grid-template-columns:minmax\(0,1fr\) 21rem;gap:0\.75rem/)
+  assert.match(css, /\.workbench-page \.lab-detail-rail\{border:1px solid var\(--ds-card-border\)/)
+  assert.match(css, /--lab-panel: var\(--ds-panel\)/)
+  assert.match(css, /scale:\.96/)
+  assert.doesNotMatch(css, /#lab-workbench|DM Sans|Manrope|fonts\.googleapis\.com|light-dark\(/)
   assert.match(css, /prefers-reduced-motion:reduce/)
   assert.match(css, /focus-visible/)
 })

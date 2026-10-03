@@ -3,7 +3,7 @@ import MatrixForm from "@/Components/matrixes/MatrixForm.vue";
 import { createMatrixDataFromRecord } from "@/Components/matrixes/matrixFormData";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
-import { ArrowLeftIcon, EyeIcon, RectangleGroupIcon } from "@heroicons/vue/24/outline";
+import { ArrowLeft as ArrowLeftIcon, Eye as EyeIcon, LayoutDashboard as RectangleGroupIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

@@ -395,22 +395,22 @@
 import { computed, ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import {
-  AcademicCapIcon,
-  ArrowPathIcon,
-  CheckCircleIcon,
-  CheckIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  IdentificationIcon,
-  KeyIcon,
-  MagnifyingGlassIcon,
-  MinusCircleIcon,
-  PencilSquareIcon,
-  PlusIcon,
-  ShieldCheckIcon,
-  UserIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  GraduationCap as AcademicCapIcon,
+  RefreshCw as ArrowPathIcon,
+  CircleCheck as CheckCircleIcon,
+  Check as CheckIcon,
+  FileText as DocumentTextIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  IdCard as IdentificationIcon,
+  KeyRound as KeyIcon,
+  Search as MagnifyingGlassIcon,
+  CircleMinus as MinusCircleIcon,
+  SquarePen as PencilSquareIcon,
+  Plus as PlusIcon,
+  ShieldCheck as ShieldCheckIcon,
+  User as UserIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import ComboboxMultipleEnhanced from '@/Components/combobox-multiple-enhanced.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import DatePickerEnhanced from '@/Components/date-picker-enhanced.vue'

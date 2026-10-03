@@ -1,18 +1,18 @@
 <script setup>
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  BeakerIcon,
-  BuildingLibraryIcon,
-  EnvelopeIcon,
-  MapPinIcon,
-  PencilSquareIcon,
-  PhoneIcon,
-  TrashIcon,
-  UserCircleIcon,
-  UserGroupIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  ArrowRight as ArrowRightIcon,
+  FlaskConical as BeakerIcon,
+  Landmark as BuildingLibraryIcon,
+  Mail as EnvelopeIcon,
+  MapPin as MapPinIcon,
+  SquarePen as PencilSquareIcon,
+  Phone as PhoneIcon,
+  Trash2 as TrashIcon,
+  CircleUser as UserCircleIcon,
+  Users as UserGroupIcon,
+} from '@lucide/vue'
 import { Link, router } from '@inertiajs/vue3'
 import { ref } from 'vue'
 

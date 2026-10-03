@@ -2,7 +2,7 @@
 import PaidServiceForm from '@/Components/paid-services/PaidServiceForm.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import { ArrowLeftIcon, CubeIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeft as ArrowLeftIcon, Box as CubeIcon } from '@lucide/vue'
 
 defineOptions({ layout: Layout })
 

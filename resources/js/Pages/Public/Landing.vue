@@ -367,20 +367,20 @@
 import { computed, ref } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import {
-  ArrowRightIcon,
-  Bars3Icon,
-  BeakerIcon,
-  ChartBarSquareIcon,
-  CheckCircleIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentCheckIcon,
-  LockClosedIcon,
-  QrCodeIcon,
-  ShieldCheckIcon,
-  UserGroupIcon,
-  WrenchScrewdriverIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowRight as ArrowRightIcon,
+  Menu as Bars3Icon,
+  FlaskConical as BeakerIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  FileCheck as DocumentCheckIcon,
+  Lock as LockClosedIcon,
+  QrCode as QrCodeIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Users as UserGroupIcon,
+  Wrench as WrenchScrewdriverIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
 
 defineOptions({ layout: false })

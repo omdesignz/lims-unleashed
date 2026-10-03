@@ -1,109 +1,79 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
-import {
-  ArchiveBoxIcon,
-  ArrowsRightLeftIcon,
-  BeakerIcon,
-  ChartBarSquareIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentCheckIcon,
-  HomeIcon,
-  ShieldCheckIcon,
-  Squares2X2Icon,
-} from '@heroicons/vue/24/outline'
-import { usePermission } from '@/Composables/usePermissions'
+import { AnimatePresence, motion } from 'motion-v'
+import { ChevronDown } from '@lucide/vue'
+import { easeOut } from '@/Support/motion'
 
 const props = defineProps({
-  collapsed: { type: Boolean, default: false },
+  area: { type: Object, default: null },
 })
 
 const emit = defineEmits(['open-command-palette', 'navigate'])
 const page = usePage()
-const { hasPermission } = usePermission()
 
-const navigation = computed(() => [
-  {
-    label: 'Rede de laboratórios',
-    href: page.props.laboratory?.active_lab?.network_id ? route('lab-network.index', page.props.laboratory.active_lab.network_id) : '#',
-    path: '/lab-networks',
-    icon: Squares2X2Icon,
-    show: Boolean(page.props.laboratory?.active_lab?.network_id),
-  },
-  {
-    label: 'Visão geral',
-    href: route('dashboard'),
-    path: '/dashboard',
-    icon: HomeIcon,
-    show: true,
-  },
-  {
-    label: 'Amostras',
-    href: route('vap_samples.queue'),
-    path: '/vap-samples',
-    icon: BeakerIcon,
-    show: hasPermission('view_samples'),
-  },
-  {
-    label: 'Análises',
-    href: route('analysis.index'),
-    path: '/analysis',
-    icon: ClipboardDocumentCheckIcon,
-    show: hasPermission('view_analysis'),
-  },
-  {
-    label: 'Certificados',
-    href: route('qualitycertificates.index'),
-    path: '/qualitycertificates',
-    icon: DocumentCheckIcon,
-    show: hasPermission('view_quality_certificates'),
-  },
-  {
-    label: 'Inventário',
-    href: route('vap-inventory.items.index'),
-    path: '/vap-inventory',
-    icon: ArchiveBoxIcon,
-    show: hasPermission('view_inventory'),
-  },
-  {
-    label: 'Integration Hub',
-    href: route('integration-hub.index'),
-    path: '/integration-hub',
-    icon: ArrowsRightLeftIcon,
-    show: hasPermission('view_iequipments') || hasPermission('view_settings'),
-  },
-  {
-    label: 'Qualidade',
-    href: route('qms.index'),
-    path: '/qms',
-    icon: ShieldCheckIcon,
-    show: hasPermission('view_activity_log'),
-  },
-  {
-    label: 'Relatórios',
-    href: route('report-studios.index'),
-    path: '/report-studios',
-    icon: ChartBarSquareIcon,
-    show: hasPermission('view_quality_certificates') || hasPermission('view_proposal_templates') || hasPermission('view_settings'),
-  },
-].filter((item) => item.show))
+const currentPath = computed(() => String(page.url || '').split(/[?#]/)[0])
+const matches = (path) => Boolean(path) && (currentPath.value === path || currentPath.value.startsWith(`${path}/`))
 
-const isActive = (path) => page.url === path || page.url.startsWith(`${path}/`) || page.url.startsWith(`${path}?`)
+// The deepest matching entry wins, so a list page and its sub-pages never light up together.
+const activeHref = computed(() => (props.area?.sections ?? [])
+  .flatMap((section) => section.items)
+  .filter((item) => matches(item.path))
+  .sort((first, second) => second.path.length - first.path.length)[0]?.href ?? null)
+
+const closed = ref(new Set())
+const isOpen = (section) => !closed.value.has(section.key)
+
+function toggle(section) {
+  const next = new Set(closed.value)
+
+  if (next.has(section.key)) {
+    next.delete(section.key)
+  } else {
+    next.add(section.key)
+  }
+
+  closed.value = next
+}
+
+watch(() => props.area?.key, () => { closed.value = new Set() })
 </script>
 
 <template>
-  <nav class="lab-navigation" aria-label="Navegação principal">
-    <section v-for="group in [{ label: 'O seu espaço', items: navigation.filter(item => ['/dashboard', '/vap-samples', '/analysis'].includes(item.path)) }, { label: 'Gestão', items: navigation.filter(item => !['/dashboard', '/vap-samples', '/analysis'].includes(item.path)) }]" :key="group.label">
-      <p v-if="!props.collapsed" class="lab-kicker">{{ group.label }}</p>
-      <div class="lab-nav">
-        <Link v-for="item in group.items" :key="item.href" :href="item.href" :title="props.collapsed ? item.label : undefined" :aria-current="isActive(item.path) ? 'page' : undefined" @click="emit('navigate')">
-          <component :is="item.icon" aria-hidden="true" />
-          <span :class="props.collapsed ? 'sr-only' : ''">{{ item.label }}</span>
-        </Link>
-      </div>
+  <nav class="app-nav" :aria-label="props.area?.label || 'Navegação'">
+    <p v-if="props.area" class="app-nav-title">{{ props.area.label }}</p>
+    <section v-for="section in props.area?.sections ?? []" :key="section.key" class="app-nav-group">
+      <button
+        v-if="section.label"
+        type="button"
+        class="app-nav-label"
+        :aria-expanded="isOpen(section)"
+        @click="toggle(section)"
+      >
+        <ChevronDown aria-hidden="true" />{{ section.label }}
+      </button>
+      <AnimatePresence :initial="false">
+        <motion.div
+          v-if="isOpen(section)"
+          class="app-nav-group overflow-hidden"
+          :initial="{ height: 0, opacity: 0 }"
+          :animate="{ height: 'auto', opacity: 1 }"
+          :exit="{ height: 0, opacity: 0, transition: { duration: 0.14, ease: easeOut } }"
+          :transition="{ duration: 0.2, ease: easeOut }"
+        >
+          <Link
+            v-for="item in section.items"
+            :key="item.href"
+            :href="item.href"
+            class="ds-nav-item app-nav-item"
+            :aria-current="activeHref === item.href ? 'page' : undefined"
+            @click="emit('navigate')"
+          >
+            <span class="app-nav-glyph" aria-hidden="true" />
+            <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
+          </Link>
+        </motion.div>
+      </AnimatePresence>
     </section>
-    <div class="lab-nav">
-      <button type="button" :title="props.collapsed ? 'Todos os módulos' : undefined" @click="emit('open-command-palette')"><Squares2X2Icon aria-hidden="true" /><span :class="props.collapsed ? 'sr-only' : ''">Todos os módulos</span></button>
-    </div>
   </nav>
 </template>

@@ -8,14 +8,14 @@ import Combobox from "@/Components/combobox.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  ArrowTopRightOnSquareIcon,
-  ArrowUpIcon,
-  BuildingStorefrontIcon,
-  CubeIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  MapPinIcon,
-} from "@heroicons/vue/24/outline";
+  ExternalLink as ArrowTopRightOnSquareIcon,
+  ArrowUp as ArrowUpIcon,
+  Store as BuildingStorefrontIcon,
+  Box as CubeIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Eye as EyeIcon,
+  MapPin as MapPinIcon,
+} from "@lucide/vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref, watch } from "vue";
@@ -293,7 +293,7 @@ function executeBulkAction() {
             <div>
               <template v-if="form.id">
                 <label for="stock-position-item" class="ds-field-label mb-2 block">Item de inventário</label>
-                <input id="stock-position-item" :value="form.item_id?.label ?? ''" readonly aria-describedby="stock-position-identity-help" class="ds-field" />
+                <BaseInput id="stock-position-item" :value="form.item_id?.label ?? ''" readonly aria-describedby="stock-position-identity-help" class="ds-field" />
               </template>
               <Combobox
                 v-else
@@ -309,7 +309,7 @@ function executeBulkAction() {
             <div>
               <template v-if="form.id">
                 <label for="stock-position-warehouse" class="ds-field-label mb-2 block">Armazém</label>
-                <input id="stock-position-warehouse" :value="form.warehouse_id?.label ?? ''" readonly aria-describedby="stock-position-identity-help" class="ds-field" />
+                <BaseInput id="stock-position-warehouse" :value="form.warehouse_id?.label ?? ''" readonly aria-describedby="stock-position-identity-help" class="ds-field" />
               </template>
               <Combobox
                 v-else

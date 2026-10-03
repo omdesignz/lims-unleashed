@@ -2,29 +2,29 @@
   <DatePicker :model-value="props.modelValue" @update:model-value="handleUpdateModelValue" v-if="props.range" color="primary" :is-dark="isDark">
     <template #default="{ inputValue, inputEvents }">
       <label v-if="label" class="ds-field-label">{{ label }}</label>
-      <div class="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center" :class="label ? 'mt-1.5' : ''">
         <div class="relative flex-1">
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" aria-hidden="true" />
+            <CalendarIcon class="h-4 w-4 text-[var(--ds-text-soft)]" aria-hidden="true" />
           </div>
           <BaseInput
             ref="startInput"
             :value="inputValue.start"
             v-on="inputEvents.start"
-            class="ds-field pl-10"
+            class="ds-field pl-9"
             :placeholder="$t('gestlab.general.calendar_input_start_placeholder')"
           />
         </div>
-        <ArrowLongRightIcon class="hidden h-5 w-5 shrink-0 text-[var(--ds-text-soft)] sm:block" />
+        <ArrowLongRightIcon class="hidden h-4 w-4 shrink-0 text-[var(--ds-text-soft)] sm:block" />
         <div class="relative flex-1">
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" aria-hidden="true" />
+            <CalendarIcon class="h-4 w-4 text-[var(--ds-text-soft)]" aria-hidden="true" />
           </div>
           <BaseInput
             ref="endInput"
             :value="inputValue.end"
             v-on="inputEvents.end"
-            class="ds-field pl-10"
+            class="ds-field pl-9"
             :placeholder="$t('gestlab.general.calendar_input_end_placeholder')"
           />
         </div>
@@ -49,12 +49,12 @@
       <label v-if="label" class="ds-field-label block">{{ label }}</label>
       <div class="relative mt-1">
         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" aria-hidden="true" />
+          <CalendarIcon class="h-4 w-4 text-[var(--ds-text-soft)]" aria-hidden="true" />
         </div>
         <BaseInput
           :value="inputValue"
           v-on="inputEvents"
-          class="ds-field pl-10"
+          class="ds-field pl-9"
           :placeholder="$t('gestlab.general.calendar_input_placeholder')"
         />
       </div>
@@ -67,7 +67,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { usePage } from '@inertiajs/vue3'
 import { DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
-import { CalendarIcon, ArrowLongRightIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { Calendar as CalendarIcon, ArrowRight as ArrowLongRightIcon, X as XMarkIcon } from '@lucide/vue'
 
 const props = defineProps({
   modelValue: [String, Date, Object, Array],

@@ -334,12 +334,12 @@
 
     <TransitionRoot as="template" :show="restockDialogOpen">
       <Dialog as="div" class="relative z-50" @close="restockDialogOpen = false">
-        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-150" leave-from="opacity-100" leave-to="opacity-0">
           <div class="ds-modal-backdrop fixed inset-0 transition-opacity" />
         </TransitionChild>
         <div class="fixed inset-0 z-10 overflow-y-auto">
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
-            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:scale-95">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:scale-[0.97]" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-out duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:scale-[0.97]">
               <DialogPanel class="ds-modal-panel w-full max-w-lg overflow-hidden text-left transition-all">
                 <div class="px-5 py-5 sm:px-6">
                   <span class="grid h-11 w-11 place-items-center rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
@@ -373,19 +373,19 @@ import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import {
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
-  ArrowsRightLeftIcon,
-  BanknotesIcon,
-  BeakerIcon,
-  BellAlertIcon,
-  ChartBarSquareIcon,
-  CircleStackIcon,
-  FunnelIcon,
-  ShoppingCartIcon,
-  TrophyIcon,
-  TruckIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  RefreshCw as ArrowPathIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  Banknote as BanknotesIcon,
+  FlaskConical as BeakerIcon,
+  BellRing as BellAlertIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  Database as CircleStackIcon,
+  Funnel as FunnelIcon,
+  ShoppingCart as ShoppingCartIcon,
+  Trophy as TrophyIcon,
+  Truck as TruckIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   initialData: { type: Object, default: () => ({}) },
@@ -511,8 +511,8 @@ const depletionRisks = computed(() => consumptionHistory.value
   .sort((a, b) => Number(a.days_remaining) - Number(b.days_remaining))
   .slice(0, 7))
 
-const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
+const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
+const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
 const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 const baseChartOptions = computed(() => ({
   chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
@@ -529,7 +529,7 @@ const consumptionChartSeries = computed(() => [{
 }])
 const consumptionChartOptions = computed(() => ({
   ...baseChartOptions.value,
-  colors: ['#be123c'],
+  colors: ['#e5484d'],
   stroke: { curve: 'straight', width: 3 },
   markers: { size: 3 },
   xaxis: {
@@ -546,7 +546,7 @@ const stockChartSeries = computed(() => stockDistribution.value.map((item) => Nu
 const stockChartOptions = computed(() => ({
   ...baseChartOptions.value,
   labels: stockDistribution.value.map((item) => item.category || 'Sem categoria'),
-  colors: ['#0e7490', '#059669', '#7c3aed', '#d97706', '#e11d48', '#475569'],
+  colors: ['#14a3a8', '#22a45d', '#7c5ce0', '#e0902b', '#e5484d', '#6b7482'],
   legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
   dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
   stroke: { width: 0 },
@@ -558,7 +558,7 @@ const monthlyChartSeries = computed(() => [
 ])
 const monthlyChartOptions = computed(() => ({
   ...baseChartOptions.value,
-  colors: ['#0e7490', '#7c3aed'],
+  colors: ['#14a3a8', '#7c5ce0'],
   plotOptions: { bar: { borderRadius: 4, columnWidth: '52%' } },
   xaxis: {
     categories: monthlyComparison.value.map((month) => month.month),
@@ -576,7 +576,7 @@ const topReagentsChartSeries = computed(() => [{
 }])
 const topReagentsChartOptions = computed(() => ({
   ...baseChartOptions.value,
-  colors: ['#d97706'],
+  colors: ['#e0902b'],
   plotOptions: { bar: { borderRadius: 4, horizontal: true } },
   xaxis: {
     categories: topReagents.value.slice(0, 8).map((item) => item.name || 'Sem nome'),
@@ -594,12 +594,12 @@ const supplierChartSeries = computed(() => [{
 }])
 const supplierChartOptions = computed(() => ({
   ...baseChartOptions.value,
-  colors: ['#059669'],
+  colors: ['#22a45d'],
   annotations: {
     xaxis: [{
       x: 90,
-      borderColor: '#e11d48',
-      label: { text: 'Meta 90%', style: { color: '#fff', background: '#e11d48' } },
+      borderColor: '#e5484d',
+      label: { text: 'Meta 90%', style: { color: '#fff', background: '#e5484d' } },
     }],
   },
   plotOptions: { bar: { borderRadius: 4, horizontal: true } },

@@ -91,7 +91,7 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import { ref, watch, reactive } from "vue";
 import { RadioGroup, RadioGroupOption } from "@headlessui/vue";
 import { useForm, router } from "@inertiajs/vue3";
-import { CheckCircleIcon } from "@heroicons/vue/24/outline";
+import { CircleCheck as CheckCircleIcon } from "@lucide/vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { usePermission } from "@/Composables/usePermissions";
 

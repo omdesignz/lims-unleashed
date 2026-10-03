@@ -351,24 +351,24 @@ import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import Pagination from '@/Components/Pagination.vue'
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  BeakerIcon,
-  CalendarDaysIcon,
-  CheckCircleIcon,
-  ClipboardDocumentListIcon,
-  ClockIcon,
-  CubeTransparentIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  PencilSquareIcon,
-  ShieldCheckIcon,
-  ShoppingCartIcon,
-  XCircleIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  FlaskConical as BeakerIcon,
+  CalendarDays as CalendarDaysIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Clock as ClockIcon,
+  Boxes as CubeTransparentIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Eye as EyeIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  SquarePen as PencilSquareIcon,
+  ShieldCheck as ShieldCheckIcon,
+  ShoppingCart as ShoppingCartIcon,
+  CircleX as XCircleIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   reagents: { type: Object, default: () => ({ data: [] }) },

@@ -1,7 +1,7 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import { ArrowLeftIcon, PaperAirplaneIcon, PaperClipIcon, UserIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeft as ArrowLeftIcon, Send as PaperAirplaneIcon, Paperclip as PaperClipIcon, User as UserIcon } from '@lucide/vue'
 import { computed } from 'vue'
 
 defineOptions({ layout: Layout })

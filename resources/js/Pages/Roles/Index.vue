@@ -6,12 +6,12 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
-  KeyIcon,
-  PlusIcon,
-  ShieldCheckIcon,
-  TagIcon,
-  UserGroupIcon,
-} from "@heroicons/vue/24/outline";
+  KeyRound as KeyIcon,
+  Plus as PlusIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Tag as TagIcon,
+  Users as UserGroupIcon,
+} from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
 

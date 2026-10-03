@@ -3,10 +3,10 @@ import Modal from "@/Components/Modal.vue";
 import { computed } from "vue";
 import { router } from "@inertiajs/vue3";
 import {
-  ArrowsRightLeftIcon,
-  DocumentMagnifyingGlassIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  FileSearch as DocumentMagnifyingGlassIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   show: Boolean,

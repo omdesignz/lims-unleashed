@@ -230,15 +230,15 @@ import { Link, router } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import { debounce } from 'lodash'
 import {
-  AdjustmentsHorizontalIcon,
-  DocumentTextIcon,
-  MagnifyingGlassIcon,
-  PencilIcon,
-  PlusCircleIcon,
-  PowerIcon,
-  StarIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
+  SlidersHorizontal as AdjustmentsHorizontalIcon,
+  FileText as DocumentTextIcon,
+  Search as MagnifyingGlassIcon,
+  Pencil as PencilIcon,
+  CirclePlus as PlusCircleIcon,
+  Power as PowerIcon,
+  Star as StarIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'

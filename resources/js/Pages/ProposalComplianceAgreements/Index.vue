@@ -6,7 +6,7 @@ import VapTable from '@/Components/vap-table/table.vue'
 import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
-import { ArrowPathRoundedSquareIcon, TrashIcon } from '@heroicons/vue/24/outline'
+import { Repeat as ArrowPathRoundedSquareIcon, Trash2 as TrashIcon } from '@lucide/vue'
 import { usePermission } from '@/Composables/usePermissions'
 import { useRecordArchive } from '@/Composables/useRecordArchive'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
@@ -73,10 +73,10 @@ function confirmAction() {
 </script>
 <template>
 <div class="proposal-compliance-page space-y-6" :class="commercialDocumentThemeClasses">
-<section class="overflow-hidden rounded-[34px] border border-[#ded2bb] bg-[#fbfaf6] shadow-[0_26px_70px_-44px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950">
+<section class="overflow-hidden rounded-[34px] border border-[var(--ds-border)] bg-[#fbfaf6] shadow-[0_26px_70px_-44px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950">
   <div class="grid gap-6 px-6 py-7 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-end">
     <div>
-      <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">ISO 17025</p>
+      <p class="text-xs font-black uppercase tracking-[0.28em] text-[rgb(var(--accent-500-rgb))]">ISO 17025</p>
       <h1 class="mt-3 text-3xl font-black tracking-[-0.04em] text-[#10221d] dark:text-white">
         {{ $t('gestlab.general.labels.proposal_compliance_agreements.page_title') }}
       </h1>
@@ -85,9 +85,9 @@ function confirmAction() {
       </p>
     </div>
     <div class="grid grid-cols-3 gap-3">
-      <div class="rounded-[24px] border border-[#ded2bb] bg-white/80 p-4 text-center shadow-[0_18px_45px_-34px_rgba(20,61,55,0.45)] dark:border-white/10 dark:bg-white/5">
+      <div class="rounded-[24px] border border-[var(--ds-border)] bg-white/80 p-4 text-center shadow-[0_18px_45px_-34px_rgba(20,61,55,0.45)] dark:border-white/10 dark:bg-white/5">
         <p class="text-xs font-black uppercase tracking-[0.18em] text-[#78847c] dark:text-slate-400">Registos</p>
-        <p class="mt-2 text-2xl font-black text-[#143d37] dark:text-emerald-100">{{ complianceRecords.length }}</p>
+        <p class="mt-2 text-2xl font-black text-[rgb(var(--primary-600-rgb))] dark:text-emerald-100">{{ complianceRecords.length }}</p>
       </div>
       <div class="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4 text-center shadow-[0_18px_45px_-34px_rgba(20,61,55,0.45)] dark:border-emerald-300/20 dark:bg-emerald-400/10">
         <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-200">Assinados</p>
@@ -99,7 +99,7 @@ function confirmAction() {
       </div>
     </div>
   </div>
-  <div class="border-t border-[#ded2bb] bg-white/55 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+  <div class="border-t border-[var(--ds-border)] bg-white/55 px-6 py-4 dark:border-white/10 dark:bg-white/5">
     <div class="flex flex-wrap gap-3 text-xs font-black uppercase tracking-[0.18em] text-[#59665f] dark:text-slate-300">
       <span class="rounded-full bg-[#f7f1e6] px-3 py-1 dark:bg-white/10">Confidencialidade</span>
       <span class="rounded-full bg-[#f7f1e6] px-3 py-1 dark:bg-white/10">Imparcialidade</span>
@@ -109,7 +109,7 @@ function confirmAction() {
   </div>
 </section>
 
-<section class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-4 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+<section class="rounded-[30px] border border-[var(--ds-border)] bg-white/90 p-4 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
   <ArchiveMutationFeedback :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="router.reload()" />
   <vap-table
     :key="tableRevision" :model="props.model" :abilities="props.abilities" :data="props.record.data"

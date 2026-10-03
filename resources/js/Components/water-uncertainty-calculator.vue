@@ -91,7 +91,7 @@
   <script setup>
   import { ref } from 'vue';
   import { useUncertaintyCalculator } from '@/Composables/useWaterUncertaintyCalculator';
-  import { PlusCircleIcon, TrashIcon } from '@heroicons/vue/24/outline';
+  import { CirclePlus as PlusCircleIcon, Trash2 as TrashIcon } from '@lucide/vue';
 
   const series1 = ref([0]);
       const series2 = ref([0]);

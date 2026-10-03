@@ -4,11 +4,11 @@ import { ResultsDataService } from "@/Services/ResultsDataService.js";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 import { computed } from "vue";
 import {
-  CalculatorIcon,
-  ExclamationTriangleIcon,
-  TrashIcon,
-  VariableIcon,
-} from "@heroicons/vue/24/outline";
+  Calculator as CalculatorIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Trash2 as TrashIcon,
+  Variable as VariableIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   result: {

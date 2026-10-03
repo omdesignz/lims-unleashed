@@ -2,15 +2,15 @@
 import { useInventoryCatalogueOptions } from '@/Composables/useInventoryCatalogueOptions'
 import Combobox from "@/Components/combobox.vue";
 import {
-  ArrowLeftIcon,
-  CalendarDaysIcon,
-  CheckIcon,
-  CubeIcon,
-  PlusIcon,
-  TrashIcon,
-  TruckIcon,
-  UserGroupIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  CalendarDays as CalendarDaysIcon,
+  Check as CheckIcon,
+  Box as CubeIcon,
+  Plus as PlusIcon,
+  Trash2 as TrashIcon,
+  Truck as TruckIcon,
+  Users as UserGroupIcon,
+} from "@lucide/vue";
 import { Link } from "@inertiajs/vue3";
 import { computed } from "vue";
 

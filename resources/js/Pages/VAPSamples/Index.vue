@@ -1008,27 +1008,27 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { router, useForm, usePage } from '@inertiajs/vue3'
 import { sampleEntryPayload, sampleTimestampInput } from '@/Utils/sampleEntryForm'
-import { 
-  BeakerIcon,
-  TagIcon,
-  QrCodeIcon,
-  BuildingOfficeIcon,
-  QueueListIcon,
-  ClipboardDocumentListIcon,
-  CheckCircleIcon,
-  ArrowPathIcon,
-  TrashIcon,
-  ArchiveBoxXMarkIcon,
-  InformationCircleIcon,
-  ExclamationTriangleIcon,
-  ArrowDownTrayIcon,
-  CloudArrowUpIcon,
-  ScaleIcon,
-  PlusCircleIcon,
-  EyeIcon,
-  PencilSquareIcon,
-  DocumentArrowDownIcon
-} from '@heroicons/vue/24/outline'
+import {
+  FlaskConical as BeakerIcon,
+  Tag as TagIcon,
+  QrCode as QrCodeIcon,
+  Building as BuildingOfficeIcon,
+  Rows3 as QueueListIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  CircleCheck as CheckCircleIcon,
+  RefreshCw as ArrowPathIcon,
+  Trash2 as TrashIcon,
+  ArchiveX as ArchiveBoxXMarkIcon,
+  Info as InformationCircleIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Download as ArrowDownTrayIcon,
+  CloudUpload as CloudArrowUpIcon,
+  Scale as ScaleIcon,
+  CirclePlus as PlusCircleIcon,
+  Eye as EyeIcon,
+  SquarePen as PencilSquareIcon,
+  FileDown as DocumentArrowDownIcon,
+} from '@lucide/vue'
 
 // Obter props da página
 const page = usePage()
@@ -1152,10 +1152,10 @@ const chartThemeOptions = computed(() => ({
   },
   chart: {
     background: 'transparent',
-    foreColor: isDarkMode.value ? '#cbd5e1' : '#475569',
+    foreColor: isDarkMode.value ? '#d7dbe0' : '#6b7482',
   },
   grid: {
-    borderColor: isDarkMode.value ? '#1e293b' : '#e2e8f0',
+    borderColor: isDarkMode.value ? '#1e293b' : '#eef0f3',
     strokeDashArray: 4,
   },
   tooltip: {
@@ -1194,14 +1194,14 @@ const intakeTrendChartOptions = computed(() => ({
     axisBorder: { show: false },
     axisTicks: { show: false },
     labels: {
-      style: { colors: isDarkMode.value ? '#94a3b8' : '#64748b' },
+      style: { colors: isDarkMode.value ? '#98a1ae' : '#6b7482' },
     },
   },
   yaxis: {
     min: 0,
     forceNiceScale: true,
     labels: {
-      style: { colors: isDarkMode.value ? '#94a3b8' : '#64748b' },
+      style: { colors: isDarkMode.value ? '#98a1ae' : '#6b7482' },
     },
   },
   tooltip: {
@@ -1221,13 +1221,13 @@ const lifecycleStatusChartOptions = computed(() => ({
     fontFamily: 'inherit',
   },
   labels: charts.value.lifecycle_status?.labels || [],
-  colors: ['#d97706', '#0f766e', '#64748b', '#059669', '#e11d48'],
+  colors: ['#e0902b', '#0f766e', '#6b7482', '#22a45d', '#e5484d'],
   stroke: {
-    colors: [isDarkMode.value ? '#0f172a' : '#ffffff'],
+    colors: [isDarkMode.value ? '#061f46' : '#ffffff'],
   },
   legend: {
     position: 'bottom',
-    labels: { colors: isDarkMode.value ? '#cbd5e1' : '#334155' },
+    labels: { colors: isDarkMode.value ? '#d7dbe0' : '#334155' },
   },
   tooltip: chartThemeOptions.value.tooltip,
   dataLabels: {
@@ -1268,14 +1268,14 @@ const retentionPressureChartOptions = computed(() => ({
     axisBorder: { show: false },
     axisTicks: { show: false },
     labels: {
-      style: { colors: isDarkMode.value ? '#94a3b8' : '#64748b' },
+      style: { colors: isDarkMode.value ? '#98a1ae' : '#6b7482' },
     },
   },
   yaxis: {
     min: 0,
     forceNiceScale: true,
     labels: {
-      style: { colors: isDarkMode.value ? '#94a3b8' : '#64748b' },
+      style: { colors: isDarkMode.value ? '#98a1ae' : '#6b7482' },
     },
   },
   plotOptions: {
@@ -1285,7 +1285,7 @@ const retentionPressureChartOptions = computed(() => ({
       distributed: true,
     },
   },
-  colors: ['#0f766e', '#f59e0b', '#ef4444', '#334155'],
+  colors: ['#0f766e', '#e0902b', '#e5484d', '#334155'],
   legend: { show: false },
 }))
 

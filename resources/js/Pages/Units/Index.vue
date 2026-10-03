@@ -1,7 +1,7 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ScaleIcon } from "@heroicons/vue/24/outline";
+import { Scale as ScaleIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

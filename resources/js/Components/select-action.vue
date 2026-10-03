@@ -37,7 +37,7 @@
       </ListboxButton>
 
       <TransitionRoot
-        leave="transition ease-in duration-100"
+        leave="transition ease-out duration-100"
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
@@ -83,7 +83,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, TransitionRoot } from '@headlessui/vue'
-import { CheckIcon, ChevronUpDownIcon, CursorArrowRippleIcon, QueueListIcon } from '@heroicons/vue/24/outline'
+import { Check as CheckIcon, ChevronsUpDown as ChevronUpDownIcon, MousePointerClick as CursorArrowRippleIcon, Rows3 as QueueListIcon } from '@lucide/vue'
 
 const props = defineProps({
   actions: {

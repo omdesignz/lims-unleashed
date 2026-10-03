@@ -2,15 +2,15 @@
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  CheckIcon,
-  ExclamationTriangleIcon,
-  KeyIcon,
-  MagnifyingGlassIcon,
-  ShieldCheckIcon,
-  UserGroupIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  Check as CheckIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  KeyRound as KeyIcon,
+  Search as MagnifyingGlassIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Users as UserGroupIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 
 defineOptions({ layout: Layout });

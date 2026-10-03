@@ -596,15 +596,15 @@ import { computed, onMounted, ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
-  ArrowLeftIcon,
-  ArrowsPointingOutIcon,
-  CheckIcon,
-  Cog6ToothIcon,
-  DocumentTextIcon,
-  PaintBrushIcon,
-  QrCodeIcon,
-  TagIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  Maximize2 as ArrowsPointingOutIcon,
+  Check as CheckIcon,
+  Settings as Cog6ToothIcon,
+  FileText as DocumentTextIcon,
+  Paintbrush as PaintBrushIcon,
+  QrCode as QrCodeIcon,
+  Tag as TagIcon,
+} from '@lucide/vue'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'

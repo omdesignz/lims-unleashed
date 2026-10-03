@@ -2,12 +2,12 @@
 import { computed, ref, watch } from 'vue'
 import { VPerfectSignature } from 'v-perfect-signature'
 import {
-  ArrowDownTrayIcon,
-  CheckIcon,
-  PencilSquareIcon,
-  TrashIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  Check as CheckIcon,
+  SquarePen as PencilSquareIcon,
+  Trash2 as TrashIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 
 const props = defineProps({

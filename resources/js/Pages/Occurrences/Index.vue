@@ -6,14 +6,14 @@ import OccurrenceImportForm from "@/Pages/Occurrences/occurrences-import-form.vu
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowPathIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  DocumentMagnifyingGlassIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  PlusIcon,
-} from "@heroicons/vue/24/outline";
+  RefreshCw as ArrowPathIcon,
+  CircleCheck as CheckCircleIcon,
+  Clock as ClockIcon,
+  FileSearch as DocumentMagnifyingGlassIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Eye as EyeIcon,
+  Plus as PlusIcon,
+} from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
 

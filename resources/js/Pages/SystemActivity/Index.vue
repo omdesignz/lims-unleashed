@@ -4,21 +4,21 @@ import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
-  CalendarDaysIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  CircleStackIcon,
-  DocumentMagnifyingGlassIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  TrashIcon,
-  UserGroupIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  RefreshCw as ArrowPathIcon,
+  CalendarDays as CalendarDaysIcon,
+  ChevronDown as ChevronDownIcon,
+  ChevronUp as ChevronUpIcon,
+  Database as CircleStackIcon,
+  FileSearch as DocumentMagnifyingGlassIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Eye as EyeIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  Trash2 as TrashIcon,
+  Users as UserGroupIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
 import { Link, router, useForm, usePage } from "@inertiajs/vue3";
 import { computed, ref } from "vue";
@@ -591,12 +591,12 @@ function confirmDelete() {
 
     <TransitionRoot :show="showDetailsModal" as="template">
       <Dialog as="div" class="relative z-50" @close="closeDetails">
-        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-150" leave-from="opacity-100" leave-to="opacity-0">
           <div class="fixed inset-0 bg-black/45" />
         </TransitionChild>
         <div class="fixed inset-0 z-10 overflow-y-auto p-4 sm:p-6">
           <div class="flex min-h-full items-center justify-center">
-            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-2" enter-to="opacity-100 translate-y-0" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0" leave-to="opacity-0 translate-y-2">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-2" enter-to="opacity-100 translate-y-0" leave="ease-out duration-150" leave-from="opacity-100 translate-y-0" leave-to="opacity-0 translate-y-2">
               <DialogPanel class="ds-floating-panel w-full max-w-4xl overflow-hidden">
                 <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
                   <div>

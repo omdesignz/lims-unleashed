@@ -4,10 +4,10 @@ import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  BuildingStorefrontIcon,
-  CheckIcon,
-  ClipboardDocumentCheckIcon,
-} from "@heroicons/vue/24/outline";
+  Store as BuildingStorefrontIcon,
+  Check as CheckIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+} from "@lucide/vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

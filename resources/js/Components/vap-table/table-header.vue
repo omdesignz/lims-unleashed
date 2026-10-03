@@ -67,9 +67,9 @@
 
 <script setup>
 import {
-  ArrowLongDownIcon,
-  ArrowLongUpIcon,
-} from "@heroicons/vue/16/solid";
+  ArrowDown as ArrowLongDownIcon,
+  ArrowUp as ArrowLongUpIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   columns: {

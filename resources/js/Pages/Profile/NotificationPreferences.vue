@@ -3,7 +3,7 @@ import BaseInput from '@/Components/base/BaseInput.vue'
 import CheckboxInput from '@/Components/base/CheckboxInput.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
-import { ArrowLeftIcon, BellAlertIcon, EnvelopeIcon, InboxIcon, SignalIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeft as ArrowLeftIcon, BellRing as BellAlertIcon, Mail as EnvelopeIcon, Inbox as InboxIcon, Signal as SignalIcon } from '@lucide/vue'
 
 defineOptions({ layout: Layout })
 
@@ -40,7 +40,7 @@ const save = () => form.put(route('notification-preferences.update'), { preserve
     <form class="space-y-5" @submit.prevent="save">
       <section class="ds-panel overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-[var(--ds-border)]">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)]">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-left text-xs font-black uppercase text-[var(--ds-text-soft)]">Área operacional</th>
@@ -73,7 +73,7 @@ const save = () => form.put(route('notification-preferences.update'), { preserve
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </section>
 

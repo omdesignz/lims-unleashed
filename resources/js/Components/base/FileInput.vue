@@ -41,6 +41,11 @@ const inputClasses = computed(() => {
 defineExpose({
   click: () => inputElement.value?.click(),
   focus: () => inputElement.value?.focus(),
+  clear: () => {
+    if (inputElement.value) {
+      inputElement.value.value = ''
+    }
+  },
   get files() {
     return inputElement.value?.files ?? null
   },

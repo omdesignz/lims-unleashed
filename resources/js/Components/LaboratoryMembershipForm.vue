@@ -26,7 +26,7 @@ function submit() {
       <form id="laboratory-membership-form" class="space-y-4 px-6 py-5" @submit.prevent="submit">
         <p class="ds-copy text-sm">Use o email registado de uma conta activa e verificada. Novas contas são criadas pelo administrador do sistema. A adesão não concede acesso à rede nem gestão de marca.</p>
         <label for="membership-email" class="ds-field-label">Email registado</label>
-        <input id="membership-email" v-model="form.email" class="ds-field" type="email" autocomplete="off" required maxlength="255" :disabled="form.processing" :aria-invalid="Boolean(form.errors.email)" :aria-describedby="form.hasErrors ? 'membership-error' : undefined" />
+        <BaseInput id="membership-email" v-model="form.email" class="ds-field" type="email" autocomplete="off" required maxlength="255" :disabled="form.processing" :aria-invalid="Boolean(form.errors.email)" :aria-describedby="form.hasErrors ? 'membership-error' : undefined" />
         <p v-if="form.hasErrors" id="membership-error" role="alert" class="ds-field-error">{{ form.errors.email || form.errors.request }}</p>
       </form>
     </template>

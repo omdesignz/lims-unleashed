@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Componentes — VAP LIMS · Plano</title>
+<link rel="stylesheet" href="system.css">
+<link rel="stylesheet" href="sheet.css">
+<script src="ui.js"></script>
+<style>
+  .cal { display: grid; grid-template-columns: repeat(7, 34px); border: 1px solid var(--line-strong); background: var(--layer); width: max-content; }
+  .cal > * { height: 32px; display: grid; place-items: center; font: 400 12px/1 var(--mono); color: var(--muted); }
+  .cal .h { grid-column: 1 / -1; display: flex; justify-content: space-between; padding: 0 10px; height: 38px; border-bottom: 1px solid var(--line); color: var(--fg); }
+  .cal .w { color: var(--faint); font-size: 10px; }
+  .cal .hov { background: var(--raised); color: var(--fg); }
+  .cal .today { box-shadow: inset 0 0 0 1px var(--muted); color: var(--fg); }
+  .cal .pick { background: var(--accent); color: var(--accent-ink); }
+  .cal .range { background: color-mix(in srgb, var(--accent-text) 16%, transparent); color: var(--fg); }
+  svg text { font: 500 10px var(--mono); fill: var(--faint); letter-spacing: 0.06em; }
+  .seg { display: flex; height: 26px; width: 100%; }
+  .seg i { display: block; height: 100%; }
+</style>
+</head>
+<body>
+<div class="sheet-band"><img data-logo="black"><span class="k">Proposta · 03 Out 2026</span><span class="k">Folha 02 / Componentes</span></div>
+<section class="sheet-hero">
+  <div style="display:flex;justify-content:space-between"><span class="k muted">Sistema «Plano»</span><span class="k muted">Raio 0 · Sombra 0 · 1 px</span></div>
+  <div class="row" style="flex-wrap:nowrap;align-items:end;gap:40px">
+    <h1 class="d0">Peças</h1>
+    <p class="lede">Todos os elementos que a aplicação usa, em cada estado. Os estados «hover», «foco» e «premido» estão fixados para leitura; no ficheiro HTML reagem ao cursor.</p>
+  </div>
+</section>
+
+<main class="sheet">
+
+<section class="sec">
+  <header><h2 class="d3">Fundamentos</h2><p>Azul VAP é acção e posição. Âmbar, verde e vermelho só dizem estado. O resto é tinta, papel e linha.</p></header>
+  <div class="stack">
+    <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
+      <div class="sw" style="background:var(--bg)">Fundo</div>
+      <div class="sw" style="background:var(--layer)">Camada</div>
+      <div class="sw" style="background:var(--raised)">Elevado</div>
+      <div class="sw" style="background:var(--line-strong)">Linha</div>
+      <div class="sw" style="background:var(--muted);color:var(--bg)">Suave</div>
+      <div class="sw" style="background:var(--fg);color:var(--bg)">Texto</div>
+      <div class="sw" style="background:var(--accent);color:var(--accent-ink)">Acção</div>
+      <div class="sw" style="background:var(--accent-hover);color:var(--accent-hover-ink)">Acção · hover</div>
+      <div class="sw" style="background:#087cf0;color:#04101f">Azul VAP #087CF0</div>
+      <div class="sw" style="background:#061f46;color:#fff">Navy #061F46</div>
+      <div class="sw" style="background:#0757b5;color:#fff">Acção #0757B5</div>
+      <div class="sw" style="background:#70b5ff;color:#04101f">Acção escuro #70B5FF</div>
+      <div class="sw" style="background:var(--ok);color:var(--bg)">Conforme</div>
+      <div class="sw" style="background:var(--warn);color:var(--bg)">Em espera</div>
+      <div class="sw" style="background:var(--bad);color:var(--bg)">Fora</div>
+      <div class="sw tx-stripes">Inactivo</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:28px">
+      <div style="display:grid;gap:14px">
+        <p class="sub-k">TASA Orbiter — títulos e texto</p>
+        <p class="d0" style="font-size:60px">AM-26-004811</p>
+        <p class="d1">Fila de amostras</p>
+        <p class="d2">Vencem hoje</p>
+        <p class="d3">Resultados do ensaio</p>
+        <p class="lede">Texto de apoio a 16 px. Diz o que está na página e o que precisa de atenção.</p>
+        <p>Texto de interface a 14 px, peso 400, para tabelas, menus e formulários.</p>
+      </div>
+      <div style="display:grid;gap:14px;align-content:start">
+        <p class="sub-k">Geist Mono — rótulos e dados</p>
+        <p class="k">Rótulo · 11 px · +0,10 em</p>
+        <p class="k k-loose muted">Faixa · 11 px · +0,18 em</p>
+        <p class="k prompt">Próximo passo</p>
+        <p class="num" style="font-size:13px">AM-26-004811 · 3,42 · ≤ 150 mg/L</p>
+        <p class="num d2">2 148,6</p>
+        <p class="sub-k" style="margin-top:14px">Alturas</p>
+        <div class="row"><span class="btn btn-quiet btn-sm">32</span><span class="btn btn-quiet">40</span><span class="btn btn-quiet btn-lg">48</span><span class="k muted">Grelha de 4 px</span></div>
+        <p class="sub-k" style="margin-top:14px">Ícones — Lucide, 1,5 px, canto vivo</p>
+        <div class="row muted"><i data-i="search"></i><i data-i="bell"></i><i data-i="flask"></i><i data-i="file"></i><i data-i="cal"></i><i data-i="upload"></i><i data-i="filter"></i><i data-i="print"></i><i data-i="alert"></i><i data-i="user"></i><i data-i="copy"></i><i data-i="out"></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Botões</h2><p>Rótulo à esquerda, sinal à direita. Hover inverte o plano, sem sombra. Premir encolhe para 0,97. Uma acção primária por ecrã.</p></header>
+  <div class="stack">
+    <div class="specs">
+      <div class="spec"><button class="btn btn-primary">Verificar <i data-i="go" class="go"></i></button><span class="cap">Primário</span></div>
+      <div class="spec"><button class="btn btn-primary is-hover">Verificar <i data-i="go" class="go"></i></button><span class="cap">Hover</span></div>
+      <div class="spec"><button class="btn btn-primary is-active">Verificar <i data-i="go" class="go"></i></button><span class="cap">Premido · 0,97</span></div>
+      <div class="spec"><button class="btn btn-primary is-focus">Verificar <i data-i="go" class="go"></i></button><span class="cap">Foco</span></div>
+      <div class="spec"><button class="btn btn-primary is-disabled">Verificar <i data-i="go" class="go"></i></button><span class="cap">Inactivo</span></div>
+      <div class="spec"><button class="btn btn-primary">A enviar <span class="spin"></span></button><span class="cap">A processar</span></div>
+
+      <div class="spec"><button class="btn">Guardar rascunho</button><span class="cap">Secundário</span></div>
+      <div class="spec"><button class="btn is-hover">Guardar rascunho</button><span class="cap">Hover</span></div>
+      <div class="spec"><button class="btn btn-quiet">Exportar <i data-i="out"></i></button><span class="cap">Discreto</span></div>
+      <div class="spec"><button class="btn btn-quiet is-hover">Exportar <i data-i="out"></i></button><span class="cap">Hover</span></div>
+      <div class="spec"><button class="btn btn-ghost">Cancelar</button><span class="cap">Fantasma</span></div>
+      <div class="spec"><button class="btn btn-ghost is-hover">Cancelar</button><span class="cap">Hover</span></div>
+
+      <div class="spec"><button class="btn btn-danger">Rejeitar amostra</button><span class="cap">Destrutivo</span></div>
+      <div class="spec"><button class="btn btn-danger is-hover">Rejeitar amostra</button><span class="cap">Hover</span></div>
+      <div class="spec"><div class="row"><button class="btn btn-quiet btn-icon"><i data-i="print"></i></button><button class="btn btn-quiet btn-icon is-hover"><i data-i="more"></i></button><button class="btn btn-ghost btn-icon btn-sm"><i data-i="x"></i></button></div><span class="cap">Só ícone · 40 / 32</span></div>
+      <div class="spec"><div class="row"><button class="btn btn-primary btn-sm">Abrir <i data-i="go"></i></button><button class="btn btn-quiet btn-sm">Matriz <i data-i="down"></i></button></div><span class="cap">Pequeno · 32</span></div>
+      <div class="spec wide"><button class="btn btn-primary btn-lg btn-block">Verificar e enviar <span class="row" style="gap:10px"><span class="kbd" style="border-color:currentColor;color:inherit;opacity:.7">⌘↵</span><i data-i="go" class="go"></i></span></button><span class="cap">Grande · 48 · com atalho</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Campos</h2><p>40 px, a mesma caixa para texto, selecção e data. O foco é uma moldura azul de 2 px, sem brilho. O erro explica como corrigir.</p></header>
+  <div class="stack">
+    <div class="specs" style="--n:4">
+      <div class="spec"><label class="field"><span class="label">Ponto de colheita</span><span class="input"><span class="ph">Ex.: ETA Kifangondo</span></span></label><span class="cap">Vazio</span></div>
+      <div class="spec"><label class="field"><span class="label">Ponto de colheita</span><span class="input is-hover"><span class="ph">Ex.: ETA Kifangondo</span></span></label><span class="cap">Hover</span></div>
+      <div class="spec"><label class="field"><span class="label">Ponto de colheita</span><span class="input is-focus">Linha 3<span class="caret"></span></span></label><span class="cap">Foco</span></div>
+      <div class="spec"><label class="field"><span class="label">Ponto de colheita</span><span class="input">Linha 3 · enchimento</span></label><span class="cap">Preenchido</span></div>
+      <div class="spec"><label class="field"><span class="label">Temp. à chegada <b>Obrigatório</b></span><span class="input is-error">12,4<span class="unit">°C</span></span><span class="err">Acima de 8 °C. Registe o desvio ou rejeite.</span></label><span class="cap">Erro</span></div>
+      <div class="spec"><label class="field"><span class="label">Código</span><span class="input is-disabled">AM-26-004811</span><span class="hint">Gerado na receção.</span></label><span class="cap">Bloqueado</span></div>
+      <div class="spec"><label class="field"><span class="label">Volume</span><span class="input">500<span class="unit">mL</span></span></label><span class="cap">Com unidade</span></div>
+      <div class="spec"><label class="field"><span class="label">Procurar</span><span class="input"><span class="affix">Filtro://</span><span class="ph num" style="font-size:13px">código, cliente</span></span></label><span class="cap">Com prefixo</span></div>
+
+      <div class="spec"><label class="field"><span class="label">Matriz</span><span class="select"><span class="ph">Escolher matriz</span><i data-i="down" class="muted"></i></span></label><span class="cap">Selecção</span></div>
+      <div class="spec"><label class="field"><span class="label">Matriz</span><span class="select is-focus">Água de consumo<i data-i="down"></i></span>
+        <span class="menu"><span class="menu-item on">Água de consumo<i data-i="check" style="margin-left:auto"></i></span><span class="menu-item is-hover">Água residual</span><span class="menu-item">Efluente industrial</span><span class="menu-item">Solo agrícola</span></span></label><span class="cap">Aberta · hover · escolhida</span></div>
+      <div class="spec"><label class="field"><span class="label">Cliente</span><span class="input is-focus"><i data-i="search" class="muted"></i>refri<span class="caret"></span></span>
+        <span class="menu"><span class="menu-head">2 resultados</span><span class="menu-item on"><span><b>Refri</b>ango, Lda.</span><span class="num" style="font-size:11px">C-0142</span></span><span class="menu-item"><span><b style="color:var(--fg)">Refri</b>norte</span><span class="num" style="font-size:11px">C-0390</span></span><span class="menu-sep"></span><span class="menu-item"><i data-i="plus"></i>Criar «refri»</span></span></label><span class="cap">Pesquisa com criação</span></div>
+      <div class="spec"><label class="field"><span class="label">Data de colheita</span><span class="input is-focus">02 Out 2026<i data-i="cal" style="margin-left:auto"></i></span></label>
+        <div class="cal"><span class="h k"><i data-i="back" style="width:12px;height:12px"></i>Outubro 2026<i data-i="go" style="width:12px;height:12px"></i></span><span class="w">S</span><span class="w">T</span><span class="w">Q</span><span class="w">Q</span><span class="w">S</span><span class="w">S</span><span class="w">D</span><span class="faint">28</span><span class="faint">29</span><span class="faint">30</span><span>1</span><span class="pick">2</span><span class="today">3</span><span>4</span><span>5</span><span class="hov">6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span></div><span class="cap">Data · hoje · hover · escolhida</span></div>
+
+      <div class="spec wide"><label class="field"><span class="label">Observações <span class="faint">38 / 500</span></span><span class="textarea is-focus">Selo intacto. Amostra recebida em caixa térmica.<span class="caret" style="width:1px;height:16px;background:var(--accent-text)"></span></span></label><span class="cap">Texto longo · foco</span></div>
+      <div class="spec"><div class="drop" style="width:100%"><i data-i="upload" class="muted"></i><span>Largar a guia de colheita</span><span class="k faint">PDF, JPG · até 20 MB</span></div><span class="cap">Ficheiro</span></div>
+      <div class="spec"><div class="drop is-hover" style="width:100%"><i data-i="upload" class="acc"></i><span>Largar para anexar</span><span class="k acc">guia-0926.pdf</span></div><span class="cap">Ficheiro · sobre a zona</span></div>
+
+      <div class="spec"><div class="stack" style="gap:12px"><span class="opt"><span class="check"></span>Amostra urgente</span><span class="opt is-hover"><span class="check"></span>Hover</span><span class="opt on"><span class="check"><i data-i="check"></i></span>Marcada</span><span class="opt on is-focus"><span class="check"><i data-i="check"></i></span>Foco</span><span class="opt is-disabled"><span class="check"></span>Inactiva</span></div><span class="cap">Caixa</span></div>
+      <div class="spec"><div class="stack" style="gap:12px"><span class="opt on"><span class="radio"></span>Colheita pelo cliente</span><span class="opt"><span class="radio"></span>Colheita pelo laboratório</span><span class="opt is-hover"><span class="radio"></span>Hover</span><span class="opt is-disabled"><span class="radio"></span>Inactiva</span></div><span class="cap">Opção única · losango</span></div>
+      <div class="spec"><div class="stack" style="gap:12px"><span class="opt on"><span class="switch"></span>Notificar o cliente</span><span class="opt"><span class="switch"></span>Subcontratar</span><span class="opt is-hover"><span class="switch"></span>Hover</span></div><span class="cap">Interruptor</span></div>
+      <div class="spec"><div class="cells" style="width:100%"><button class="cell on" style="padding:10px 12px"><span class="k">Normal</span></button><button class="cell" style="padding:10px 12px"><span class="k muted">Urgente</span></button><button class="cell is-hover" style="padding:10px 12px"><span class="k">24 h</span></button></div><span class="cap">Segmentos · activo · hover</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Estado</h2><p>Etiqueta quadrada com 13 % da própria cor. «Certificada» é o único estado em plano cheio: é o fim do percurso.</p></header>
+  <div class="stack">
+    <div class="row"><span class="chip">Recebida</span><span class="chip c-run">Em análise</span><span class="chip c-wait">Por verificar</span><span class="chip c-wait">Por aprovar</span><span class="chip c-ok">Aprovada</span><span class="chip c-bad">Fora de especificação</span><span class="chip c-done">Certificada</span><span class="chip c-run c-plain">Urgente <i data-i="x" style="width:10px;height:10px"></i></span><span class="tag">Novo</span><span class="tag">3</span><span class="kbd">⌘K</span><span class="kbd">J</span><span class="tip">Imprimir etiqueta <span style="opacity:.6">P</span></span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="banner"><i data-i="flask" class="acc"></i><div style="flex:1"><p class="k">Folha de trabalho em curso</p><p style="font-size:13.5px;margin-top:5px">FT-1182 tem 4 resultados por introduzir.</p></div><button class="btn btn-sm btn-quiet">Retomar <i data-i="go" class="go"></i></button></div>
+      <div class="banner" style="--c:var(--warn)"><i data-i="alert" style="color:var(--warn)"></i><div style="flex:1"><p class="k">Calibração a vencer</p><p style="font-size:13.5px;margin-top:5px">BA-03 deixa de estar apta em 2 dias.</p></div></div>
+      <div class="banner" style="--c:var(--bad)"><i data-i="alert" style="color:var(--bad)"></i><div style="flex:1"><p class="k">Resultado fora do limite</p><p style="font-size:13.5px;margin-top:5px">Peça repetição ou justifique antes de verificar.</p></div></div>
+      <div class="banner" style="--c:var(--ok)"><i data-i="check" style="color:var(--ok)"></i><div style="flex:1"><p class="k">Certificado emitido</p><p style="font-size:13.5px;margin-top:5px">CE-26-01877 enviado a Refriango, Lda.</p></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:start">
+      <div class="toast"><span class="k acc">Guardado</span><span>Resultados de AM-26-004811 guardados.</span></div>
+      <div class="toast" style="--c:var(--ok)"><span class="k" style="color:var(--ok)">Verificada</span><span>Enviada para aprovação técnica.</span><span class="row" style="gap:14px"><a class="k acc" href="#">Anular</a><a class="k muted" href="#">Abrir seguinte</a></span></div>
+      <div class="toast" style="--c:var(--bad)"><span class="k" style="color:var(--bad)">Não foi guardado</span><span>Sem ligação ao servidor. Os valores ficam neste posto.</span><span class="row"><a class="k acc" href="#">Tentar de novo</a></span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+      <div class="panel" style="padding:16px;display:grid;gap:10px"><span class="k muted">Ensaios concluídos</span><span class="row" style="justify-content:space-between"><span class="num">9 / 14</span><span class="num muted">64 %</span></span><span class="bar"><i style="width:64%"></i></span></div>
+      <div class="panel" style="padding:16px;display:grid;gap:10px"><span class="k muted">A carregar</span><span class="skel" style="height:14px;width:70%"></span><span class="skel" style="height:14px;width:92%"></span><span class="skel" style="height:14px;width:48%"></span></div>
+      <div class="panel tx-stripes" style="padding:20px 16px;display:grid;gap:10px;justify-items:start"><span class="k muted">Fila vazia</span><span class="d3">Nada por verificar.</span><span class="muted" style="font-size:13px">As amostras submetidas pelos analistas aparecem aqui.</span><button class="btn btn-sm btn-quiet">Ver em análise <i data-i="go" class="go"></i></button></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Navegação</h2><p>A posição actual é um plano azul cheio. O hover só clareia o texto: nunca compete com a posição.</p></header>
+  <div class="stack">
+    <div class="panel" style="display:flex;height:64px;padding:0 12px"><a class="area">Início</a><a class="area on">Amostras</a><a class="area is-hover">Análise · hover</a><a class="area">Certificados</a><a class="area">Qualidade <span class="tag">3</span></a><span style="margin-left:auto;display:flex;align-items:center;gap:8px"><span class="find is-hover"><i data-i="search"></i>Procurar<span class="kbd">⌘K</span></span><span class="avatar">DR</span></span></div>
+    <div style="display:grid;grid-template-columns:240px 1fr;gap:28px;align-items:start">
+      <div class="panel tx-dots" style="padding:16px 0"><p class="side-head">Fluxo</p><a class="side-link">Receção <span class="num">12</span></a><a class="side-link on">Fila de amostras <span class="num">148</span></a><a class="side-link is-hover">Em análise · hover <span class="num">64</span></a><a class="side-link">Por verificar <span class="num">23</span></a></div>
+      <div class="stack">
+        <div class="crumbs"><a>Amostras</a><span>/</span><a>Por verificar</a><span>/</span><span>AM-26-004811</span></div>
+        <div class="tabs"><a class="tab on">Resultados <span class="num">9</span></a><a class="tab">Detalhes</a><a class="tab is-hover">Cadeia de custódia · hover</a><a class="tab">Anexos <span class="num">2</span></a></div>
+        <div class="cells"><button class="cell on"><span class="k">Todas</span><span class="d2 num">148</span></button><button class="cell"><span class="k muted">Recebidas</span><span class="d2 num">52</span></button><button class="cell is-hover"><span class="k muted">Em análise · hover</span><span class="d2 num">64</span></button><button class="cell"><span class="k" style="color:var(--bad)">Atrasadas</span><span class="d2 num">5</span></button></div>
+        <div class="row" style="justify-content:space-between"><span class="k muted">1–25 de 148</span><div class="pager"><a><i data-i="back" style="width:12px;height:12px"></i>Ant</a><a class="on">1</a><a class="is-hover">2</a><a>3</a><a>…</a><a>6</a><a>Seg<i data-i="go" style="width:12px;height:12px"></i></a></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Tabela</h2><p>Sem zebra. A linha sob o cursor ganha plano e filete azul; as acções só aparecem aí. Códigos e números em mono, alinhados.</p></header>
+  <div class="stack">
+    <div class="panel">
+      <table class="tbl">
+        <thead><tr><th style="width:40px"><span class="check"></span></th><th class="sorted">Código ▾</th><th>Cliente</th><th>Estado</th><th class="r">Prazo</th><th style="width:150px"></th><th class="r" style="width:120px"><span class="faint">Estado da linha</span></th></tr></thead>
+        <tbody>
+          <tr><td><span class="check"></span></td><td class="id">AM-26-004812</td><td>Águas de Luanda, E.P.</td><td><span class="chip c-run">Em análise</span></td><td class="r num">16:00</td><td></td><td class="r k faint">Normal</td></tr>
+          <tr class="is-hover"><td><span class="check"></span></td><td class="id">AM-26-004811</td><td>Refriango</td><td><span class="chip c-wait">Por verificar</span></td><td class="r num">18:00</td><td class="r"><span class="acts"><button class="btn btn-ghost btn-icon btn-sm"><i data-i="print"></i></button><button class="btn btn-primary btn-sm">Abrir <i data-i="go"></i></button></span></td><td class="r k faint">Hover</td></tr>
+          <tr class="sel"><td><span class="opt on"><span class="check"><i data-i="check"></i></span></span></td><td class="id">AM-26-004809</td><td>Nova Cimangola</td><td><span class="chip">Recebida</span></td><td class="r num">04 Out</td><td></td><td class="r k faint">Seleccionada</td></tr>
+          <tr><td><span class="check"></span></td><td><span class="skel" style="display:block;height:12px;width:110px"></span></td><td><span class="skel" style="display:block;height:12px;width:180px"></span></td><td><span class="skel" style="display:block;height:20px;width:96px"></span></td><td class="r"><span class="skel" style="display:inline-block;height:12px;width:48px"></span></td><td></td><td class="r k faint">A carregar</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="row" style="justify-content:center"><div class="k" style="display:flex;background:var(--fg);color:var(--bg)"><span style="height:44px;padding:0 16px;display:inline-flex;align-items:center;border-right:1px solid color-mix(in srgb,var(--bg) 22%,transparent)">2 seleccionadas</span><span style="height:44px;padding:0 16px;display:inline-flex;align-items:center;background:var(--accent);color:var(--accent-ink)">Atribuir analista · hover</span><span style="height:44px;padding:0 16px;display:inline-flex;align-items:center;border-right:1px solid color-mix(in srgb,var(--bg) 22%,transparent)">Criar lote</span><span style="height:44px;padding:0 16px;display:inline-flex;align-items:center"><i data-i="x"></i></span></div></div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Sobreposições</h2><p>Sem sombra: a camada separa-se por véu, moldura de 1 px e uma faixa de cor no topo. Vermelho só para o irreversível.</p></header>
+  <div class="stack">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="scrimbox"><div class="dialog" style="width:100%">
+        <div class="strip">Atribuir analista · 2 amostras</div>
+        <div style="padding:22px;display:grid;gap:18px">
+          <h3 class="d3">Quem analisa estas amostras?</h3>
+          <label class="field"><span class="label">Analista</span><span class="select">M. Kiala · 6 em curso<i data-i="down" class="muted"></i></span></label>
+          <span class="opt on"><span class="switch"></span>Avisar por notificação</span>
+        </div>
+        <div style="padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-ghost">Cancelar <span class="kbd">Esc</span></button><button class="btn btn-primary">Atribuir <i data-i="go" class="go"></i></button></div>
+      </div></div>
+      <div class="scrimbox"><div class="dialog" style="width:100%">
+        <div class="strip bad">Acção irreversível</div>
+        <div style="padding:22px;display:grid;gap:14px">
+          <h3 class="d3">Rejeitar AM-26-004801?</h3>
+          <p class="muted">A amostra sai da fila e o cliente é avisado. Fica registado na pista de auditoria com o seu nome.</p>
+          <label class="field"><span class="label">Motivo <b>Obrigatório</b></span><span class="input"><span class="ph">Ex.: recipiente danificado</span></span></label>
+        </div>
+        <div style="padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-ghost">Manter amostra</button><button class="btn btn-danger is-hover">Rejeitar amostra</button></div>
+      </div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.25fr 1fr 0.8fr;gap:16px;align-items:start">
+      <div class="dialog">
+        <div style="height:52px;padding:0 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)"><span class="k acc">&gt;</span><span class="num" style="font-size:14px">4811</span><span class="caret" style="width:1px;height:16px;background:var(--accent-text)"></span><span class="kbd" style="margin-left:auto">Esc</span></div>
+        <div style="padding:4px"><p class="menu-head">Amostras</p><span class="menu-item on"><i data-i="flask"></i>AM-26-004811 · Refriango<span class="kbd" style="border-color:currentColor;color:inherit">↵</span></span><span class="menu-item is-hover"><i data-i="flask"></i>AM-25-014811 · Biocom</span><p class="menu-head">Acções</p><span class="menu-item"><i data-i="plus"></i>Receber amostra<span class="kbd">⌘N</span></span><span class="menu-item"><i data-i="file"></i>Emitir certificado</span></div>
+        <div style="padding:10px 14px;border-top:1px solid var(--line);display:flex;gap:16px" class="k faint"><span>↑↓ Mover</span><span>↵ Abrir</span><span>⌘↵ Nova janela</span></div>
+      </div>
+      <div class="dialog" style="display:grid">
+        <div class="panel-head"><span class="k">Notificações</span><a class="k acc">Marcar lidas</a></div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:grid;gap:5px;box-shadow:inset 2px 0 0 var(--accent-text)"><span>9 resultados submetidos em AM-26-004811</span><span class="k faint">A. Domingos · há 2 h</span></div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:grid;gap:5px;background:var(--raised)"><span>PH-07 bloqueado: verificação em falta</span><span class="k faint">Sistema · há 3 h · hover</span></div>
+        <div style="padding:12px 16px;display:grid;gap:5px" class="muted"><span>CE-26-01877 descarregado pelo cliente</span><span class="k faint">Ontem</span></div>
+      </div>
+      <div class="menu"><p class="menu-head">D. Reviewer</p><span class="menu-item"><i data-i="user"></i>Perfil e segurança</span><span class="menu-item is-hover"><i data-i="sun"></i>Modo claro<span class="kbd">⇧D</span></span><span class="menu-item"><i data-i="file"></i>Manual</span><span class="menu-sep"></span><span class="menu-item" style="color:var(--bad)"><i data-i="out"></i>Terminar sessão</span></div>
+    </div>
+    <div class="panel" style="display:grid;grid-template-columns:1fr 420px;min-height:230px">
+      <div class="tx-stripes" style="display:grid;place-items:center"><span class="k faint">Página por baixo, sem véu</span></div>
+      <div style="border-left:1px solid var(--line-strong);background:var(--layer);display:grid;grid-template-rows:auto 1fr auto">
+        <div class="strip">Painel lateral · Editar método</div>
+        <div style="padding:18px;display:grid;gap:14px"><label class="field"><span class="label">Código</span><span class="input num">ISO 10523</span></label><label class="field"><span class="label">Incerteza expandida</span><span class="input">0,05<span class="unit">pH</span></span></label></div>
+        <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:space-between"><button class="btn btn-ghost">Fechar</button><button class="btn btn-primary">Guardar método <i data-i="go" class="go"></i></button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Gráficos</h2><p>Barras de topo recto, traço de 1,5 px, grelha tracejada, eixos em mono. Duas séries no máximo: azul e papel. Vermelho só para o que falhou o alvo.</p></header>
+  <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start">
+    <div class="panel"><div class="panel-head"><span class="k">Amostras por dia</span><span class="k muted">Recebidas · Concluídas</span></div><div style="padding:16px"><svg id="bars" viewBox="0 0 560 190" width="100%"></svg></div></div>
+    <div class="stack" style="gap:16px">
+      <div class="panel"><div class="panel-head"><span class="k">Prazo médio</span><span class="num" style="font-size:12px;color:var(--ok)">− 0,4 d</span></div><div style="padding:12px 16px"><svg id="line" viewBox="0 0 400 86" width="100%"></svg></div></div>
+      <div class="panel" style="padding:16px;display:grid;gap:12px"><span class="k">Carteira por estado</span><span class="seg"><i style="width:35%;background:var(--muted)"></i><i style="width:43%;background:var(--accent-text)"></i><i style="width:16%;background:var(--warn)"></i><i style="width:6%;background:var(--bad)"></i></span><span class="row k muted" style="gap:16px"><span>Recebidas 52</span><span class="acc">Em análise 64</span><span style="color:var(--warn)">Em espera 32</span></span></div>
+      <div class="cells"><div class="cell"><span class="k muted">No prazo</span><span class="d2 num">94 %</span><span class="num" style="font-size:11px;color:var(--ok)">+ 3 pts</span></div><div class="cell"><span class="k muted">Repetições</span><span class="d2 num">3,1 %</span><span class="num" style="font-size:11px;color:var(--bad)">+ 0,4 pts</span></div></div>
+    </div>
+  </div>
+</section>
+
+</main>
+<script>
+  const css = (v) => `var(--${v})`;
+  const a = [24, 31, 28, 35, 12, 6, 30, 33, 29, 38, 41, 14];
+  const b = [22, 27, 30, 31, 15, 4, 26, 32, 31, 33, 37, 18];
+  let out = '';
+  [0, 15, 30, 45].forEach((t) => { const y = 165 - t * 3.4; out += `<line x1="26" x2="560" y1="${y}" y2="${y}" stroke="${css('line')}" stroke-dasharray="${t ? '2 4' : '0'}"/><text x="0" y="${y + 3}">${t}</text>`; });
+  a.forEach((v, i) => { const x = 36 + i * 44; out += `<rect x="${x}" y="${165 - v * 3.4}" width="14" height="${v * 3.4}" fill="${css('accent-text')}"/><rect x="${x + 16}" y="${165 - b[i] * 3.4}" width="14" height="${b[i] * 3.4}" fill="${css('fg')}"/><text x="${x + 15}" y="184" text-anchor="middle">${String(i + 20 > 30 ? i - 10 : i + 20).padStart(2, '0')}</text>`; });
+  document.getElementById('bars').innerHTML = out;
+  const trend = [3.4, 3.3, 3.1, 3.2, 3.0, 2.9, 3.0, 2.8, 2.7, 2.8, 2.6, 2.6];
+  const pts = trend.map((v, i) => [i * 36 + 2, 80 - (v - 2.4) * 66]);
+  document.getElementById('line').innerHTML = `<line x1="0" x2="400" y1="40" y2="40" stroke="${css('line-strong')}" stroke-dasharray="2 4"/><text x="372" y="35">ALVO</text><polyline points="${pts.map((p) => p.join(',')).join(' ')}" fill="none" stroke="${css('accent-text')}" stroke-width="1.5"/>${pts.map((p) => `<rect x="${p[0] - 2}" y="${p[1] - 2}" width="4" height="4" fill="${css('bg')}" stroke="${css('accent-text')}"/>`).join('')}`;
+</script>
+</body>
+</html>

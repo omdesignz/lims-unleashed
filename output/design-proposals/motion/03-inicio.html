@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hoje — VAP LIMS</title>
+<link rel="stylesheet" href="system.css">
+<script src="ui.js"></script>
+<style>
+  .main { padding: 0 0 64px; }
+  .band { background: var(--band); color: var(--band-ink); height: 150px; padding: 28px 36px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+  .hero { margin: -78px 36px 0; width: min(820px, calc(100% - 72px)); background: var(--bg); padding: 26px 32px 30px; display: grid; gap: 22px; }
+  .hero-row { display: grid; grid-template-columns: auto 1fr; gap: 44px; align-items: end; }
+  .body { padding: 36px 36px 0; display: grid; gap: 36px; }
+  .work { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); }
+  .job { padding: 18px 18px 16px; border-right: 1px solid var(--line); display: grid; gap: 14px; transition: background-color 120ms var(--ease), color 120ms var(--ease); }
+  .job:last-child { border-right: 0; }
+  .job:hover, .job.is-hover { background: var(--accent); color: var(--accent-ink); }
+  .job:hover .muted, .job.is-hover .muted { color: inherit; opacity: 0.8; }
+  .job .d1 { font-size: 52px; line-height: 0.95; }
+  .job-foot { display: flex; justify-content: space-between; align-items: center; }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  .legend { display: flex; gap: 18px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 8px; height: 8px; display: inline-block; }
+  .hbar { display: grid; grid-template-columns: 132px 1fr 52px; gap: 12px; align-items: center; padding: 11px 16px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .hbar:last-child { border-bottom: 0; }
+  .hbar .bar > i.late { background: var(--bad); }
+  svg text { font: 500 10px var(--mono); fill: var(--faint); letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top" data-area="Início"></header>
+
+  <aside class="side tx-dots">
+    <button class="lab">
+      <span class="lab-mark">LC</span>
+      <span style="flex:1;text-align:left"><span style="display:block;font-weight:600;font-size:13.5px">Laboratório Central</span><span class="k faint" style="font-size:10px">ISO 17025</span></span>
+      <i data-i="updown" class="muted"></i>
+    </button>
+    <div class="side-group">
+      <p class="side-head">O meu dia</p>
+      <a class="side-link on" href="#">Hoje</a>
+      <a class="side-link" href="#">As minhas tarefas <span class="num">14</span></a>
+      <a class="side-link" href="#">Notificações <span class="num">7</span></a>
+      <a class="side-link" href="#">Calendário</a>
+    </div>
+    <div class="side-group">
+      <p class="side-head">Indicadores</p>
+      <a class="side-link" href="#">Produção</a>
+      <a class="side-link" href="#">Prazos de resposta</a>
+      <a class="side-link" href="#">Não conformidades</a>
+      <a class="side-link" href="#">Carga por analista</a>
+    </div>
+    <div class="side-group">
+      <p class="side-head">Fixados</p>
+      <a class="side-link" href="#">Águas de Luanda</a>
+      <a class="side-link" href="#">Lote L3-0926-B</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="band">
+      <span class="k">Sábado · 03 Out 2026</span>
+      <span class="k">Turno da manhã · 6 analistas</span>
+    </div>
+    <section class="hero">
+      <div style="display:flex;justify-content:space-between"><span class="k muted">Laboratório Central</span><span class="k muted">148 amostras em curso</span></div>
+      <div class="hero-row">
+        <h1 class="d0">Hoje</h1>
+        <p class="lede" style="max-width:400px">23 amostras esperam a sua verificação e 5 vencem antes das 18:00. A receção registou 12 desde as 07:00.</p>
+      </div>
+    </section>
+
+    <div class="body">
+      <section>
+        <p class="k muted prompt" style="margin-bottom:14px">À sua espera</p>
+        <div class="work">
+          <a class="job is-hover" href="#"><span class="k">Por verificar</span><span class="d1 num">23</span><span class="job-foot"><span class="muted" style="font-size:13px">5 vencem hoje</span><i data-i="go"></i></span></a>
+          <a class="job" href="#"><span class="k muted">Por aprovar</span><span class="d1 num">9</span><span class="job-foot"><span class="muted" style="font-size:13px">A mais antiga há 1 dia</span><i data-i="go" class="muted"></i></span></a>
+          <a class="job" href="#"><span class="k muted">Repetições pedidas</span><span class="d1 num">3</span><span class="job-foot"><span class="muted" style="font-size:13px">2 de microbiologia</span><i data-i="go" class="muted"></i></span></a>
+          <a class="job" href="#"><span class="k" style="color:var(--bad)">Fora de especificação</span><span class="d1 num">4</span><span class="job-foot"><span class="muted" style="font-size:13px">1 sem decisão</span><i data-i="go" class="muted"></i></span></a>
+        </div>
+      </section>
+
+      <section class="grid2">
+        <div class="panel">
+          <div class="panel-head"><span class="k">Amostras · 14 dias</span>
+            <span class="legend k muted"><span><i style="background:var(--accent-text)"></i>Recebidas</span><span><i style="background:var(--fg)"></i>Concluídas</span></span>
+          </div>
+          <div style="padding:18px 16px 10px"><svg id="bars" viewBox="0 0 640 230" width="100%"></svg></div>
+          <div class="cells" style="border-width:1px 0 0">
+            <div class="cell"><span class="k muted">Recebidas</span><span class="d2 num">412</span></div>
+            <div class="cell"><span class="k muted">Concluídas</span><span class="d2 num">389</span></div>
+            <div class="cell"><span class="k muted">Prazo médio</span><span class="d2 num">2,6 <span style="font-size:14px;letter-spacing:0" class="muted">dias</span></span></div>
+            <div class="cell"><span class="k muted">No prazo</span><span class="d2 num">94 %</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="k">Prazo por matriz</span><span class="k faint">Alvo 3 dias</span></div>
+          <div class="hbar"><span>Água de consumo</span><span class="bar"><i style="width:52%"></i></span><span class="num r" style="text-align:right">1,9 d</span></div>
+          <div class="hbar"><span>Água residual</span><span class="bar"><i style="width:66%"></i></span><span class="num" style="text-align:right">2,4 d</span></div>
+          <div class="hbar"><span>Alimentos</span><span class="bar"><i style="width:78%"></i></span><span class="num" style="text-align:right">2,8 d</span></div>
+          <div class="hbar"><span>Bebidas</span><span class="bar"><i style="width:60%"></i></span><span class="num" style="text-align:right">2,2 d</span></div>
+          <div class="hbar"><span>Solos</span><span class="bar"><i class="late" style="width:100%"></i></span><span class="num" style="text-align:right;color:var(--bad)">4,1 d</span></div>
+          <div class="hbar"><span>Efluentes</span><span class="bar"><i style="width:72%"></i></span><span class="num" style="text-align:right">2,6 d</span></div>
+          <div class="panel-head" style="border-top:1px solid var(--line);border-bottom:0"><span class="k muted">Evolução do prazo médio</span><span class="num" style="font-size:12px;color:var(--ok)">− 0,4 d</span></div>
+          <div style="padding:0 16px 14px"><svg id="line" viewBox="0 0 400 86" width="100%"></svg></div>
+        </div>
+      </section>
+
+      <section class="grid2">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h2 class="d3">Vencem hoje</h2><a class="k acc" href="#">Ver fila completa →</a></div>
+          <div class="panel">
+            <table class="tbl">
+              <thead><tr><th>Código</th><th>Cliente</th><th>Estado</th><th class="r">Prazo</th></tr></thead>
+              <tbody>
+                <tr><td class="id">AM-26-004812</td><td>Águas de Luanda, E.P.</td><td><span class="chip c-run">Em análise</span></td><td class="r num" style="color:var(--bad)">16:00</td></tr>
+                <tr><td class="id">AM-26-004811</td><td>Refriango</td><td><span class="chip c-wait">Por verificar</span></td><td class="r num">18:00</td></tr>
+                <tr><td class="id">AM-26-004806</td><td>Hotel Presidente</td><td><span class="chip c-wait">Por verificar</span></td><td class="r num">18:00</td></tr>
+                <tr><td class="id">AM-26-004799</td><td>Biocom</td><td><span class="chip c-wait">Por aprovar</span></td><td class="r num">18:00</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h2 class="d3">Equipamento</h2><a class="k acc" href="#">Inventário →</a></div>
+          <div class="panel">
+            <div class="hbar" style="grid-template-columns:1fr auto"><span>Balança analítica BA-03<span class="muted" style="display:block;font-size:12.5px">Calibração vence em 2 dias</span></span><span class="chip c-wait">A vencer</span></div>
+            <div class="hbar" style="grid-template-columns:1fr auto"><span>Medidor de pH PH-07<span class="muted" style="display:block;font-size:12.5px">Verificação diária em falta</span></span><span class="chip c-bad">Bloqueado</span></div>
+            <div class="hbar" style="grid-template-columns:1fr auto"><span>HPLC-02<span class="muted" style="display:block;font-size:12.5px">Qualificado até 12 Jan 2027</span></span><span class="chip c-ok">Apto</span></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+  const css = (v) => `var(--${v})`;
+  const received = [24, 31, 28, 35, 12, 6, 30, 33, 29, 38, 41, 14, 8, 34];
+  const done = [22, 27, 30, 31, 15, 4, 26, 32, 31, 33, 37, 18, 6, 29];
+  const days = ['20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '01', '02', '03'];
+  let out = '';
+  [0, 15, 30, 45].forEach((tick) => {
+    const y = 200 - tick * 4.2;
+    out += `<line x1="28" x2="640" y1="${y}" y2="${y}" stroke="${css('line')}" stroke-dasharray="${tick ? '2 4' : '0'}"/><text x="0" y="${y + 3}">${tick}</text>`;
+  });
+  received.forEach((value, index) => {
+    const x = 38 + index * 43;
+    out += `<rect x="${x}" y="${200 - value * 4.2}" width="14" height="${value * 4.2}" fill="${css('accent-text')}"/>`;
+    out += `<rect x="${x + 16}" y="${200 - done[index] * 4.2}" width="14" height="${done[index] * 4.2}" fill="${css('fg')}"/>`;
+    out += `<text x="${x + 15}" y="220" text-anchor="middle">${days[index]}</text>`;
+  });
+  document.getElementById('bars').innerHTML = out;
+  const trend = [3.4, 3.3, 3.1, 3.2, 3.0, 2.9, 3.0, 2.8, 2.7, 2.8, 2.6, 2.6];
+  const points = trend.map((value, index) => `${index * 36 + 2},${80 - (value - 2.4) * 66}`);
+  document.getElementById('line').innerHTML = `<line x1="0" x2="400" y1="40" y2="40" stroke="${css('line-strong')}" stroke-dasharray="2 4"/><text x="372" y="35">ALVO</text><polyline points="${points.join(' ')}" fill="none" stroke="${css('accent-text')}" stroke-width="1.5"/>${points.map((p) => `<rect x="${p.split(',')[0] - 2}" y="${p.split(',')[1] - 2}" width="4" height="4" fill="${css('bg')}" stroke="${css('accent-text')}"/>`).join('')}`;
+</script>
+</body>
+</html>

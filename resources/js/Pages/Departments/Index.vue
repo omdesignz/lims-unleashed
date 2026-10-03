@@ -7,13 +7,13 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
-  BuildingOffice2Icon,
-  EnvelopeIcon,
-  IdentificationIcon,
-  PhoneIcon,
-  PlusIcon,
-  UserCircleIcon,
-} from "@heroicons/vue/24/outline";
+  Building2 as BuildingOffice2Icon,
+  Mail as EnvelopeIcon,
+  IdCard as IdentificationIcon,
+  Phone as PhoneIcon,
+  Plus as PlusIcon,
+  CircleUser as UserCircleIcon,
+} from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
 

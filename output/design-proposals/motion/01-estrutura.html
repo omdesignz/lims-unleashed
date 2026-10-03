@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estrutura — VAP LIMS · Plano</title>
+<link rel="stylesheet" href="system.css">
+<link rel="stylesheet" href="sheet.css">
+<script src="ui.js"></script>
+<style>
+  .three { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); }
+  .three > div { padding: 22px; border-right: 1px solid var(--line); display: grid; gap: 12px; align-content: start; }
+  .three > div:last-child { border-right: 0; }
+  .three p { color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+
+  /* Anatomy wireframe */
+  .wire { border: 1px solid var(--line-strong); display: grid; grid-template-columns: 150px 1fr; grid-template-rows: 40px 1fr; height: 400px; position: relative; }
+  .wire > * { position: relative; }
+  .w-top { grid-column: 1 / -1; border-bottom: 1px solid var(--line-strong); display: flex; align-items: center; gap: 14px; padding: 0 14px; }
+  .w-side { border-right: 1px solid var(--line-strong); padding: 14px 0; display: grid; gap: 7px; align-content: start; }
+  .w-main { padding: 18px 20px 0; display: grid; grid-template-rows: auto auto 1fr auto; gap: 14px; }
+  .ln { height: 6px; background: var(--raised); }
+  .ln.a { background: var(--accent); }
+  .ln.f { background: var(--fg); }
+  .pin { position: absolute; width: 20px; height: 20px; display: grid; place-items: center; background: var(--fg); color: var(--bg); font: 600 10px/1 var(--mono); z-index: 2; }
+  .legend { display: grid; gap: 0; border: 1px solid var(--line); }
+  .legend > div { display: grid; grid-template-columns: 20px 1fr; gap: 14px; padding: 13px 16px; border-bottom: 1px solid var(--line); align-items: start; }
+  .legend > div:last-child { border-bottom: 0; }
+  .legend .pin { position: static; }
+  .legend p { font-size: 13.5px; line-height: 1.5; }
+  .legend p span { color: var(--muted); }
+
+  .ia { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); border: 1px solid var(--line); }
+  .ia > div { border-right: 1px solid var(--line); display: grid; align-content: start; }
+  .ia > div:last-child { border-right: 0; }
+  .ia h4 { height: 40px; padding: 0 12px; display: flex; align-items: center; font: 500 11px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+  .ia .on { background: var(--accent); color: var(--accent-ink); }
+  .ia h5 { padding: 14px 12px 6px; font: 500 9.5px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); }
+  .ia a { padding: 4px 12px; font-size: 12.5px; color: var(--muted); display: block; }
+  .ia > div > :last-child { margin-bottom: 14px; }
+
+  .tpl { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+  .tpl > div { display: grid; gap: 10px; align-content: start; }
+  .mini { border: 1px solid var(--line-strong); height: 150px; padding: 8px; display: grid; gap: 5px; align-content: start; }
+  .mini .b { background: var(--raised); height: 7px; }
+  .mini .row { display: grid; gap: 4px; grid-auto-flow: column; grid-auto-columns: 1fr; }
+  .tpl p { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+  .journey { display: grid; grid-template-columns: 170px repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); border-bottom: 0; }
+  .journey > * { padding: 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; gap: 8px; align-content: start; font-size: 13px; }
+  .journey > *:nth-child(6n) { border-right: 0; }
+  .journey .who { background: var(--layer); }
+  .journey .who b { font: 700 15px/1.2 var(--sans); letter-spacing: -0.02em; }
+  .journey .hd { font: 500 11px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 12px 14px; }
+  .journey .do { background: var(--accent); color: var(--accent-ink); }
+  .journey .none { color: var(--faint); }
+  .journey .muted { line-height: 1.45; }
+
+  .rules { width: 100%; border-collapse: collapse; border: 1px solid var(--line); }
+  .rules th, .rules td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: top; }
+  .rules th { font: 500 11px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .rules td.num { font-size: 12px; white-space: nowrap; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .list { border: 1px solid var(--line); }
+  .list > div { padding: 12px 16px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 150px 1fr; gap: 14px; font-size: 13.5px; }
+  .list > div:last-child { border-bottom: 0; }
+  .list span:first-child { font: 500 11px/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .list span.acc { color: var(--accent-text); }
+</style>
+</head>
+<body>
+<div class="sheet-band"><img data-logo="black"><span class="k">Proposta · 03 Out 2026</span><span class="k">Folha 01 / Estrutura</span></div>
+<section class="sheet-hero">
+  <div style="display:flex;justify-content:space-between"><span class="k muted">VAP LIMS · de raiz</span><span class="k muted">Linguagem motion.dev · Marca VAP</span></div>
+  <div class="row" style="flex-wrap:nowrap;align-items:end;gap:40px">
+    <h1 class="d0">Plano</h1>
+    <p class="lede">Um LIMS desenhado a partir da amostra, não dos ecrãs que já existiam. Sem cantos redondos, sem sombras, sem cartões dentro de cartões.</p>
+  </div>
+</section>
+
+<main class="sheet">
+
+<section class="sec">
+  <header><h2 class="d3">Se fosse de raiz</h2><p>Três decisões que mudam a estrutura e não só a pele.</p></header>
+  <div class="stack">
+    <div class="three">
+      <div><span class="k acc">A amostra manda</span><h3 class="d3">A navegação segue o percurso, não as tabelas da base de dados.</h3><p>Receção, análise, verificação, aprovação, certificado. Cada pessoa abre a aplicação na sua fila, com o que vence primeiro no topo.</p></div>
+      <div><span class="k acc">Um passo seguinte</span><h3 class="d3">Cada ecrã diz o que falta fazer e tem um só botão primário.</h3><p>Uma barra fixa no fundo do dossier nomeia o próximo passo e o que o bloqueia. O resto das acções fica discreto.</p></div>
+      <div><span class="k acc">Cor é informação</span><h3 class="d3">Azul VAP marca onde está e o que pode fazer. Mais nada é azul.</h3><p>Âmbar espera, verde conforme, vermelho fora. Sem gradientes nem ícones decorativos: tinta, papel e linhas de 1 px.</p></div>
+    </div>
+    <div class="two">
+      <div class="list">
+        <div><span>Sai</span><span>Calha de ícones e coluna dupla</span></div>
+        <div><span>Sai</span><span>Folhas e cartões arredondados, sombras, cartões «hero» por módulo</span></div>
+        <div><span>Sai</span><span>Um painel de indicadores em cada módulo</span></div>
+        <div><span>Sai</span><span>Inter e JetBrains Mono, raios de 6 a 14 px</span></div>
+      </div>
+      <div class="list">
+        <div><span class="acc">Entra</span><span>Barra de áreas no topo e uma coluna de texto por área</span></div>
+        <div><span class="acc">Entra</span><span>Painéis de linha fina que partilham arestas; planos de cor cheia</span></div>
+        <div><span class="acc">Entra</span><span>Um único «Hoje» por pessoa; indicadores numa área própria</span></div>
+        <div><span class="acc">Entra</span><span>TASA Orbiter e Geist Mono, raio 0 em tudo</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Estrutura do ecrã</h2><p>Cinco zonas fixas em toda a aplicação. Os números ligam o esquema à legenda.</p></header>
+  <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:24px;align-items:start">
+    <div class="wire">
+      <div class="w-top"><span class="pin" style="left:-10px;top:10px">1</span><span class="ln f" style="width:34px;height:10px"></span><span class="ln" style="width:38px"></span><span class="ln a" style="width:46px"></span><span class="ln" style="width:40px"></span><span class="ln" style="width:54px"></span><span class="ln" style="width:44px"></span><span style="margin-left:auto;display:flex;gap:8px;align-items:center"><span class="ln" style="width:70px;height:18px;background:transparent;border:1px solid var(--line-strong)"></span><span class="ln a" style="width:86px;height:24px"></span></span></div>
+      <div class="w-side tx-dots"><span class="pin" style="left:-10px;top:14px">2</span><span class="ln f" style="width:44px;margin:0 14px 4px"></span><span class="ln" style="width:70px;margin:0 14px"></span><span class="ln a" style="height:18px"></span><span class="ln" style="width:60px;margin:0 14px"></span><span class="ln" style="width:76px;margin:0 14px"></span><span class="ln f" style="width:58px;margin:14px 14px 4px"></span><span class="ln" style="width:66px;margin:0 14px"></span><span class="ln" style="width:50px;margin:0 14px"></span></div>
+      <div class="w-main">
+        <div><span class="pin" style="left:-10px;top:-2px">3</span><span class="ln" style="width:90px;display:block;margin-bottom:10px"></span><span class="ln f" style="width:240px;height:22px;display:block"></span></div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--line-strong);height:44px"><span class="ln a" style="height:100%"></span><span style="border-right:1px solid var(--line-strong)"></span><span style="border-right:1px solid var(--line-strong)"></span><span style="border-right:1px solid var(--line-strong)"></span><span></span></div>
+        <div style="border:1px solid var(--line-strong);position:relative;display:grid;align-content:start"><span class="pin" style="left:-10px;top:12px">4</span><span style="height:26px;border-bottom:1px solid var(--line-strong)"></span><span style="height:26px;border-bottom:1px solid var(--line)"></span><span style="height:26px;border-bottom:1px solid var(--line);background:var(--layer)"></span><span style="height:26px;border-bottom:1px solid var(--line)"></span><span style="height:26px;border-bottom:1px solid var(--line)"></span></div>
+        <div style="margin:0 -20px;border-top:1px solid var(--line-strong);height:46px;display:flex;align-items:center;gap:10px;padding:0 20px;position:relative"><span class="pin" style="left:-10px;top:13px">5</span><span class="ln" style="width:200px"></span><span class="ln a" style="width:120px;height:26px;margin-left:auto"></span></div>
+      </div>
+    </div>
+    <div class="legend">
+      <div><span class="pin">1</span><p><b>Barra de áreas · 64 px.</b> <span>Oito áreas em mono maiúsculo, procura ⌘K, avisos, «Receber amostra» sempre à mão.</span></p></div>
+      <div><span class="pin">2</span><p><b>Coluna da área · 240 px.</b> <span>Só texto. Laboratório activo no topo, filas com contagem, vistas guardadas. Posição actual em plano azul.</span></p></div>
+      <div><span class="pin">3</span><p><b>Cabeçalho da página.</b> <span>Caminho, título grande, uma frase com o que precisa de atenção. Acções secundárias à direita.</span></p></div>
+      <div><span class="pin">4</span><p><b>Conteúdo.</b> <span>Células de estado que filtram, linha de filtro, tabela ou dossier. Largura total, sem cartões aninhados.</span></p></div>
+      <div><span class="pin">5</span><p><b>Barra do próximo passo.</b> <span>Fixa no fundo de dossiers e formulários: o que falta, o que bloqueia, o botão primário e o seu atalho.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Mapa da aplicação</h2><p>As cerca de 140 páginas actuais cabem em oito áreas. Cada coluna é o menu lateral da área.</p></header>
+  <div class="ia">
+    <div><h4>Início</h4><h5>O meu dia</h5><a>Hoje</a><a>As minhas tarefas</a><a>Notificações</a><a>Calendário</a><h5>Indicadores</h5><a>Produção</a><a>Prazos</a><a>Carga por analista</a></div>
+    <div><h4 class="on">Amostras</h4><h5>Fluxo</h5><a>Receção</a><a>Fila de amostras</a><a>Em análise</a><a>Por verificar</a><a>Por aprovar</a><h5>Organização</h5><a>Lotes</a><a>Cadeia de custódia</a><a>Armazenamento</a><a>Etiquetas</a><a>Subcontratação</a></div>
+    <div><h4>Análise</h4><h5>Bancada</h5><a>Folhas de trabalho</a><a>Introduzir resultados</a><a>Repetições</a><a>Análise múltipla</a><h5>Referência</h5><a>Métodos</a><a>Parâmetros</a><a>Especificações</a><a>Matrizes</a></div>
+    <div><h4>Certificados</h4><h5>Emissão</h5><a>Por emitir</a><a>Emitidos</a><a>Rectificações</a><h5>Modelos</h5><a>Estúdio de relatórios</a><a>Assinaturas</a><a>Arquivo</a></div>
+    <div><h4>Comercial</h4><h5>Clientes</h5><a>Clientes</a><a>Contactos</a><a>Portal do cliente</a><h5>Vendas</h5><a>Pedidos</a><a>Propostas</a><a>Contratos</a><a>Facturação</a><a>Tabelas de preços</a></div>
+    <div><h4>Inventário</h4><h5>Existências</h5><a>Artigos</a><a>Reagentes e padrões</a><a>Movimentos</a><a>Armazéns</a><h5>Equipamento</h5><a>Instrumentos</a><a>Calibrações</a><a>Manutenção</a><a>Compras</a></div>
+    <div><h4>Qualidade</h4><h5>Sistema</h5><a>Não conformidades</a><a>Acções correctivas</a><a>Auditorias</a><a>Documentos</a><h5>Controlo</h5><a>Cartas de controlo</a><a>Ensaios de aptidão</a><a>Formação</a><a>Pista de auditoria</a></div>
+    <div><h4>Admin</h4><h5>Organização</h5><a>Rede de laboratórios</a><a>Utilizadores</a><a>Funções e permissões</a><h5>Sistema</h5><a>Catálogos</a><a>Marca e aparência</a><a>Integrações</a><a>Registos</a></div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Seis moldes de página</h2><p>Toda a página usa um destes. Módulo novo significa conteúdo novo, não desenho novo.</p></header>
+  <div class="tpl">
+    <div><div class="mini"><span class="b" style="background:var(--accent);height:26px;margin:-8px -8px 0"></span><span class="b" style="height:30px;width:60%;background:var(--fg);margin-top:-12px"></span><span class="row" style="margin-top:6px"><span class="b" style="height:28px;background:var(--accent)"></span><span class="b" style="height:28px"></span><span class="b" style="height:28px"></span></span><span class="row"><span class="b" style="height:34px"></span><span class="b" style="height:34px"></span></span></div><span class="k">Hoje</span><p>Faixa azul, trabalho à espera, dois gráficos, o que vence.</p></div>
+    <div><div class="mini"><span class="b" style="width:50%;height:12px;background:var(--fg)"></span><span class="row"><span class="b" style="height:18px;background:var(--accent)"></span><span class="b" style="height:18px"></span><span class="b" style="height:18px"></span><span class="b" style="height:18px"></span></span><span class="b"></span><span class="b"></span><span class="b"></span><span class="b"></span><span class="b"></span><span class="b"></span><span class="b"></span></div><span class="k">Fila</span><p>Células de estado, linha de filtro, tabela, acções em lote.</p></div>
+    <div><div class="mini"><span class="b" style="width:50%;height:12px;background:var(--fg)"></span><span class="row"><span class="b" style="height:14px;background:var(--accent-text)"></span><span class="b" style="height:14px;background:var(--accent)"></span><span class="b tx-stripes" style="height:14px"></span></span><span style="display:grid;grid-template-columns:2fr 1fr;gap:5px"><span style="display:grid;gap:5px"><span class="b"></span><span class="b"></span><span class="b"></span><span class="b"></span></span><span class="b" style="height:44px"></span></span><span class="b" style="height:16px;margin-top:auto;background:transparent;border-top:1px solid var(--line-strong);display:flex;justify-content:flex-end"><span class="b" style="width:34px;height:10px;background:var(--accent);margin-top:4px"></span></span></div><span class="k">Dossier</span><p>Percurso, separadores, resultados, ficha lateral, próximo passo.</p></div>
+    <div><div class="mini"><span class="b" style="width:50%;height:12px;background:var(--fg)"></span><span style="display:grid;grid-template-columns:1fr 2fr;gap:6px;margin-top:4px"><span class="b" style="width:70%"></span><span style="display:grid;gap:5px"><span class="b" style="height:12px"></span><span class="b" style="height:12px"></span></span><span class="b" style="width:60%"></span><span style="display:grid;gap:5px"><span class="b" style="height:12px"></span><span class="b" style="height:22px"></span></span></span></div><span class="k">Formulário</span><p>Secção à esquerda, campos à direita. Guarda sozinho; erro junto ao campo.</p></div>
+    <div><div class="mini" style="grid-template-columns:1.4fr 1fr;gap:6px"><span style="display:grid;gap:5px;align-content:start"><span class="b" style="width:60%;height:12px;background:var(--fg)"></span><span class="b"></span><span class="b"></span><span class="b"></span><span class="b"></span><span class="b"></span></span><span style="border-left:1px solid var(--line-strong);margin:-8px -8px -8px 0;padding:0 6px;display:grid;gap:5px;align-content:start"><span class="b" style="background:var(--accent);height:12px;margin:0 -6px"></span><span class="b" style="height:12px"></span><span class="b" style="height:12px"></span></span></div><span class="k">Catálogo</span><p>Lista simples e edição em painel lateral, sem sair da página.</p></div>
+    <div><div class="mini"><span class="b" style="width:50%;height:12px;background:var(--fg)"></span><span class="row" style="align-items:end;height:60px;margin-top:6px"><span class="b" style="height:30px;background:var(--accent-text)"></span><span class="b" style="height:44px;background:var(--fg)"></span><span class="b" style="height:38px;background:var(--accent-text)"></span><span class="b" style="height:56px;background:var(--fg)"></span><span class="b" style="height:24px;background:var(--accent-text)"></span></span><span class="row"><span class="b" style="height:20px"></span><span class="b" style="height:20px"></span><span class="b" style="height:20px"></span></span></div><span class="k">Relatório</span><p>Período no topo, gráficos planos, tabela exportável por baixo.</p></div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Percursos</h2><p>Quem faz o quê em cada etapa. A célula azul é o momento em que a pessoa age; o resto é só acompanhar.</p></header>
+  <div class="journey">
+    <span class="hd">Pessoa</span><span class="hd">01 Receção</span><span class="hd">02 Análise</span><span class="hd">03 Verificação</span><span class="hd">04 Aprovação</span><span class="hd">05 Certificado</span>
+
+    <div class="who"><b>Recepcionista</b><span class="muted">Abre em Amostras · Receção</span></div>
+    <div class="do"><b>Receber amostra</b><span>Cliente, matriz, ensaios da proposta. Etiqueta impressa ao guardar.</span><span class="kbd" style="border-color:currentColor;color:inherit;width:max-content">⌘N</span></div>
+    <div class="none">Vê o estado na fila</div><div class="none">—</div><div class="none">—</div><div class="none">Entrega ao cliente</div>
+
+    <div class="who"><b>Analista</b><span class="muted">Abre em Análise · Folhas de trabalho</span></div>
+    <div class="none">Recebe aviso de atribuição</div>
+    <div class="do"><b>Introduzir resultados</b><span>Tab avança, Enter guarda. O limite e a avaliação aparecem ao lado do valor.</span><span class="kbd" style="border-color:currentColor;color:inherit;width:max-content">⌘↵ Submeter</span></div>
+    <div class="none">Recebe devoluções</div><div class="none">—</div><div class="none">—</div>
+
+    <div class="who"><b>Verificador</b><span class="muted">Abre em Amostras · Por verificar</span></div>
+    <div class="none">—</div><div class="none">Vê a carga por analista</div>
+    <div class="do"><b>Verificar e enviar</b><span>J e K percorrem a fila. Um resultado fora do limite bloqueia até haver decisão.</span><span class="kbd" style="border-color:currentColor;color:inherit;width:max-content">⌘↵</span></div>
+    <div class="none">—</div><div class="none">—</div>
+
+    <div class="who"><b>Responsável técnico</b><span class="muted">Abre em Amostras · Por aprovar</span></div>
+    <div class="none">—</div><div class="none">—</div><div class="none">Vê quem verificou</div>
+    <div class="do"><b>Aprovar com assinatura</b><span>Confirma a identidade uma vez por sessão. Rejeitar pede motivo.</span></div>
+    <div class="do"><b>Emitir certificado</b><span>Pré-visualização ao lado. Envio ao cliente no mesmo passo.</span></div>
+
+    <div class="who"><b>Cliente</b><span class="muted">Portal, mesma linguagem, uma só coluna</span></div>
+    <div class="do"><b>Pedir análise</b><span>Escolhe da proposta em vigor.</span></div>
+    <div class="none">Acompanha o percurso</div><div class="none">Acompanha o percurso</div><div class="none">Acompanha o percurso</div>
+    <div class="do"><b>Descarregar certificado</b><span>PDF assinado e histórico.</span></div>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Movimento</h2><p>motion-v onde a continuidade ajuda. Nada salta, roda ou brilha, como pede a marca VAP.</p></header>
+  <div class="stack">
+    <table class="rules">
+      <thead><tr><th>Elemento</th><th>O que acontece</th><th>Duração</th><th>Curva</th></tr></thead>
+      <tbody>
+        <tr><td>Botão, linha, ligação (hover)</td><td>Troca de cor do plano. Seta avança 3 px no botão.</td><td class="num">120 ms</td><td class="num">0.23, 1, 0.32, 1</td></tr>
+        <tr><td>Premir</td><td>Escala 0,97 e volta.</td><td class="num">160 ms</td><td class="num">0.23, 1, 0.32, 1</td></tr>
+        <tr><td>Plano azul da posição (menu, separadores, células)</td><td>Desliza para a nova posição com layoutId.</td><td class="num">220 ms</td><td class="num">mola, sem ressalto</td></tr>
+        <tr><td>Menu, selecção, calendário</td><td>Opacidade e 4 px a partir do gatilho. Sai mais depressa do que entra.</td><td class="num">160 / 100 ms</td><td class="num">0.23, 1, 0.32, 1</td></tr>
+        <tr><td>Diálogo e painel lateral</td><td>Véu em opacidade; painel entra 100 % da sua largura.</td><td class="num">220 ms</td><td class="num">0.32, 0.72, 0, 1</td></tr>
+        <tr><td>Aviso (toast)</td><td>Sobe do canto inferior direito; sai pelo mesmo lado.</td><td class="num">200 ms</td><td class="num">0.23, 1, 0.32, 1</td></tr>
+        <tr><td>Números do «Hoje»</td><td>Contam até ao valor na primeira visita do dia. Nunca em tabelas.</td><td class="num">600 ms</td><td class="num">0.23, 1, 0.32, 1</td></tr>
+        <tr><td>Procura ⌘K, atalhos J/K, introdução de resultados</td><td>Sem animação. Usados centenas de vezes por dia.</td><td class="num">0 ms</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+    <p class="note">Só se anima opacidade e transformação. Hover apenas em dispositivos com cursor. Com «reduzir movimento» ligado ficam as trocas de cor e desaparecem as deslocações. A troca de tema é instantânea.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <header><h2 class="d3">Tema e largura</h2><p>Escuro é a referência da linguagem. Claro é o mesmo sistema com tinta Navy sobre papel.</p></header>
+  <div class="two">
+    <div class="list">
+      <div><span>Escuro</span><span>Fundo #070F1C, acção Azul VAP com texto tinta. Para bancada e turnos longos.</span></div>
+      <div><span>Claro</span><span>Fundo branco, texto Navy #061F46, acção #0757B5. Para receção e impressão.</span></div>
+      <div><span>Marca do laboratório</span><span>A cor própria de cada laboratório fica só no seu selo da coluna.</span></div>
+    </div>
+    <div class="list">
+      <div><span>≥ 1280 px</span><span>Barra de áreas, coluna e conteúdo.</span></div>
+      <div><span>768 – 1279 px</span><span>A coluna recolhe para um botão «Menu»; as áreas ficam.</span></div>
+      <div><span>&lt; 768 px</span><span>Áreas numa barra inferior de cinco; tabelas passam a linhas empilhadas; próximo passo ocupa a largura toda.</span></div>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

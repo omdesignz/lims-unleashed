@@ -1,7 +1,7 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { usePermission } from "@/Composables/usePermissions";
-import { ArrowLongRightIcon, ArrowPathRoundedSquareIcon, CheckIcon, PencilIcon, ChevronDownIcon, TrashIcon } from "@heroicons/vue/24/outline";
+import { ArrowRight as ArrowLongRightIcon, Repeat as ArrowPathRoundedSquareIcon, Check as CheckIcon, Pencil as PencilIcon, ChevronDown as ChevronDownIcon, Trash2 as TrashIcon } from "@lucide/vue";
 import progressTracker from '@/Components/progress-tracker.vue';
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue'
 import { onMounted } from 'vue';
@@ -119,7 +119,7 @@ onMounted(() => {
                 </ListboxButton>
             </div>
 
-            <transition leave-active-class="transition ease-in duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
+            <transition leave-active-class="transition ease-out duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
                 <ListboxOptions class="absolute right-0 z-10 mt-2 w-72 origin-top-right divide-y divide-gray-200 overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none">
                 <ListboxOption as="template" v-for="option in props.steps" :key="option.name" :value="option" v-slot="{ active, selected }">
                     <li :class="[active ? 'bg-blue-900 text-white' : 'text-gray-900', 'cursor-default select-none p-4 text-sm']">

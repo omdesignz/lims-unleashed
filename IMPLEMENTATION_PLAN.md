@@ -1,6 +1,6 @@
 # LIMS modernization — phased implementation plan
 
-Status: Phase 1 complete under all eight frozen gates; certified source publication is verified. This documentation-only closure record is the final bookkeeping change. Phase 2 belongs to Claude Code, outside Codex; Phase 3 requires a later explicit user request. Updated 2026-10-03.
+Status: Phase 1 complete under all eight frozen gates; certified source publication is verified. This documentation-only closure record is the final bookkeeping change. Phase 2 (VAP visual system) is in progress under Claude Code — see its section for scope and open items; Phase 3 requires a later explicit user request. Updated 2026-10-03.
 
 ## Authoritative Phase 1 acceptance contract — frozen 2026-10-03
 
@@ -1293,15 +1293,50 @@ better-ui and emil-design-eng guided these capability-matched controls, identity
 
 The new entry file initially reproduced **22 failures / one passing membership-denial case**. It now passes **25 cases / 141 assertions**. The prior classification matrix now follows edit redirects and checks the canonical destination's retained resource, rather than treating a missing-page HTTP payload as browser success. Final post-format affected regression passes **73 cases / 973 assertions**, with no failures/errors/skips. The four frontend files pass **55 checks**, including real Vue watcher behavior and success-before-finish ordering. Build passes in **21.24 seconds** with the existing chunk-size warning; Pint, tracked/untracked whitespace checks and read-only Laravel review pass. Evidence: `/private/tmp/lims-stock-entry-regression.log`, `-front.log` and `-build.log`. The approved complete checkpoint has **4,164 manifest cases / 193 classes** and uses `/private/tmp/lims-stock-entry-full-manifest.xml`, `-full.log`, `-full.xml` and `-full-before.sha256`; its outcome is pending. No competing tests, builds or source edits will occur during that invocation. No schemas, development records, credentials, account grants, dependencies, production settings or global PHP configuration were changed.
 
-## Phase 2 — Exact visual system (deferred; Claude Code owns implementation)
+## Phase 2 — VAP visual system (in progress; Claude Code)
 
-- Compare the running application with the existing references before changing direction. Establish fixed viewport, font, and sample-data conditions for comparisons.
-- Match typography, content width, spacing, table density, surfaces, icon weight, and navigation geometry. Use shared components and tokens to prevent page-by-page drift.
-- Complete persistent collapsed navigation, accessible mobile navigation, light/dark behavior, and configurable branding with clear inheritance and reset behavior.
-- Review dashboard, list, detail, and form examples in default, loading, empty, error, validation, disabled, and success states. Test keyboard access, focus return, reduced motion, and long Portuguese labels.
-- Use better-ui and emil-design-eng for interaction polish: restrained motion, immediate high-frequency actions, explicit transition properties, and no animated color sweep when changing themes.
+Revised on 2026-10-03 at the user's request: the earlier pixel-match brief is replaced. The target is a unified, production-grade interface built from the VAP Brand Identity System 1.1 and the two video references, not a recolour of the previous screens.
 
-Exit: screenshots at agreed desktop and mobile sizes match the reference, unexplained differences are resolved, and the user approves the representative screens before broad rollout. Automated screenshot comparisons supplement visual review; a successful build is not visual acceptance.
+**Direction under review: "Plano"** (proposed 2026-10-03, awaiting the user's approval; nothing of it is implemented). The user rejected "Bancada" after seeing it across the app ("you're using the skeleton or surface that was already in the project") and asked for the flat design language of motion.dev carrying the VAP brand, designed from scratch, with proposals shown before any implementation.
+
+The proposal lives in `output/design-proposals/motion/`:
+
+- `system.css` — the reference stylesheet: tokens for dark (reference) and light, type, and every component with its hover, focus, pressed and disabled state. Port from this file; do not re-derive values.
+- `01-estrutura.html` — the three structural decisions, shell anatomy, application map (eight areas), six page templates, role journeys, motion rules, themes and breakpoints.
+- `02-componentes.html` — every component in every state.
+- `03-inicio.html`, `04-fila.html`, `05-registo.html`, `06-entrada.html` — Today, sample queue, sample dossier and sign-in built with the system. Append `?light` for the light theme. Renders are in `png/`.
+
+Summary of the language: zero radius and no shadows anywhere; 1px hairlines; panels that share edges instead of floating cards; TASA Orbiter (700, tight tracking) for titles and text, Geist Mono (11px uppercase, +0.10em) for labels, navigation, buttons and data; VAP Blue `#087CF0` as the only accent (action and current position), amber/green/red for state only; a 64px area bar across the top and a 240px text-only column per area replacing the icon rail and double column; a flat blue band with an ink panel cut into it on Today, sign-in and error pages; a fixed "next step" bar on dossiers and forms with the single primary action. Both typefaces are OFL and must be self-hosted in `resources/fonts` (the mockups load them from Google Fonts).
+
+Implementation order once approved: (1) tokens, fonts and Tailwind theme (radius 0, shadows none) replacing the Bancada values; (2) shell — area bar, area column, page header, next-step bar; (3) shared components (buttons, fields, select/combobox, date picker, checkbox/radio/switch, chips, tabs, state cells, pager, table, dialog, slide-over, menu, command palette, toast, banner, empty/loading states, chart defaults); (4) the six page templates; (5) every module page mapped to a template, area by area; (6) portal, auth and error pages. Remove the Bancada-only classes (`app-rail*`, `app-column*`, `app-sheet`, hero-flattening rules) as each layer is replaced.
+
+**Working tree state: proposal B, "Bancada"** (chosen 2026-10-03, then rejected the same day; this is what the code currently renders and what the new direction replaces). One sheet on a neutral canvas: an icon rail for areas, a context column listing that area's pages, and a work area whose header band carries the page title, context line and tabs. Neutral greys with near-black text, borderless white cards on a grey body, small radii (controls 6px, cards 10px at the 15px root), dense type. Icons are Lucide (`@lucide/vue`), with motion.dev gestures on the rail. Typeface: Inter with JetBrains Mono, self-hosted from `resources/fonts`. Charts share one language through `resources/js/Support/charts.js` applied as ApexCharts global defaults. The parts that survive the change of direction are the brand assets, Lucide icons, `motion-v` helpers, the control and surface contracts as a mechanism, custom error pages, chart defaults and the branding-default migration.
+
+Foundations in place:
+
+- **Brand and type.** VAP Navy/Blue/Action tokens (`--vap-*`), Inter and JetBrains Mono self-hosted from `resources/fonts`, brand assets in `public/brand`. Tailwind's stock palettes are remapped to brand scales in `tailwind.config.js`, so utility-styled screens share one palette. Emphasis is Medium; SemiBold is the strongest level.
+- **Shell.** `Shared/Layouts/Layout.vue` defines the rail areas (`areaDefinitions`): every permitted menu entry is assigned to exactly one area by path, unmatched entries fall into Administração, and each area lists its daily pages first and catalogues under "Catálogos e configuração". `Shared/Navigation/app-sidebar.vue` renders the rail and context column (also used by the mobile drawer); `side-nav.vue` renders the column's sections. The work area scrolls inside the sheet (`scroll-region`). Command palette with arrow-key selection; the column collapses, the rail stays.
+- **Page header band.** `.app-page-header` / `.app-page-title` / `.app-tabs` for new pages. Older pages that open with a hero card (`ds-panel`, `ds-command-surface`) are flattened into the same band by a base-layer rule, so their titles sit under the top bar instead of in a floating card.
+- **Icons.** All component imports use `@lucide/vue` (aliased to the previous local names). `Components/motion/AnimatedIcon.vue` plays short gestures (pop, ring, spin, wobble, draw, lift) on rail hover. `icon-picker.vue` and `Boards/Index.vue` still enumerate Heroicons because stored records reference those icon names.
+- **Motion.** `motion-v` (motion.dev). The active rail tile uses a shared layout animation; module groups expand with presence; page changes settle with a 200 ms fade/4 px rise; sign-in traces the sample lifecycle once. Keyboard-opened surfaces do not animate; `prefers-reduced-motion` is honoured. Helpers live in `resources/js/Support/motion.js` and `Components/motion`.
+- **Control contract (app.css §21).** One height (`--ds-control-height`), radius, border, type and focus for every input, select, textarea and `ds-button`, enforced from the base cascade layer so page-level size utilities cannot drift. Opt out with `data-bare`; dense tools may use `h-7`/`h-8`.
+- **Surface contract (app.css §22).** Dialogs, menus, option lists, tables and third-party toasts are normalised by role. Labels are sentence case.
+- **Shared components.** `records-table` (39 list pages) is one card: toolbar, table, pagination. `vap-table`, `DataTableShell`, `form-section`, `action-section`, `dialog-modal`, `confirm-dialog`, toasts, `BaseSelect`, filters and date range follow the same language.
+- **Rebuilt screens.** Sign-in and all auth pages (`AuthExperienceShell`), overview, sample queue, sample record, laboratory network, customer portal layout, Inertia error page, and Blade error views for 401/402/403/404/419/429/500/503.
+- **Branding defaults.** Network/app defaults are VAP Action `#0757b5`; `2026_10_03_100504_adopt_vap_brand_colour_defaults` converts the earlier untouched defaults and preserves explicit choices. Laboratory overrides still theme the action colour only; status colours never follow branding.
+
+Verification so far: production build passes; frontend suite 414 pass / 11 fail; `ErrorPagesTest`, `BrandColourDefaultsMigrationTest`, `LabNetworkAccessTest` and the admin, LIMS and portal smoke tests pass. Desktop (1440×900), dark mode and mobile (390×844) were reviewed with headless Chrome on the overview, queue, sample record, network, analysis, customers, settings, notifications, invoice form, staff dossier, sign-in and error pages. The complete PHP suite has not been rerun after these changes.
+
+Open items:
+
+- The 11 remaining frontend failures are the F1 contract cases whose assertions describe pre-Phase-1 behaviour (report export wiring, reversal instead of delete, and similar). They need reconciling against the approved Phase 1 behaviour, case by case; none concerns the visual system.
+- Page-level composition on older module screens (hero cards, nested panels, per-page stat strips) still varies; the contracts unify controls and surfaces but not each page's layout. Convert module by module, starting with the most used.
+- Not yet reviewed in a browser: report studio, file manager, label studio, worksheets, public proposal page, portal pages behind a customer login, and real-time toasts.
+- Four native-control surfaces are deliberate exceptions listed in `design-system-contract.test.mjs` because their behaviour tests exercise native semantics.
+
+- Known defect in the Bancada shell: below the desktop breakpoint the rail and column render stacked above the page because the mobile hide rule does not match elements inside `div.contents`. Not worth fixing if "Plano" replaces the shell.
+
+Exit: the user approves "Plano" (or a revision of it), it is implemented across every module page, the representative screens are approved in light and dark at desktop and mobile sizes, the open items above are closed or explicitly deferred, and the complete PHP and frontend suites pass.
 
 ## Phase 3 — Core laboratory journey
 

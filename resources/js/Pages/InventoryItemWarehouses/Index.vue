@@ -8,12 +8,12 @@ import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  CheckIcon,
-  CubeIcon,
-  MapPinIcon,
-  BeakerIcon,
-  Squares2X2Icon,
-} from "@heroicons/vue/24/outline";
+  Check as CheckIcon,
+  Box as CubeIcon,
+  MapPin as MapPinIcon,
+  FlaskConical as BeakerIcon,
+  LayoutGrid as Squares2X2Icon,
+} from "@lucide/vue";
 import { router, useForm } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

@@ -692,22 +692,22 @@ import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed } from "vue";
 import { router } from "@inertiajs/vue3";
-import { 
-  CreditCardIcon,
-  UserIcon,
-  BuildingOfficeIcon,
-  DocumentTextIcon,
-  CalculatorIcon,
-  CurrencyEuroIcon,
-  InformationCircleIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentDuplicateIcon,
-  DocumentArrowDownIcon,
-  TagIcon,
-  EnvelopeIcon,
-  ArrowLeftIcon,
-  PencilIcon
-} from "@heroicons/vue/24/outline";
+import {
+  CreditCard as CreditCardIcon,
+  User as UserIcon,
+  Building as BuildingOfficeIcon,
+  FileText as DocumentTextIcon,
+  Calculator as CalculatorIcon,
+  Euro as CurrencyEuroIcon,
+  Info as InformationCircleIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Copy as DocumentDuplicateIcon,
+  FileDown as DocumentArrowDownIcon,
+  Tag as TagIcon,
+  Mail as EnvelopeIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Pencil as PencilIcon,
+} from "@lucide/vue";
 
 defineOptions({
   layout: Layout

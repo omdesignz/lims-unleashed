@@ -10,11 +10,11 @@ import { pickBy } from "lodash";
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { Link, router, usePage } from "@inertiajs/vue3";
 import {
-  ChevronDownIcon,
-  MagnifyingGlassIcon,
-  SquaresPlusIcon,
-  AdjustmentsHorizontalIcon,
-} from "@heroicons/vue/24/outline";
+  ChevronDown as ChevronDownIcon,
+  Search as MagnifyingGlassIcon,
+  Grid2x2Plus as SquaresPlusIcon,
+  SlidersHorizontal as AdjustmentsHorizontalIcon,
+} from "@lucide/vue";
 import { usePermission } from "@/Composables/usePermissions";
 import { trans } from "laravel-vue-i18n";
 import DataTableShell from "@/Components/tables/DataTableShell.vue";
@@ -238,58 +238,53 @@ const masks = ref({
 </script>
 
 <template>
-  <div class="space-y-8">
-    <section class="ds-command-surface">
-      <div class="space-y-5 px-5 py-5 sm:px-7 sm:py-6">
-        <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div>
-            <p class="ds-kicker">
-              {{ $t("gestlab.general.titles.search_and_filters") }}
-            </p>
-            <h2 class="ds-heading mt-2 text-lg">
+  <div class="space-y-4">
+    <DataTableShell :show-summary="false">
+      <div class="space-y-3 border-b border-[var(--ds-border)] px-4 py-4 sm:px-5">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="min-w-0">
+            <h2 class="ds-heading text-base">
               {{ $t("gestlab.general.titles.records_list") }}
             </h2>
+            <p class="mt-0.5 text-[0.8125rem] text-[var(--ds-text-soft)]">
+              <template v-if="totalRecords">{{ resultSummary }} · </template>{{ totalRecords }} {{ $t("gestlab.general.labels.records") }}
+            </p>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2 xl:justify-end">
-            <span
-              v-if="totalRecords"
-              class="inline-flex items-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-1.5 text-xs font-bold text-[var(--ds-text-muted)]"
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              class="ds-button ds-button-secondary md:hidden"
+              @click="toggleSelectAll"
             >
-              {{ resultSummary }}
-            </span>
-            <span
-              v-if="selectedRecordIds.length"
-              class="inline-flex items-center gap-1 rounded-full border border-[rgb(var(--primary-200-rgb)/0.75)] bg-[rgb(var(--primary-50-rgb)/0.75)] px-3 py-1.5 text-xs font-semibold text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--primary-300-rgb)/0.2)] dark:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:text-[rgb(var(--primary-100-rgb))]"
-            >
-              {{ selectedRecordIds.length }} {{ $t("gestlab.general.labels.selected_records") }}
-            </span>
+              {{ allVisibleSelected ? $t("gestlab.general.labels.clear_selection") : $t("gestlab.general.buttons.select_all") }}
+            </button>
             <button
               v-if="props.createAction && hasPermission('add_' + props.model)"
               type="button"
               class="ds-button ds-button-primary"
               @click="$emit('create-record')"
             >
-              <SquaresPlusIcon class="mr-2 h-5 w-5" />
+              <SquaresPlusIcon class="h-4 w-4" />
               {{ $t("gestlab.general.buttons.new_record") }}
             </button>
           </div>
         </div>
 
-        <div class="ds-command-toolbar grid gap-3 p-3 lg:grid-cols-[minmax(16rem,1fr)_auto] lg:items-center">
-          <div class="relative min-w-0">
-              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <MagnifyingGlassIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
-              </div>
-              <BaseInput
-                v-model="query.search"
-                type="search"
-                :placeholder="$t('gestlab.general.search_input_placeholder')"
-                class="ds-field pl-10"
-              />
+        <div class="flex flex-col gap-2 lg:flex-row lg:items-start">
+          <div class="relative min-w-0 lg:w-80">
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <MagnifyingGlassIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
+            </div>
+            <BaseInput
+              v-model="query.search"
+              type="search"
+              :placeholder="$t('gestlab.general.search_input_placeholder')"
+              class="ds-field pl-9"
+            />
           </div>
 
-          <div class="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:items-center lg:justify-end">
+          <div class="grid min-w-0 flex-1 gap-2 sm:grid-cols-2 lg:flex lg:items-start">
             <select-filter
               :filters="filters"
               :model-value="query.filter"
@@ -310,7 +305,7 @@ const masks = ref({
             <button
               v-if="hasActiveQuery"
               type="button"
-              class="ds-button ds-button-secondary sm:col-span-2 lg:col-span-1"
+              class="ds-button ds-button-ghost sm:col-span-2 lg:col-span-1"
               @click="clearQueryFilters"
             >
               <AdjustmentsHorizontalIcon class="h-4 w-4" />
@@ -319,41 +314,18 @@ const masks = ref({
           </div>
         </div>
 
-        <div v-if="selectedRecordIds.length" class="rounded-[1.35rem] border border-[rgb(var(--primary-200-rgb)/0.75)] bg-[rgb(var(--primary-50-rgb)/0.7)] p-3 dark:border-[rgb(var(--primary-300-rgb)/0.18)] dark:bg-[rgb(var(--primary-500-rgb)/0.1)]">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-100-rgb))]">
-              {{ selectedRecordIds.length }} {{ $t("gestlab.general.labels.selected_records") }}
-            </p>
-            <select-action
-              :record-ids="selectedRecordIds"
-              :actions="actions"
-              :processing="actionProcessing || isProcessingAction"
-              @execute="executeAction"
-            />
-          </div>
+        <div v-if="selectedRecordIds.length" class="flex flex-col gap-2 rounded-xl bg-[rgb(var(--primary-50-rgb))] px-3 py-2 dark:bg-[rgb(var(--primary-400-rgb)/0.12)] lg:flex-row lg:items-center lg:justify-between">
+          <p class="text-[0.8125rem] font-medium text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-100-rgb))]">
+            {{ selectedRecordIds.length }} {{ $t("gestlab.general.labels.selected_records") }}
+          </p>
+          <select-action
+            :record-ids="selectedRecordIds"
+            :actions="actions"
+            :processing="actionProcessing || isProcessingAction"
+            @execute="executeAction"
+          />
         </div>
       </div>
-    </section>
-
-    <DataTableShell>
-      <template #summary>
-        <div>
-          <p class="ds-heading text-sm">
-            {{ $t("gestlab.general.titles.records_list") }}
-          </p>
-          <p class="mt-0.5 text-xs font-semibold text-[var(--ds-text-muted)]">
-            {{ totalRecords }} {{ $t("gestlab.general.labels.records") }}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          class="ds-button ds-button-secondary min-h-0 rounded-full px-3 py-1.5 text-xs md:hidden"
-          @click="toggleSelectAll"
-        >
-          {{ allVisibleSelected ? $t("gestlab.general.labels.clear_selection") : $t("gestlab.general.buttons.select_all") }}
-        </button>
-      </template>
 
       <!-- Records -->
       <div v-if="record.data.length">
@@ -388,7 +360,7 @@ const masks = ref({
               <div
                 v-for="field in displayFields"
                 :key="`${item.id}-${field.value}`"
-                class="rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2"
+                class="rounded-xl bg-[var(--ds-panel-subtle)] px-3 py-2"
               >
                 <dt class="ds-table-heading">
                   {{ $t(field.name) }}
@@ -611,19 +583,17 @@ const masks = ref({
         :description="$t('gestlab.general.labels.start_creating')"
         @create-record="$emit('create-record')"
       />
+      <template v-if="props.record.data.length" #pagination>
+        <Pagination
+          :links="props.record.meta.links"
+          :from="props.record.meta.from"
+          :to="props.record.meta.to"
+          :total="props.record.meta.total"
+          :current_page="props.record.meta.current_page"
+          :last_page="props.record.meta.last_page"
+        />
+      </template>
     </DataTableShell>
-
-    <!-- Pagination -->
-    <div v-if="props.record.data.length" class="flex justify-center">
-      <Pagination
-        :links="props.record.meta.links"
-        :from="props.record.meta.from"
-        :to="props.record.meta.to"
-        :total="props.record.meta.total"
-        :current_page="props.record.meta.current_page"
-        :last_page="props.record.meta.last_page"
-      />
-    </div>
 
     <!-- Confirm dialog -->
     <confirm-dialog

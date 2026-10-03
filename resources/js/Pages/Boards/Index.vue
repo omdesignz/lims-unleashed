@@ -6,13 +6,13 @@ import slideOver from '@/Components/slide-over.vue'
 import { usePermission } from '@/Composables/usePermissions'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import {
-  MagnifyingGlassIcon,
-  PencilIcon,
-  PlusIcon,
-  RectangleStackIcon,
-  Squares2X2Icon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
+  Search as MagnifyingGlassIcon,
+  Pencil as PencilIcon,
+  Plus as PlusIcon,
+  Layers as RectangleStackIcon,
+  LayoutGrid as Squares2X2Icon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 import * as OutlinedIcons from '@heroicons/vue/24/outline'
 import { Link, router, useForm, usePage } from '@inertiajs/vue3'
 import debounce from 'lodash/debounce'

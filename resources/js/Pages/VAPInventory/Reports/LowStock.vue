@@ -337,18 +337,18 @@ import BaseSelect from '@/Components/base/BaseSelect.vue'
 import Pagination from '@/Components/Pagination.vue'
 import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import {
-  ArrowLeftIcon,
-  ChartBarSquareIcon,
-  CheckCircleIcon,
-  CubeIcon,
-  ExclamationCircleIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  FunnelIcon,
-  PencilSquareIcon,
-  ShoppingCartIcon,
-  XCircleIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  ChartColumnBig as ChartBarSquareIcon,
+  CircleCheck as CheckCircleIcon,
+  Box as CubeIcon,
+  CircleAlert as ExclamationCircleIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Eye as EyeIcon,
+  Funnel as FunnelIcon,
+  SquarePen as PencilSquareIcon,
+  ShoppingCart as ShoppingCartIcon,
+  CircleX as XCircleIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   inventory: {
@@ -387,8 +387,8 @@ const filters = reactive({
 const isDarkMode = ref(false)
 let themeObserver
 
-const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
+const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
+const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
 const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
 const inventoryRows = computed(() => props.inventory?.data || [])
@@ -471,7 +471,7 @@ const severityMixChartOptions = computed(() => ({
   chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#be123c'],
+  colors: ['#e5484d'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
   plotOptions: { bar: { borderRadius: 4, horizontal: true } },
@@ -491,7 +491,7 @@ const warehouseExposureChartOptions = computed(() => ({
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.warehouse_exposure?.labels || [],
-  colors: ['#d97706', '#be123c', '#0e7490', '#7c3aed', '#047857', '#475569'],
+  colors: ['#e0902b', '#e5484d', '#14a3a8', '#7c5ce0', '#047857', '#6b7482'],
   legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
   dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
   stroke: { width: 0 },
@@ -502,7 +502,7 @@ const replenishmentGapChartOptions = computed(() => ({
   chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#0e7490'],
+  colors: ['#14a3a8'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
   plotOptions: { bar: { borderRadius: 4, columnWidth: '48%' } },

@@ -7,17 +7,17 @@ import { usePermission } from "@/Composables/usePermissions";
 import { computed, ref } from "vue";
 import { Link, router, useForm, usePage } from "@inertiajs/vue3";
 import {
-  ArchiveBoxIcon,
-  ArrowPathRoundedSquareIcon,
-  BeakerIcon,
-  CheckBadgeIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentCheckIcon,
-  DocumentMagnifyingGlassIcon,
-  DocumentPlusIcon,
-  PencilSquareIcon,
-  TrashIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  Repeat as ArrowPathRoundedSquareIcon,
+  FlaskConical as BeakerIcon,
+  BadgeCheck as CheckBadgeIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  FileCheck as DocumentCheckIcon,
+  FileSearch as DocumentMagnifyingGlassIcon,
+  FilePlus as DocumentPlusIcon,
+  SquarePen as PencilSquareIcon,
+  Trash2 as TrashIcon,
+} from "@lucide/vue";
 
 defineOptions({
   layout: Layout,

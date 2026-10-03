@@ -1,7 +1,7 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ClipboardDocumentCheckIcon } from "@heroicons/vue/24/outline";
+import { ClipboardCheck as ClipboardDocumentCheckIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

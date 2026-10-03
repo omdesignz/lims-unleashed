@@ -50,7 +50,7 @@
 </template>
 
 <script setup>
-import { PrinterIcon } from '@heroicons/vue/24/outline'
+import { Printer as PrinterIcon } from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 const batches = ref([])

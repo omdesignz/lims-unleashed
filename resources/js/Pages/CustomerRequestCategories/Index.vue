@@ -1,7 +1,7 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ChatBubbleLeftRightIcon } from "@heroicons/vue/24/outline";
+import { MessagesSquare as ChatBubbleLeftRightIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

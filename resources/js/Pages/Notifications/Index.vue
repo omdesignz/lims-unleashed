@@ -246,25 +246,25 @@
 import { computed, ref, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 import {
-  ArchiveBoxXMarkIcon,
-  ArrowPathIcon,
-  ArrowTopRightOnSquareIcon,
-  BellAlertIcon,
-  BellIcon,
-  BellSlashIcon,
-  CheckBadgeIcon,
-  CheckCircleIcon,
-  CheckIcon,
-  ClockIcon,
-  EnvelopeIcon,
-  EnvelopeOpenIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
-  MagnifyingGlassIcon,
-  TrashIcon,
-  UserIcon,
-  XCircleIcon,
-} from '@heroicons/vue/24/outline'
+  ArchiveX as ArchiveBoxXMarkIcon,
+  RefreshCw as ArrowPathIcon,
+  ExternalLink as ArrowTopRightOnSquareIcon,
+  BellRing as BellAlertIcon,
+  Bell as BellIcon,
+  BellOff as BellSlashIcon,
+  BadgeCheck as CheckBadgeIcon,
+  CircleCheck as CheckCircleIcon,
+  Check as CheckIcon,
+  Clock as ClockIcon,
+  Mail as EnvelopeIcon,
+  MailOpen as EnvelopeOpenIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Info as InformationCircleIcon,
+  Search as MagnifyingGlassIcon,
+  Trash2 as TrashIcon,
+  User as UserIcon,
+  CircleX as XCircleIcon,
+} from '@lucide/vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import Pagination from '@/Components/pagination.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'

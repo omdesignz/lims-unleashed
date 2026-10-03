@@ -388,16 +388,16 @@ import { Link, router } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import { debounce } from 'lodash'
 import {
-  AdjustmentsHorizontalIcon,
-  DocumentDuplicateIcon,
-  EyeIcon,
-  MagnifyingGlassIcon,
-  PencilIcon,
-  PlusCircleIcon,
-  PowerIcon,
-  TagIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
+  SlidersHorizontal as AdjustmentsHorizontalIcon,
+  Copy as DocumentDuplicateIcon,
+  Eye as EyeIcon,
+  Search as MagnifyingGlassIcon,
+  Pencil as PencilIcon,
+  CirclePlus as PlusCircleIcon,
+  Power as PowerIcon,
+  Tag as TagIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'

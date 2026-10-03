@@ -347,13 +347,13 @@
 import { ref, computed } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import {
-  WrenchScrewdriverIcon,
-  XMarkIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  XCircleIcon,
-  DocumentArrowUpIcon,
-} from '@heroicons/vue/24/outline'
+  Wrench as WrenchScrewdriverIcon,
+  X as XMarkIcon,
+  CircleCheck as CheckCircleIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  CircleX as XCircleIcon,
+  FileUp as DocumentArrowUpIcon,
+} from '@lucide/vue'
 import Modal from '@/Components/Modal.vue'
 
 const props = defineProps({

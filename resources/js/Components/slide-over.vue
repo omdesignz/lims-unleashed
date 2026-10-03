@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
-import { XMarkIcon } from '@heroicons/vue/24/outline'
+import { X as XMarkIcon } from '@lucide/vue'
 
 const emit = defineEmits(['closed', 'close'])
 
@@ -33,7 +33,7 @@ const close = () => {
       <!-- Backdrop -->
       <TransitionChild
         as="template"
-        enter="ease-out duration-300"
+        enter="ease-out duration-200"
         enter-from="opacity-0"
         enter-to="opacity-100"
         leave="ease-out duration-200"

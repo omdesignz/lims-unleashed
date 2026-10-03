@@ -18,18 +18,18 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
-  ArrowUturnLeftIcon,
-  DocumentDuplicateIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  LockClosedIcon,
-  LockOpenIcon,
-  PaintBrushIcon,
-  PhotoIcon,
-  RectangleGroupIcon,
-  SparklesIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
+  Undo2 as ArrowUturnLeftIcon,
+  Copy as DocumentDuplicateIcon,
+  Eye as EyeIcon,
+  EyeOff as EyeSlashIcon,
+  Lock as LockClosedIcon,
+  LockOpen as LockOpenIcon,
+  Paintbrush as PaintBrushIcon,
+  Image as PhotoIcon,
+  LayoutDashboard as RectangleGroupIcon,
+  Sparkles as SparklesIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   title: {
@@ -6489,7 +6489,7 @@ function submit() {
             class="mb-5 w-full rounded-[2rem] border border-dashed p-5 text-left transition"
             :class="mediaPickerUploadDragging
               ? 'border-[rgb(var(--primary-500-rgb))] bg-[#fff7e1] dark:border-[rgb(var(--primary-500-rgb))] dark:bg-[rgb(var(--primary-700-rgb))]/10'
-              : 'border-[#d8cbb8] bg-white/70 hover:border-[rgb(var(--primary-500-rgb))] hover:bg-[var(--ds-panel-subtle)] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-panel)]/80 dark:hover:border-[rgb(var(--primary-500-rgb))]/70 dark:hover:bg-[rgb(var(--primary-700-rgb))]/10'"
+              : 'border-[var(--ds-border)] bg-white/70 hover:border-[rgb(var(--primary-500-rgb))] hover:bg-[var(--ds-panel-subtle)] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-panel)]/80 dark:hover:border-[rgb(var(--primary-500-rgb))]/70 dark:hover:bg-[rgb(var(--primary-700-rgb))]/10'"
             @click="pickMediaPickerUpload"
             @dragenter.prevent="mediaPickerUploadDragging = true"
             @dragover.prevent="mediaPickerUploadDragging = true"

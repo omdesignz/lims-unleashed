@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="910" height="385" viewBox="55 55 910 385" role="img" aria-labelledby="title desc">
+<title id="title">VAP Sistemas — VAP_Small.svg</title>
+<desc id="desc">Optically refined V/A structure, flowing ribbon and P. Negative space is transparent. Small-size optical geometry.</desc>
+<metadata>VAP optical refinement, 2026-09-29. Navy #061F46; blue #087CF0. No raster content. Negative-space guide is non-rendering; separation is built into the contours.</metadata>
+<defs></defs>
+<g id="structure" inkscape:groupmode="layer" inkscape:label="structure" fill="#061F46"><path id="v" d="M 88 102 H 158 C 171 102 179.971 110 186 121 L 300 329 L 280 416 C 250 416 227.79 395 213 364 Z"/><path id="a" d="M 365 225 L 429 132 C 443.452 111 462 100 483 100 C 507 100 527.078 112 540 135 L 699 418 H 628 C 615 418 606.99 412 600 400 L 480 194 L 468 214 C 434 200 398 204 365 225 Z"/></g>
+<g id="flow" inkscape:groupmode="layer" inkscape:label="flow" fill="#087CF0"><path id="ribbon" d="M 256 375 L 343 257 C 361.432 232 395 226 423 226 C 451 226 474.579 242 490 268 L 576 413 C 556 411 543.903 399 534 382 L 474 279 C 468.175 269 465 266 458 266 C 451 266 445.981 271 438 281 L 355 385 C 335.048 410 312 422 280 416 C 253.333 411 244.203 391 256 375 Z"/></g>
+<g id="p" inkscape:groupmode="layer" inkscape:label="p" fill="#087CF0"><path id="p-bowl" d="M 588 162 C 623 113 661 82 717 82 H 804 C 897 82 959 133 959 218 C 959 303 897 367 800 367 H 719 C 715.134 367 712 363.866 712 360 V 295 C 712 291.134 715.134 288 719 288 H 804 C 847 288 876 262 876 226 C 876 190 851 165 811 165 H 717 C 675 165 654 198 639 254 Z"/></g>
+<g id="negative-space" inkscape:groupmode="layer" inkscape:label="negative-space" display="none" fill="none"><path id="separation-guide" d="M 365 225 C 398 204 434 200 468 214 L 480 194 L 600 400 C 606.99 412 615 418 628 418 L 576 413 L 490 268 C 474.579 242 451 226 423 226 C 395 226 361.432 232 343 257 Z"/></g>
+</svg>

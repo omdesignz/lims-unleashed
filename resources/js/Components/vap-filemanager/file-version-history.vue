@@ -199,7 +199,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue'
-import { ClockIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { Clock as ClockIcon, X as XMarkIcon } from '@lucide/vue'
 import { diffLines, type Change } from 'diff'
 import { useFileStore, type FileVersion } from '../../Stores/fileStore'
 

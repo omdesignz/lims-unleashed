@@ -4,20 +4,20 @@ import VapTable from "@/Components/vap-table/table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  ArchiveBoxIcon,
-  ArrowDownTrayIcon,
-  ArrowPathRoundedSquareIcon,
-  BeakerIcon,
-  ClipboardDocumentCheckIcon,
-  ClipboardDocumentListIcon,
-  DocumentArrowDownIcon,
-  EyeIcon,
-  PencilIcon,
-  PlusIcon,
-  QrCodeIcon,
-  TagIcon,
-  TrashIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  Download as ArrowDownTrayIcon,
+  Repeat as ArrowPathRoundedSquareIcon,
+  FlaskConical as BeakerIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  FileDown as DocumentArrowDownIcon,
+  Eye as EyeIcon,
+  Pencil as PencilIcon,
+  Plus as PlusIcon,
+  QrCode as QrCodeIcon,
+  Tag as TagIcon,
+  Trash2 as TrashIcon,
+} from "@lucide/vue";
 import { Link, router } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

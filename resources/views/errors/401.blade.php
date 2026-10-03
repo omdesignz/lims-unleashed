@@ -1,5 +1,6 @@
 @extends('errors::minimal')
 
-@section('title', __('Unauthorized'))
+@section('title', 'Sessão necessária')
 @section('code', '401')
-@section('message', __('Unauthorized'))
+@section('message', 'Inicie sessão para continuar.')
+@section('description', 'A sua sessão terminou ou ainda não foi iniciada. Depois de entrar, regressa ao ponto onde estava.')

@@ -3,21 +3,21 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link } from "@inertiajs/vue3";
 import {
-  ArrowLeftIcon,
-  BellAlertIcon,
-  BuildingOffice2Icon,
-  CalendarDaysIcon,
-  CheckCircleIcon,
-  ChatBubbleLeftRightIcon,
-  ClockIcon,
-  DocumentMagnifyingGlassIcon,
-  ExclamationTriangleIcon,
-  MagnifyingGlassIcon,
-  PencilSquareIcon,
-  ShieldCheckIcon,
-  UserCircleIcon,
-  WrenchScrewdriverIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  BellRing as BellAlertIcon,
+  Building2 as BuildingOffice2Icon,
+  CalendarDays as CalendarDaysIcon,
+  CircleCheck as CheckCircleIcon,
+  MessagesSquare as ChatBubbleLeftRightIcon,
+  Clock as ClockIcon,
+  FileSearch as DocumentMagnifyingGlassIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Search as MagnifyingGlassIcon,
+  SquarePen as PencilSquareIcon,
+  ShieldCheck as ShieldCheckIcon,
+  CircleUser as UserCircleIcon,
+  Wrench as WrenchScrewdriverIcon,
+} from "@lucide/vue";
 import { computed } from "vue";
 
 defineOptions({ layout: Layout });

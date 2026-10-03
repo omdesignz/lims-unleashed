@@ -1,6 +1,6 @@
 <template>
     <div class="ds-empty-state px-6 py-10 text-center">
-      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-500-rgb)/0.16)] dark:text-[rgb(var(--primary-200-rgb))]">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--ds-panel-muted)] text-[var(--ds-text-muted)]">
         <SquaresPlusIcon class="h-6 w-6" aria-hidden="true" />
       </div>
       <h3 class="ds-heading mt-4 text-base">
@@ -19,7 +19,7 @@
   </template>
   
   <script setup>
-  import { SquaresPlusIcon } from '@heroicons/vue/24/outline';
+  import { Grid2x2Plus as SquaresPlusIcon } from '@lucide/vue';
   const emit = defineEmits(['create-record']);
   
   defineProps({

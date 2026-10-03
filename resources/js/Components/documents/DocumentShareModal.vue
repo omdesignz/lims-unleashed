@@ -2,7 +2,7 @@
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import { useForm } from '@inertiajs/vue3'
-import { DocumentTextIcon, EnvelopeIcon, PaperAirplaneIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { FileText as DocumentTextIcon, Mail as EnvelopeIcon, Send as PaperAirplaneIcon, X as XMarkIcon } from '@lucide/vue'
 import { computed, watch } from 'vue'
 
 const props = defineProps({

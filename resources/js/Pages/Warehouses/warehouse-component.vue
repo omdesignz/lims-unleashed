@@ -2,16 +2,16 @@
 import { router, useForm } from "@inertiajs/vue3";
 import Combobox from "@/Components/combobox.vue";
 import {
-  ArrowPathIcon,
-  BuildingOffice2Icon,
-  CheckIcon,
-  EnvelopeIcon,
-  MapPinIcon,
-  PhoneIcon,
-  StarIcon,
-  TrashIcon,
-  UserCircleIcon,
-} from "@heroicons/vue/24/outline";
+  RefreshCw as ArrowPathIcon,
+  Building2 as BuildingOffice2Icon,
+  Check as CheckIcon,
+  Mail as EnvelopeIcon,
+  MapPin as MapPinIcon,
+  Phone as PhoneIcon,
+  Star as StarIcon,
+  Trash2 as TrashIcon,
+  CircleUser as UserCircleIcon,
+} from "@lucide/vue";
 import { computed } from "vue";
 
 const props = defineProps({

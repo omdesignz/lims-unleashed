@@ -1,7 +1,7 @@
 <script setup>
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
 import { Link } from "@inertiajs/vue3";
-import { BuildingOffice2Icon, CheckBadgeIcon, ClipboardDocumentCheckIcon, ClockIcon, EnvelopeIcon, MapPinIcon, PhoneIcon, ShieldCheckIcon, UserCircleIcon } from "@heroicons/vue/24/outline";
+import { Building2 as BuildingOffice2Icon, BadgeCheck as CheckBadgeIcon, ClipboardCheck as ClipboardDocumentCheckIcon, Clock as ClockIcon, Mail as EnvelopeIcon, MapPin as MapPinIcon, Phone as PhoneIcon, ShieldCheck as ShieldCheckIcon, CircleUser as UserCircleIcon } from "@lucide/vue";
 
 defineOptions({ layout: PortalLayout });
 

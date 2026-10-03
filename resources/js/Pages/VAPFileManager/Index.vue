@@ -7,16 +7,16 @@ import WorkflowPanel from "@/Components/vap-filemanager/workflow-panel.vue";
 import DocumentCompliancePanel from "@/Components/vap-filemanager/document-compliance-panel.vue";
 import { useFileStore } from "@/Stores/fileStore";
 import {
-  ArchiveBoxIcon,
-  CheckBadgeIcon,
-  ClockIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  FolderIcon,
-  LockClosedIcon,
-  ShieldCheckIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  BadgeCheck as CheckBadgeIcon,
+  Clock as ClockIcon,
+  FileText as DocumentTextIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Folder as FolderIcon,
+  Lock as LockClosedIcon,
+  ShieldCheck as ShieldCheckIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 import {
   Dialog,
   DialogPanel,
@@ -311,7 +311,7 @@ function closeSidePanel(): void {
           enter="ease-out duration-200"
           enter-from="opacity-0"
           enter-to="opacity-100"
-          leave="ease-in duration-150"
+          leave="ease-out duration-150"
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
@@ -326,7 +326,7 @@ function closeSidePanel(): void {
                 enter="transform transition ease-out duration-300"
                 enter-from="translate-x-full"
                 enter-to="translate-x-0"
-                leave="transform transition ease-in duration-200"
+                leave="transform transition ease-out duration-150"
                 leave-from="translate-x-0"
                 leave-to="translate-x-full"
               >

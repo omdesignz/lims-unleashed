@@ -10,7 +10,7 @@ import { router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
 import {throttle} from "lodash";
 import datePicker from '@/Components/date-picker.vue'
-import { TrashIcon, PlusCircleIcon, ClipboardDocumentCheckIcon } from "@heroicons/vue/24/outline";
+import { Trash2 as TrashIcon, CirclePlus as PlusCircleIcon, ClipboardCheck as ClipboardDocumentCheckIcon } from "@lucide/vue";
 import { trans } from 'laravel-vue-i18n';
 
 

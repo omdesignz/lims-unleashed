@@ -42,7 +42,7 @@
       <span v-if="required" class="ds-field-required" aria-hidden="true">*</span>
     </label>
     <div class="relative">
-      <div v-if="$slots.leading" class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[var(--ds-text-soft)]">
+      <div v-if="$slots.leading" class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[var(--ds-text-soft)] [&>svg]:h-4 [&>svg]:w-4">
         <slot name="leading" />
       </div>
       <input
@@ -59,11 +59,11 @@
         :required="required"
         :aria-invalid="Boolean(error)"
         :aria-describedby="describedBy"
-        :class="[baseInputClasses, $slots.leading ? 'pl-11' : '', $slots.trailing ? 'pr-11' : '']"
+        :class="[baseInputClasses, $slots.leading ? 'pl-9' : '', $slots.trailing ? 'pr-9' : '']"
         @input="handleInput"
         @change="handleChange"
       />
-      <div v-if="$slots.trailing" class="absolute inset-y-0 right-0 flex items-center pr-4 text-[var(--ds-text-soft)]">
+      <div v-if="$slots.trailing" class="absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--ds-text-soft)]">
         <slot name="trailing" />
       </div>
     </div>

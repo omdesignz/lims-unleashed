@@ -61,7 +61,7 @@ class Handler extends ExceptionHandler
 
         //  dd($e->getMessage());
 
-        if ($this->shouldRenderCustomErrorPage() && in_array($response->status(), [400, 401, 403, 404, 500, 503])) {
+        if ($this->shouldRenderCustomErrorPage() && in_array($response->status(), [400, 401, 403, 404, 405, 429, 500, 503])) {
             return inertia()->render('Error', [
                 'status' => $response->status(),
                 'message' => $e->getMessage(),

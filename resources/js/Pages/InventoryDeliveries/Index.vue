@@ -2,7 +2,7 @@
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { CalendarDaysIcon, TruckIcon } from "@heroicons/vue/24/outline";
+import { CalendarDays as CalendarDaysIcon, Truck as TruckIcon } from "@lucide/vue";
 import { router } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

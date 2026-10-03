@@ -22,11 +22,11 @@
 
         <transition
           enter-active-class="transition ease-out duration-100"
-          enter-from-class="transform opacity-0 scale-95"
+          enter-from-class="transform opacity-0 scale-[0.97]"
           enter-to-class="transform opacity-100 scale-100"
-          leave-active-class="transition ease-in duration-75"
+          leave-active-class="transition ease-out duration-100"
           leave-from-class="transform opacity-100 scale-100"
-          leave-to-class="transform opacity-0 scale-95"
+          leave-to-class="transform opacity-0 scale-[0.97]"
         >
           <MenuItems class="absolute right-0 z-10 mt-2 w-44 origin-top-right rounded-2xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-slate-900/5 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:ring-slate-100/5">
             <div class="py-1">
@@ -107,9 +107,9 @@
 </template>
 
 <script setup>
-import { FolderIcon, TrashIcon, PencilIcon, ArrowsRightLeftIcon, CloudArrowDownIcon, UserPlusIcon } from '@heroicons/vue/24/outline'
+import { Folder as FolderIcon, Trash2 as TrashIcon, Pencil as PencilIcon, ArrowLeftRight as ArrowsRightLeftIcon, CloudDownload as CloudArrowDownIcon, UserPlus as UserPlusIcon } from '@lucide/vue'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
-import { ChevronDownIcon } from '@heroicons/vue/20/solid'
+import { ChevronDown as ChevronDownIcon } from '@lucide/vue'
 
 defineProps({
   folder: Object,

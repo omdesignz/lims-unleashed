@@ -246,7 +246,7 @@
             </MenuButton>
           </div>
 
-            <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
+            <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-[0.97]" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-out duration-100" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-[0.97]">
               <MenuItems class="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                 <div class="py-1">
                   <MenuItem v-slot="{ active }">
@@ -427,7 +427,7 @@
                     </span>
                   </ListboxButton>
 
-                  <transition leave-active-class="transition ease-in duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
+                  <transition leave-active-class="transition ease-out duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
                     <ListboxOptions class="absolute z-10 -ml-6 mt-1 w-60 rounded-lg bg-white py-3 text-base shadow outline outline-1 outline-black/5 sm:ml-auto sm:w-64 sm:text-sm">
                       <ListboxOption as="template" v-for="mood in moods" :key="mood.value" :value="mood" v-slot="{ active }">
                         <li :class="[active ? 'relative bg-gray-100 outline-none' : 'bg-white', 'cursor-default select-none px-3 py-2']">
@@ -513,21 +513,21 @@
   import StarterKit from '@tiptap/starter-kit'
   import { Menu, MenuButton, MenuItem, MenuItems, Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue'
   import {
-    ArchiveBoxIcon,
-    ArrowRightCircleIcon,
-    ChevronDownIcon,
-    DocumentDuplicateIcon,
-    HeartIcon,
-    PencilSquareIcon,
-    TrashIcon,
-    UserPlusIcon,
-    FaceFrownIcon,
-    FaceSmileIcon,
-    FireIcon,
-    HandThumbUpIcon,
-    PaperClipIcon,
-    XMarkIcon,
-  } from '@heroicons/vue/20/solid'
+  Archive as ArchiveBoxIcon,
+  CircleArrowRight as ArrowRightCircleIcon,
+  ChevronDown as ChevronDownIcon,
+  Copy as DocumentDuplicateIcon,
+  Heart as HeartIcon,
+  SquarePen as PencilSquareIcon,
+  Trash2 as TrashIcon,
+  UserPlus as UserPlusIcon,
+  Frown as FaceFrownIcon,
+  Smile as FaceSmileIcon,
+  Flame as FireIcon,
+  ThumbsUp as HandThumbUpIcon,
+  Paperclip as PaperClipIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 
   const props = defineProps({
     modelValue: {

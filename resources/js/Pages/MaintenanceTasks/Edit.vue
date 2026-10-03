@@ -786,28 +786,28 @@ import { ref, reactive } from 'vue'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { router, useForm } from '@inertiajs/vue3'
 import {
-  WrenchScrewdriverIcon,
-  ArrowLeftIcon,
-  InformationCircleIcon,
-  TagIcon,
-  FolderIcon,
-  CogIcon,
-  DocumentTextIcon,
-  CalendarIcon,
-  CalendarDaysIcon,
-  ArrowPathIcon,
-  HashtagIcon,
-  BeakerIcon,
-  CheckCircleIcon,
-  DocumentIcon,
-  ScaleIcon,
-  ArrowsRightLeftIcon,
-  ListBulletIcon,
-  PlusCircleIcon,
-  TruckIcon,
-  ClipboardDocumentCheckIcon,
-  ChatBubbleLeftRightIcon
-} from '@heroicons/vue/24/outline'
+  Wrench as WrenchScrewdriverIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Info as InformationCircleIcon,
+  Tag as TagIcon,
+  Folder as FolderIcon,
+  Cog as CogIcon,
+  FileText as DocumentTextIcon,
+  Calendar as CalendarIcon,
+  CalendarDays as CalendarDaysIcon,
+  RefreshCw as ArrowPathIcon,
+  Hash as HashtagIcon,
+  FlaskConical as BeakerIcon,
+  CircleCheck as CheckCircleIcon,
+  File as DocumentIcon,
+  Scale as ScaleIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  List as ListBulletIcon,
+  CirclePlus as PlusCircleIcon,
+  Truck as TruckIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  MessagesSquare as ChatBubbleLeftRightIcon,
+} from '@lucide/vue'
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { trans } from 'laravel-vue-i18n';
 import comboboxEnhanced from "@/Components/combobox-enhanced.vue";

@@ -38,7 +38,7 @@
                     </span>
                   </ListboxButton>
 
-                  <transition leave-active-class="transition ease-in duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
+                  <transition leave-active-class="transition ease-out duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
                     <ListboxOptions class="absolute z-10 -ml-6 w-60 rounded-lg bg-white py-3 text-base shadow outline outline-1 outline-black/5 sm:ml-auto sm:w-64 sm:text-sm">
                       <ListboxOption as="template" v-for="mood in moods" :key="mood.value" :value="mood" v-slot="{ active }">
                         <li :class="[active ? 'relative bg-gray-100 outline-none' : 'bg-white', 'cursor-default select-none px-3 py-2']">
@@ -69,16 +69,16 @@
   <script setup>
   import {ref} from 'vue'
   import Layout from "@/Shared/Layouts/Layout.vue";
-  import { FaceSmileIcon as FaceSmileIconOutline, PaperClipIcon } from '@heroicons/vue/20/solid'
+  import { Smile as FaceSmileIconOutline, Paperclip as PaperClipIcon } from '@lucide/vue'
     import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue'
     import {
-    FaceFrownIcon,
-    FaceSmileIcon as FaceSmileIconMini,
-    FireIcon,
-    HandThumbUpIcon,
-    HeartIcon,
-    XMarkIcon,
-    } from '@heroicons/vue/24/outline'
+  Frown as FaceFrownIcon,
+  Smile as FaceSmileIconMini,
+  Flame as FireIcon,
+  ThumbsUp as HandThumbUpIcon,
+  Heart as HeartIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
     import { useEditor, EditorContent } from '@tiptap/vue-3'
     import StarterKit from '@tiptap/starter-kit'
 

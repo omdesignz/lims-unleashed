@@ -2,13 +2,13 @@
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
-  ArrowRightIcon,
-  CheckBadgeIcon,
-  ClockIcon,
-  DocumentTextIcon,
-  MagnifyingGlassIcon,
-  Squares2X2Icon,
-} from "@heroicons/vue/24/outline";
+  ArrowRight as ArrowRightIcon,
+  BadgeCheck as CheckBadgeIcon,
+  Clock as ClockIcon,
+  FileText as DocumentTextIcon,
+  Search as MagnifyingGlassIcon,
+  LayoutGrid as Squares2X2Icon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 
 defineOptions({

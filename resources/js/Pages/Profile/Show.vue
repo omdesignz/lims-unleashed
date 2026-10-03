@@ -2,14 +2,14 @@
 import { computed } from 'vue'
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import {
-  ArrowRightStartOnRectangleIcon,
-  BellAlertIcon,
-  ExclamationTriangleIcon,
-  FingerPrintIcon,
-  IdentificationIcon,
-  KeyIcon,
-  ShieldCheckIcon,
-} from '@heroicons/vue/24/outline'
+  LogOut as ArrowRightStartOnRectangleIcon,
+  BellRing as BellAlertIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Fingerprint as FingerPrintIcon,
+  IdCard as IdentificationIcon,
+  KeyRound as KeyIcon,
+  ShieldCheck as ShieldCheckIcon,
+} from '@lucide/vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import SettingsSection from '@/Components/settings/SettingsSection.vue'
 import DeleteUserForm from '@/Shared/delete-user-form.vue'

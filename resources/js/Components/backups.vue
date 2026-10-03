@@ -161,7 +161,7 @@
 import { computed, ref } from 'vue'
 import backupRow from '@/Components/backup-row.vue'
 import confirmDialog from '@/Components/confirm-dialog.vue'
-import { CloudArrowDownIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { CloudDownload as CloudArrowDownIcon, Trash2 as TrashIcon } from '@lucide/vue';
 import { trans } from 'laravel-vue-i18n';
 
 const props = defineProps({

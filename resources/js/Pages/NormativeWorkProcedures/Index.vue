@@ -1,7 +1,7 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { DocumentTextIcon } from "@heroicons/vue/24/outline";
+import { FileText as DocumentTextIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

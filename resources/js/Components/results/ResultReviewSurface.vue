@@ -2,15 +2,15 @@
 import { ResultsDataService } from "@/Services/ResultsDataService.js";
 import { computed, onMounted, ref, watch } from "vue";
 import {
-  CalculatorIcon,
-  CheckIcon,
-  DocumentMagnifyingGlassIcon,
-  ExclamationTriangleIcon,
-  PencilIcon,
-  ScaleIcon,
-  ShieldCheckIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Calculator as CalculatorIcon,
+  Check as CheckIcon,
+  FileSearch as DocumentMagnifyingGlassIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Pencil as PencilIcon,
+  Scale as ScaleIcon,
+  ShieldCheck as ShieldCheckIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   mode: {

@@ -225,15 +225,15 @@ import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
 import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import {
-  ArrowLeftIcon,
-  ArrowUpTrayIcon,
-  BeakerIcon,
-  ChartBarIcon,
-  CheckBadgeIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentArrowDownIcon,
-  UserGroupIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  Upload as ArrowUpTrayIcon,
+  FlaskConical as BeakerIcon,
+  ChartColumn as ChartBarIcon,
+  BadgeCheck as CheckBadgeIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  FileDown as DocumentArrowDownIcon,
+  Users as UserGroupIcon,
+} from '@lucide/vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import { computed, onMounted, ref } from 'vue'
 
@@ -314,22 +314,22 @@ const summaryCards = computed(() => [
 ])
 
 const chartTheme = computed(() => ({
-  chart: { toolbar: { show: false }, foreColor: isDarkMode.value ? '#cbd5e1' : '#475569' },
-  grid: { borderColor: isDarkMode.value ? '#334155' : '#e2e8f0' },
-  legend: { labels: { colors: isDarkMode.value ? '#cbd5e1' : '#475569' } },
+  chart: { toolbar: { show: false }, foreColor: isDarkMode.value ? '#d7dbe0' : '#6b7482' },
+  grid: { borderColor: isDarkMode.value ? '#334155' : '#eef0f3' },
+  legend: { labels: { colors: isDarkMode.value ? '#d7dbe0' : '#6b7482' } },
 }))
 
 const zScoreChartSeries = computed(() => props.charts?.z_scores?.series ?? [{ name: 'z-score', data: [] }])
 const zScoreChartOptions = computed(() => ({
   ...chartTheme.value,
   xaxis: { categories: props.charts?.z_scores?.categories ?? [] },
-  colors: ['#0ea5e9'],
+  colors: ['#087cf0'],
   annotations: {
     yaxis: [
-      { y: 2, borderColor: '#f59e0b', label: { text: '+2 alerta', style: { background: '#f59e0b', color: '#fff' } } },
-      { y: -2, borderColor: '#f59e0b', label: { text: '-2 alerta', style: { background: '#f59e0b', color: '#fff' } } },
-      { y: 3, borderColor: '#ef4444', label: { text: '+3 acção', style: { background: '#ef4444', color: '#fff' } } },
-      { y: -3, borderColor: '#ef4444', label: { text: '-3 acção', style: { background: '#ef4444', color: '#fff' } } },
+      { y: 2, borderColor: '#e0902b', label: { text: '+2 alerta', style: { background: '#e0902b', color: '#fff' } } },
+      { y: -2, borderColor: '#e0902b', label: { text: '-2 alerta', style: { background: '#e0902b', color: '#fff' } } },
+      { y: 3, borderColor: '#e5484d', label: { text: '+3 acção', style: { background: '#e5484d', color: '#fff' } } },
+      { y: -3, borderColor: '#e5484d', label: { text: '-3 acção', style: { background: '#e5484d', color: '#fff' } } },
     ],
   },
 }))
@@ -338,13 +338,13 @@ const performanceChartSeries = computed(() => props.charts?.performance?.series 
 const performanceChartOptions = computed(() => ({
   ...chartTheme.value,
   labels: props.charts?.performance?.labels ?? [],
-  colors: ['#10b981', '#f59e0b', '#ef4444'],
+  colors: ['#22a45d', '#e0902b', '#e5484d'],
 }))
 const participantStatusChartSeries = computed(() => props.charts?.participant_status?.series ?? [])
 const participantStatusChartOptions = computed(() => ({
   ...chartTheme.value,
   labels: props.charts?.participant_status?.labels ?? [],
-  colors: ['#94a3b8', '#38bdf8', '#6366f1', '#10b981', '#f97316'],
+  colors: ['#98a1ae', '#38bdf8', '#7c5ce0', '#22a45d', '#e0902b'],
 }))
 
 function schemeLabel(value) {

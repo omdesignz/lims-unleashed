@@ -2,16 +2,16 @@
 import Pagination from "@/Components/pagination.vue";
 import { Link, router, usePage } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  CalendarDaysIcon,
-  CheckBadgeIcon,
-  ClockIcon,
-  CurrencyDollarIcon,
-  DocumentTextIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  CalendarDays as CalendarDaysIcon,
+  BadgeCheck as CheckBadgeIcon,
+  Clock as ClockIcon,
+  CircleDollarSign as CurrencyDollarIcon,
+  FileText as DocumentTextIcon,
+  Search as MagnifyingGlassIcon,
+  Plus as PlusIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 
 const props = defineProps({

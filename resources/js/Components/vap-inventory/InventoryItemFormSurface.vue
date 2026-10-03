@@ -541,21 +541,21 @@
 import { computed, ref } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import {
-  ArrowLeftIcon,
-  BeakerIcon,
-  BuildingLibraryIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  Cog6ToothIcon,
-  DocumentPlusIcon,
-  FingerPrintIcon,
-  InformationCircleIcon,
-  PlusIcon,
-  TagIcon,
-  TrashIcon,
-  ArchiveBoxIcon,
-  WrenchScrewdriverIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowLeft as ArrowLeftIcon,
+  FlaskConical as BeakerIcon,
+  Landmark as BuildingLibraryIcon,
+  Calendar as CalendarIcon,
+  CircleCheck as CheckCircleIcon,
+  Settings as Cog6ToothIcon,
+  FilePlus as DocumentPlusIcon,
+  Fingerprint as FingerPrintIcon,
+  Info as InformationCircleIcon,
+  Plus as PlusIcon,
+  Tag as TagIcon,
+  Trash2 as TrashIcon,
+  Archive as ArchiveBoxIcon,
+  Wrench as WrenchScrewdriverIcon,
+} from '@lucide/vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import datePickerEnhanced from '@/Components/date-picker-enhanced.vue'
 

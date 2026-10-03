@@ -1,6 +1,6 @@
 <script setup>
 import { nextTick, reactive, ref } from 'vue'
-import { ArrowPathIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { RefreshCw as ArrowPathIcon, X as XMarkIcon } from '@lucide/vue'
 import DialogModal from './dialog-modal.vue'
 
 const emit = defineEmits(['confirmed'])

@@ -554,23 +554,23 @@ import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed } from "vue";
 import { router } from "@inertiajs/vue3";
-import { 
-  DocumentTextIcon,
-  UserIcon,
-  BuildingOfficeIcon,
-  CalculatorIcon,
-  CurrencyEuroIcon,
-  InformationCircleIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentDuplicateIcon,
-  DocumentArrowDownIcon,
-  CalendarIcon,
-  ArrowLeftIcon,
-  PencilIcon,
-  TagIcon,
-  EnvelopeIcon,
-  ArrowsRightLeftIcon
-} from "@heroicons/vue/24/outline";
+import {
+  FileText as DocumentTextIcon,
+  User as UserIcon,
+  Building as BuildingOfficeIcon,
+  Calculator as CalculatorIcon,
+  Euro as CurrencyEuroIcon,
+  Info as InformationCircleIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Copy as DocumentDuplicateIcon,
+  FileDown as DocumentArrowDownIcon,
+  Calendar as CalendarIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Pencil as PencilIcon,
+  Tag as TagIcon,
+  Mail as EnvelopeIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+} from "@lucide/vue";
 
 defineOptions({
   layout: Layout

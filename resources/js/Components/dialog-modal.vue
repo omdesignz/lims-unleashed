@@ -6,16 +6,16 @@
         @close="close"
     >
         <div class="px-6 py-5">
-            <div class="ds-heading text-lg">
+            <div class="ds-heading text-base">
                 <slot name="title" />
             </div>
 
-            <div class="ds-copy mt-4 text-sm">
+            <div class="ds-copy mt-3 text-sm">
                 <slot name="content" />
             </div>
         </div>
 
-        <div class="flex flex-row justify-end gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-6 py-4 text-right">
+        <div class="flex flex-row justify-end gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-6 py-3 text-right">
             <slot name="footer" />
         </div>
     </Modal>

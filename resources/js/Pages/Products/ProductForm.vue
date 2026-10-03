@@ -2,13 +2,13 @@
 import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
 import ToggleField from "@/Components/base/ToggleField.vue";
 import {
-  ArrowLeftIcon,
-  BanknotesIcon,
-  BeakerIcon,
-  CheckIcon,
-  CubeIcon,
-  ReceiptPercentIcon,
-} from "@heroicons/vue/24/outline";
+  ArrowLeft as ArrowLeftIcon,
+  Banknote as BanknotesIcon,
+  FlaskConical as BeakerIcon,
+  Check as CheckIcon,
+  Box as CubeIcon,
+  BadgePercent as ReceiptPercentIcon,
+} from "@lucide/vue";
 import { Link } from "@inertiajs/vue3";
 import { computed, watch } from "vue";
 

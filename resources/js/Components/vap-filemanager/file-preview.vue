@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue'
-import { XMarkIcon, DocumentIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
+import { X as XMarkIcon, File as DocumentIcon, Download as ArrowDownTrayIcon } from '@lucide/vue'
 import { saveAs } from 'file-saver'
 
 const props = defineProps<{

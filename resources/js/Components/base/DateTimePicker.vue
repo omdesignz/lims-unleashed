@@ -1,5 +1,5 @@
 <script setup>
-import { CalendarDaysIcon, ClockIcon, XMarkIcon } from '@heroicons/vue/20/solid'
+import { CalendarDays as CalendarDaysIcon, Clock as ClockIcon, X as XMarkIcon } from '@lucide/vue'
 import { DatePicker as VDatePicker } from 'v-calendar'
 import { computed, onBeforeUnmount, onMounted, ref, useAttrs, useId } from 'vue'
 import 'v-calendar/dist/style.css'

@@ -4,18 +4,18 @@ import RestoreRevisionModal from "./Partials/RestoreRevisionModal.vue";
 import { computed, ref } from "vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  ArrowsRightLeftIcon,
-  BeakerIcon,
-  ClipboardDocumentListIcon,
-  DocumentDuplicateIcon,
-  DocumentTextIcon,
-  FolderOpenIcon,
-  UserIcon,
-  UsersIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  FlaskConical as BeakerIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Copy as DocumentDuplicateIcon,
+  FileText as DocumentTextIcon,
+  FolderOpen as FolderOpenIcon,
+  User as UserIcon,
+  Users as UsersIcon,
+} from "@lucide/vue";
 
 defineOptions({
   layout: Layout,

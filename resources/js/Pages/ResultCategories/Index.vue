@@ -1,5 +1,5 @@
 <script setup>
-import { TagIcon } from '@heroicons/vue/24/outline'
+import { Tag as TagIcon } from '@lucide/vue'
 import ReferenceCatalogManager from '@/Components/catalogs/ReferenceCatalogManager.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 

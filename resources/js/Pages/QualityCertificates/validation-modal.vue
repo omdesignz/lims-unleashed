@@ -6,11 +6,11 @@ import { computed, watch } from "vue";
 import { useForm } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import {
-  ArrowPathIcon,
-  CheckBadgeIcon,
-  CheckCircleIcon,
-  UserGroupIcon,
-} from "@heroicons/vue/24/outline";
+  RefreshCw as ArrowPathIcon,
+  BadgeCheck as CheckBadgeIcon,
+  CircleCheck as CheckCircleIcon,
+  Users as UserGroupIcon,
+} from "@lucide/vue";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 
 const props = defineProps({

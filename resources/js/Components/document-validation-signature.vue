@@ -2,11 +2,11 @@
 import { computed, ref } from 'vue'
 import { VPerfectSignature } from 'v-perfect-signature'
 import {
-  ArrowDownTrayIcon,
-  CheckIcon,
-  PencilSquareIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  Check as CheckIcon,
+  SquarePen as PencilSquareIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   currentSignature: {
@@ -122,7 +122,7 @@ const save = () => {
 
       <template v-else>
         <div
-          class="relative overflow-hidden rounded-[1.4rem] border border-dashed border-[color:var(--ds-border-strong)] bg-[#fffdf7] shadow-inner"
+          class="relative overflow-hidden rounded-[1.4rem] border border-dashed border-[color:var(--ds-border-strong)] bg-[var(--ds-panel)] shadow-inner"
           @pointerdown="markDraft"
         >
           <VPerfectSignature

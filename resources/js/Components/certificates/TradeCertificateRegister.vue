@@ -6,12 +6,12 @@ import RecordsTable from "@/Components/records-table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowPathRoundedSquareIcon,
-  DocumentCheckIcon,
-  EyeIcon,
-  GlobeAltIcon,
-  ShieldCheckIcon,
-} from "@heroicons/vue/24/outline";
+  Repeat as ArrowPathRoundedSquareIcon,
+  FileCheck as DocumentCheckIcon,
+  Eye as EyeIcon,
+  Globe as GlobeAltIcon,
+  ShieldCheck as ShieldCheckIcon,
+} from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
 

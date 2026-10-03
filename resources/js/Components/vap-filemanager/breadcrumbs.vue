@@ -32,11 +32,11 @@
 </template>
   
   <script setup lang="ts">
-  import { ChevronRightIcon } from '@heroicons/vue/24/outline'
+  import { ChevronRight as ChevronRightIcon } from '@lucide/vue'
   import { useFileStore } from '../../Stores/fileStore'
-  import { 
-  HomeIcon,
-} from '@heroicons/vue/24/outline'
+  import {
+  House as HomeIcon,
+} from '@lucide/vue'
 
   
 const fileStore = useFileStore();

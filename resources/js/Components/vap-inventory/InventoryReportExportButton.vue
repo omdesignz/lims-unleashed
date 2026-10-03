@@ -13,7 +13,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { ArrowDownTrayIcon } from '@heroicons/vue/24/outline'
+import { Download as ArrowDownTrayIcon } from '@lucide/vue'
 
 const props = defineProps({
   reportType: { type: String, required: true },

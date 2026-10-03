@@ -2,16 +2,13 @@
   <div class="space-y-6">
     <!-- TABLE COMMAND SURFACE -->
     <section class="ds-command-surface overflow-hidden">
-      <div class="px-5 py-5 sm:px-7 sm:py-6">
-        <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div class="px-4 py-4 sm:px-5">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div class="min-w-0">
-            <p class="ds-kicker">
-              {{ $t('gestlab.general.titles.search_and_filters') }}
-            </p>
-            <h1 class="ds-heading mt-2 text-2xl">
+            <h2 class="ds-heading text-base">
               {{ $t('gestlab.general.titles.records_list') }}
-            </h1>
-            <p class="ds-copy mt-1 text-sm">
+            </h2>
+            <p class="mt-0.5 text-[0.8125rem] text-[var(--ds-text-soft)]">
               {{ props.pagination.total ?? props.data.length }} {{ $t('gestlab.general.labels.records') }}
             </p>
           </div>
@@ -24,7 +21,7 @@
             <button
               v-if="props.createAction && hasPermission('add_' + props.model)"
               type="button"
-              class="ds-button ds-button-primary h-12"
+              class="ds-button ds-button-primary"
               @click="$emit('create-record')"
             >
               <SquaresPlusIcon class="h-5 w-5" />
@@ -33,17 +30,17 @@
           </div>
         </div>
 
-        <div class="ds-command-toolbar mt-5 p-2">
+        <div class="mt-3">
           <div class="grid gap-2 xl:grid-cols-[minmax(18rem,1fr)_auto] xl:items-center">
           <div class="relative min-w-0">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <MagnifyingGlassIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
+              <MagnifyingGlassIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
             </div>
             <BaseInput
               v-model="filters.globalFilter"
               type="search"
               :placeholder="$t('gestlab.general.search_input_placeholder')"
-              class="ds-field h-12 border-transparent pl-11 pr-3"
+              class="ds-field pl-10 pr-3"
               @input="updateQuery"
             />
           </div>
@@ -51,7 +48,7 @@
           <div class="flex flex-wrap items-center gap-2 xl:justify-end">
             <button
               type="button"
-              class="ds-button h-12"
+              class="ds-button h-10"
               :class="showFilterPanel
                 ? 'ds-button-primary'
                 : 'ds-button-secondary'"
@@ -78,7 +75,7 @@
               <BaseSelect
                 v-model="perPage"
                 @change="changePerPage"
-                class="ds-field h-12 min-w-28 py-0"
+                class="ds-field h-10 min-w-28 py-0"
                 aria-label="Registos por página"
               >
                 <option value="10" :selected="props.pagination.per_page == 10">10 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
@@ -471,14 +468,14 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import {
-  MagnifyingGlassIcon,
-  XMarkIcon,
-  SquaresPlusIcon,
-  CalendarIcon,
-  FunnelIcon,
-  TrashIcon,
-  TableCellsIcon
-} from "@heroicons/vue/24/outline";
+  Search as MagnifyingGlassIcon,
+  X as XMarkIcon,
+  Grid2x2Plus as SquaresPlusIcon,
+  Calendar as CalendarIcon,
+  Funnel as FunnelIcon,
+  Trash2 as TrashIcon,
+  Table as TableCellsIcon,
+} from "@lucide/vue";
 import debounce from "lodash/debounce";
 import { usePage, router } from "@inertiajs/vue3";
 

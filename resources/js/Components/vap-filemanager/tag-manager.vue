@@ -73,7 +73,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { XMarkIcon, PlusIcon } from '@heroicons/vue/24/outline'
+import { X as XMarkIcon, Plus as PlusIcon } from '@lucide/vue'
 import { useFileStore } from '../../Stores/fileStore'
 
 const props = defineProps<{

@@ -302,18 +302,18 @@
 
 <script setup>
 import { computed } from "vue";
-import { 
-  TrashIcon, 
-  PlusCircleIcon, 
-  CalculatorIcon,
-  BeakerIcon,
-  VariableIcon,
-  PencilIcon,
-  DocumentIcon,
-  CheckIcon,
-  InformationCircleIcon,
-  ClockIcon
-} from "@heroicons/vue/24/outline";
+import {
+  Trash2 as TrashIcon,
+  CirclePlus as PlusCircleIcon,
+  Calculator as CalculatorIcon,
+  FlaskConical as BeakerIcon,
+  Variable as VariableIcon,
+  Pencil as PencilIcon,
+  File as DocumentIcon,
+  Check as CheckIcon,
+  Info as InformationCircleIcon,
+  Clock as ClockIcon,
+} from "@lucide/vue";
 import ResultItem from '@/Components/results/ResultItem.vue';
 import IndividualResultEntry from '@/Components/results/IndividualResultEntry.vue'
 

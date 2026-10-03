@@ -52,9 +52,9 @@
   import { defineProps, defineEmits, computed, ref } from 'vue';
   import { DatePicker } from 'v-calendar'
   import {
-  CalendarDateRangeIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  CalendarRange as CalendarDateRangeIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
   
   const props = defineProps({
     modelValue: [String, Date, Object],

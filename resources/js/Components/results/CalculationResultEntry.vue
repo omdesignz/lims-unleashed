@@ -1,15 +1,15 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import {
-  CalculatorIcon,
-  CheckCircleIcon,
-  CheckIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
-  ScaleIcon,
-  VariableIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Calculator as CalculatorIcon,
+  CircleCheck as CheckCircleIcon,
+  Check as CheckIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Info as InformationCircleIcon,
+  Scale as ScaleIcon,
+  Variable as VariableIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   parameters: {

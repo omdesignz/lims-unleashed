@@ -4,30 +4,30 @@ import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import DataTableShell from '@/Components/tables/DataTableShell.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import {
-  ArrowPathIcon,
-  ArrowsRightLeftIcon,
-  BeakerIcon,
-  BoltIcon,
-  CheckCircleIcon,
-  ChevronRightIcon,
-  CircleStackIcon,
-  ClipboardDocumentIcon,
-  CloudArrowDownIcon,
-  CloudArrowUpIcon,
-  CodeBracketSquareIcon,
-  CpuChipIcon,
-  ExclamationTriangleIcon,
-  KeyIcon,
-  LinkIcon,
-  MagnifyingGlassIcon,
-  PaperAirplaneIcon,
-  PlusIcon,
-  QueueListIcon,
-  ServerStackIcon,
-  ShieldCheckIcon,
-  SignalIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  RefreshCw as ArrowPathIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  FlaskConical as BeakerIcon,
+  Zap as BoltIcon,
+  CircleCheck as CheckCircleIcon,
+  ChevronRight as ChevronRightIcon,
+  Database as CircleStackIcon,
+  ClipboardCopy as ClipboardDocumentIcon,
+  CloudDownload as CloudArrowDownIcon,
+  CloudUpload as CloudArrowUpIcon,
+  SquareCode as CodeBracketSquareIcon,
+  Cpu as CpuChipIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  KeyRound as KeyIcon,
+  Link as LinkIcon,
+  Search as MagnifyingGlassIcon,
+  Send as PaperAirplaneIcon,
+  Plus as PlusIcon,
+  Rows3 as QueueListIcon,
+  Server as ServerStackIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Signal as SignalIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import {
   Dialog,
   DialogPanel,
@@ -889,7 +889,7 @@ function relativeTime(value) {
 
   <TransitionRoot as="template" :show="connectorModalOpen">
     <Dialog as="div" class="relative z-[80]" @close="connectorModalOpen = false">
-      <TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/55" /></TransitionChild>
+      <TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/55" /></TransitionChild>
       <div class="fixed inset-0 overflow-y-auto p-4 sm:p-6">
         <div class="flex min-h-full items-start justify-center sm:items-center">
           <DialogPanel class="ds-floating-panel w-full max-w-3xl overflow-hidden">
@@ -946,7 +946,7 @@ function relativeTime(value) {
 
   <TransitionRoot as="template" :show="mappingModalOpen">
     <Dialog as="div" class="relative z-[80]" @close="mappingModalOpen = false">
-      <TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/55" /></TransitionChild>
+      <TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/55" /></TransitionChild>
       <div class="fixed inset-0 overflow-y-auto p-4 sm:p-6"><div class="flex min-h-full items-start justify-center sm:items-center"><DialogPanel class="ds-floating-panel w-full max-w-4xl overflow-hidden">
         <form @submit.prevent="submitMapping">
           <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><div><DialogTitle class="text-base font-semibold text-[var(--ds-text)]">Publicar versão de mapeamento</DialogTitle><p class="mt-1 text-xs text-[var(--ds-text-muted)]">{{ selectedConnector?.name }} · a versão anterior permanece no histórico.</p></div><button type="button" class="ds-icon-button" title="Fechar" @click="mappingModalOpen = false"><XMarkIcon class="h-4 w-4" /></button></div>
@@ -965,7 +965,7 @@ function relativeTime(value) {
 
   <TransitionRoot as="template" :show="mappingTestOpen">
     <Dialog as="div" class="relative z-[80]" @close="mappingTestOpen = false">
-      <TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/55" /></TransitionChild>
+      <TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/55" /></TransitionChild>
       <div class="fixed inset-0 overflow-y-auto p-4 sm:p-6"><div class="flex min-h-full items-start justify-center sm:items-center"><DialogPanel class="ds-floating-panel w-full max-w-5xl overflow-hidden">
         <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><div><DialogTitle class="text-base font-semibold text-[var(--ds-text)]">Diagnóstico de payload</DialogTitle><p class="mt-1 text-xs text-[var(--ds-text-muted)]">{{ selectedConnector?.name }} · mapeamento v{{ selectedConnector?.active_mapping?.version }}</p></div><button type="button" class="ds-icon-button" title="Fechar" @click="mappingTestOpen = false"><XMarkIcon class="h-4 w-4" /></button></div>
         <div class="grid max-h-[72vh] overflow-y-auto lg:grid-cols-2 lg:divide-x lg:divide-[var(--ds-border)]">
@@ -978,10 +978,10 @@ function relativeTime(value) {
   </TransitionRoot>
 
   <TransitionRoot as="template" :show="rejectModalOpen">
-    <Dialog as="div" class="relative z-[80]" @close="rejectModalOpen = false"><TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/55" /></TransitionChild><div class="fixed inset-0 overflow-y-auto p-4"><div class="flex min-h-full items-center justify-center"><DialogPanel class="ds-floating-panel w-full max-w-lg overflow-hidden"><form @submit.prevent="rejectTransmission"><div class="border-b border-[var(--ds-border)] px-5 py-4"><DialogTitle class="text-base font-semibold text-[var(--ds-text)]">Rejeitar transmissão</DialogTitle><p class="mt-1 text-xs text-[var(--ds-text-muted)]">Mensagem #{{ selectedTransmission?.id }} · {{ selectedTransmission?.external_id }}</p></div><div class="px-5 py-5"><BaseTextarea v-model="rejectionForm.reason" label="Justificação" rows="4" :error="rejectionForm.errors.reason" required /></div><div class="flex justify-end gap-2 border-t border-[var(--ds-border)] px-5 py-4"><button type="button" class="ds-button ds-button-secondary" @click="rejectModalOpen = false">Cancelar</button><button type="submit" class="ds-button bg-rose-600 text-white hover:bg-rose-700" :disabled="rejectionForm.processing">Confirmar rejeição</button></div></form></DialogPanel></div></div></Dialog>
+    <Dialog as="div" class="relative z-[80]" @close="rejectModalOpen = false"><TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/55" /></TransitionChild><div class="fixed inset-0 overflow-y-auto p-4"><div class="flex min-h-full items-center justify-center"><DialogPanel class="ds-floating-panel w-full max-w-lg overflow-hidden"><form @submit.prevent="rejectTransmission"><div class="border-b border-[var(--ds-border)] px-5 py-4"><DialogTitle class="text-base font-semibold text-[var(--ds-text)]">Rejeitar transmissão</DialogTitle><p class="mt-1 text-xs text-[var(--ds-text-muted)]">Mensagem #{{ selectedTransmission?.id }} · {{ selectedTransmission?.external_id }}</p></div><div class="px-5 py-5"><BaseTextarea v-model="rejectionForm.reason" label="Justificação" rows="4" :error="rejectionForm.errors.reason" required /></div><div class="flex justify-end gap-2 border-t border-[var(--ds-border)] px-5 py-4"><button type="button" class="ds-button ds-button-secondary" @click="rejectModalOpen = false">Cancelar</button><button type="submit" class="ds-button bg-rose-600 text-white hover:bg-rose-700" :disabled="rejectionForm.processing">Confirmar rejeição</button></div></form></DialogPanel></div></div></Dialog>
   </TransitionRoot>
 
   <TransitionRoot as="template" :show="tokenModalOpen">
-    <Dialog as="div" class="relative z-[90]" @close="tokenModalOpen = false"><TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/60" /></TransitionChild><div class="fixed inset-0 overflow-y-auto p-4"><div class="flex min-h-full items-center justify-center"><DialogPanel class="ds-floating-panel w-full max-w-xl overflow-hidden"><div class="flex items-start gap-4 border-b border-[var(--ds-border)] px-5 py-5"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300"><KeyIcon class="h-5 w-5" /></span><div><DialogTitle class="text-base font-semibold text-[var(--ds-text)]">Token de ingestão</DialogTitle><p class="mt-1 text-xs leading-5 text-[var(--ds-text-muted)]">Esta credencial é apresentada uma única vez.</p></div></div><div class="px-5 py-5"><div class="flex items-center gap-2 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3"><code class="min-w-0 flex-1 break-all text-xs text-[var(--ds-text)]">{{ revealedToken }}</code><button type="button" class="ds-icon-button shrink-0" title="Copiar token" @click="copyText(revealedToken, 'token')"><CheckCircleIcon v-if="copiedValue === 'token'" class="h-4 w-4 text-emerald-500" /><ClipboardDocumentIcon v-else class="h-4 w-4" /></button></div><p class="mt-3 font-mono text-[0.65rem] text-[var(--ds-text-soft)]">CONNECTOR · {{ revealedConnectorUuid }}</p></div><div class="flex justify-end border-t border-[var(--ds-border)] px-5 py-4"><button type="button" class="ds-button ds-button-primary" @click="tokenModalOpen = false">Concluir</button></div></DialogPanel></div></div></Dialog>
+    <Dialog as="div" class="relative z-[90]" @close="tokenModalOpen = false"><TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/60" /></TransitionChild><div class="fixed inset-0 overflow-y-auto p-4"><div class="flex min-h-full items-center justify-center"><DialogPanel class="ds-floating-panel w-full max-w-xl overflow-hidden"><div class="flex items-start gap-4 border-b border-[var(--ds-border)] px-5 py-5"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300"><KeyIcon class="h-5 w-5" /></span><div><DialogTitle class="text-base font-semibold text-[var(--ds-text)]">Token de ingestão</DialogTitle><p class="mt-1 text-xs leading-5 text-[var(--ds-text-muted)]">Esta credencial é apresentada uma única vez.</p></div></div><div class="px-5 py-5"><div class="flex items-center gap-2 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3"><code class="min-w-0 flex-1 break-all text-xs text-[var(--ds-text)]">{{ revealedToken }}</code><button type="button" class="ds-icon-button shrink-0" title="Copiar token" @click="copyText(revealedToken, 'token')"><CheckCircleIcon v-if="copiedValue === 'token'" class="h-4 w-4 text-emerald-500" /><ClipboardDocumentIcon v-else class="h-4 w-4" /></button></div><p class="mt-3 font-mono text-[0.65rem] text-[var(--ds-text-soft)]">CONNECTOR · {{ revealedConnectorUuid }}</p></div><div class="flex justify-end border-t border-[var(--ds-border)] px-5 py-4"><button type="button" class="ds-button ds-button-primary" @click="tokenModalOpen = false">Concluir</button></div></DialogPanel></div></div></Dialog>
   </TransitionRoot>
 </template>

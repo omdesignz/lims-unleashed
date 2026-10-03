@@ -419,25 +419,25 @@ import { ref, computed, onMounted } from 'vue'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import {
-  WrenchScrewdriverIcon,
-  ArrowLeftIcon,
-  DocumentDuplicateIcon,
-  TagIcon,
-  CogIcon,
-  CalendarIcon,
-  ArrowPathRoundedSquareIcon,
-  DocumentTextIcon,
-  CurrencyEuroIcon,
-  TruckIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  PencilIcon,
-  PrinterIcon,
-  BellAlertIcon,
-  TrashIcon,
-  ClockIcon,
-  ArrowRightIcon,
-} from '@heroicons/vue/24/outline'
+  Wrench as WrenchScrewdriverIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Copy as DocumentDuplicateIcon,
+  Tag as TagIcon,
+  Cog as CogIcon,
+  Calendar as CalendarIcon,
+  Repeat as ArrowPathRoundedSquareIcon,
+  FileText as DocumentTextIcon,
+  Euro as CurrencyEuroIcon,
+  Truck as TruckIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  CircleCheck as CheckCircleIcon,
+  Pencil as PencilIcon,
+  Printer as PrinterIcon,
+  BellRing as BellAlertIcon,
+  Trash2 as TrashIcon,
+  Clock as ClockIcon,
+  ArrowRight as ArrowRightIcon,
+} from '@lucide/vue'
 import Modal from '@/Components/Modal.vue'
 
 const props = defineProps({

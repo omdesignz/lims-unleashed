@@ -1,7 +1,7 @@
 <script setup>
 import PortalDocumentLibrary from "@/Components/portal/PortalDocumentLibrary.vue";
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
-import { DocumentCheckIcon } from "@heroicons/vue/24/outline";
+import { FileCheck as DocumentCheckIcon } from "@lucide/vue";
 
 defineOptions({ layout: PortalLayout });
 

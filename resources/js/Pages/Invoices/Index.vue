@@ -11,7 +11,7 @@ import { trans } from 'laravel-vue-i18n';
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
 import { usePermission } from '@/Composables/usePermissions'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { EyeIcon } from "@heroicons/vue/24/outline";
+import { Eye as EyeIcon } from "@lucide/vue";
 import ModuleHero from '@/Components/base/ModuleHero.vue'
 
 const { hasPermission } = usePermission();

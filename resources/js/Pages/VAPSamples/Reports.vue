@@ -403,14 +403,14 @@ import datePickerEnhanced from '@/Components/date-picker-enhanced.vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { useTheme } from '@/Composables/useTheme'
 import {
-  ArrowDownTrayIcon,
-  BeakerIcon,
-  CheckCircleIcon,
-  DocumentArrowDownIcon,
-  FunnelIcon,
-  QueueListIcon,
-  TrashIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  FlaskConical as BeakerIcon,
+  CircleCheck as CheckCircleIcon,
+  FileDown as DocumentArrowDownIcon,
+  Funnel as FunnelIcon,
+  Rows3 as QueueListIcon,
+  Trash2 as TrashIcon,
+} from '@lucide/vue'
 
 defineOptions({
   layout: Layout,
@@ -505,11 +505,11 @@ const chartThemeOptions = computed(() => ({
   },
   chart: {
     background: 'transparent',
-    foreColor: isDark.value ? '#cbd5e1' : '#475569',
+    foreColor: isDark.value ? '#d7dbe0' : '#6b7482',
     toolbar: { show: false },
   },
   grid: {
-    borderColor: isDark.value ? '#1e293b' : '#e2e8f0',
+    borderColor: isDark.value ? '#1e293b' : '#eef0f3',
     strokeDashArray: 4,
   },
   tooltip: {
@@ -527,14 +527,14 @@ const statusChartOptions = computed(() => ({
     fontFamily: 'inherit',
   },
   labels: statusChartLabels.value,
-  colors: ['#0f766e', '#d97706', '#059669', '#e11d48', '#64748b'],
+  colors: ['#0f766e', '#e0902b', '#22a45d', '#e5484d', '#6b7482'],
   dataLabels: {
     enabled: true,
     formatter: (value) => `${Math.round(value)}%`,
   },
   legend: {
     position: 'bottom',
-    labels: { colors: isDark.value ? '#cbd5e1' : '#334155' },
+    labels: { colors: isDark.value ? '#d7dbe0' : '#334155' },
   },
   plotOptions: {
     pie: {
@@ -552,7 +552,7 @@ const statusChartOptions = computed(() => ({
     },
   },
   stroke: {
-    colors: [isDark.value ? '#0f172a' : '#ffffff'],
+    colors: [isDark.value ? '#061f46' : '#ffffff'],
   },
 }))
 
@@ -589,14 +589,14 @@ const timelineChartOptions = computed(() => ({
     axisBorder: { show: false },
     axisTicks: { show: false },
     labels: {
-      style: { colors: isDark.value ? '#94a3b8' : '#64748b' },
+      style: { colors: isDark.value ? '#98a1ae' : '#6b7482' },
     },
   },
   yaxis: {
     min: 0,
     forceNiceScale: true,
     labels: {
-      style: { colors: isDark.value ? '#94a3b8' : '#64748b' },
+      style: { colors: isDark.value ? '#98a1ae' : '#6b7482' },
     },
   },
 }))
@@ -615,7 +615,7 @@ const discardChartOptions = computed(() => ({
     ...chartThemeOptions.value.chart,
     fontFamily: 'inherit',
   },
-  colors: ['#e11d48'],
+  colors: ['#e5484d'],
   dataLabels: { enabled: false },
   grid: chartThemeOptions.value.grid,
   plotOptions: {
@@ -628,12 +628,12 @@ const discardChartOptions = computed(() => ({
   xaxis: {
     categories: discardChartLabels.value,
     labels: {
-      style: { colors: isDark.value ? '#94a3b8' : '#64748b' },
+      style: { colors: isDark.value ? '#98a1ae' : '#6b7482' },
     },
   },
   yaxis: {
     labels: {
-      style: { colors: isDark.value ? '#94a3b8' : '#64748b' },
+      style: { colors: isDark.value ? '#98a1ae' : '#6b7482' },
     },
   },
 }))

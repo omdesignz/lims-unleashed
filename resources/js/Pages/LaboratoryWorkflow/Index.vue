@@ -2,15 +2,15 @@
 import { computed, ref } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import {
-  ArrowRightIcon,
-  BeakerIcon,
-  CheckCircleIcon,
-  ClipboardDocumentCheckIcon,
-  ClockIcon,
-  DocumentCheckIcon,
-  MagnifyingGlassIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  ArrowRight as ArrowRightIcon,
+  FlaskConical as BeakerIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Clock as ClockIcon,
+  FileCheck as DocumentCheckIcon,
+  Search as MagnifyingGlassIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'

@@ -3,7 +3,7 @@ import Pagination from "@/Components/pagination.vue";
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 import { Link, router } from "@inertiajs/vue3";
-import { ChatBubbleLeftRightIcon, ChevronDownIcon, MagnifyingGlassIcon, PlusIcon, QuestionMarkCircleIcon, TagIcon } from "@heroicons/vue/24/outline";
+import { MessagesSquare as ChatBubbleLeftRightIcon, ChevronDown as ChevronDownIcon, Search as MagnifyingGlassIcon, Plus as PlusIcon, CircleHelp as QuestionMarkCircleIcon, Tag as TagIcon } from "@lucide/vue";
 import { computed, ref } from "vue";
 
 defineOptions({ layout: PortalLayout });

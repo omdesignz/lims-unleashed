@@ -3,26 +3,26 @@ import BaseInput from "@/Components/base/BaseInput.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowDownTrayIcon,
-  ArrowTopRightOnSquareIcon,
-  BanknotesIcon,
-  BeakerIcon,
-  BuildingOffice2Icon,
-  CircleStackIcon,
-  ClipboardDocumentListIcon,
-  ClockIcon,
-  CubeIcon,
-  DocumentChartBarIcon,
-  DocumentMagnifyingGlassIcon,
-  FunnelIcon,
-  MapPinIcon,
-  ReceiptPercentIcon,
-  ReceiptRefundIcon,
-  ShieldCheckIcon,
-  Squares2X2Icon,
-  TruckIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Download as ArrowDownTrayIcon,
+  ExternalLink as ArrowTopRightOnSquareIcon,
+  Banknote as BanknotesIcon,
+  FlaskConical as BeakerIcon,
+  Building2 as BuildingOffice2Icon,
+  Database as CircleStackIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Clock as ClockIcon,
+  Box as CubeIcon,
+  FileChartColumn as DocumentChartBarIcon,
+  FileSearch as DocumentMagnifyingGlassIcon,
+  Funnel as FunnelIcon,
+  MapPin as MapPinIcon,
+  BadgePercent as ReceiptPercentIcon,
+  Receipt as ReceiptRefundIcon,
+  ShieldCheck as ShieldCheckIcon,
+  LayoutGrid as Squares2X2Icon,
+  Truck as TruckIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 import { computed, reactive, ref } from "vue";
 
 defineOptions({ layout: Layout });
@@ -222,7 +222,7 @@ function formatDate(value) {
           <div><p class="ds-kicker">Catálogo</p><h2 class="ds-heading mt-2 text-base">Conjuntos de dados</h2></div>
           <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             <BaseInput v-model="catalogSearch" type="search" class="ds-field w-full" placeholder="Pesquisar conjunto" />
-            <select v-model="catalogCategory" class="ds-field w-full"><option value="all">Todas as áreas</option><option v-for="category in categories" :key="category" :value="category">{{ category }}</option></select>
+            <BaseSelect v-model="catalogCategory" class="ds-field w-full"><option value="all">Todas as áreas</option><option v-for="category in categories" :key="category" :value="category">{{ category }}</option></BaseSelect>
           </div>
           <p class="text-xs font-semibold text-[var(--ds-text-soft)]">{{ filteredDatasets.length }} de {{ datasets.length }} conjuntos</p>
         </div>
@@ -260,66 +260,66 @@ function formatDate(value) {
               </div>
 
               <template v-if="filterGroup === 'activity'">
-                <label class="block"><span class="ds-field-label">Nome do log</span><select v-model="form.log_name" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.log_names || []" :key="option.value" :value="option.value">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Evento</span><select v-model="form.event" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.events || []" :key="option.value" :value="option.value">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Actor</span><select v-model="form.causer_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.actors || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Tipo de entidade</span><select v-model="form.subject_type" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.subject_types || []" :key="option.value" :value="option.value">{{ option.label }}</option></select></label>
+                <label class="block"><span class="ds-field-label">Nome do log</span><BaseSelect v-model="form.log_name" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.log_names || []" :key="option.value" :value="option.value">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Evento</span><BaseSelect v-model="form.event" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.events || []" :key="option.value" :value="option.value">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Actor</span><BaseSelect v-model="form.causer_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.actors || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Tipo de entidade</span><BaseSelect v-model="form.subject_type" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.subject_types || []" :key="option.value" :value="option.value">{{ option.label }}</option></BaseSelect></label>
                 <label class="block"><span class="ds-field-label">ID da entidade</span><BaseInput v-model="form.subject_id" type="number" min="1" class="ds-field mt-1 w-full" /></label>
                 <label class="block"><span class="ds-field-label">Propriedade</span><BaseInput v-model="form.property" type="text" class="ds-field mt-1 w-full" placeholder="Ex.: attributes, old, ip_address" /></label>
                 <label class="block md:col-span-2"><span class="ds-field-label">UUID do lote</span><BaseInput v-model="form.batch_uuid" type="text" class="ds-field mt-1 w-full font-mono" /></label>
               </template>
 
               <template v-if="filterGroup === 'customers'">
-                <label class="block"><span class="ds-field-label">Categoria</span><select v-model="form.category_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.categories || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Província</span><select v-model="form.province" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.provinces || []" :key="option.value" :value="option.value">{{ option.label }}</option></select></label>
-                <label class="block md:col-span-2"><span class="ds-field-label">Local principal</span><select v-model="form.has_primary_site" class="ds-field mt-1 w-full"><option value="all">Com ou sem local</option><option value="yes">Com local principal</option><option value="no">Sem local principal</option></select></label>
+                <label class="block"><span class="ds-field-label">Categoria</span><BaseSelect v-model="form.category_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.categories || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Província</span><BaseSelect v-model="form.province" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.provinces || []" :key="option.value" :value="option.value">{{ option.label }}</option></BaseSelect></label>
+                <label class="block md:col-span-2"><span class="ds-field-label">Local principal</span><BaseSelect v-model="form.has_primary_site" class="ds-field mt-1 w-full"><option value="all">Com ou sem local</option><option value="yes">Com local principal</option><option value="no">Sem local principal</option></BaseSelect></label>
               </template>
 
               <template v-if="partyFilterGroups.includes(filterGroup)">
-                <label class="block"><span class="ds-field-label">Cliente</span><select v-model="form.customer_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.customers || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Local</span><select v-model="form.warehouse_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.warehouses || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
+                <label class="block"><span class="ds-field-label">Cliente</span><BaseSelect v-model="form.customer_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.customers || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Local</span><BaseSelect v-model="form.warehouse_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.warehouses || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
               </template>
-              <label v-if="filterGroup === 'warehouses'" class="block md:col-span-2"><span class="ds-field-label">Província</span><select v-model="form.province" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.provinces || []" :key="option.value" :value="option.value">{{ option.label }}</option></select></label>
+              <label v-if="filterGroup === 'warehouses'" class="block md:col-span-2"><span class="ds-field-label">Província</span><BaseSelect v-model="form.province" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.provinces || []" :key="option.value" :value="option.value">{{ option.label }}</option></BaseSelect></label>
 
               <template v-if="filterGroup === 'products'">
-                <label class="block md:col-span-2"><span class="ds-field-label">Matriz</span><select v-model="form.matrix_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.matrixes || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
+                <label class="block md:col-span-2"><span class="ds-field-label">Matriz</span><BaseSelect v-model="form.matrix_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.matrixes || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
               </template>
               <template v-if="['products', 'parameters', 'matrixes'].includes(filterGroup)">
-                <label class="block"><span class="ds-field-label">Tributação</span><select v-model="form.tax_status" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="taxable">Tributados</option><option value="exempt">Isentos</option></select></label>
-                <label class="block"><span class="ds-field-label">Retenção</span><select v-model="form.withholding" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="yes">Com retenção</option><option value="no">Sem retenção</option></select></label>
+                <label class="block"><span class="ds-field-label">Tributação</span><BaseSelect v-model="form.tax_status" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="taxable">Tributados</option><option value="exempt">Isentos</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Retenção</span><BaseSelect v-model="form.withholding" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="yes">Com retenção</option><option value="no">Sem retenção</option></BaseSelect></label>
               </template>
               <template v-if="filterGroup === 'parameters'">
-                <label class="block"><span class="ds-field-label">Disponibilidade</span><select v-model="form.enabled" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="yes">Activos</option><option value="no">Inactivos</option></select></label>
-                <label class="block"><span class="ds-field-label">Tipo de resultado</span><select v-model="form.result_type" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.result_types || []" :key="option.value" :value="option.value">{{ option.label }}</option></select></label>
+                <label class="block"><span class="ds-field-label">Disponibilidade</span><BaseSelect v-model="form.enabled" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="yes">Activos</option><option value="no">Inactivos</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Tipo de resultado</span><BaseSelect v-model="form.result_type" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.result_types || []" :key="option.value" :value="option.value">{{ option.label }}</option></BaseSelect></label>
               </template>
-              <label v-if="filterGroup === 'profiles'" class="block md:col-span-2"><span class="ds-field-label">Categoria analítica</span><select v-model="form.analysis_category_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.analysis_categories || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
+              <label v-if="filterGroup === 'profiles'" class="block md:col-span-2"><span class="ds-field-label">Categoria analítica</span><BaseSelect v-model="form.analysis_category_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.analysis_categories || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
 
               <div v-if="priceFilterGroups.includes(filterGroup)" class="grid grid-cols-2 gap-3 md:col-span-2"><label class="block"><span class="ds-field-label">Preço mínimo</span><BaseInput v-model="form.min_price" type="number" min="0" step="0.01" class="ds-field mt-1 w-full" /></label><label class="block"><span class="ds-field-label">Preço máximo</span><BaseInput v-model="form.max_price" type="number" min="0" step="0.01" class="ds-field mt-1 w-full" /></label></div>
               <div v-if="financialFilterGroups.includes(filterGroup)" class="grid grid-cols-2 gap-3 md:col-span-2"><label class="block"><span class="ds-field-label">Valor mínimo</span><BaseInput v-model="form.min_total" type="number" min="0" step="0.01" class="ds-field mt-1 w-full" /></label><label class="block"><span class="ds-field-label">Valor máximo</span><BaseInput v-model="form.max_total" type="number" min="0" step="0.01" class="ds-field mt-1 w-full" /></label></div>
 
-              <label v-if="filterGroup === 'invoices'" class="block md:col-span-2"><span class="ds-field-label">Pagamento</span><select v-model="form.payment_status" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="paid">Pagas</option><option value="unpaid">Não pagas</option><option value="canceled">Anuladas</option></select></label>
-              <label v-if="filterGroup === 'quotes'" class="block md:col-span-2"><span class="ds-field-label">Conversão</span><select v-model="form.converted" class="ds-field mt-1 w-full"><option value="all">Todas</option><option value="yes">Convertidas em factura</option><option value="no">Não convertidas</option></select></label>
-              <label v-if="filterGroup === 'credit_notes'" class="block md:col-span-2"><span class="ds-field-label">Motivo</span><select v-model="form.reason" class="ds-field mt-1 w-full"><option value="">Todos</option><option value="R">Rectificação</option><option value="A">Anulação</option></select></label>
-              <label v-if="filterGroup === 'receipts'" class="block md:col-span-2"><span class="ds-field-label">Meio de pagamento</span><select v-model="form.payment_type_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.payment_types || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
+              <label v-if="filterGroup === 'invoices'" class="block md:col-span-2"><span class="ds-field-label">Pagamento</span><BaseSelect v-model="form.payment_status" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="paid">Pagas</option><option value="unpaid">Não pagas</option><option value="canceled">Anuladas</option></BaseSelect></label>
+              <label v-if="filterGroup === 'quotes'" class="block md:col-span-2"><span class="ds-field-label">Conversão</span><BaseSelect v-model="form.converted" class="ds-field mt-1 w-full"><option value="all">Todas</option><option value="yes">Convertidas em factura</option><option value="no">Não convertidas</option></BaseSelect></label>
+              <label v-if="filterGroup === 'credit_notes'" class="block md:col-span-2"><span class="ds-field-label">Motivo</span><BaseSelect v-model="form.reason" class="ds-field mt-1 w-full"><option value="">Todos</option><option value="R">Rectificação</option><option value="A">Anulação</option></BaseSelect></label>
+              <label v-if="filterGroup === 'receipts'" class="block md:col-span-2"><span class="ds-field-label">Meio de pagamento</span><BaseSelect v-model="form.payment_type_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.payment_types || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
 
               <template v-if="filterGroup === 'trade_certificates'">
-                <label class="block"><span class="ds-field-label">Transporte</span><select v-model="form.transport_type_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.transport_types || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Facturação</span><select v-model="form.invoiced" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="yes">Facturados</option><option value="no">Não facturados</option></select></label>
+                <label class="block"><span class="ds-field-label">Transporte</span><BaseSelect v-model="form.transport_type_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.transport_types || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Facturação</span><BaseSelect v-model="form.invoiced" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="yes">Facturados</option><option value="no">Não facturados</option></BaseSelect></label>
               </template>
               <template v-if="filterGroup === 'quality_certificates'">
-                <label class="block"><span class="ds-field-label">Produto</span><select v-model="form.product_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.products || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Validação</span><select v-model="form.validation_status" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="validated">Validados</option><option value="pending">Pendentes</option></select></label>
+                <label class="block"><span class="ds-field-label">Produto</span><BaseSelect v-model="form.product_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.products || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Validação</span><BaseSelect v-model="form.validation_status" class="ds-field mt-1 w-full"><option value="all">Todos</option><option value="validated">Validados</option><option value="pending">Pendentes</option></BaseSelect></label>
               </template>
               <template v-if="filterGroup === 'customer_requests'">
-                <label class="block"><span class="ds-field-label">Categoria</span><select v-model="form.request_category_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.request_categories || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Estado do fluxo</span><select v-model="form.workflow_status" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.workflow_statuses || []" :key="option.value" :value="option.value">{{ option.label }}</option></select></label>
-                <label class="block md:col-span-2"><span class="ds-field-label">Prioridade</span><select v-model="form.priority" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.priorities || []" :key="option.value" :value="option.value">{{ option.label }}</option></select></label>
+                <label class="block"><span class="ds-field-label">Categoria</span><BaseSelect v-model="form.request_category_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.request_categories || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Estado do fluxo</span><BaseSelect v-model="form.workflow_status" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.workflow_statuses || []" :key="option.value" :value="option.value">{{ option.label }}</option></BaseSelect></label>
+                <label class="block md:col-span-2"><span class="ds-field-label">Prioridade</span><BaseSelect v-model="form.priority" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.priorities || []" :key="option.value" :value="option.value">{{ option.label }}</option></BaseSelect></label>
               </template>
               <template v-if="filterGroup === 'occurrences'">
-                <label class="block"><span class="ds-field-label">Estado</span><select v-model="form.occurrence_status_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.occurrence_statuses || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Categoria</span><select v-model="form.occurrence_category_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.occurrence_categories || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Origem</span><select v-model="form.occurrence_origin_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.occurrence_origins || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
-                <label class="block"><span class="ds-field-label">Departamento</span><select v-model="form.department_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.departments || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></select></label>
+                <label class="block"><span class="ds-field-label">Estado</span><BaseSelect v-model="form.occurrence_status_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.occurrence_statuses || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Categoria</span><BaseSelect v-model="form.occurrence_category_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.occurrence_categories || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Origem</span><BaseSelect v-model="form.occurrence_origin_id" class="ds-field mt-1 w-full"><option value="">Todas</option><option v-for="option in filterOptions.occurrence_origins || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
+                <label class="block"><span class="ds-field-label">Departamento</span><BaseSelect v-model="form.department_id" class="ds-field mt-1 w-full"><option value="">Todos</option><option v-for="option in filterOptions.departments || []" :key="option.value" :value="String(option.value)">{{ option.label }}</option></BaseSelect></label>
               </template>
 
               <label class="block"><span class="ds-field-label">{{ selected.date_label || "Data" }} desde</span><BaseInput v-model="form.date_from" type="date" class="ds-field mt-1 w-full" /></label>

@@ -222,16 +222,16 @@
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import {
-  WrenchScrewdriverIcon,
-  ArrowLeftIcon,
-  InformationCircleIcon,
-  CalendarIcon,
-  Cog6ToothIcon,
-  TruckIcon,
-  CurrencyEuroIcon,
-  CheckCircleIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Wrench as WrenchScrewdriverIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Info as InformationCircleIcon,
+  Calendar as CalendarIcon,
+  Settings as Cog6ToothIcon,
+  Truck as TruckIcon,
+  Euro as CurrencyEuroIcon,
+  CircleCheck as CheckCircleIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   categories: Array,

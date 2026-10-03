@@ -415,23 +415,23 @@ import BaseSelect from '@/Components/base/BaseSelect.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import { router, useForm } from '@inertiajs/vue3'
 import {
-  ArrowPathIcon,
-  BeakerIcon,
-  CheckCircleIcon,
-  ClipboardDocumentCheckIcon,
-  ClockIcon,
-  CpuChipIcon,
-  HashtagIcon,
-  InformationCircleIcon,
-  LinkIcon,
-  PaperClipIcon,
-  PlusCircleIcon,
-  QueueListIcon,
-  TagIcon,
-  TrashIcon,
-  WrenchScrewdriverIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  RefreshCw as ArrowPathIcon,
+  FlaskConical as BeakerIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Clock as ClockIcon,
+  Cpu as CpuChipIcon,
+  Hash as HashtagIcon,
+  Info as InformationCircleIcon,
+  Link as LinkIcon,
+  Paperclip as PaperClipIcon,
+  CirclePlus as PlusCircleIcon,
+  Rows3 as QueueListIcon,
+  Tag as TagIcon,
+  Trash2 as TrashIcon,
+  Wrench as WrenchScrewdriverIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 const props = defineProps({

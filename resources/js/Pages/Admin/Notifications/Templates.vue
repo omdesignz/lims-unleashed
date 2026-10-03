@@ -7,12 +7,12 @@ import NotificationAdminHeader from '@/Components/notifications/NotificationAdmi
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { useForm } from '@inertiajs/vue3'
 import {
-  ArrowPathIcon,
-  CheckCircleIcon,
-  EnvelopeIcon,
-  MagnifyingGlassIcon,
-  SignalIcon,
-} from '@heroicons/vue/24/outline'
+  RefreshCw as ArrowPathIcon,
+  CircleCheck as CheckCircleIcon,
+  Mail as EnvelopeIcon,
+  Search as MagnifyingGlassIcon,
+  Signal as SignalIcon,
+} from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 
 defineOptions({ layout: Layout })

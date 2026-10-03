@@ -2,7 +2,7 @@
 import CustomerRequestForm from "@/Components/customer-requests/CustomerRequestForm.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
-import { ArrowLeftIcon, ClipboardDocumentCheckIcon } from "@heroicons/vue/24/outline";
+import { ArrowLeft as ArrowLeftIcon, ClipboardCheck as ClipboardDocumentCheckIcon } from "@lucide/vue";
 
 defineOptions({
   layout: Layout,

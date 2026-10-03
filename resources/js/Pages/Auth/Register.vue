@@ -2,7 +2,7 @@
 import AuthExperienceShell from '@/Components/auth/AuthExperienceShell.vue'
 import EmptyLayout from '../../Shared/EmptyLayout.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
-import { EyeIcon, EyeSlashIcon, UserPlusIcon } from '@heroicons/vue/24/outline'
+import { Eye as EyeIcon, EyeOff as EyeSlashIcon, UserPlus as UserPlusIcon } from '@lucide/vue'
 import { ref } from 'vue'
 
 defineOptions({ layout: EmptyLayout })
@@ -25,9 +25,7 @@ const submit = () => {
     context-description="Associe posteriormente a funcao, departamento e permissoes adequadas ao perfil operacional."
   >
     <div>
-      <p class="ds-kicker">Registo</p>
-      <h2 class="ds-heading mt-2 text-xl">Criar utilizador</h2>
-      <p class="ds-copy mt-2 text-sm">Introduza os dados de identificação e defina uma credencial segura.</p>
+      <p class="ds-copy text-sm">Introduza os dados de identificação e defina uma credencial segura.</p>
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">
         <div class="ds-field-group"><label for="name" class="ds-field-label">Nome</label><BaseInput id="name" v-model="form.name" name="name" type="text" autocomplete="name" class="ds-field" :aria-invalid="Boolean(form.errors.name)" /><p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p></div>

@@ -6,13 +6,13 @@ import { usePermission } from '@/Composables/usePermissions'
 import WarehouseComponent from '@/Pages/Warehouses/warehouse-component.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import {
-  BuildingOffice2Icon,
-  CheckCircleIcon,
-  EyeIcon,
-  KeyIcon,
-  MapPinIcon,
-  UsersIcon,
-} from '@heroicons/vue/24/outline'
+  Building2 as BuildingOffice2Icon,
+  CircleCheck as CheckCircleIcon,
+  Eye as EyeIcon,
+  KeyRound as KeyIcon,
+  MapPin as MapPinIcon,
+  Users as UsersIcon,
+} from '@lucide/vue'
 import { Link, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 

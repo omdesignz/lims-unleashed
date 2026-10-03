@@ -4,15 +4,15 @@ import Pagination from "@/Components/pagination.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  BeakerIcon,
-  CalendarDaysIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  MagnifyingGlassIcon,
-  PencilSquareIcon,
-  PlusIcon,
-  TrashIcon,
-} from "@heroicons/vue/24/outline";
+  FlaskConical as BeakerIcon,
+  CalendarDays as CalendarDaysIcon,
+  CircleCheck as CheckCircleIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Search as MagnifyingGlassIcon,
+  SquarePen as PencilSquareIcon,
+  Plus as PlusIcon,
+  Trash2 as TrashIcon,
+} from "@lucide/vue";
 import { Head, Link, router, useForm } from "@inertiajs/vue3";
 import { computed, ref, watch } from "vue";
 

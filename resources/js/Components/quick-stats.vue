@@ -1,14 +1,14 @@
 <script setup>
 import {
-  BeakerIcon,
-  ArchiveBoxIcon,
-  UserGroupIcon,
-  DocumentTextIcon,
-  BanknotesIcon,
-  CubeIcon,
-  DocumentCheckIcon,
-  QueueListIcon,
-} from '@heroicons/vue/24/outline'
+  FlaskConical as BeakerIcon,
+  Archive as ArchiveBoxIcon,
+  Users as UserGroupIcon,
+  FileText as DocumentTextIcon,
+  Banknote as BanknotesIcon,
+  Box as CubeIcon,
+  FileCheck as DocumentCheckIcon,
+  Rows3 as QueueListIcon,
+} from '@lucide/vue'
 
 const props = defineProps({
   stats: Object,

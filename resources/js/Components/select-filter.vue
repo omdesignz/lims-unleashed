@@ -1,23 +1,21 @@
 <template>
   <div class="flex flex-wrap items-center gap-2">
-    <Listbox :model-value="filterId" as="div" class="relative min-w-56" @update:model-value="selectFilter">
+    <Listbox :model-value="filterId" as="div" class="relative min-w-48" @update:model-value="selectFilter">
       <ListboxButton class="ds-combobox-control group inline-flex w-full items-center justify-between gap-3 px-3.5 py-2 text-left text-sm font-semibold">
         <span class="inline-flex min-w-0 items-center gap-2">
-          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] transition group-hover:bg-[rgb(var(--primary-50-rgb))] dark:text-[rgb(var(--accent-200-rgb))]">
-            <FunnelIcon class="h-4 w-4" />
-          </span>
+          <FunnelIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" />
           <span class="truncate">{{ $t(selectedFilterLabel) }}</span>
         </span>
 
-        <ChevronUpDownIcon class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
+        <ChevronUpDownIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" />
       </ListboxButton>
 
       <TransitionRoot
-        leave="transition ease-in duration-100"
+        leave="transition ease-out duration-100"
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <ListboxOptions class="ds-floating-panel absolute left-0 z-50 mt-2 max-h-72 w-full overflow-auto p-2 focus:outline-none">
+        <ListboxOptions class="ds-floating-panel absolute left-0 z-50 mt-1.5 max-h-72 w-full overflow-auto focus:outline-none">
           <ListboxOption
             v-for="filter in normalizedFilters"
             :key="filter.id ?? 'none'"
@@ -62,7 +60,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, TransitionRoot } from '@headlessui/vue'
-import { CheckIcon, ChevronUpDownIcon, FunnelIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { Check as CheckIcon, ChevronsUpDown as ChevronUpDownIcon, Funnel as FunnelIcon, X as XMarkIcon } from '@lucide/vue'
 
 const props = defineProps({
   filters: {
@@ -95,7 +93,7 @@ const selectedFilter = computed(() => {
 })
 
 const selectedFilterLabel = computed(() => selectedFilter.value?.label ?? 'gestlab.filter.select_filter')
-const hasActiveFilter = computed(() => filterId.value !== null && filterId.value !== '')
+const hasActiveFilter = computed(() => ![null, undefined, ''].includes(selectedFilter.value?.id) && selectedFilter.value?.id === filterId.value)
 
 function selectFilter(value) {
   filterId.value = value

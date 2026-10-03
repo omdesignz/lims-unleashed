@@ -8,11 +8,11 @@ import { usePermission } from "@/Composables/usePermissions";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 import { router, useForm } from "@inertiajs/vue3";
 import {
-  ArchiveBoxIcon,
-  CheckBadgeIcon,
-  DocumentTextIcon,
-  PlusIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  BadgeCheck as CheckBadgeIcon,
+  FileText as DocumentTextIcon,
+  Plus as PlusIcon,
+} from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref, watch } from "vue";
 

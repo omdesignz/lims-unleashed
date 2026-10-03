@@ -2,7 +2,7 @@
 import {Menu, MenuButton, MenuItem, MenuItems} from '@headlessui/vue';
 import BoardNameForm from '@/Components/BoardNameForm';
 import CreateBoardListForm from '@/Components/CreateBoardListForm';
-import { EllipsisHorizontalIcon, EllipsisVerticalIcon, PencilSquareIcon, PlusCircleIcon } from '@heroicons/vue/24/outline';
+import { Ellipsis as EllipsisHorizontalIcon, EllipsisVertical as EllipsisVerticalIcon, SquarePen as PencilSquareIcon, CirclePlus as PlusCircleIcon } from '@lucide/vue';
 
 const props = defineProps({
   board: Object

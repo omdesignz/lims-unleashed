@@ -4,10 +4,10 @@ import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
 import {
-  ChatBubbleBottomCenterTextIcon,
-  CheckIcon,
-  QuestionMarkCircleIcon,
-} from "@heroicons/vue/24/outline";
+  MessageSquareText as ChatBubbleBottomCenterTextIcon,
+  Check as CheckIcon,
+  CircleHelp as QuestionMarkCircleIcon,
+} from "@lucide/vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

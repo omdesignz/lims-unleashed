@@ -1,12 +1,12 @@
 <script setup>
 import { router } from '@inertiajs/vue3'
 import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
-  XCircleIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  CircleCheck as CheckCircleIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Info as InformationCircleIcon,
+  CircleX as XCircleIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const props = defineProps({
@@ -21,10 +21,10 @@ let lastTick = null
 let remaining = props.item.duration
 
 const configurations = {
-  success: { icon: CheckCircleIcon, rail: 'bg-emerald-500', iconClass: 'text-emerald-600 dark:text-emerald-300', label: 'Concluído' },
-  error: { icon: XCircleIcon, rail: 'bg-rose-500', iconClass: 'text-rose-600 dark:text-rose-300', label: 'Atenção' },
-  warning: { icon: ExclamationTriangleIcon, rail: 'bg-amber-500', iconClass: 'text-amber-600 dark:text-amber-300', label: 'Aviso' },
-  info: { icon: InformationCircleIcon, rail: 'bg-sky-500', iconClass: 'text-sky-600 dark:text-sky-300', label: 'Informação' },
+  success: { icon: CheckCircleIcon, rail: 'bg-[var(--lims-release)]', iconClass: 'text-[var(--lims-release)]', label: 'Concluído' },
+  error: { icon: XCircleIcon, rail: 'bg-[var(--lims-critical)]', iconClass: 'text-[var(--lims-critical)]', label: 'Atenção' },
+  warning: { icon: ExclamationTriangleIcon, rail: 'bg-[var(--lims-hold)]', iconClass: 'text-[var(--lims-hold)]', label: 'Aviso' },
+  info: { icon: InformationCircleIcon, rail: 'bg-[var(--lims-instrument)]', iconClass: 'text-[var(--lims-instrument)]', label: 'Informação' },
 }
 
 const configuration = computed(() => configurations[props.item.variant] || configurations.info)
@@ -65,39 +65,37 @@ const followAction = () => {
 
 <template>
   <article
-    class="pointer-events-auto relative overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-[var(--ds-shadow-card)]"
+    class="ds-floating-panel pointer-events-auto relative"
     :role="item.variant === 'error' || item.priority === 'urgent' ? 'alert' : 'status'"
     @mouseenter="paused = true"
     @mouseleave="paused = false"
     @focusin="paused = true"
     @focusout="paused = false"
   >
-    <span class="absolute inset-y-0 left-0 w-1" :class="configuration.rail" />
-    <div class="flex items-start gap-3 px-4 py-3.5 pl-5">
+    <div class="flex items-start gap-3 py-3 pl-3.5 pr-2.5">
       <component :is="configuration.icon" class="mt-0.5 h-5 w-5 shrink-0" :class="configuration.iconClass" aria-hidden="true" />
 
       <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-2">
-          <span class="text-[0.64rem] font-black uppercase text-[var(--ds-text-soft)]">{{ configuration.label }}</span>
-          <span v-if="item.priority === 'high' || item.priority === 'urgent'" class="rounded bg-rose-50 px-1.5 py-0.5 text-[0.62rem] font-black uppercase text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
+        <p class="text-sm font-medium leading-5 text-[var(--ds-text)]">
+          <span class="sr-only">{{ configuration.label }}: </span>{{ item.title }}
+          <span v-if="item.priority === 'high' || item.priority === 'urgent'" class="ds-badge ds-badge-danger ml-1.5 align-middle">
             {{ item.priority === 'urgent' ? 'Urgente' : 'Prioridade alta' }}
           </span>
-        </div>
-        <p class="mt-1 text-sm font-bold leading-5 text-[var(--ds-text)]">{{ item.title }}</p>
-        <p class="mt-0.5 text-sm font-medium leading-5 text-[var(--ds-text-muted)]">{{ item.message }}</p>
+        </p>
+        <p v-if="item.message" class="mt-0.5 text-[0.8125rem] leading-5 text-[var(--ds-text-muted)]">{{ item.message }}</p>
 
-        <button v-if="actionLabel && actionUrl" type="button" class="mt-2 text-xs font-black text-[rgb(var(--primary-700-rgb))] hover:underline dark:text-cyan-200" @click="followAction">
+        <button v-if="actionLabel && actionUrl" type="button" class="ds-link mt-1.5 text-[0.8125rem]" @click="followAction">
           {{ actionLabel }}
         </button>
       </div>
 
-      <button type="button" class="ds-icon-button -mr-1 -mt-1 h-8 w-8 shrink-0" title="Fechar notificação" @click="emit('remove')">
+      <button type="button" class="ds-icon-button h-7 w-7 shrink-0" title="Fechar notificação" @click="emit('remove')">
         <XMarkIcon class="h-4 w-4" aria-hidden="true" />
       </button>
     </div>
 
-    <div v-if="!isPersistent" class="h-0.5 bg-[var(--ds-panel-subtle)]">
-      <div class="h-full transition-[width] duration-100 ease-linear" :class="configuration.rail" :style="{ width: `${progress}%` }" />
+    <div v-if="!isPersistent" class="h-0.5 bg-[var(--ds-panel-muted)]">
+      <div class="h-full opacity-60 transition-[width] duration-100 ease-linear" :class="configuration.rail" :style="{ width: `${progress}%` }" />
     </div>
   </article>
 </template>

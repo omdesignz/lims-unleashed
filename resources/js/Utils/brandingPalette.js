@@ -2,7 +2,7 @@ function clamp(value, min = 0, max = 255) {
   return Math.min(max, Math.max(min, Math.round(value)))
 }
 
-function hexToRgb(hex, fallback = '#143d37') {
+function hexToRgb(hex, fallback = '#0757b5') {
   const normalized = String(hex || fallback).replace('#', '').trim()
   const safeHex = normalized.length === 3
     ? normalized.split('').map((char) => char + char).join('')
@@ -50,13 +50,13 @@ export function contrastingText(hex) {
 }
 
 export function buildBrandingCssVariables(branding = {}) {
-  const primaryColor = branding.primary_color || branding.app_primary_color || '#143d37'
-  const secondaryColor = branding.secondary_color || branding.app_secondary_color || '#07110f'
-  const accentColor = branding.accent_color || branding.app_accent_color || '#d9b05f'
+  const primaryColor = branding.primary_color || branding.app_primary_color || '#0757b5'
+  const secondaryColor = branding.secondary_color || branding.app_secondary_color || '#061f46'
+  const accentColor = branding.accent_color || branding.app_accent_color || '#087cf0'
 
-  const primary = hexToRgb(primaryColor, '#143d37')
-  const secondary = hexToRgb(secondaryColor, '#07110f')
-  const accent = hexToRgb(accentColor, '#d9b05f')
+  const primary = hexToRgb(primaryColor, '#0757b5')
+  const secondary = hexToRgb(secondaryColor, '#061f46')
+  const accent = hexToRgb(accentColor, '#087cf0')
 
   const primaryPalette = {
     50: lighten(primary, 0.92),

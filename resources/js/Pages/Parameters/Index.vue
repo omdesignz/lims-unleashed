@@ -8,12 +8,12 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
-  BeakerIcon,
-  CalculatorIcon,
-  CheckBadgeIcon,
-  ListBulletIcon,
-  PlusIcon,
-} from "@heroicons/vue/24/outline";
+  FlaskConical as BeakerIcon,
+  Calculator as CalculatorIcon,
+  BadgeCheck as CheckBadgeIcon,
+  List as ListBulletIcon,
+  Plus as PlusIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 import { trans } from "laravel-vue-i18n";
 

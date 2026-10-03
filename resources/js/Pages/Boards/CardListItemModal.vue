@@ -1,7 +1,7 @@
 <script setup>
 import combobox from '@/Components/combobox.vue'
 import confirmDialog from '@/Components/confirm-dialog.vue'
-import { PlusIcon, TrashIcon, UserCircleIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { Plus as PlusIcon, Trash2 as TrashIcon, CircleUser as UserCircleIcon, X as XMarkIcon } from '@lucide/vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { router, useForm } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
@@ -116,7 +116,7 @@ async function loadUsers(query, setOptions) {
         enter="ease-out duration-200"
         enter-from="opacity-0"
         enter-to="opacity-100"
-        leave="ease-in duration-150"
+        leave="ease-out duration-150"
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
@@ -128,11 +128,11 @@ async function loadUsers(query, setOptions) {
           <TransitionChild
             as="template"
             enter="ease-out duration-200"
-            enter-from="opacity-0 translate-y-3 sm:translate-y-0 sm:scale-95"
+            enter-from="opacity-0 translate-y-3 sm:translate-y-0 sm:scale-[0.97]"
             enter-to="opacity-100 translate-y-0 sm:scale-100"
-            leave="ease-in duration-150"
+            leave="ease-out duration-150"
             leave-from="opacity-100 translate-y-0 sm:scale-100"
-            leave-to="opacity-0 translate-y-3 sm:translate-y-0 sm:scale-95"
+            leave-to="opacity-0 translate-y-3 sm:translate-y-0 sm:scale-[0.97]"
           >
             <DialogPanel class="ds-modal-panel relative w-full max-w-3xl overflow-hidden transition-all">
               <header class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4">

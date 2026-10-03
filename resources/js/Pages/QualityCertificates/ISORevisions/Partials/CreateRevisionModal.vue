@@ -3,11 +3,11 @@ import Modal from "@/Components/Modal.vue";
 import { computed, ref } from "vue";
 import { useForm } from "@inertiajs/vue3";
 import {
-  CheckIcon,
-  DocumentPlusIcon,
-  ExclamationTriangleIcon,
-  XMarkIcon,
-} from "@heroicons/vue/24/outline";
+  Check as CheckIcon,
+  FilePlus as DocumentPlusIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  X as XMarkIcon,
+} from "@lucide/vue";
 
 const props = defineProps({
   show: Boolean,

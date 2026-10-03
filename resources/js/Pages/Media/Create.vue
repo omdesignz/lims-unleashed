@@ -9,7 +9,7 @@ import slideOver from '@/Components/slide-over.vue';
 import { ref, computed } from "vue";
 import { useForm, router } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
-import { PhotoIcon } from "@heroicons/vue/24/outline";
+import { Image as PhotoIcon } from "@lucide/vue";
 
 
 const props = defineProps({

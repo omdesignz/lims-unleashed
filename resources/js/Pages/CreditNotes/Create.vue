@@ -8,23 +8,23 @@ import { router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
 import {throttle} from "lodash";
 import {
-  TrashIcon,
-  PlusCircleIcon,
-  ClipboardDocumentCheckIcon,
-  ChevronUpIcon,
-  CurrencyEuroIcon,
-  UserIcon,
-  BuildingOfficeIcon,
-  DocumentTextIcon,
-  TagIcon,
-  BeakerIcon,
-  CreditCardIcon,
-  CalculatorIcon,
-  InformationCircleIcon,
-  ExclamationCircleIcon,
-  ReceiptRefundIcon,
-  DocumentDuplicateIcon
-} from "@heroicons/vue/24/outline";
+  Trash2 as TrashIcon,
+  CirclePlus as PlusCircleIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  ChevronUp as ChevronUpIcon,
+  Euro as CurrencyEuroIcon,
+  User as UserIcon,
+  Building as BuildingOfficeIcon,
+  FileText as DocumentTextIcon,
+  Tag as TagIcon,
+  FlaskConical as BeakerIcon,
+  CreditCard as CreditCardIcon,
+  Calculator as CalculatorIcon,
+  Info as InformationCircleIcon,
+  CircleAlert as ExclamationCircleIcon,
+  Receipt as ReceiptRefundIcon,
+  Copy as DocumentDuplicateIcon,
+} from "@lucide/vue";
 import { trans } from 'laravel-vue-i18n';
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 import confirmDialog from "@/Components/confirm-dialog.vue";

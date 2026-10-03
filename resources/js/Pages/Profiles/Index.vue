@@ -5,13 +5,13 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
-  BeakerIcon,
-  BuildingOffice2Icon,
-  ClipboardDocumentCheckIcon,
-  CurrencyDollarIcon,
-  EyeIcon,
-  PlusIcon,
-} from "@heroicons/vue/24/outline";
+  FlaskConical as BeakerIcon,
+  Building2 as BuildingOffice2Icon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  CircleDollarSign as CurrencyDollarIcon,
+  Eye as EyeIcon,
+  Plus as PlusIcon,
+} from "@lucide/vue";
 import { computed, ref } from "vue";
 import { trans } from "laravel-vue-i18n";
 

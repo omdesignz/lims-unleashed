@@ -277,8 +277,8 @@ const isDarkMode = ref(false)
 const selectedSupplierOption = ref(null)
 let themeObserver
 
-const chartTextColor = computed(() => (isDarkMode.value ? '#cbd5e1' : '#475569'))
-const chartGridColor = computed(() => (isDarkMode.value ? '#1e293b' : '#e2e8f0'))
+const chartTextColor = computed(() => (isDarkMode.value ? '#d7dbe0' : '#6b7482'))
+const chartGridColor = computed(() => (isDarkMode.value ? '#1e293b' : '#eef0f3'))
 const chartTooltipTheme = computed(() => (isDarkMode.value ? 'dark' : 'light'))
 
 const syncDarkMode = () => {
@@ -346,7 +346,7 @@ const quantityScopeChartOptions = computed(() => ({
       columnWidth: '48%',
     },
   },
-  colors: ['#0f172a', '#16a34a', '#f59e0b'],
+  colors: ['#061f46', '#22a45d', '#e0902b'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.quantity_scope?.labels || [],
@@ -377,7 +377,7 @@ const itemValueMixChartOptions = computed(() => ({
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.item_value_mix?.labels || [],
-  colors: ['#0891b2', '#0f766e', '#4f46e5', '#f59e0b', '#dc2626', '#334155'],
+  colors: ['#14a3a8', '#0f766e', '#4f46e5', '#e0902b', '#e5484d', '#334155'],
   dataLabels: {
     enabled: true,
     formatter: (value) => `${Math.round(value)}%`,
@@ -407,7 +407,7 @@ const governancePulseChartOptions = computed(() => ({
       columnWidth: '52%',
     },
   },
-  colors: ['#334155', '#f59e0b', '#0891b2', '#16a34a'],
+  colors: ['#334155', '#e0902b', '#14a3a8', '#22a45d'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.governance_pulse?.labels || [],

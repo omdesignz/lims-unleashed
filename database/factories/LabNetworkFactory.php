@@ -19,7 +19,7 @@ class LabNetworkFactory extends Factory
     {
         return [
             'name' => fake()->company().' Labs',
-            'primary_color' => '#24664f',
+            'primary_color' => '#0757b5',
         ];
     }
 }

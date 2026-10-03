@@ -1004,28 +1004,28 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
-import { 
-  FolderIcon, 
-  DocumentIcon, 
-  TrashIcon,
-  PencilIcon,
-  ArchiveBoxIcon,
-  ShareIcon,
-  ArrowDownTrayIcon,
-  EyeIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
-  EllipsisHorizontalIcon,
-  ClockIcon,
-  XMarkIcon,
-  ExclamationTriangleIcon,
-  TagIcon,
-  CloudArrowUpIcon,
-  FolderPlusIcon,
-  ArrowsRightLeftIcon
-} from '@heroicons/vue/24/outline'
+import {
+  Folder as FolderIcon,
+  File as DocumentIcon,
+  Trash2 as TrashIcon,
+  Pencil as PencilIcon,
+  Archive as ArchiveBoxIcon,
+  Share2 as ShareIcon,
+  Download as ArrowDownTrayIcon,
+  Eye as EyeIcon,
+  Search as MagnifyingGlassIcon,
+  Funnel as FunnelIcon,
+  ChevronUp as ChevronUpIcon,
+  ChevronDown as ChevronDownIcon,
+  Ellipsis as EllipsisHorizontalIcon,
+  Clock as ClockIcon,
+  X as XMarkIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Tag as TagIcon,
+  CloudUpload as CloudArrowUpIcon,
+  FolderPlus as FolderPlusIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+} from '@lucide/vue'
 import FilePreview from './file-preview.vue'
 import FileVersionHistory from './file-version-history.vue'
 import TagManager from './tag-manager.vue'

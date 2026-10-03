@@ -232,7 +232,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline';
+import { CircleCheck as CheckCircleIcon, CircleX as XCircleIcon } from '@lucide/vue';
 
 const props = defineProps({
   backupStatuses: { required: true, type: Array },

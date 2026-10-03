@@ -871,14 +871,26 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useForm, Link } from '@inertiajs/vue3'
-import { 
-  DocumentTextIcon, ArrowLeftIcon, InformationCircleIcon,
-  UserIcon, BuildingStorefrontIcon, BuildingOfficeIcon,
-  MapPinIcon, ClockIcon, ListBulletIcon,
-  PlusCircleIcon, DocumentDuplicateIcon, TrashIcon,
-  CheckCircleIcon, Cog6ToothIcon, BoltIcon, ArrowPathIcon,
-  XMarkIcon, ExclamationTriangleIcon
-} from '@heroicons/vue/24/outline'
+import {
+  FileText as DocumentTextIcon,
+  ArrowLeft as ArrowLeftIcon,
+  Info as InformationCircleIcon,
+  User as UserIcon,
+  Store as BuildingStorefrontIcon,
+  Building as BuildingOfficeIcon,
+  MapPin as MapPinIcon,
+  Clock as ClockIcon,
+  List as ListBulletIcon,
+  CirclePlus as PlusCircleIcon,
+  Copy as DocumentDuplicateIcon,
+  Trash2 as TrashIcon,
+  CircleCheck as CheckCircleIcon,
+  Settings as Cog6ToothIcon,
+  Zap as BoltIcon,
+  RefreshCw as ArrowPathIcon,
+  X as XMarkIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+} from '@lucide/vue'
 import Modal from '@/Components/modal.vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import { trans } from 'laravel-vue-i18n'

@@ -1,7 +1,7 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { UserGroupIcon } from "@heroicons/vue/24/outline";
+import { Users as UserGroupIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 

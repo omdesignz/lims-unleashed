@@ -4,7 +4,7 @@ import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { BuildingOffice2Icon, CheckIcon, MapPinIcon } from "@heroicons/vue/24/outline";
+import { Building2 as BuildingOffice2Icon, Check as CheckIcon, MapPin as MapPinIcon } from "@lucide/vue";
 import { router, useForm } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

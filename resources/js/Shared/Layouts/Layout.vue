@@ -1,205 +1,182 @@
 <template>
-  <div id="lab-workbench" class="lims-app-shell" :data-collapsed="!desktopSidebarOpen" :style="brandingCssVariables" :data-theme-preset="themePreset">
+  <div class="lims-app-shell min-h-dvh" :data-collapsed="!desktopSidebarOpen" :style="brandingCssVariables" :data-theme-preset="themePreset">
     <backend-modal />
     <ToastList />
 
-    <div v-if="impersonation" class="ds-impersonation-banner relative z-[60] flex flex-wrap items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium">
-      <span><strong>{{ trans('gestlab.general.labels.impersonation.title') }}</strong> {{ trans('gestlab.general.labels.impersonation.description') }} {{ auth?.user?.name }}.</span>
-      <button type="button" class="rounded-md bg-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/25" @click="router.post(route('users.stopimpersonating'), {}, { preserveState: false, replace: true })">
+    <div v-if="impersonation" class="ds-impersonation-banner relative z-[60] flex flex-wrap items-center justify-center gap-3 px-4 py-2 text-sm">
+      <span><strong class="font-semibold">{{ trans('gestlab.general.labels.impersonation.title') }}</strong> {{ trans('gestlab.general.labels.impersonation.description') }} {{ auth?.user?.name }}.</span>
+      <button type="button" class="rounded-md bg-white/15 px-2.5 py-1 text-xs font-medium text-white transition-colors duration-150 hover:bg-white/25" @click="router.post(route('users.stopimpersonating'), {}, { preserveState: false, replace: true })">
         {{ trans('gestlab.general.buttons.leave_impersonation') }}
       </button>
     </div>
 
     <TransitionRoot as="template" :show="sidebarOpen">
       <Dialog as="div" class="relative z-50 lg:hidden" @close="sidebarOpen = false">
-        <TransitionChild as="template" enter="transition-opacity ease-linear duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="transition-opacity ease-linear duration-150" leave-from="opacity-100" leave-to="opacity-0">
-          <div class="fixed inset-0 bg-slate-950/55" />
+        <TransitionChild as="template" enter="transition-opacity duration-200 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="transition-opacity duration-150 ease-out" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="fixed inset-0 bg-[var(--color-surface-overlay)]" />
         </TransitionChild>
         <div class="fixed inset-0 flex">
-          <TransitionChild as="template" enter="transition ease-out duration-200 transform" enter-from="-translate-x-full" enter-to="translate-x-0" leave="transition ease-in duration-150 transform" leave-from="translate-x-0" leave-to="-translate-x-full">
-            <DialogPanel class="lab-mobile-navigation flex w-full max-w-72 flex-col border-r border-[var(--ds-border)] bg-[var(--ds-panel)] shadow-xl" :style="brandingCssVariables">
-              <div class="flex h-16 shrink-0 items-center gap-3 border-b border-[var(--ds-border)] px-4">
-                <Link :href="route('dashboard')" class="flex min-w-0 flex-1 items-center gap-3" @click="sidebarOpen = false">
-                  <span v-if="!settings?.logo_url" class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--brand-secondary)] text-xs font-bold text-white">{{ brandInitials }}</span>
-                  <img v-else class="max-h-9 max-w-32 object-contain" :src="settings.logo_url" :alt="settings?.app_name || ''" />
-                  <span class="min-w-0">
-                    <span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ settings?.app_name }}</span>
-                    <span class="block truncate text-xs text-[var(--ds-text-soft)]">{{ settings?.lab_name }}</span>
-                  </span>
-                </Link>
-                <button type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]" @click="sidebarOpen = false">
-                  <span class="sr-only">Fechar navegação</span>
-                  <XMarkIcon class="h-5 w-5" aria-hidden="true" />
-                </button>
-              </div>
-              <side-nav class="py-5" @navigate="sidebarOpen = false" @open-command-palette="openCommandPaletteFromMobile" />
-              <div class="mt-auto border-t border-[var(--ds-border)] p-3">
-                <div class="flex items-center gap-3 rounded-lg px-2 py-2">
-                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[rgb(var(--primary-100-rgb))] text-sm font-semibold text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.14)] dark:text-white">{{ auth?.user?.name?.charAt(0) }}</span>
-                  <span class="min-w-0"><span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ auth?.user?.name }}</span><span class="block truncate text-xs text-[var(--ds-text-soft)]">{{ auth?.user?.email }}</span></span>
-                </div>
-              </div>
+          <TransitionChild as="template" enter="transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]" enter-from="-translate-x-full" enter-to="translate-x-0" leave="transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]" leave-from="translate-x-0" leave-to="-translate-x-full">
+            <DialogPanel class="app-drawer" :style="brandingCssVariables">
+              <app-sidebar
+                mobile
+                :areas="navAreas"
+                :active-area-key="activeAreaKey"
+                :unread-count="unreadNotificationCount"
+                :is-dark="isDark"
+                @close="sidebarOpen = false"
+                @navigate="sidebarOpen = false"
+                @open-command-palette="openCommandPaletteFromMobile"
+                @toggle-theme="toggleTheme"
+                @switch-language="switchLanguage"
+              />
             </DialogPanel>
           </TransitionChild>
         </div>
       </Dialog>
     </TransitionRoot>
 
-    <div class="lab-shell">
-    <aside id="desktop-navigation" class="lab-sidebar">
-      <Link :href="route('dashboard')" class="lab-brand lab-flex" aria-label="LIMS Unleashed — Visão geral">
-        <span class="lab-mark"><BeakerIcon aria-hidden="true" /></span>
-        <span v-if="desktopSidebarOpen"><span class="lab-brand-name">lims<span style="font-weight:400">.</span></span><span class="lab-brand-sub">unleashed</span></span>
-      </Link>
-      <div v-if="activeLab && desktopSidebarOpen" class="lab-location lab-flex">
-        <BuildingOffice2Icon aria-hidden="true" />
-        <div class="lab-location-text"><label for="laboratory-context" class="sr-only">Laboratório activo</label>
-          <select id="laboratory-context" :value="activeLab.id" @change="router.post(route('lab-context.switch', $event.target.value))">
-            <option v-for="lab in laboratory.labs" :key="lab.id" :value="lab.id">{{ lab.name }}</option>
-          </select><small class="lab-muted">Espaço laboratorial</small>
-        </div>
-      </div>
-      <side-nav :collapsed="!desktopSidebarOpen" @open-command-palette="openCommandPalette" />
-      <div class="lab-profile lab-flex">
-        <span class="lab-avatar">{{ auth?.user?.name?.charAt(0) }}</span>
-        <div v-if="desktopSidebarOpen" class="lab-profile-text"><strong>{{ auth?.user?.name }}</strong><div class="lab-muted lab-small">{{ activeLab?.name || 'Laboratório' }}</div></div>
-      </div>
-    </aside>
+    <div id="desktop-navigation" class="app-sheet">
+      <app-sidebar
+        :areas="navAreas"
+        :active-area-key="activeAreaKey"
+        :unread-count="unreadNotificationCount"
+        :is-dark="isDark"
+        @open-command-palette="openCommandPalette"
+        @toggle-theme="toggleTheme"
+        @switch-language="switchLanguage"
+      />
 
-    <div class="lab-main">
-      <header class="lab-topbar">
-        <button type="button" class="lab-btn lab-ghost lab-icon-btn lab-mobile-toggle" aria-label="Abrir navegação" @click="sidebarOpen = true"><Bars3Icon /></button>
-        <button type="button" class="lab-btn lab-ghost lab-icon-btn lab-collapse-toggle" :aria-label="desktopSidebarOpen ? 'Recolher navegação' : 'Expandir navegação'" :aria-expanded="desktopSidebarOpen" aria-controls="desktop-navigation" @click="toggleDesktopSidebar"><Bars3Icon aria-hidden="true" /></button>
-        <div class="lab-crumb"><span>Laboratório</span><span>/</span><strong>{{ page.component === 'LaboratoryWorkbench' ? 'Visão geral' : page.component === 'LabNetwork/Index' ? 'Rede de laboratórios' : moduleFamilyLabel }}</strong></div>
-        <div class="lab-spacer"></div>
-        <button type="button" class="lab-search-launch" aria-label="Pesquisar módulos e registos" @click="openCommandPalette"><MagnifyingGlassIcon /><span>Pesquisar</span><kbd>⌘ K</kbd></button>
-        <button v-if="activeLab?.can_manage_branding" type="button" class="lab-btn lab-ghost lab-icon-btn" aria-label="Personalizar cores do laboratório" @click="openBranding"><SwatchIcon /></button>
-        <Link :href="route('notifications.index')" class="lab-btn lab-ghost lab-icon-btn" aria-label="Ver notificações"><BellIcon /><span v-if="unreadNotificationCount" class="lab-dot" /></Link>
+      <div class="app-work">
+        <header class="app-topbar">
+          <button type="button" class="app-topbar-action lg:hidden" aria-label="Abrir navegação" @click="sidebarOpen = true"><Bars3Icon aria-hidden="true" /></button>
+          <button type="button" class="app-topbar-action -ml-2 hidden lg:inline-grid" :aria-label="desktopSidebarOpen ? 'Recolher painel de navegação' : 'Expandir painel de navegação'" :aria-expanded="desktopSidebarOpen" aria-controls="desktop-navigation" @click="toggleDesktopSidebar">
+            <PanelLeft aria-hidden="true" />
+          </button>
+          <nav class="app-crumb" aria-label="Localização">
+            <template v-for="(crumb, index) in crumbs" :key="`${crumb.title}-${index}`">
+              <span v-if="index" class="app-crumb-separator hidden sm:inline" aria-hidden="true">/</span>
+              <Link v-if="crumb.url && !crumb.current" :href="crumb.url" class="hidden sm:inline">{{ crumb.title }}</Link>
+              <span v-else :aria-current="crumb.current ? 'page' : undefined" :class="crumb.current ? '' : 'hidden sm:inline'">{{ crumb.title }}</span>
+            </template>
+          </nav>
+          <div class="flex-1" />
+          <button type="button" class="app-topbar-action lg:hidden" aria-label="Pesquisar módulos e registos" @click="openCommandPalette"><MagnifyingGlassIcon aria-hidden="true" /></button>
+          <button v-if="activeLab?.can_manage_branding" type="button" class="app-topbar-action" aria-label="Personalizar cores do laboratório" @click="openBranding"><SwatchIcon aria-hidden="true" /></button>
+          <button type="button" class="app-topbar-action" :aria-label="isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'" @click="toggleTheme"><SunIcon v-if="isDark" aria-hidden="true" /><MoonIcon v-else aria-hidden="true" /></button>
+          <Link :href="route('notifications.index')" class="app-topbar-action" :aria-label="unreadNotificationCount ? `Ver notificações, ${unreadNotificationCount} por ler` : 'Ver notificações'"><BellIcon aria-hidden="true" /><span v-if="unreadNotificationCount" class="app-topbar-dot" aria-hidden="true" /></Link>
+        </header>
 
-        <Menu as="div" class="relative">
-          <MenuButton class="lab-user-menu" aria-label="Perfil e preferências">
-            <img v-if="auth?.user?.profile_photo_url" :src="auth.user.profile_photo_url" alt="" class="h-7 w-7 rounded-md object-cover" />
-            <span v-else class="grid h-7 w-7 place-items-center rounded-md bg-[var(--brand-secondary)] text-xs font-semibold text-white">{{ auth?.user?.name?.charAt(0) }}</span>
-          </MenuButton>
-          <transition enter-active-class="transition ease-out duration-100" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
-            <MenuItems class="ds-floating-panel absolute right-0 z-20 mt-2 w-64 origin-top-right p-2 focus:outline-none">
-              <div class="border-b border-[var(--ds-border)] px-3 py-2">
-                <p class="truncate text-sm font-semibold text-[var(--ds-text)]">{{ auth?.user?.name }}</p><p class="truncate text-xs text-[var(--ds-text-soft)]">{{ auth?.user?.email }}</p>
-              </div>
-              <div class="space-y-1 py-2">
-                <MenuItem v-slot="{ active }"><Link :href="profileHref" :class="[active ? 'bg-[var(--ds-panel-subtle)] text-[var(--ds-text)]' : 'text-[var(--ds-text-muted)]', 'block rounded-lg px-3 py-2 text-sm font-semibold']">Perfil e seguranca</Link></MenuItem>
-                <MenuItem v-slot="{ active }"><Link :href="route('users.help')" :class="[active ? 'bg-[var(--ds-panel-subtle)] text-[var(--ds-text)]' : 'text-[var(--ds-text-muted)]', 'block rounded-lg px-3 py-2 text-sm font-semibold']">Manual do utilizador</Link></MenuItem>
-                <MenuItem v-slot="{ active }"><button type="button" :class="[active ? 'bg-[var(--ds-panel-subtle)] text-[var(--ds-text)]' : 'text-[var(--ds-text-muted)]', 'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-semibold']" @click="toggleTheme"><span>{{ isDark ? 'Modo claro' : 'Modo escuro' }}</span><SunIcon v-if="isDark" class="h-4 w-4" /><MoonIcon v-else class="h-4 w-4" /></button></MenuItem>
-              </div>
-              <div v-if="$page.props.languages?.data?.length > 1" class="border-y border-[var(--ds-border)] py-2">
-                <button v-for="language in $page.props.languages.data" :key="language.value" type="button" :class="[language.value === $page.props.language ? 'bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-white' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)]', 'block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold']" @click="switchLanguage(language.value)">{{ language.label }}</button>
-              </div>
-              <div class="pt-2"><Link :href="route('logout')" method="post" as="button" class="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10">Terminar sessão</Link></div>
-            </MenuItems>
-          </transition>
-        </Menu>
-      </header>
-
-      <Dialog :open="brandingOpen" class="relative z-[80]" @close="brandingOpen = false">
-        <div class="fixed inset-0 bg-black/40" aria-hidden="true" />
-        <div class="fixed inset-0 flex items-center justify-center p-4"><DialogPanel class="ds-panel w-full max-w-md p-6">
-          <DialogTitle class="text-lg font-semibold">Identidade do laboratório</DialogTitle>
-          <p class="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">{{ activeLab?.name }}. As cores de alerta mantêm o seu significado.</p>
-          <form class="mt-5 space-y-5" @submit.prevent="saveBranding">
-            <label class="flex items-center justify-between gap-4 text-sm font-medium">Cor principal<input v-model="brandingForm.primary_color" type="color" class="h-11 w-16 cursor-pointer rounded border border-[var(--ds-border)] p-1" /></label>
-            <p v-if="brandingForm.errors.primary_color" class="text-sm text-red-600" role="alert">{{ brandingForm.errors.primary_color }}</p>
-            <p class="text-xs text-[var(--ds-text-soft)]">{{ activeLab?.inherited_color ? 'Actualmente herdada da rede.' : 'Cor personalizada para este laboratório.' }}</p>
-            <div class="flex flex-wrap justify-end gap-2"><button type="button" class="ds-button ds-button-secondary" :disabled="brandingForm.processing" @click="saveBranding(true)">Herdar da rede</button><button type="button" class="ds-button ds-button-secondary" @click="brandingOpen = false">Cancelar</button><button type="submit" class="ds-button ds-button-primary" :disabled="brandingForm.processing">{{ brandingForm.processing ? 'A guardar…' : 'Guardar' }}</button></div>
-          </form>
-        </DialogPanel></div>
-      </Dialog>
-
-      <TransitionRoot as="template" :show="commandPaletteOpen">
-        <Dialog as="div" class="relative z-[70]" @close="commandPaletteOpen = false">
-          <TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/50" /></TransitionChild>
-          <div class="fixed inset-0 z-[70] overflow-y-auto p-4 sm:p-8 md:p-20">
-            <TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="ease-in duration-100" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
-              <DialogPanel class="ds-command-palette mx-auto max-w-2xl overflow-hidden">
-                <div class="flex items-center gap-3 border-b border-[var(--ds-border)] px-4"><MagnifyingGlassIcon class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" /><BaseInput ref="commandPaletteInput" v-model="commandPaletteQuery" type="search" class="h-14 min-w-0 flex-1 border-0 bg-transparent text-sm font-semibold text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-soft)] focus:ring-0" placeholder="Pesquisar modulos e registos..." @keydown.enter.prevent="activateFirstCommandPaletteResult" /><kbd class="rounded border border-[var(--ds-border)] px-2 py-1 font-mono text-[0.65rem] text-[var(--ds-text-soft)]">ESC</kbd></div>
-                <div class="max-h-[70vh] overflow-y-auto p-2 sm:max-h-[32rem]">
-                  <div v-if="filteredCommandGroups.length" class="space-y-3">
-                    <section v-for="group in filteredCommandGroups" :key="group.label">
-                      <p class="px-3 py-2 font-mono text-[0.68rem] font-semibold uppercase text-[var(--ds-text-soft)]">{{ group.label }}</p>
-                      <button v-for="command in group.items" :key="`${group.label}-${command.href}-${command.label}`" type="button" class="ds-command-palette-item group" @click="visitCommand(command)"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-soft)]"><component :is="command.icon" class="h-4 w-4" /></span><span class="min-w-0 flex-1 text-left"><span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ command.label }}</span><span class="block truncate font-mono text-[0.68rem] uppercase text-[var(--ds-text-soft)]">{{ command.path }}</span></span><ChevronRightIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" /></button>
-                    </section>
-                  </div>
-                  <div v-else class="px-6 py-14 text-center"><MagnifyingGlassIcon class="mx-auto h-5 w-5 text-[var(--ds-text-soft)]" /><p class="mt-4 text-sm font-semibold text-[var(--ds-text)]">Nenhum modulo encontrado</p></div>
-                </div>
-              </DialogPanel>
-            </TransitionChild>
+        <main ref="stageContent" class="app-content" scroll-region>
+          <div :class="{ 'lims-backoffice-content': !['LaboratoryWorkbench', 'LabNetwork/Index', 'VAPSamples/Queue', 'VAPSamples/Show'].includes(page.component) }" :data-module-family="moduleFamily">
+            <confirm-dialog v-if="showSessionModal" :open="showSessionModal" :title="$t('Session Expiring Soon')" :description="$t('You will be logged out due to inactivity')" variant="warning" :hide-buttons="true" size="sm:max-w-xl" @canceled="showSessionModal = false">
+              <p class="mt-4 text-sm text-[var(--ds-text-muted)]">{{ $t('For your security, this session will end in :seconds seconds.', { seconds: remainingTime }) }} {{ $t('Move your mouse or press any key to continue working.') }}</p>
+            </confirm-dialog>
+            <slot />
           </div>
-        </Dialog>
-      </TransitionRoot>
+        </main>
+      </div>
+    </div>
 
-      <main class="lab-content">
-        <div :class="{ 'lims-backoffice-content': !['LaboratoryWorkbench', 'LabNetwork/Index', 'VAPSamples/Queue', 'VAPSamples/Show'].includes(page.component) }" :data-module-family="moduleFamily">
-          <confirm-dialog v-if="showSessionModal" :open="showSessionModal" :title="$t('Session Expiring Soon')" :description="$t('You will be logged out due to inactivity')" variant="warning" :hide-buttons="true" size="sm:max-w-xl" @canceled="showSessionModal = false">
-            <p class="mt-4 text-sm font-semibold text-[var(--ds-text-muted)]">{{ $t('For your security, this session will end in :seconds seconds.', { seconds: remainingTime }) }} {{ $t('Move your mouse or press any key to continue working.') }}</p>
-          </confirm-dialog>
-          <slot />
-        </div>
-      </main>
-    </div>
-    </div>
-    <footer class="lab-foot"><span class="lab-flex"><span class="lab-dot"></span>{{ activeLab?.name || 'LIMS Unleashed' }}</span><span>Laboratório em foco</span></footer>
+    <Dialog :open="brandingOpen" class="relative z-[80]" @close="brandingOpen = false">
+      <div class="ds-modal-backdrop fixed inset-0" aria-hidden="true" />
+      <div class="fixed inset-0 flex items-center justify-center p-4"><DialogPanel class="ds-modal-panel w-full max-w-md p-6" :style="brandingCssVariables">
+        <DialogTitle class="text-lg font-semibold tracking-tight text-[var(--ds-text)]">Identidade do laboratório</DialogTitle>
+        <p class="mt-1.5 text-sm leading-6 text-[var(--ds-text-muted)]">{{ activeLab?.name }}. A cor escolhida aplica-se às acções principais; as cores de alerta mantêm o seu significado.</p>
+        <form class="mt-5 space-y-4" @submit.prevent="saveBranding">
+          <div class="flex items-center justify-between gap-4 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3">
+            <div>
+              <p class="text-sm font-medium text-[var(--ds-text)]">Cor principal</p>
+              <p class="mt-0.5 font-mono text-xs uppercase text-[var(--ds-text-soft)]">{{ brandingForm.primary_color }}</p>
+            </div>
+            <ColorInput v-model="brandingForm.primary_color" aria-label="Cor principal" />
+          </div>
+          <p v-if="brandingForm.errors.primary_color" class="ds-field-error" role="alert">{{ brandingForm.errors.primary_color }}</p>
+          <p class="text-xs text-[var(--ds-text-soft)]">{{ activeLab?.inherited_color ? 'Actualmente herdada da rede.' : 'Cor personalizada para este laboratório.' }}</p>
+          <div class="flex flex-wrap justify-end gap-2 pt-1"><button type="button" class="ds-button ds-button-ghost mr-auto" :disabled="brandingForm.processing" @click="saveBranding(true)">Herdar da rede</button><button type="button" class="ds-button ds-button-secondary" @click="brandingOpen = false">Cancelar</button><button type="submit" class="ds-button ds-button-primary" :disabled="brandingForm.processing">{{ brandingForm.processing ? 'A guardar…' : 'Guardar' }}</button></div>
+        </form>
+      </DialogPanel></div>
+    </Dialog>
+
+    <!-- Opened from the keyboard many times a day: it appears at once, without choreography. -->
+    <Dialog :open="commandPaletteOpen" as="div" class="relative z-[70]" @close="commandPaletteOpen = false">
+      <div class="ds-modal-backdrop fixed inset-0" aria-hidden="true" />
+      <div class="fixed inset-0 z-[70] overflow-y-auto p-4 sm:p-8 md:p-[12vh]">
+        <DialogPanel class="ds-command-palette mx-auto max-w-xl overflow-hidden" :style="brandingCssVariables">
+          <div class="flex items-center gap-3 border-b border-[var(--ds-border)] px-4">
+            <MagnifyingGlassIcon class="h-[1.125rem] w-[1.125rem] shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
+            <BaseInput ref="commandPaletteInput" v-model="commandPaletteQuery" type="search" class="h-12 min-w-0 flex-1 border-0 bg-transparent px-0 text-sm text-[var(--ds-text)] shadow-none outline-none placeholder:text-[var(--ds-text-soft)] focus:ring-0" placeholder="Pesquisar módulos e registos…" aria-label="Pesquisar módulos e registos" role="combobox" aria-expanded="true" aria-controls="command-palette-results" :aria-activedescendant="activeCommand ? `command-${activeCommandIndex}` : undefined" @keydown.enter.prevent="activateCommandPaletteResult" @keydown.down.prevent="moveCommandSelection(1)" @keydown.up.prevent="moveCommandSelection(-1)" />
+            <kbd class="app-kbd">Esc</kbd>
+          </div>
+          <div id="command-palette-results" ref="commandPaletteResults" class="max-h-[60vh] overflow-y-auto p-1.5 sm:max-h-[26rem]" role="listbox" aria-label="Resultados">
+            <template v-if="filteredCommandGroups.length">
+              <section v-for="group in filteredCommandGroups" :key="group.label" class="pb-1">
+                <p class="px-2.5 pb-1 pt-2 text-xs text-[var(--ds-text-soft)]">{{ group.label }}</p>
+                <button v-for="command in group.items" :id="`command-${command.index}`" :key="`${group.label}-${command.href}-${command.label}`" type="button" role="option" class="ds-command-palette-item" :class="command.index === activeCommandIndex ? 'bg-[var(--ds-panel-muted)]' : ''" :aria-selected="command.index === activeCommandIndex" @click="visitCommand(command)" @mousemove="activeCommandIndex = command.index">
+                  <component :is="command.icon" class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
+                  <span class="min-w-0 flex-1 truncate text-left text-sm text-[var(--ds-text)]">{{ command.label }}</span>
+                  <span class="hidden truncate font-mono text-xs text-[var(--ds-text-soft)] sm:block">{{ command.path }}</span>
+                </button>
+              </section>
+            </template>
+            <div v-else class="px-6 py-12 text-center">
+              <p class="text-sm font-medium text-[var(--ds-text)]">Nenhum módulo encontrado</p>
+              <p class="mt-1 text-sm text-[var(--ds-text-muted)]">Experimente outro termo ou verifique as suas permissões.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 border-t border-[var(--ds-border)] px-4 py-2 text-xs text-[var(--ds-text-soft)]">
+            <span class="flex items-center gap-1.5"><kbd class="app-kbd">↑</kbd><kbd class="app-kbd">↓</kbd>Navegar</span>
+            <span class="flex items-center gap-1.5"><kbd class="app-kbd">↵</kbd>Abrir</span>
+          </div>
+        </DialogPanel>
+      </div>
+    </Dialog>
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useIdle, useCounter } from '@vueuse/core'
-import sideNav from '../Navigation/side-nav.vue'
+import appSidebar from '../Navigation/app-sidebar.vue'
 import ToastList from '@/Components/toast-list.vue'
 import confirmDialog from '@/Components/confirm-dialog.vue'
 import {
   Dialog,
   DialogPanel,
   DialogTitle,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
   TransitionChild,
   TransitionRoot,
 } from '@headlessui/vue'
 import {
-  Bars3Icon,
-  BuildingOffice2Icon,
-  BellIcon,
-  HomeIcon,
-  ShieldCheckIcon,
-  MegaphoneIcon,
-  UsersIcon,
-  FolderOpenIcon,
-  BanknotesIcon,
-  Square3Stack3DIcon,
-  DocumentTextIcon,
-  RectangleStackIcon,
-  UserGroupIcon,
-  UserIcon,
-  FingerPrintIcon,
-  StopIcon,
-  WrenchScrewdriverIcon,
-  ServerIcon,
-  InboxStackIcon,
-  ExclamationTriangleIcon,
-  SwatchIcon,
-  Cog6ToothIcon,
-  BeakerIcon,
-  ArrowsRightLeftIcon,
-  ArrowDownTrayIcon,
-  ChevronRightIcon,
-  MagnifyingGlassIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
-import { ChevronDownIcon } from '@heroicons/vue/20/solid'
-import { SunIcon, MoonIcon } from '@heroicons/vue/24/outline'
-import { router, usePage, useForm } from '@inertiajs/vue3'
+  Menu as Bars3Icon,
+  Bell as BellIcon,
+  House as HomeIcon,
+  ShieldCheck as ShieldCheckIcon,
+  Megaphone as MegaphoneIcon,
+  Users as UsersIcon,
+  FolderOpen as FolderOpenIcon,
+  Banknote as BanknotesIcon,
+  Layers as Square3Stack3DIcon,
+  FileText as DocumentTextIcon,
+  Layers as RectangleStackIcon,
+  Users as UserGroupIcon,
+  User as UserIcon,
+  Fingerprint as FingerPrintIcon,
+  Square as StopIcon,
+  Wrench as WrenchScrewdriverIcon,
+  Server as ServerIcon,
+  Package as InboxStackIcon,
+  TriangleAlert as ExclamationTriangleIcon,
+  Palette as SwatchIcon,
+  Settings as Cog6ToothIcon,
+  FlaskConical as BeakerIcon,
+  ArrowLeftRight as ArrowsRightLeftIcon,
+  Download as ArrowDownTrayIcon,
+  Search as MagnifyingGlassIcon,
+} from '@lucide/vue'
+import { Sun as SunIcon, Moon as MoonIcon } from '@lucide/vue'
+import { Link, router, usePage, useForm } from '@inertiajs/vue3'
+import { animate } from 'motion-v'
 import { usePermission } from '@/Composables/usePermissions'
 import { useTheme } from '@/Composables/useTheme'
 import { trans, loadLanguageAsync } from 'laravel-vue-i18n'
@@ -207,6 +184,8 @@ import backendModal from '@/Components/backend-modal.vue'
 import { getEcho } from '@/lib/echo'
 import toast from '@/Stores/toast'
 import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
+import { ClipboardCheck, FileCheck, FlaskConical, LayoutGrid, Package, PanelLeft, Users } from '@lucide/vue'
+import { durations, easeOut, prefersReducedMotion } from '@/Support/motion'
 
 const { hasPermission } = usePermission()
 
@@ -224,7 +203,7 @@ const laboratory = computed(() => page.props.laboratory ?? { labs: [], active_la
 const activeLab = computed(() => laboratory.value.active_lab)
 const brandingCssVariables = computed(() => buildBrandingCssVariables({ ...settings.value, ...(activeLab.value ? { primary_color: activeLab.value.primary_color } : {}) }))
 const brandingOpen = ref(false)
-const brandingForm = useForm({ primary_color: '#24664f' })
+const brandingForm = useForm({ primary_color: '#0757b5' })
 function openBranding() {
   brandingForm.primary_color = activeLab.value.primary_color
   brandingForm.clearErrors()
@@ -235,16 +214,6 @@ function saveBranding(inherit = false) {
     .put(route('lab-branding.update', activeLab.value.id), { preserveScroll: true, onSuccess: () => { brandingOpen.value = false } })
 }
 const themePreset = computed(() => settings.value.theme_preset || 'corporate')
-const brandInitials = computed(() => String(settings.value.app_name || settings.value.lab_name || 'Espaço laboratorial')
-  .split(/\s+/)
-  .filter(Boolean)
-  .slice(0, 2)
-  .map((word) => word.charAt(0))
-  .join('')
-  .toUpperCase())
-const profileHref = computed(() => props.auth?.user?.id
-  ? route('users.edit', props.auth.user.id)
-  : route('dashboard'))
 const moduleFamily = computed(() => {
   const url = page.url || ''
 
@@ -351,15 +320,34 @@ const moduleFamily = computed(() => {
 
 const moduleFamilyLabels = {
   integrations: 'Integrações laboratoriais',
-  inventory: 'Controlo de inventário',
+  inventory: 'Inventário',
   'sample-lifecycle': 'Ciclo de vida das amostras',
-  commercial: 'Commercial ops',
-  operations: 'Field operations',
-  admin: 'Controlo do sistema',
-  general: 'Operações laboratoriais',
+  commercial: 'Área comercial',
+  operations: 'Operações de campo',
+  admin: 'Administração',
+  general: 'Laboratório',
 }
 
-const moduleFamilyLabel = computed(() => moduleFamilyLabels[moduleFamily.value] || moduleFamilyLabels.general)
+const pageCrumbs = {
+  LaboratoryWorkbench: 'Visão geral',
+  'LabNetwork/Index': 'Rede de laboratórios',
+  'VAPSamples/Queue': 'Amostras',
+}
+
+// The server describes where a page sits; pages without a trail fall back to their module family.
+const crumbs = computed(() => {
+  const root = { title: activeLab.value?.name || settings.value.lab_name || 'Laboratório', url: route('dashboard'), current: false }
+
+  if (pageCrumbs[page.component]) {
+    return [root, { title: pageCrumbs[page.component], current: true }]
+  }
+
+  const trail = (page.props.breadcrumbs ?? []).filter((crumb) => crumb?.title)
+
+  return trail.length
+    ? [root, ...trail]
+    : [root, { title: moduleFamilyLabels[moduleFamily.value] || moduleFamilyLabels.general, current: true }]
+})
 
 // --- Session timeout ---
 const timerDuration = 1500
@@ -577,6 +565,9 @@ const desktopSidebarOpen = ref(true)
 const commandPaletteOpen = ref(false)
 const commandPaletteQuery = ref('')
 const commandPaletteInput = ref(null)
+const commandPaletteResults = ref(null)
+const activeCommandIndex = ref(0)
+const stageContent = ref(null)
 
 const navLabel = (item) => {
   if (!item?.title) {
@@ -618,6 +609,7 @@ const normalizeSearchValue = (value) => String(value || '')
 
 const filteredCommandGroups = computed(() => {
   const query = normalizeSearchValue(commandPaletteQuery.value.trim())
+  let index = 0
 
   return commandGroups.value
     .map((group) => {
@@ -635,39 +627,134 @@ const filteredCommandGroups = computed(() => {
       }
     })
     .filter((group) => group.items.length > 0)
+    .map((group) => ({ ...group, items: group.items.map((command) => ({ ...command, index: index++ })) }))
 })
 
-const firstCommandPaletteResult = computed(() => filteredCommandGroups.value[0]?.items?.[0] ?? null)
+const flatCommands = computed(() => filteredCommandGroups.value.flatMap((group) => group.items))
+const activeCommand = computed(() => flatCommands.value[activeCommandIndex.value] ?? flatCommands.value[0] ?? null)
 
-const openCommandPalette = () => {
-  commandPaletteOpen.value = true
-  commandPaletteQuery.value = ''
+// Every menu entry belongs to exactly one rail area; anything unmatched lands in
+// Administração, so no page is ever left without a place in the navigation.
+const areaDefinitions = [
+  { key: 'home', primary: ['/dashboard', '/lab-networks'], label: 'Início', icon: LayoutGrid, animation: 'pop', match: ['/dashboard', '/lab-networks'] },
+  { key: 'samples', primary: ['/vap-samples', '/vap-samples/reports', '/directcollections', '/programmedcollections'], label: 'Amostras', icon: FlaskConical, animation: 'wobble', match: ['/vap-samples', '/samples', '/directcollections', '/programmedcollections', '/collectionreasons', '/collectioncollaborations', '/collectionendresults', '/packagingcategories'] },
+  { key: 'analysis', primary: ['/laboratory-workflow', '/analysis', '/analysis/data-exports', '/counter-analysis'], label: 'Análises', icon: ClipboardCheck, animation: 'draw', match: ['/laboratory-workflow', '/analysis', '/counter-analysis', '/counteranalysis', '/multiple-sample-analysis', '/parameters', '/analysiscategories', '/profiles', '/matrixes', '/protocols', '/standards', '/nwps', '/units', '/temperatures', '/environmental-conditions', '/resultcategories', '/worksheets', '/formulas', '/variables'] },
+  { key: 'certificates', primary: ['/qualitycertificates', '/import-certificates', '/export-certificates', '/report-studios'], label: 'Certificados', icon: FileCheck, animation: 'draw', match: ['/qualitycertificates', '/import-certificates', '/export-certificates', '/report-studios'] },
+  { key: 'commercial', primary: ['/vap-proposals', '/quotes', '/invoices', '/creditnotes', '/receipts', '/contractguides'], label: 'Comercial', icon: BanknotesIcon, animation: 'lift', match: ['/vap-proposals', '/invoices', '/quotes', '/creditnotes', '/receipts', '/invoicecategories', '/currencies', '/paymentcategories', '/discountcategories', '/taxtypes', '/taxexemptions', '/customers/tax-identification', '/products', '/phytosanitary-products', '/paid-services', '/contractguides'] },
+  { key: 'customers', primary: ['/customers', '/warehouses', '/customerrequests'], label: 'Clientes', icon: Users, animation: 'pop', match: ['/customers', '/customercategories', '/contactcategories', '/warehouses', '/customerrequests', '/customerrequestcategories', '/faqs', '/faqcategories', '/faqanswers', '/countries', '/transportcategories', '/vehicles', '/ratings', '/complaints'] },
+  { key: 'inventory', primary: ['/vap-inventory/items', '/vap-inventory/reagents/consumption', '/vap-inventory/orders', '/vap-inventory/needs', '/vap-inventory/transfers', '/vap-inventory/analytics', '/maintenance/tasks', '/integration-hub', '/vap-labels/labels'], label: 'Inventário', icon: Package, animation: 'lift', match: ['/vap-inventory', '/inventory', '/itemcategories', '/equipmentcategories', '/itemstatuses', '/iunits', '/itypes', '/ilocations', '/ideliveries', '/isuppliers', '/iwarehouses', '/integration-hub', '/maintenance', '/vap-labels'] },
+  { key: 'quality', primary: ['/qms', '/occurrences', '/vap-non-conformities', '/supplier-assessments', '/proficiency-tests', '/responsibility-matrix', '/uncertainty-sources', '/users'], label: 'Qualidade', icon: ShieldCheckIcon, animation: 'draw', match: ['/qms', '/occurrences', '/occurrencecategories', '/occurrenceorigins', '/occurrencestatuses', '/occcurrencecategories', '/occcurrenceorigins', '/vap-non-conformities', '/supplier-assessments', '/responsibility-matrix', '/uncertainty-sources', '/proficiency-tests', '/management-reviews'] },
+  { key: 'admin', primary: ['/users', '/departments', '/vap-labs/labs', '/file-manager', '/exports', '/general-settings'], label: 'Administração', icon: Cog6ToothIcon, animation: 'spin', match: [] },
+]
 
-  nextTick(() => {
-    commandPaletteInput.value?.focus()
+const pathMatches = (path, prefix) => path === prefix || path.startsWith(`${prefix}/`)
+const areaKeyForPath = (path) => areaDefinitions
+  .flatMap((area) => area.match.map((prefix) => ({ key: area.key, prefix })))
+  .filter(({ prefix }) => pathMatches(path, prefix))
+  .sort((first, second) => second.prefix.length - first.prefix.length)[0]?.key ?? null
+
+const navAreas = computed(() => {
+  const buckets = Object.fromEntries(areaDefinitions.map((area) => [area.key, new Map()]))
+  const place = (leaf, sectionLabel) => {
+    if (!leaf.show || !leaf.href || leaf.href === '#' || leaf.name === '/notifications') {
+      return
+    }
+
+    const sections = buckets[areaKeyForPath(leaf.name) ?? 'admin']
+    const section = sections.get(sectionLabel) ?? []
+
+    if (![...sections.values()].flat().some((item) => item.href === leaf.href)) {
+      section.push({ label: navLabel(leaf), href: leaf.href, path: leaf.name })
+    }
+
+    sections.set(sectionLabel, section)
+  }
+
+  // Daily pages lead each area; catalogues and settings follow under one heading.
+  const sectionFor = (leaf) => {
+    const area = areaDefinitions.find((definition) => definition.key === (areaKeyForPath(leaf.name) ?? 'admin'))
+
+    return area.primary.includes(leaf.name) ? '' : 'Catálogos e configuração'
+  }
+
+  navigation.filter((item) => item.show).forEach((item) => {
+    (item.children?.length ? item.children : [item]).forEach((leaf) => place(leaf, sectionFor(leaf)))
   })
+
+  if (activeLab.value?.network_id) {
+    place({ show: true, title: 'Rede de laboratórios', name: '/lab-networks', href: route('lab-network.index', activeLab.value.network_id) }, '')
+  }
+
+  return areaDefinitions
+    .map((area) => {
+      const sections = [...buckets[area.key].entries()]
+        .filter(([, items]) => items.length)
+        .sort(([first], [second]) => first.length - second.length)
+        .map(([label, items]) => ({
+          key: `${area.key}-${label || 'main'}`,
+          label,
+          items: label ? items : [...items].sort((first, second) => area.primary.indexOf(first.path) - area.primary.indexOf(second.path)),
+        }))
+
+      return { ...area, sections, href: sections[0]?.items[0]?.href ?? null }
+    })
+    .filter((area) => area.href)
+})
+
+const activeAreaKey = computed(() => {
+  const path = String(page.url || '').split(/[?#]/)[0]
+  const leaf = navAreas.value
+    .flatMap((area) => area.sections.flatMap((section) => section.items.map((item) => ({ key: area.key, path: item.path }))))
+    .filter((item) => pathMatches(path, item.path))
+    .sort((first, second) => second.path.length - first.path.length)[0]
+
+  return areaKeyForPath(path) ?? leaf?.key ?? (navAreas.value.some((area) => area.key === 'admin') ? 'admin' : navAreas.value[0]?.key ?? null)
+})
+
+const activateCommandPaletteResult = () => {
+  if (activeCommand.value) {
+    visitCommand(activeCommand.value)
+  }
 }
 
-const openCommandPaletteFromMobile = () => {
-  sidebarOpen.value = false
-  nextTick(openCommandPalette)
-}
+const moveCommandSelection = (step) => {
+  const total = flatCommands.value.length
 
-const visitCommand = (command) => {
-  if (!command?.href || command.href === '#') {
+  if (!total) {
     return
   }
 
-  commandPaletteOpen.value = false
-  commandPaletteQuery.value = ''
-  router.visit(command.href)
+  activeCommandIndex.value = (activeCommandIndex.value + step + total) % total
+  nextTick(() => commandPaletteResults.value?.querySelector(`#command-${activeCommandIndex.value}`)?.scrollIntoView({ block: 'nearest' }))
 }
 
-const activateFirstCommandPaletteResult = () => {
-  if (firstCommandPaletteResult.value) {
-    visitCommand(firstCommandPaletteResult.value)
+watch(commandPaletteQuery, () => { activeCommandIndex.value = 0 })
+
+// A quiet settle when the destination changes; filters and tabs that keep the same page do not replay it.
+let renderedComponent = page.component
+const removeNavigateListener = router.on('navigate', (event) => {
+  const nextComponent = event.detail.page.component
+
+  if (nextComponent === renderedComponent) {
+    return
   }
-}
+
+  renderedComponent = nextComponent
+  const element = stageContent.value
+
+  if (!element || document.visibilityState !== 'visible') {
+    return
+  }
+
+  const keyframes = prefersReducedMotion()
+    ? { opacity: [0, 1] }
+    : { opacity: [0, 1], transform: ['translateY(4px)', 'translateY(0px)'] }
+
+  animate(element, keyframes, { duration: durations.page, ease: easeOut }).then(() => {
+    element.style.opacity = ''
+    element.style.transform = ''
+  })
+})
 
 const handleCommandPaletteShortcut = (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -717,6 +804,7 @@ watch(() => props.auth?.user?.unread_notifications?.length, (count) => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleCommandPaletteShortcut)
+  removeNavigateListener()
 
   if (countdownInterval) clearInterval(countdownInterval)
 

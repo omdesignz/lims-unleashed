@@ -11,15 +11,15 @@ import {
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import {
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
-  CheckIcon,
-  EyeIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  PaperAirplaneIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  RefreshCw as ArrowPathIcon,
+  Check as CheckIcon,
+  Eye as EyeIcon,
+  Funnel as FunnelIcon,
+  Search as MagnifyingGlassIcon,
+  Send as PaperAirplaneIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import { computed } from 'vue'
 
 defineOptions({ layout: Layout })

@@ -2,16 +2,16 @@
 import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
 import ToggleField from "@/Components/base/ToggleField.vue";
 import {
-  BellAlertIcon,
-  BuildingOffice2Icon,
-  CalendarDaysIcon,
-  ChatBubbleLeftRightIcon,
-  ClipboardDocumentCheckIcon,
-  MagnifyingGlassIcon,
-  ShieldCheckIcon,
-  UserCircleIcon,
-  WrenchScrewdriverIcon,
-} from "@heroicons/vue/24/outline";
+  BellRing as BellAlertIcon,
+  Building2 as BuildingOffice2Icon,
+  CalendarDays as CalendarDaysIcon,
+  MessagesSquare as ChatBubbleLeftRightIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  Search as MagnifyingGlassIcon,
+  ShieldCheck as ShieldCheckIcon,
+  CircleUser as UserCircleIcon,
+  Wrench as WrenchScrewdriverIcon,
+} from "@lucide/vue";
 
 defineProps({
   form: { type: Object, required: true },

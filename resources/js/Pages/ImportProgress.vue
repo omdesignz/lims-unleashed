@@ -57,7 +57,7 @@
   import { ref, onMounted, computed } from 'vue'
   import Layout from "@/Shared/Layouts/Layout.vue";
   import { router } from '@inertiajs/vue3'
-  import { CheckIcon } from '@heroicons/vue/24/solid'
+  import { Check as CheckIcon } from '@lucide/vue'
   import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
   defineOptions({

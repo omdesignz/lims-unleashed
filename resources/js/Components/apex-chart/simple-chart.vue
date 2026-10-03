@@ -78,7 +78,7 @@ const initializeChart = () => {
         type: 'bar',
         height: props.height,
         background: 'transparent',
-        foreColor: isDark.value ? '#d7e2dd' : '#31413b',
+        foreColor: isDark.value ? '#f3f5f7' : '#111827',
         toolbar: {
           show: false
         }
@@ -89,7 +89,7 @@ const initializeChart = () => {
           columnWidth: '60%',
         }
       },
-      colors: ['#dc2626', '#d89f39', '#1f7a68', '#10b981'],
+      colors: ['#e5484d', '#e0902b', '#14a3a8', '#22a45d'],
       dataLabels: {
         enabled: true,
         style: {
@@ -106,7 +106,7 @@ const initializeChart = () => {
         ],
         labels: {
           style: {
-            colors: isDark.value ? '#d7e2dd' : '#31413b',
+            colors: isDark.value ? '#f3f5f7' : '#111827',
             fontSize: '12px',
             fontWeight: 600
           }
@@ -116,7 +116,7 @@ const initializeChart = () => {
         title: {
           text: trans('gestlab.general.chart.task_count'),
           style: {
-            color: isDark.value ? '#d7e2dd' : '#31413b',
+            color: isDark.value ? '#f3f5f7' : '#111827',
             fontSize: '12px',
             fontWeight: 400
           }
@@ -124,7 +124,7 @@ const initializeChart = () => {
         min: 0
       },
       grid: {
-        borderColor: isDark.value ? '#25443c' : '#ded3bf',
+        borderColor: isDark.value ? '#262d3a' : '#e3e6ea',
         strokeDashArray: 4
       },
       tooltip: {

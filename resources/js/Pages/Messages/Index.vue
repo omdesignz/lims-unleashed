@@ -2,7 +2,7 @@
 import Pagination from '@/Components/pagination.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, router } from '@inertiajs/vue3'
-import { ChatBubbleLeftRightIcon, EyeIcon, MagnifyingGlassIcon, PaperAirplaneIcon, PaperClipIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { MessagesSquare as ChatBubbleLeftRightIcon, Eye as EyeIcon, Search as MagnifyingGlassIcon, Send as PaperAirplaneIcon, Paperclip as PaperClipIcon, X as XMarkIcon } from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 defineOptions({ layout: Layout })

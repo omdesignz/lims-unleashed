@@ -345,13 +345,13 @@
 
     <TransitionRoot as="template" :show="isReceivingModalOpen">
       <Dialog as="div" class="relative z-50" @close="closeReceivingModal">
-        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-150" leave-from="opacity-100" leave-to="opacity-0">
           <div class="fixed inset-0 bg-black/45 transition-opacity" />
         </TransitionChild>
 
         <div class="fixed inset-0 z-10 overflow-y-auto">
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-6">
-            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-out duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]">
               <DialogPanel class="ds-modal-panel w-full max-w-2xl p-0 text-left">
                 <div class="flex items-start justify-between gap-4 border-b border-[color:var(--ds-border)] px-5 py-4">
                   <div>
@@ -503,13 +503,13 @@
 
     <TransitionRoot as="template" :show="isCancelModalOpen">
       <Dialog as="div" class="relative z-50" @close="closeCancelModal">
-        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-out duration-150" leave-from="opacity-100" leave-to="opacity-0">
           <div class="fixed inset-0 bg-black/45 transition-opacity" />
         </TransitionChild>
 
         <div class="fixed inset-0 z-10 overflow-y-auto">
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-6">
-            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-out duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-[0.97]">
               <DialogPanel class="ds-modal-panel w-full max-w-lg p-0 text-left">
                 <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
                   <DialogTitle as="h3" class="ds-heading text-lg">Cancelar pedido</DialogTitle>
@@ -543,18 +543,18 @@
 import { Link, router } from '@inertiajs/vue3'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
-  ArrowDownTrayIcon,
-  ArrowLeftIcon,
-  ArrowPathIcon,
-  CheckCircleIcon,
-  ClipboardDocumentListIcon,
-  CubeIcon,
-  PencilIcon,
-  PrinterIcon,
-  TruckIcon,
-  XCircleIcon,
-  XMarkIcon,
-} from '@heroicons/vue/24/outline'
+  Download as ArrowDownTrayIcon,
+  ArrowLeft as ArrowLeftIcon,
+  RefreshCw as ArrowPathIcon,
+  CircleCheck as CheckCircleIcon,
+  ClipboardList as ClipboardDocumentListIcon,
+  Box as CubeIcon,
+  Pencil as PencilIcon,
+  Printer as PrinterIcon,
+  Truck as TruckIcon,
+  CircleX as XCircleIcon,
+  X as XMarkIcon,
+} from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 
 const props = defineProps({
@@ -575,8 +575,8 @@ const props = defineProps({
 const isDarkMode = ref(false)
 let themeObserver
 
-const chartTextColor = computed(() => (isDarkMode.value ? '#cbd5e1' : '#475569'))
-const chartGridColor = computed(() => (isDarkMode.value ? '#1e293b' : '#e2e8f0'))
+const chartTextColor = computed(() => (isDarkMode.value ? '#d7dbe0' : '#6b7482'))
+const chartGridColor = computed(() => (isDarkMode.value ? '#1e293b' : '#eef0f3'))
 const chartTooltipTheme = computed(() => (isDarkMode.value ? 'dark' : 'light'))
 
 const isReceivingModalOpen = ref(false)
@@ -770,7 +770,7 @@ const itemStatusMixChartOptions = computed(() => ({
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.item_status_mix?.labels || [],
-  colors: ['#b45309', '#2563eb', '#0f766e'],
+  colors: ['#b45309', '#087cf0', '#0f766e'],
   dataLabels: {
     enabled: true,
     formatter: (value) => `${Math.round(value)}%`,
@@ -800,7 +800,7 @@ const governanceSummaryChartOptions = computed(() => ({
       columnWidth: '52%',
     },
   },
-  colors: ['#0f766e', '#dc2626', '#7c3aed', '#475569'],
+  colors: ['#0f766e', '#e5484d', '#7c5ce0', '#6b7482'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.governance_summary?.labels || [],

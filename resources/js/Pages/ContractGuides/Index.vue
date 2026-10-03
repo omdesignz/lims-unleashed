@@ -4,12 +4,12 @@ import RecordsTable from "@/Components/records-table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  ArchiveBoxIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentArrowDownIcon,
-  PlusIcon,
-  TruckIcon,
-} from "@heroicons/vue/24/outline";
+  Archive as ArchiveBoxIcon,
+  ClipboardCheck as ClipboardDocumentCheckIcon,
+  FileDown as DocumentArrowDownIcon,
+  Plus as PlusIcon,
+  Truck as TruckIcon,
+} from "@lucide/vue";
 import { Link, router } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";

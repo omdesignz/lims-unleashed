@@ -1,0 +1,29 @@
+<!doctype html><html lang="pt"><head><meta charset="utf-8"><title>Tipos de letra — comparação</title>
+<link rel="stylesheet" href="https://fonts.bunny.net/css?family=geist:400,500,600|geist-mono:400|inter:400,500,600|jetbrains-mono:400|onest:400,500,600|instrument-sans:400,500,600|ibm-plex-mono:400">
+<style>
+@font-face{font-family:"Plex";src:url("../../resources/fonts/ibm-plex/IBMPlexSans-Regular.woff2");font-weight:400}
+@font-face{font-family:"Plex";src:url("../../resources/fonts/ibm-plex/IBMPlexSans-Medium.woff2");font-weight:500}
+@font-face{font-family:"Plex";src:url("../../resources/fonts/ibm-plex/IBMPlexSans-SemiBold.woff2");font-weight:600}
+@font-face{font-family:"PlexMono";src:url("../../resources/fonts/ibm-plex/IBMPlexMono-Regular.woff2");font-weight:400}
+*{box-sizing:border-box;margin:0;padding:0}html{-webkit-font-smoothing:antialiased;font-synthesis:none}
+body{background:#E6E9ED;color:#111827;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px;width:1440px}
+.o{background:#F4F6F8;border-radius:10px;overflow:hidden;font-size:13.5px;line-height:1.45}
+.tag0{display:flex;align-items:baseline;gap:10px;background:#061F46;color:#fff;padding:9px 16px}.tag0 b{font-weight:600;font-size:14px}.tag0 span{opacity:.7;font-size:12.5px}
+.hd{background:#fff;padding:14px 18px 0;border-bottom:1px solid #EEF0F3}.hd h1{font-size:22px;font-weight:500;letter-spacing:-.02em}.hd p{color:#6B7482;margin-top:2px}
+.tabs{display:flex;gap:22px;margin-top:12px;font-weight:500;color:#6B7482;font-size:14px}.tabs span{padding-bottom:10px}.tabs .on{color:#111827;box-shadow:0 2px 0 #087CF0}
+.bd{padding:12px 18px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.c{background:#fff;border-radius:8px;padding:12px 14px}.c small{color:#4B5563;font-size:13px}.c b{display:block;font-size:24px;font-weight:600;letter-spacing:-.025em;margin-top:4px;font-variant-numeric:tabular-nums}.c b i{font-style:normal;font-weight:400;font-size:12.5px;color:#98A1AE;letter-spacing:0;margin-left:6px}
+.t{grid-column:span 3;padding:6px 14px 8px}table{width:100%;border-collapse:collapse}th{text-align:left;font-weight:400;font-size:12px;color:#6B7482;padding:8px 6px 6px}td{padding:8px 6px;border-top:1px solid #EEF0F3;font-variant-numeric:tabular-nums;white-space:nowrap}td small{display:block;color:#98A1AE;font-size:12px}
+.tg{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:2px 9px;font-size:12px;font-weight:500}.tg:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.f{grid-column:span 3;display:flex;gap:8px;align-items:center}.in{flex:1;height:34px;border:1px solid #D7DBE0;border-radius:6px;background:#fff;padding:0 11px;display:flex;align-items:center;color:#98A1AE}.bt{height:34px;border-radius:6px;padding:0 13px;display:flex;align-items:center;font-weight:500;font-size:13px;border:1px solid #D7DBE0;background:#fff}.bt.p{background:#0757B5;border-color:#0757B5;color:#fff}
+</style></head><body>
+<script>
+const opts=[['A · IBM Plex Sans + Plex Mono','Actual. Da identidade VAP: técnico, engenharia.','Plex','PlexMono'],['B · Geist + Geist Mono','Suíço moderno, muito nítido em tabelas densas.','Geist','Geist Mono'],['C · Inter + JetBrains Mono','O padrão de interfaces de dados; máxima legibilidade.','Inter','JetBrains Mono'],['D · Onest + IBM Plex Mono','Geométrico e mais caloroso, próximo do 1.º vídeo.','Onest','IBM Plex Mono']];
+document.body.innerHTML=opts.map(([n,d,f,m])=>`<section class="o" style="font-family:'${f}',sans-serif"><div class="tag0"><b>${n}</b><span>${d}</span></div>
+<div class="hd"><h1>Laboratório Central</h1><p>Rede VAP Lab · 128 amostras em curso · sábado, 3 de outubro</p><div class="tabs"><span class="on">Resumo</span><span>Prazos</span><span>Qualidade</span><span>Existências 4</span></div></div>
+<div class="bd"><div class="c"><small>Dentro do prazo</small><b>94%<i>meta 95%</i></b></div><div class="c"><small>Tempo médio de resposta</small><b>3,2 dias<i>−0,4</i></b></div><div class="c"><small>Certificados emitidos</small><b>42<i>de 51 previstos</i></b></div>
+<div class="c t"><table><thead><tr><th>Amostra</th><th>Cliente</th><th>Resultado</th><th>Estado</th><th>Entrega</th></tr></thead><tbody>
+<tr><td><span style="font-family:'${m}',monospace">SMP-2026-L1-AGU-00148</span><small>Água de processo</small></td><td>Indústria Horizonte</td><td style="font-family:'${m}',monospace">1,62 mg/L</td><td><span class="tg" style="background:#E6F0FE;color:#0757B5">Em análise</span></td><td>Hoje, 17h00</td></tr>
+<tr><td><span style="font-family:'${m}',monospace">SMP-2026-L1-ALM-00212</span><small>Farinha de milho</small></td><td>Moagens do Kwanza</td><td style="font-family:'${m}',monospace">12,4 %</td><td><span class="tg" style="background:#FEF3E2;color:#B5690B">Por verificar</span></td><td>Amanhã</td></tr></tbody></table></div>
+<div class="f"><div class="in">Código, cliente ou produto</div><span class="bt">Pedir repetição</span><span class="bt p">Verificar resultados</span></div></div></section>`).join('');
+</script></body></html>

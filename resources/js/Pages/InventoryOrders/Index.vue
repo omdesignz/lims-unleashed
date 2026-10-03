@@ -6,7 +6,7 @@ import { ref, computed } from "vue";
 import { Link, router } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { EyeIcon } from "@heroicons/vue/24/outline";
+import { Eye as EyeIcon } from "@lucide/vue";
 
 
 const props = defineProps({
