@@ -662,15 +662,12 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertNotEmpty(data_get($sample->client_submitted_info, 'required_parameters'));
 
         $this->actingAs($user)
-            ->get(route('vap_samples.index'))
+            ->get(route('vap_samples.index', ['edit' => $sample->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('VAPSamples/Index')
-                ->has('charts.intake_trend.categories', 7)
-                ->has('charts.intake_trend.series', 1)
-                ->where('charts.lifecycle_status.labels.0', 'Por iniciar')
-                ->where('charts.retention_pressure.labels.2', 'Retenção vencida')
-                ->where('samples.0.client_submitted_info.conditioning_status', data_get($sample->client_submitted_info, 'conditioning_status'))
+                ->missing('charts')
+                ->where('editingSample.client_submitted_info.conditioning_status', data_get($sample->client_submitted_info, 'conditioning_status'))
             );
     }
 

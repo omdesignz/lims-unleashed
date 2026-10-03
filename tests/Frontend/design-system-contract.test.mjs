@@ -1845,11 +1845,13 @@ test('sample detail page uses traceability-focused LIMS surfaces', () => {
 })
 
 test('sample intake console uses accessioning and destruction-control surfaces', () => {
-  assert.match(vapSamplesIndexSource, /class="min-w-0 space-y-6 overflow-x-clip"/)
-  assert.match(vapSamplesIndexSource, /class="ds-panel overflow-hidden"/)
+  assert.match(vapSamplesIndexSource, /data-template="form"/)
+  assert.match(vapSamplesIndexSource, /<PageHeader/)
   assert.match(vapSamplesIndexSource, /class="ds-command-surface overflow-hidden"/)
   assert.match(vapSamplesIndexSource, /class="ds-table-shell"/)
-  assert.match(vapSamplesIndexSource, /class="ds-table-summary/)
+  // The register lives in the queue; the intake page loads only the sample being corrected.
+  assert.doesNotMatch(vapSamplesIndexSource, /page\.props\.samples|apexchart|filteredSamples/)
+  assert.match(vapSamplesIndexSource, /if \(page\.props\.editingSample\) \{\n    editSample\(page\.props\.editingSample\)/)
   assert.match(vapSamplesIndexSource, /class="ds-field/)
   assert.match(vapSamplesIndexSource, /class="ds-button ds-button-primary/)
   assert.match(vapSamplesIndexSource, /class="ds-table-action ds-table-action-danger"/)

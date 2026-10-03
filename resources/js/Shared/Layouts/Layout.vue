@@ -690,6 +690,7 @@ const activeArea = computed(() => navAreas.value.find((area) => area.key === act
 const planoTemplates = {
   LaboratoryWorkbench: 'today',
   'LabNetwork/Index': 'page',
+  'VAPSamples/Index': 'form',
   'VAPSamples/Queue': 'queue',
   'VAPSamples/Show': 'dossier',
   'VAPProposals/Index': 'queue',

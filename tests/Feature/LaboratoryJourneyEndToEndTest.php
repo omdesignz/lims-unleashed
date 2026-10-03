@@ -179,6 +179,9 @@ class LaboratoryJourneyEndToEndTest extends TestCase
         $analysis = Analysis::query()->whereIn('sample_id', data_get($entry->client_submitted_info, 'linked_sample_ids', []))->sole();
         $this->assertSame('results', $this->dossierStage($proposal));
         $this->asPeer()->get(route('vap_samples.show', $entry))->assertNotFound();
+        $this->asPeer()->get(route('vap_samples.index', ['edit' => $entry->id]))->assertNotFound();
+        $this->asPeer()->get(route('vap_samples.index', ['discard' => $entry->id]))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('discardableSamples', fn ($samples) => collect($samples)->doesntContain('id', $entry->id)));
         $this->asPeer()->get(route('customers.show', $this->customer))->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('customerState.summary.accepted_proposals', 0)
