@@ -6,7 +6,7 @@
           <BeakerIcon class="h-5 w-5 text-rose-700 dark:text-rose-300" />
           Registrar Consumo de Reagentes
         </h3>
-        <button type="button" @click="close" class="ds-icon-button">
+        <button type="button" @click="close" class="ds-icon-button" aria-label="Fechar">
           <XMarkIcon class="h-5 w-5" />
         </button>
       </div>

@@ -1,122 +1,83 @@
 <template>
-  <section class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-    <div class="border-b border-slate-200 bg-slate-50 px-5 py-5 dark:border-slate-700 dark:bg-slate-800/90">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Fluxo de trabalho</p>
-          <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">{{ $t('gestlab.general.labels.vap_filemanager.workflow_tasks') }}</h2>
-          <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-            Distribua revisão, aprovação e publicação com responsáveis, prazos e histórico de comentários.
-          </p>
+  <section class="grid gap-6" aria-label="Fluxo documental">
+    <div v-if="selectedFile" class="grid gap-6">
+      <dl class="pl-panel pl-facts">
+        <div v-for="card in workflowCards" :key="card.label" class="pl-fact">
+          <dt>{{ card.label }}</dt>
+          <dd>
+            <span class="pl-num font-medium">{{ card.value }}</span>
+            <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ card.caption }}</span>
+          </dd>
         </div>
-        <div
-          v-if="selectedFile"
-          class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right shadow-sm dark:border-slate-600 dark:bg-slate-900/80"
-        >
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Tarefas abertas</p>
-          <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ openTaskCount }}</p>
-        </div>
-      </div>
-    </div>
+      </dl>
 
-    <div class="p-5">
-      <div v-if="selectedFile" class="space-y-5">
-        <div class="grid gap-3 sm:grid-cols-3">
-          <article
-            v-for="card in workflowCards"
-            :key="card.label"
-            class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-800/70"
-          >
-            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{{ card.label }}</p>
-            <p class="mt-3 text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ card.value }}</p>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-300">{{ card.caption }}</p>
-          </article>
+      <section class="pl-panel" aria-labelledby="workflow-new-task">
+        <div class="pl-panel-head">
+          <h3 id="workflow-new-task" class="pl-k">{{ $t('gestlab.general.labels.vap_filemanager.create_workflow_task') }}</h3>
+          <span class="pl-k pl-faint">{{ openTaskCount }} abertas</span>
         </div>
+        <div class="grid gap-4 p-4 sm:grid-cols-2">
+          <BaseSelect v-model="newTask.type" label="Etapa">
+            <option value="review">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.review') }}</option>
+            <option value="approve">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.approve') }}</option>
+            <option value="publish">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.publish') }}</option>
+          </BaseSelect>
 
-        <div class="rounded-[1.5rem] border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-          <div class="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
-            <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700 dark:text-slate-200">{{ $t('gestlab.general.labels.vap_filemanager.create_workflow_task') }}</h3>
+          <DateTimePicker v-model="newTask.dueDate" type="date" label="Prazo" />
+
+          <div class="ds-field-group sm:col-span-2">
+            <span class="ds-field-label">Responsável</span>
+            <comboboxEnhanced v-model="newTask.assignedTo" :load-options="loadUsers" />
           </div>
-          <div class="grid gap-4 p-4">
-            <label class="block text-sm">
-              <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Etapa</span>
-              <BaseSelect
-                v-model="newTask.type"
-                class="block w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-              >
-                <option value="review">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.review') }}</option>
-                <option value="approve">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.approve') }}</option>
-                <option value="publish">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.publish') }}</option>
-              </BaseSelect>
-            </label>
 
-            <label class="block text-sm">
-              <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Responsável</span>
-              <comboboxEnhanced v-model="newTask.assignedTo" :load-options="loadUsers"/>
-            </label>
-
-            <label class="block text-sm">
-              <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Prazo</span>
-              <DateTimePicker
-                type="date"
-                v-model="newTask.dueDate"
-                class="block w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-            </label>
-
-            <button
-              class="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              @click="createTask"
-            >
+          <div class="sm:col-span-2">
+            <button type="button" class="ds-button ds-button-primary" @click="createTask">
               {{ $t('gestlab.general.labels.vap_filemanager.buttons.create_task') }}
             </button>
           </div>
         </div>
+      </section>
 
-        <div class="space-y-4">
-          <div v-if="workflowStore.pendingTasks.length > 0">
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700 dark:text-slate-200">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.pending_tasks') }}</h3>
-              <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">{{ workflowStore.pendingTasks.length }}</span>
-            </div>
-            <div class="space-y-3">
-              <TaskCard
-                v-for="task in workflowStore.pendingTasks"
-                :key="task.id"
-                :task="task"
-                @status-change="updateTaskStatus"
-                @add-comment="addTaskComment"
-              />
-            </div>
-          </div>
-
-          <div v-if="workflowStore.inProgressTasks.length > 0">
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700 dark:text-slate-200">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.in_progress_tasks') }}</h3>
-              <span class="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">{{ workflowStore.inProgressTasks.length }}</span>
-            </div>
-            <div class="space-y-3">
-              <TaskCard
-                v-for="task in workflowStore.inProgressTasks"
-                :key="task.id"
-                :task="task"
-                @status-change="updateTaskStatus"
-                @add-comment="addTaskComment"
-              />
-            </div>
-          </div>
-
-          <div
-            v-if="workflowStore.pendingTasks.length === 0 && workflowStore.inProgressTasks.length === 0 && !workflowStore.isLoading"
-            class="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm leading-6 text-slate-500 dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-300"
-          >
-            {{ $t('gestlab.general.labels.vap_filemanager.no_active_workflow_tasks') }}
-          </div>
+      <section v-if="workflowStore.pendingTasks.length > 0" class="grid gap-3" aria-labelledby="workflow-pending">
+        <div class="flex items-center justify-between gap-3">
+          <h3 id="workflow-pending" class="pl-k">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.pending_tasks') }}</h3>
+          <span class="pl-k pl-num pl-faint">{{ workflowStore.pendingTasks.length }}</span>
         </div>
-      </div>
+        <TaskCard
+          v-for="task in workflowStore.pendingTasks"
+          :key="task.id"
+          :task="task"
+          @status-change="updateTaskStatus"
+          @add-comment="addTaskComment"
+        />
+      </section>
 
-      <div v-else class="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm leading-6 text-slate-500 dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
-        {{ $t('gestlab.general.labels.vap_filemanager.select_document_workflow_hint') }}
+      <section v-if="workflowStore.inProgressTasks.length > 0" class="grid gap-3" aria-labelledby="workflow-in-progress">
+        <div class="flex items-center justify-between gap-3">
+          <h3 id="workflow-in-progress" class="pl-k">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.in_progress_tasks') }}</h3>
+          <span class="pl-k pl-num pl-faint">{{ workflowStore.inProgressTasks.length }}</span>
+        </div>
+        <TaskCard
+          v-for="task in workflowStore.inProgressTasks"
+          :key="task.id"
+          :task="task"
+          @status-change="updateTaskStatus"
+          @add-comment="addTaskComment"
+        />
+      </section>
+
+      <div
+        v-if="workflowStore.pendingTasks.length === 0 && workflowStore.inProgressTasks.length === 0 && !workflowStore.isLoading"
+        class="ds-empty-state grid justify-items-start gap-2 p-6"
+      >
+        <span class="pl-k">Sem tarefas activas</span>
+        <p class="text-sm text-[var(--pl-muted)]">{{ $t('gestlab.general.labels.vap_filemanager.no_active_workflow_tasks') }}</p>
       </div>
+    </div>
+
+    <div v-else class="ds-empty-state grid justify-items-start gap-2 p-6">
+      <span class="pl-k">Nenhum documento seleccionado</span>
+      <p class="text-sm text-[var(--pl-muted)]">{{ $t('gestlab.general.labels.vap_filemanager.select_document_workflow_hint') }}</p>
     </div>
   </section>
 </template>
@@ -127,6 +88,7 @@ import { useWorkflowStore, type WorkflowTask } from '../../Stores/workflowStore'
 import { useFileStore } from '../../Stores/fileStore'
 import TaskCard from './task-card.vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import DateTimePicker from '@/Components/base/DateTimePicker.vue'
 import { loadSelectOptions, optionMappers } from '@/Utils/selectOptions'
 
 const workflowStore = useWorkflowStore()
@@ -136,6 +98,15 @@ const selectedFile = computed(() => {
   const selectedIds = Array.from(fileStore.selectedItems)
   return selectedIds.length === 1 ? fileStore.files.find(f => f.id === selectedIds[0]) : null
 })
+
+const statusLabels: Record<string, string> = {
+  draft: 'Rascunho',
+  in_review: 'Em revisão',
+  approved: 'Aprovado',
+  effective: 'Efectivo',
+  obsolete: 'Obsoleto',
+  archived: 'Arquivado',
+}
 
 const openTaskCount = computed(() => workflowStore.pendingTasks.length + workflowStore.inProgressTasks.length)
 
@@ -152,8 +123,8 @@ const workflowCards = computed(() => {
       caption: 'Já atribuídas e em execução.',
     },
     {
-      label: 'Estado seleccionado',
-      value: selectedFile.value?.status || 'draft',
+      label: 'Estado do documento',
+      value: statusLabels[selectedFile.value?.status || 'draft'] ?? selectedFile.value?.status,
       caption: 'Situação documental actual.',
     },
   ]

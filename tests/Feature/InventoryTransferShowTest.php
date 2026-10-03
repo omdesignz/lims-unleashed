@@ -30,7 +30,7 @@ class InventoryTransferShowTest extends TestCase
         return $user;
     }
 
-    public function test_inventory_transfer_show_exposes_chart_payloads(): void
+    public function test_inventory_transfer_show_exposes_stock_positions_and_receipt_actions(): void
     {
         $user = $this->verifiedAdmin();
         $labId = (int) DB::table('lab_user')->where('user_id', $user->id)->value('lab_id');
@@ -80,9 +80,11 @@ class InventoryTransferShowTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('VAPInventory/Transfers/Show')
                 ->where('transfer.id', $transfer->id)
-                ->where('charts.quantity_flow.labels.0', 'Quantidade transferida')
-                ->where('charts.timing_pressure.labels.0', 'Dias em curso')
-                ->where('charts.execution_pulse.labels.0', 'Gap destino')
+                ->where('sourceStock.qty_available', fn ($quantity): bool => (float) $quantity === 25.0)
+                ->where('destinationStock.qty_available', fn ($quantity): bool => (float) $quantity === 4.0)
+                ->where('canReceive', true)
+                ->where('canCancel', true)
+                ->missing('charts')
             );
     }
 }

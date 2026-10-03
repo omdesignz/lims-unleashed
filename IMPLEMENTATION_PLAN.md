@@ -1326,7 +1326,7 @@ Decisions made with the approval, now implemented:
 
 - User visual approval of the representative screens in light and dark, desktop and mobile (exit gate).
 - PHP checkpoint above.
-- Not yet reviewed in a browser against real data: report studio, file manager, label studio, worksheets, public proposal page and portal pages behind a customer login. They inherit Plano through the contracts; page-specific layouts (nested panels, per-page stat strips) may still need individual passes.
+- Not yet reviewed in a browser against real data: report studio, label studio, worksheets, public proposal page and portal pages behind a customer login (the file manager and inventory were rebuilt on Plano on 2026-10-03, see below). They inherit Plano through the contracts; page-specific layouts (nested panels, per-page stat strips) may still need individual passes.
 - Four native-control surfaces remain deliberate exceptions listed in `design-system-contract.test.mjs`.
 - Generated PDFs keep their document typography; they are documents, not interface, and are outside this phase.
 
@@ -1390,6 +1390,23 @@ Still open in Phase 3:
 - Proposal and certificate numbering per laboratory remains with the later numbering slice (sample numbering is already per laboratory and year). Certificate codes are still timestamps.
 - Analysis queue and results bench keep their Phase 2 layout; they work but are not yet rebuilt on the Plano templates.
 - Concurrency for certificate generation and validation is covered by locking and the unique index; there is no multi-process race test for them yet.
+
+### Inventory and document manager on Plano — 2026-10-03
+
+The Inventário area (items with equipment/reagent views, item form and dossier, stock positions, needs, purchase orders, transfers, reagent consumption, expiry, calibration schedule, analytics and the four reports) and the document manager now use the Plano queue, form, dossier and page templates: one page header with its own crumbs, state cells only where they filter, one next-step bar per dossier or form, European Portuguese copy, tables that scroll inside their panel. Decorative stat tiles, duplicate action panels, readiness side cards, English kickers and decorative charts were removed.
+
+Behaviour fixes found on the way:
+
+- Purchase-order statuses are stored in uppercase, so the queue's pending and open-line counts were always 0 and the order value included cancelled orders; comparisons are now case-insensitive and sorting accepts only the offered columns.
+- The item dossier read model accessors the payload does not carry (stock status, expiry, calibration days), so stock chips were blank and always "ok", an expired reagent read "Dentro da validade" and calibration warnings never fired; it now uses the values actually sent.
+- Days to reagent expiry are whole calendar days (Carbon 3 returned fractions on screen).
+- The order form's supplier/item/warehouse locks never applied (`disabled` instead of the combobox's `disable-input`); a task card never showed its current status; the low-stock pager never appeared; the file list drag image used `innerHTML` with the file name.
+- Error pages raised before the session starts no longer throw while sharing props (regression from the early-404 fix).
+- Decision (user, 2026-10-03): the low-stock report and its download also list positions with no stock, first and labelled "Sem existências"; severity buckets no longer overlap.
+
+Evidence: full PHP suite 4,221 passed / 3 skipped / 1 environment-only failure (`PhpTestLauncherTest`, OPcache loaded only through this build's php.ini) before the last three changes; the inventory/document/procurement files were re-run after them. Frontend 427+ pass. Every reworked screen checked in the browser with a `[DEMO]` inventory and document set (created through the application's own endpoints in the development database only), in light, dark and at 390px, with no horizontal page scroll.
+
+Still open: the item dossier controller still computes chart data the page no longer draws (two tests use it to check laboratory-scoped figures); the needs/orders controllers likewise still send unused `charts`; the analytics "áreas" rows use whole-inventory figures while the metrics strip follows the filter; the file manager's whole-page drop overlay is never activated (pre-existing).
 
 ## Phase 4 — Network stock and summary visibility
 

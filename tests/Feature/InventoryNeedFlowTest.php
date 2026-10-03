@@ -238,6 +238,7 @@ class InventoryNeedFlowTest extends TestCase
         $this->assertIsArray(data_get($page, 'props.procurementQueue', []));
         $this->assertNotNull(data_get($page, 'props.stats.awaiting_order'));
         $this->assertNotNull(data_get($page, 'props.stats.overdue_procurement'));
+        $this->assertSame(InventoryNeed::query()->where('lab_id', $need->lab_id)->where('status', 'approved')->count(), data_get($page, 'props.stats.by_status.approved'));
         $this->assertSame('Submetidas', data_get($page, 'props.charts.status_overview.labels.0'));
         $this->assertSame('Prontas', data_get($page, 'props.charts.queue_readiness.labels.0'));
         $this->assertSame('Fila procurement', data_get($page, 'props.charts.procurement_pressure.labels.0'));

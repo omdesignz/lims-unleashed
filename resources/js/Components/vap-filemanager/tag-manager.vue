@@ -1,73 +1,39 @@
 <template>
-  <div class="w-full">
-    <div class="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/70">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            Etiquetas activas
-          </h3>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Use etiquetas consistentes para facilitar pesquisa, classificação e rastreabilidade.
-          </p>
-        </div>
-        <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">
-          {{ tags.length }} {{ tags.length === 1 ? 'etiqueta' : 'etiquetas' }}
-        </span>
+  <div class="grid w-full gap-6">
+    <section class="pl-panel" aria-labelledby="tag-manager-active">
+      <div class="pl-panel-head">
+        <h3 id="tag-manager-active" class="pl-k">Etiquetas activas</h3>
+        <span class="pl-k pl-faint">{{ tags.length }} {{ tags.length === 1 ? 'etiqueta' : 'etiquetas' }}</span>
       </div>
-
-      <div class="mt-4 flex min-h-16 flex-wrap gap-2">
-        <span
-          v-for="tag in tags"
-          :key="tag"
-          class="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-800 ring-1 ring-blue-200 dark:bg-blue-950/50 dark:text-blue-200 dark:ring-blue-800"
-        >
+      <div class="flex min-h-16 flex-wrap items-center gap-2 p-4">
+        <span v-for="tag in tags" :key="tag" class="ds-chip">
           {{ tag }}
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-full text-blue-700 transition hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
-            @click="removeTag(tag)"
-          >
-            <XMarkIcon class="h-4 w-4" />
+          <button type="button" class="inline-flex" :aria-label="`Remover etiqueta ${tag}`" @click="removeTag(tag)">
+            <XMarkIcon class="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </span>
-
-        <div
-          v-if="!tags.length"
-          class="flex w-full items-center rounded-2xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-500 dark:border-slate-600 dark:text-slate-400"
-        >
+        <p v-if="!tags.length" class="text-sm text-[var(--pl-muted)]">
           {{ $t('gestlab.general.labels.vap_filemanager.tags_empty') }}
-        </div>
+        </p>
       </div>
-    </div>
+    </section>
 
-    <div class="mt-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <label class="block text-sm font-semibold text-slate-900 dark:text-slate-100">
-        Adicionar nova etiqueta
-      </label>
-      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        Evite duplicados e prefira nomes curtos e claros.
-      </p>
-      <div class="mt-4 flex flex-col gap-3 sm:flex-row">
-        <div class="relative flex-1">
-          <BaseInput
-            v-model="newTag"
-            type="text"
-            @keydown.enter.prevent="addTag"
-            :placeholder="$t('gestlab.general.labels.vap_filemanager.tag_placeholder')"
-            class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-900/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-blue-500 dark:focus:bg-slate-900 dark:focus:ring-blue-500/20"
-          />
-        </div>
-        <button
-          v-if="newTag"
-          type="button"
-          class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800"
-          @click="addTag"
-        >
-          <PlusIcon class="h-4 w-4" />
+    <form class="grid gap-3" @submit.prevent="addTag">
+      <BaseInput
+        v-model="newTag"
+        type="text"
+        class="ds-field"
+        label="Adicionar nova etiqueta"
+        hint="Evite duplicados e prefira nomes curtos e claros."
+        :placeholder="$t('gestlab.general.labels.vap_filemanager.tag_placeholder')"
+      />
+      <div>
+        <button type="submit" class="ds-button ds-button-secondary" :disabled="!newTag.trim()">
+          <PlusIcon class="h-4 w-4" aria-hidden="true" />
           Adicionar
         </button>
       </div>
-    </div>
+    </form>
   </div>
 </template>
 

@@ -626,13 +626,13 @@ class VAPInventoryReportController extends Controller
             'warehouse.location:id,name',
         ])
             ->whereColumn('qty_available', '<=', 'reorder_point')
-            ->where('qty_available', '>', 0)
             ->when(($filters['severity'] ?? null) === 'critical', fn (Builder $query): Builder => $query->whereColumn('qty_available', '<=', 'min_stock_level'))
             ->when(($filters['severity'] ?? null) === 'low', fn (Builder $query): Builder => $query->whereColumn('qty_available', '>', 'min_stock_level'));
 
-        $lowStock = $query->orderByRaw('qty_available / NULLIF(reorder_point, 0)')->get();
+        $lowStock = $query->orderByRaw('CASE WHEN qty_available <= 0 THEN 0 ELSE 1 END')
+            ->orderByRaw('qty_available / NULLIF(reorder_point, 0)')->get();
 
-        $criticalStock = $lowStock->filter(fn (Inventory $item): bool => $item->qty_available <= $item->min_stock_level)->count();
+        $criticalStock = $lowStock->filter(fn (Inventory $item): bool => (float) $item->qty_available > 0 && $item->qty_available <= $item->min_stock_level)->count();
 
         return [
             'lowStock' => $lowStock,
@@ -699,7 +699,11 @@ class VAPInventoryReportController extends Controller
             case 'low_stock':
                 $rows[] = ['Artigo', 'Categoria', 'Armazém', 'Existências actuais', 'Unidade', 'Ponto de reposição', 'Existências mínimas', 'Estado'];
                 foreach ($data['lowStock'] as $item) {
-                    $status = $item->qty_available <= $item->min_stock_level ? 'CRÍTICO' : 'BAIXO';
+                    $status = match (true) {
+                        (float) $item->qty_available <= 0 => 'SEM EXISTÊNCIAS',
+                        $item->qty_available <= $item->min_stock_level => 'CRÍTICO',
+                        default => 'BAIXO',
+                    };
                     $rows[] = [
                         $item->item->name,
                         $item->item->category->name ?? 'N/D',

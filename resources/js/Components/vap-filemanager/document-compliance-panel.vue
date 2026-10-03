@@ -1,181 +1,94 @@
 <template>
-  <section class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-    <div class="border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.18),_transparent_34%),linear-gradient(135deg,_#f8fafc,_#eef6ff)] px-5 py-5 dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_34%),linear-gradient(135deg,_#0f172a,_#111827)]">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700 dark:text-sky-300">ISO 17025</p>
-          <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">Controlo documental</h2>
-          <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-            Estado controlado, revisão, retenção, confidencialidade e efetividade no mesmo painel operacional.
-          </p>
+  <section class="grid gap-6" aria-label="Controlo documental">
+    <template v-if="selectedFile">
+      <section class="pl-panel" aria-labelledby="compliance-document">
+        <div class="pl-panel-head">
+          <h3 id="compliance-document" class="pl-k truncate">{{ selectedFile.name }}</h3>
+          <StatusChip :tone="statusTone">{{ statusLabel }}</StatusChip>
         </div>
-        <div
-          v-if="selectedFile"
-          class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right shadow-sm dark:border-slate-600 dark:bg-slate-900/80"
-        >
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Prontidão</p>
-          <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ readinessScore }}%</p>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="selectedFile" class="space-y-5 p-5">
-      <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <h3 class="truncate text-base font-semibold text-slate-900 dark:text-slate-100">{{ selectedFile.name }}</h3>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {{ selectedFile.document_number || $t('gestlab.general.labels.vap_filemanager.missing_document_number') }} •
-              {{ selectedFile.revision_code || $t('gestlab.general.labels.vap_filemanager.missing_revision') }}
-            </p>
-          </div>
-          <span
-            class="inline-flex shrink-0 items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]"
-            :class="statusClass"
-          >
-            {{ selectedFile.status || "draft" }}
-          </span>
-        </div>
-
-        <dl class="mt-4 grid gap-3 sm:grid-cols-2">
-          <div class="rounded-2xl border border-white bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
-            <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Confidencialidade</dt>
-            <dd class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{{ selectedFile.confidentiality_level || "internal" }}</dd>
-          </div>
-          <div class="rounded-2xl border border-white bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
-            <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Acesso actual</dt>
-            <dd class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{{ selectedFile.current_access_level || "read" }}</dd>
-          </div>
-          <div class="rounded-2xl border border-white bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
-            <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Entrada em vigor</dt>
-            <dd class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{{ formatDate(selectedFile.effective_at) }}</dd>
-          </div>
-          <div class="rounded-2xl border border-white bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
-            <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Próxima revisão</dt>
-            <dd class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{{ formatDate(selectedFile.review_due_at) }}</dd>
-          </div>
+        <dl class="pl-facts pl-facts-2">
+          <div class="pl-fact"><dt>Número</dt><dd class="pl-num">{{ selectedFile.document_number || $t('gestlab.general.labels.vap_filemanager.missing_document_number') }}</dd></div>
+          <div class="pl-fact"><dt>Revisão</dt><dd class="pl-num">{{ selectedFile.revision_code || $t('gestlab.general.labels.vap_filemanager.missing_revision') }}</dd></div>
+          <div class="pl-fact"><dt>Confidencialidade</dt><dd>{{ confidentialityLabels[selectedFile.confidentiality_level || 'internal'] }}</dd></div>
+          <div class="pl-fact"><dt>Acesso actual</dt><dd>{{ accessLabels[selectedFile.current_access_level || 'read'] ?? selectedFile.current_access_level }}</dd></div>
+          <div class="pl-fact"><dt>Entrada em vigor</dt><dd class="pl-num">{{ formatDate(selectedFile.effective_at) }}</dd></div>
+          <div class="pl-fact"><dt>Próxima revisão</dt><dd class="pl-num">{{ formatDate(selectedFile.review_due_at) }}</dd></div>
         </dl>
-      </div>
+      </section>
 
-      <div
-        v-if="complianceAlerts.length"
-        class="space-y-3"
-      >
-        <article
+      <div v-if="complianceAlerts.length" class="grid gap-3">
+        <div
           v-for="alert in complianceAlerts"
           :key="alert.title"
-          class="rounded-2xl border px-4 py-3"
-          :class="alert.tone === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200' : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200'"
+          class="pl-banner items-start text-sm"
+          :class="alert.tone === 'warning' ? 'pl-banner-warn' : 'pl-banner-bad'"
+          role="alert"
         >
-          <p class="text-sm font-semibold">{{ alert.title }}</p>
-          <p class="mt-1 text-sm leading-6">{{ alert.description }}</p>
-        </article>
-      </div>
-
-      <div class="rounded-[1.5rem] border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-        <div class="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
-          <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700 dark:text-slate-200">Checklist de conformidade</h3>
-        </div>
-        <div class="space-y-3 p-4">
-          <div
-            v-for="item in checklist"
-            :key="item.label"
-            class="flex items-start gap-3 rounded-2xl border px-4 py-3"
-            :class="item.ok ? 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/40' : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/70'"
-          >
-            <div
-              class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-              :class="item.ok ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'"
-            >
-              {{ item.ok ? "✓" : "!" }}
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ item.label }}</p>
-              <p class="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{{ item.help }}</p>
-            </div>
-          </div>
+          <span class="grid gap-1">
+            <span class="pl-k">{{ alert.title }}</span>
+            <span class="leading-6">{{ alert.description }}</span>
+          </span>
         </div>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-2">
-        <label class="block text-sm">
-          <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Número do documento</span>
-          <BaseInput v-model="form.document_number" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-        </label>
+      <section class="pl-panel" aria-labelledby="compliance-checklist">
+        <div class="pl-panel-head">
+          <h3 id="compliance-checklist" class="pl-k">Lista de conformidade</h3>
+          <span class="pl-k pl-faint">{{ readinessScore }}% cumprido</span>
+        </div>
+        <ul>
+          <li v-for="item in checklist" :key="item.label" class="pl-row items-start">
+            <span class="min-w-0">
+              <span class="block font-medium">{{ item.label }}</span>
+              <span class="block text-[12.5px] leading-5 text-[var(--pl-muted)]">{{ item.help }}</span>
+            </span>
+            <StatusChip :tone="item.ok ? 'ok' : 'wait'">{{ item.ok ? 'Cumprido' : 'Em falta' }}</StatusChip>
+          </li>
+        </ul>
+      </section>
 
-        <label class="block text-sm">
-          <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Tipo documental</span>
-          <BaseInput v-model="form.document_type" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400" :placeholder="$t('gestlab.general.labels.vap_filemanager.document_type_placeholder')" />
-        </label>
-
-        <label class="block text-sm">
-          <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Categoria</span>
-          <BaseInput v-model="form.category" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-        </label>
-
-        <label class="block text-sm">
-          <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Confidencialidade</span>
-          <BaseSelect v-model="form.confidentiality_level" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+      <section class="grid gap-4" aria-labelledby="compliance-metadata">
+        <h3 id="compliance-metadata" class="pl-k">Metadados documentais</h3>
+        <div class="grid gap-4 md:grid-cols-2">
+          <BaseInput v-model="form.document_number" class="ds-field" label="Número do documento" />
+          <BaseInput v-model="form.document_type" class="ds-field" label="Tipo documental" :placeholder="$t('gestlab.general.labels.vap_filemanager.document_type_placeholder')" />
+          <BaseInput v-model="form.category" class="ds-field" label="Categoria" />
+          <BaseSelect v-model="form.confidentiality_level" label="Confidencialidade">
             <option value="public">Público</option>
             <option value="internal">Interno</option>
             <option value="confidential">Confidencial</option>
             <option value="restricted">Restrito</option>
           </BaseSelect>
-        </label>
+          <BaseInput v-model="form.retention_period_days" type="number" min="1" class="ds-field" label="Retenção (dias)" />
+          <DateTimePicker v-model="form.review_due_at" type="date" label="Próxima revisão" />
+          <div class="md:col-span-2">
+            <DateTimePicker v-model="form.effective_at" type="date" label="Data de entrada em vigor" />
+          </div>
+          <label class="flex items-center gap-3 text-sm">
+            <CheckboxInput v-model="form.is_controlled" type="checkbox" />
+            Documento controlado
+          </label>
+          <label class="flex items-center gap-3 text-sm">
+            <CheckboxInput v-model="form.requires_periodic_review" type="checkbox" />
+            Exige revisão periódica
+          </label>
+          <div class="md:col-span-2">
+            <BaseTextarea v-model="form.change_reason" :rows="3" class="ds-field" label="Motivo da alteração" />
+          </div>
+        </div>
+      </section>
 
-        <label class="block text-sm">
-          <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Retenção (dias)</span>
-          <BaseInput v-model="form.retention_period_days" type="number" min="1" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-        </label>
-
-        <label class="block text-sm">
-          <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Próxima revisão</span>
-          <DateTimePicker v-model="form.review_due_at" type="date" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-        </label>
-
-        <label class="block text-sm md:col-span-2">
-          <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Data de entrada em vigor</span>
-          <DateTimePicker v-model="form.effective_at" type="date" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-        </label>
+      <div class="flex flex-wrap gap-2 border-t border-[var(--pl-line)] pt-4">
+        <button type="button" class="ds-button ds-button-secondary" :disabled="busy || !canWrite" @click="saveMetadata">Guardar metadados</button>
+        <button type="button" class="ds-button ds-button-secondary" :disabled="busy || !canWrite" @click="submitReview">Submeter para revisão</button>
+        <button type="button" class="ds-button ds-button-primary" :disabled="busy || !canApprove" @click="approveDocument">Aprovar e efectivar</button>
+        <button type="button" class="ds-button ds-button-danger" :disabled="busy || !canApprove" @click="markObsolete">Marcar obsoleto</button>
       </div>
+    </template>
 
-      <div class="grid gap-3 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
-        <label class="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
-          <CheckboxInput v-model="form.is_controlled" type="checkbox" class="rounded border-slate-300 dark:border-slate-600 dark:bg-slate-900" />
-          Documento controlado
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
-          <CheckboxInput v-model="form.requires_periodic_review" type="checkbox" class="rounded border-slate-300 dark:border-slate-600 dark:bg-slate-900" />
-          Exige revisão periódica
-        </label>
-      </div>
-
-      <label class="block text-sm">
-        <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Motivo da alteração</span>
-        <textarea v-model="form.change_reason" rows="3" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-      </label>
-
-      <div class="grid gap-3 sm:grid-cols-2">
-        <button class="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800" :disabled="busy || !canWrite" @click="saveMetadata">
-          Guardar metadados
-        </button>
-        <button class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:hover:bg-sky-950/60" :disabled="busy || !canWrite" @click="submitReview">
-          Submeter para revisão
-        </button>
-        <button class="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50" :disabled="busy || !canApprove" @click="approveDocument">
-          Aprovar e efectivar
-        </button>
-        <button class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-950/60" :disabled="busy || !canApprove" @click="markObsolete">
-          Marcar obsoleto
-        </button>
-      </div>
-    </div>
-
-    <div v-else class="p-5">
-      <div class="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm leading-6 text-slate-500 dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
-        {{ $t('gestlab.general.labels.vap_filemanager.select_document_workflow_hint') }}
-      </div>
+    <div v-else class="ds-empty-state grid justify-items-start gap-2 p-6">
+      <span class="pl-k">Nenhum documento seleccionado</span>
+      <p class="text-sm text-[var(--pl-muted)]">{{ $t('gestlab.general.labels.vap_filemanager.select_single_document_hint') }}</p>
     </div>
   </section>
 </template>
@@ -186,6 +99,8 @@ import { computed, reactive, watch, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useFileStore } from '@/Stores/fileStore'
 import { trans } from 'laravel-vue-i18n'
+import StatusChip from '@/Components/plano/StatusChip.vue'
+import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 
 const fileStore = useFileStore()
 const toast = useToast()
@@ -229,7 +144,7 @@ const checklist = computed(() => {
     },
     {
       label: 'Entrada em vigor pronta',
-      help: 'A efetividade deve estar clara antes de colocar o documento em uso.',
+      help: 'A efectividade deve estar clara antes de colocar o documento em uso.',
       ok: selectedFile.value.status !== 'effective' || Boolean(form.effective_at),
     },
   ]
@@ -262,7 +177,7 @@ const complianceAlerts = computed(() => {
 
   if (selectedFile.value.status === 'effective' && !selectedFile.value.is_controlled) {
     alerts.push({
-      title: 'Documento eficaz sem marcação controlada',
+      title: 'Documento efectivo sem marcação controlada',
       description: 'Se este ficheiro faz parte do sistema documental ISO, active o controlo para manter rastreabilidade formal.',
       tone: 'danger',
     })
@@ -279,27 +194,42 @@ const complianceAlerts = computed(() => {
   return alerts
 })
 
-const statusClass = computed(() => {
+const statusLabels: Record<string, string> = {
+  draft: 'Rascunho',
+  in_review: 'Em revisão',
+  approved: 'Aprovado',
+  effective: 'Efectivo',
+  obsolete: 'Obsoleto',
+  archived: 'Arquivado',
+}
+
+const confidentialityLabels: Record<string, string> = {
+  public: 'Público',
+  internal: 'Interno',
+  confidential: 'Confidencial',
+  restricted: 'Restrito',
+}
+
+const accessLabels: Record<string, string> = {
+  read: 'Leitura',
+  write: 'Escrita',
+  admin: 'Administração',
+}
+
+const statusLabel = computed(() => {
   const status = selectedFile.value?.status || 'draft'
 
-  if (status === 'effective') {
-    return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-  }
-
-  if (status === 'obsolete') {
-    return 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
-  }
-
-  if (status === 'in_review') {
-    return 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
-  }
-
-  if (status === 'approved') {
-    return 'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'
-  }
-
-  return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+  return statusLabels[status] ?? status
 })
+
+/** Status chip tone: in review waits, approved is in progress, effective conforms, obsolete is closed. */
+const statusTone = computed(() => ({
+  in_review: 'wait',
+  approved: 'run',
+  effective: 'ok',
+  obsolete: 'done',
+  archived: 'done',
+} as Record<string, string>)[selectedFile.value?.status || 'draft'] ?? 'neutral')
 
 const form = reactive({
   document_number: '',

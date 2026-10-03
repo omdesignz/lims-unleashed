@@ -141,7 +141,7 @@ test('edit form renders stock read-only and directs adjustments to the item page
 
   assert.match(surface, /v-if="mode === 'create'"[^>]*@click="emit\('add-warehouse'\)"/);
   assert.match(surface, /v-if="mode === 'create'"[^>]*@click="emit\('remove-warehouse', index\)"/);
-  assert.match(surface, /<dl v-else class="mt-4 grid gap-4 text-sm sm:grid-cols-3">/);
+  assert.match(surface, /<dl v-else class="pl-facts">/);
   assert.match(surface, /<Link v-else :href="backHref" class="ds-button ds-button-secondary">Ver movimentos<\/Link>/);
   assert.doesNotMatch(edit, /@add-warehouse|@remove-warehouse|@update-warehouse-info/);
 });
@@ -214,7 +214,7 @@ test('stock-register threshold edits cannot submit a balance change', () => {
   const compiled = compileTemplate({ id: 'inventory-index', source: descriptor.template.content, filename: 'Inventory/Index.vue' });
   assert.deepEqual(compiled.errors, []);
   assert.match(stockRegister, /<div v-if="!form\.id">[\s\S]*?v-model="form\.qty_available"[^>]*step="0\.0001"/);
-  assert.match(stockRegister, /<div v-else class="rounded-lg[\s\S]*?Ajustar existências<\/Link>/);
+  assert.match(stockRegister, /<div v-else class="[^"]*">[\s\S]*?Ajustar existências<\/Link>/);
 
   const body = stockRegister.match(/function submit\(\) \{([\s\S]*?)\n\}/)[1];
   const calls = [];
@@ -335,4 +335,24 @@ test('quick reagent consumption submits the selected event time through Inertia 
   assert.deepEqual(transform({ date: '2026-09-30', used_at: '10:15', quantity_used: '0.0001' }), {
     date: '2026-09-30', used_at: '2026-09-30T10:15:00', quantity_used: '0.0001',
   });
+});
+
+test('item dossier derives stock, expiry and calibration state from what the payload carries', () => {
+  const dossier = readFileSync(new URL('../../resources/js/Pages/VAPInventory/Items/Show.vue', import.meta.url), 'utf8');
+  // Model accessors that are not serialized must not drive the status chips or the next step.
+  assert.doesNotMatch(dossier, /item\.is_expired|item\.days_to_expiry|item\.days_to_calibration|item\.needs_calibration|\.stock_status\b/);
+  assert.match(dossier, /expired: Boolean\(props\.isExpired\)/);
+  assert.match(dossier, /overdue: Boolean\(props\.needsCalibration\)/);
+
+  const stockStatus = new Function(`return ${dossier.match(/const stockStatus = (\(inventory\) => \{[\s\S]*?\n\})/)[1]}`)();
+  assert.equal(stockStatus({ qty_available: '0', min_stock_level: '1', reorder_point: '2' }), 'out_of_stock');
+  assert.equal(stockStatus({ qty_available: '0.4', min_stock_level: '0.5', reorder_point: '1' }), 'critical_stock');
+  assert.equal(stockStatus({ qty_available: '1.5', min_stock_level: '1', reorder_point: '2' }), 'low_stock');
+  assert.equal(stockStatus({ qty_available: '2.25', min_stock_level: '1', reorder_point: '2' }), 'in_stock');
+
+  const daysUntil = new Function(`return ${dossier.match(/const daysUntil = (\(value\) => \{[\s\S]*?\n\})/)[1]}`)();
+  const inFiveDays = new Date(Date.now() + 5 * 86400000);
+  const iso = `${inFiveDays.getFullYear()}-${String(inFiveDays.getMonth() + 1).padStart(2, '0')}-${String(inFiveDays.getDate()).padStart(2, '0')}`;
+  assert.equal(daysUntil(iso), 5);
+  assert.equal(daysUntil(null), null);
 });

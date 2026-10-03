@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import FileList from "@/Components/vap-filemanager/file-list.vue";
 import ArchivedItems from "@/Components/vap-filemanager/archived-items.vue";
 import WorkflowPanel from "@/Components/vap-filemanager/workflow-panel.vue";
@@ -8,19 +9,20 @@ import DocumentCompliancePanel from "@/Components/vap-filemanager/document-compl
 import { useFileStore } from "@/Stores/fileStore";
 import {
   Archive as ArchiveBoxIcon,
-  BadgeCheck as CheckBadgeIcon,
-  Clock as ClockIcon,
-  FileText as DocumentTextIcon,
-  TriangleAlert as ExclamationTriangleIcon,
+  ChevronDown as ChevronDownIcon,
+  CloudUpload as CloudArrowUpIcon,
   Folder as FolderIcon,
-  Lock as LockClosedIcon,
-  ShieldCheck as ShieldCheckIcon,
+  FolderPlus as FolderPlusIcon,
   X as XMarkIcon,
 } from "@lucide/vue";
 import {
   Dialog,
   DialogPanel,
   DialogTitle,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
   TransitionChild,
   TransitionRoot,
 } from "@headlessui/vue";
@@ -29,38 +31,36 @@ defineOptions({
   layout: Layout,
 });
 
+/**
+ * Document manager (Plano page). The library itself (state cells, filter, register,
+ * uploads, versions, sharing) lives in FileList; this page owns the header, the
+ * register facts, the archive and the compliance/workflow side panels.
+ */
 const fileStore = useFileStore();
+const fileList = ref<InstanceType<typeof FileList> | null>(null);
 const showArchivedItems = ref(false);
 const activeSidePanel = ref<"compliance" | "workflow" | null>(null);
 
+const isUploading = computed(() => Boolean(fileList.value?.isUploading));
+
 const activeFiles = computed(() => {
   return fileStore.files.filter((file) => !file.archived);
-});
-
-const activeFileCount = computed(() => {
-  return activeFiles.value.length;
 });
 
 const archivedFileCount = computed(() => {
   return fileStore.files.filter((file) => file.archived).length;
 });
 
-const controlledFiles = computed(() => {
-  return activeFiles.value.filter((file) => file.type === "file" && file.is_controlled);
-});
-
 const controlledDocumentCount = computed(() => {
-  return controlledFiles.value.length;
+  return activeFiles.value.filter((file) => file.type === "file" && file.is_controlled).length;
 });
 
 const effectiveDocumentCount = computed(() => {
-  return activeFiles.value.filter((file) => file.type === "file" && file.status === "effective")
-    .length;
+  return activeFiles.value.filter((file) => file.type === "file" && file.status === "effective").length;
 });
 
 const pendingApprovalCount = computed(() => {
-  return activeFiles.value.filter((file) => ["draft", "in_review", "approved"].includes(file.status || ""))
-    .length;
+  return activeFiles.value.filter((file) => ["draft", "in_review", "approved"].includes(file.status || "")).length;
 });
 
 const overdueReviewCount = computed(() => {
@@ -81,134 +81,25 @@ const restrictedAccessCount = computed(() => {
   ).length;
 });
 
-const selectedFile = computed(() => {
-  const selectedIds = Array.from(fileStore.selectedItems);
+/** Register-wide counts. They describe the whole library, so they are facts, not filters. */
+const registerFacts = computed(() => [
+  { label: "Itens activos", value: activeFiles.value.length },
+  { label: "Documentos controlados", value: controlledDocumentCount.value },
+  { label: "Documentos efectivos", value: effectiveDocumentCount.value },
+  { label: "No arquivo", value: archivedFileCount.value },
+]);
 
-  if (selectedIds.length !== 1) {
-    return null;
-  }
+const lede = computed(() => {
+  const attention = [
+    pendingApprovalCount.value ? `${pendingApprovalCount.value} por decidir (rascunho, revisão ou aprovação)` : "",
+    overdueReviewCount.value ? `${overdueReviewCount.value} com revisão em atraso` : "",
+    restrictedAccessCount.value ? `${restrictedAccessCount.value} de acesso restrito` : "",
+  ].filter(Boolean);
 
-  return fileStore.files.find((file) => file.id === selectedIds[0]) ?? null;
+  return attention.length
+    ? `Documentos que pedem atenção: ${attention.join(", ")}.`
+    : "Biblioteca controlada com revisão, aprovação, retenção e rastreabilidade no mesmo registo.";
 });
-
-const selectedFileSignals = computed(() => {
-  if (!selectedFile.value) {
-    return [];
-  }
-
-  const signals = [];
-
-  if (selectedFile.value.is_controlled) {
-    signals.push({
-      label: "Documento controlado",
-      tone: "emerald",
-    });
-  }
-
-  if (selectedFile.value.review_due_at && new Date(selectedFile.value.review_due_at).getTime() < Date.now()) {
-    signals.push({
-      label: "Revisão em atraso",
-      tone: "amber",
-    });
-  }
-
-  if (selectedFile.value.confidentiality_level && ["confidential", "restricted"].includes(selectedFile.value.confidentiality_level)) {
-    signals.push({
-      label: "Acesso restrito",
-      tone: "rose",
-    });
-  }
-
-  if (selectedFile.value.status) {
-    signals.push({
-      label: `Estado ${selectedFile.value.status}`,
-      tone: "slate",
-    });
-  }
-
-  return signals;
-});
-
-const dashboardCards = computed(() => {
-  return [
-    {
-      label: "Itens activos",
-      value: activeFileCount.value,
-      caption: "Base documental visível no espaço actual.",
-      icon: FolderIcon,
-    },
-    {
-      label: "Documentos controlados",
-      value: controlledDocumentCount.value,
-      caption: "Registos sujeitos a revisão, retenção e aprovação.",
-      icon: ShieldCheckIcon,
-    },
-    {
-      label: "Documentos eficazes",
-      value: effectiveDocumentCount.value,
-      caption: "Versões actualmente válidas para uso operacional.",
-      icon: CheckBadgeIcon,
-    },
-    {
-      label: "Arquivo",
-      value: archivedFileCount.value,
-      caption: "Itens fora de circulação mas ainda rastreáveis.",
-      icon: ArchiveBoxIcon,
-    },
-  ];
-});
-
-const attentionCards = computed(() => {
-  return [
-    {
-      label: "Pendentes de decisão",
-      value: pendingApprovalCount.value,
-      description: "Rascunho, revisão ou aprovação ainda em aberto.",
-      icon: DocumentTextIcon,
-      tone: "blue",
-    },
-    {
-      label: "Revisões em atraso",
-      value: overdueReviewCount.value,
-      description: "Documentos que já excederam a data de revisão.",
-      icon: ClockIcon,
-      tone: "amber",
-    },
-    {
-      label: "Acesso sensível",
-      value: restrictedAccessCount.value,
-      description: "Conteúdo confidencial ou restrito sob controlo.",
-      icon: LockClosedIcon,
-      tone: "rose",
-    },
-  ];
-});
-
-function signalClass(tone: string): string {
-  if (tone === "emerald") {
-    return "ds-badge-success";
-  }
-
-  if (tone === "amber") {
-    return "ds-badge-warning";
-  }
-
-  if (tone === "rose") {
-    return "ds-badge-danger";
-  }
-
-  return "ds-badge-neutral";
-}
-
-function formatDate(value?: string | null): string {
-  if (!value) {
-    return "Não definido";
-  }
-
-  return new Intl.DateTimeFormat("pt-PT", {
-    dateStyle: "medium",
-  }).format(new Date(value));
-}
 
 function openSidePanel(panel: "compliance" | "workflow"): void {
   activeSidePanel.value = panel;
@@ -220,84 +111,64 @@ function closeSidePanel(): void {
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden" data-testid="document-manager-overview">
-      <div class="flex flex-col gap-4 border-b border-[var(--ds-border)] p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between">
-        <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-badge ds-badge-info">ISO 17025</span>
-            <span class="ds-badge ds-badge-neutral">Controlo documental</span>
-          </div>
-          <h1 class="ds-heading mt-3 text-xl sm:text-2xl">
-            {{ $t("gestlab.general.labels.vap_filemanager.page_title") }}
-          </h1>
-          <p class="ds-copy mt-1 max-w-3xl text-sm">
-            Biblioteca operacional com revisão, aprovação, retenção e rastreabilidade no mesmo registo.
-          </p>
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="button"
-            class="ds-button ds-button-secondary"
-            @click="openSidePanel('compliance')"
-          >
-            <ShieldCheckIcon class="h-4 w-4" />
-            Controlo documental
-          </button>
-          <button
-            type="button"
-            class="ds-button ds-button-secondary"
-            @click="openSidePanel('workflow')"
-          >
-            <CheckBadgeIcon class="h-4 w-4" />
-            Fluxo de trabalho e tarefas
-          </button>
-          <button
-            type="button"
-            class="ds-button ds-button-secondary"
-            @click="showArchivedItems = true"
-          >
-            <ArchiveBoxIcon class="h-4 w-4" />
-            Arquivo
-          </button>
-        </div>
-      </div>
-
-      <div class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
-        <dl
-          v-for="card in dashboardCards"
-          :key="card.label"
-          class="flex items-center gap-3 px-4 py-3"
-        >
-          <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)]">
-            <component :is="card.icon" class="h-4 w-4 text-[var(--ds-text-soft)]" />
-          </div>
-          <div class="min-w-0">
-            <dt class="truncate text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ card.label }}</dt>
-            <dd class="mt-0.5 text-lg font-bold tabular-nums text-[var(--ds-text)]">{{ card.value }}</dd>
-          </div>
-        </dl>
-      </div>
-    </section>
-
-    <section
-      v-if="pendingApprovalCount || overdueReviewCount || restrictedAccessCount"
-      class="ds-command-surface flex flex-col gap-3 p-3 sm:flex-row sm:items-center"
-      aria-label="Atenção documental"
+  <div class="pl-page" data-template="page">
+    <PageHeader
+      :crumbs="[{ title: 'Admin' }, { title: 'Gestor documental' }]"
+      title="Gestor documental"
+      :lede="lede"
+      data-testid="document-manager-overview"
     >
-      <div class="flex items-center gap-2 sm:mr-auto">
-        <ExclamationTriangleIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
-        <p class="text-sm font-bold text-[var(--ds-text)]">Atenção documental</p>
-      </div>
-      <span v-for="card in attentionCards" :key="card.label" class="ds-badge ds-badge-neutral">
-        {{ card.label }}: {{ card.value }}
-      </span>
-    </section>
+      <template #actions>
+        <button type="button" class="ds-button ds-button-quiet" @click="openSidePanel('compliance')">Controlo documental</button>
+        <button type="button" class="ds-button ds-button-quiet" @click="openSidePanel('workflow')">Fluxo e tarefas</button>
+        <Menu as="div" class="relative">
+          <MenuButton class="ds-button ds-button-secondary">
+            Mais acções
+            <ChevronDownIcon class="h-4 w-4" aria-hidden="true" />
+          </MenuButton>
+          <MenuItems class="ds-floating-panel absolute right-0 z-30 mt-1 w-56 origin-top-right focus:outline-none">
+            <MenuItem v-slot="{ active, disabled }" :disabled="isUploading">
+              <button type="button" class="pl-menu-item" :data-active="active" :disabled="disabled" @click="fileList?.triggerFolderUpload()">
+                <FolderPlusIcon aria-hidden="true" />
+                Importar pasta
+              </button>
+            </MenuItem>
+            <MenuItem v-slot="{ active }">
+              <button type="button" class="pl-menu-item" :data-active="active" @click="fileList?.startCreateFolder()">
+                <FolderIcon aria-hidden="true" />
+                Criar pasta
+              </button>
+            </MenuItem>
+            <div class="pl-menu-sep" />
+            <MenuItem v-slot="{ active }">
+              <button type="button" class="pl-menu-item" :data-active="active" @click="showArchivedItems = true">
+                <ArchiveBoxIcon aria-hidden="true" />
+                Arquivo
+              </button>
+            </MenuItem>
+          </MenuItems>
+        </Menu>
+        <button
+          type="button"
+          class="ds-button ds-button-primary"
+          :disabled="isUploading"
+          data-testid="upload-files-button"
+          @click="fileList?.triggerFileUpload()"
+        >
+          <CloudArrowUpIcon class="h-4 w-4" aria-hidden="true" />
+          {{ isUploading ? $t("gestlab.general.labels.vap_filemanager.uploading") : $t("gestlab.general.labels.vap_filemanager.upload_files") }}
+        </button>
+      </template>
+    </PageHeader>
 
-    <main class="min-w-0">
-      <FileList />
-    </main>
+    <dl class="pl-panel pl-facts pl-facts-2 mb-10" aria-label="Registo documental">
+      <div v-for="fact in registerFacts" :key="fact.label" class="pl-fact">
+        <dt>{{ fact.label }}</dt>
+        <dd class="pl-num">{{ fact.value }}</dd>
+      </div>
+    </dl>
+
+    <FileList ref="fileList" />
 
     <ArchivedItems
       :is-open="showArchivedItems"
@@ -332,46 +203,26 @@ function closeSidePanel(): void {
               >
                 <DialogPanel class="pointer-events-auto w-screen max-w-2xl">
                   <div class="ds-slideover-panel flex h-full flex-col overflow-y-auto border-l">
-                    <div class="ds-slideover-header border-b px-5 py-4 sm:px-6">
+                    <div class="border-b border-[var(--pl-line)] px-5 pt-5 sm:px-6">
                       <div class="flex items-start justify-between gap-4">
-                        <div>
-                          <p class="ds-kicker">Painel lateral</p>
-                          <DialogTitle class="ds-heading mt-1 text-xl">
-                            {{ activeSidePanel === 'compliance' ? 'Controlo documental' : 'Workflow documental' }}
+                        <div class="grid gap-1">
+                          <DialogTitle class="pl-d3">
+                            {{ activeSidePanel === 'compliance' ? 'Controlo documental' : 'Fluxo e tarefas' }}
                           </DialogTitle>
-                          <p class="ds-copy mt-1 text-sm">
+                          <p class="text-sm text-[var(--pl-muted)]">
                             {{ activeSidePanel === 'compliance'
-                              ? 'Metadados ISO, revisão, retenção e efetividade do documento seleccionado.'
+                              ? 'Metadados ISO, revisão, retenção e efectividade do documento seleccionado.'
                               : 'Estado operacional, tarefas e seguimento do fluxo documental.' }}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          class="ds-icon-button"
-                          @click="closeSidePanel"
-                          title="Fechar painel"
-                        >
-                          <XMarkIcon class="h-5 w-5" />
+                        <button type="button" class="ds-icon-button" aria-label="Fechar painel" @click="closeSidePanel">
+                          <XMarkIcon class="h-5 w-5" aria-hidden="true" />
                         </button>
                       </div>
 
-                      <div class="mt-4 inline-flex rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-1">
-                        <button
-                          type="button"
-                          class="rounded-md px-3 py-1.5 text-xs font-bold transition"
-                          :class="activeSidePanel === 'compliance' ? 'bg-[var(--ds-panel-raised)] text-[var(--ds-text)] shadow-sm' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'"
-                          @click="openSidePanel('compliance')"
-                        >
-                          Controlo documental
-                        </button>
-                        <button
-                          type="button"
-                          class="rounded-md px-3 py-1.5 text-xs font-bold transition"
-                          :class="activeSidePanel === 'workflow' ? 'bg-[var(--ds-panel-raised)] text-[var(--ds-text)] shadow-sm' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'"
-                          @click="openSidePanel('workflow')"
-                        >
-                          Fluxo de trabalho e tarefas
-                        </button>
+                      <div class="pl-tabs mt-3 border-b-0" role="tablist" aria-label="Painel lateral">
+                        <button type="button" role="tab" class="pl-tab" :aria-selected="activeSidePanel === 'compliance'" @click="openSidePanel('compliance')">Controlo documental</button>
+                        <button type="button" role="tab" class="pl-tab" :aria-selected="activeSidePanel === 'workflow'" @click="openSidePanel('workflow')">Fluxo e tarefas</button>
                       </div>
                     </div>
 

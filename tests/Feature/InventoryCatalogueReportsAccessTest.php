@@ -33,10 +33,9 @@ class InventoryCatalogueReportsAccessTest extends TestCase
         $types = $grant === 'both' ? ['material', 'equipment'] : [$grant];
         $expected = [];
         foreach ($types as $type) {
+            // Low stock lists positions, the empty ones included; the other reports list items.
             $expected[] = $report === 'stock' ? $items[$type]['stock']->id : $items[$type]['item']->id;
-            if ($report !== 'stock') {
-                $expected[] = $items[$type]['emptyItem']->id;
-            }
+            $expected[] = $report === 'stock' ? $items[$type]['emptyStock']->id : $items[$type]['emptyItem']->id;
         }
         $rows = $props[self::rowsKey($report)]['data'];
         $actual = array_column($rows, 'id');
@@ -59,15 +58,17 @@ class InventoryCatalogueReportsAccessTest extends TestCase
             }
         } else {
             $this->assertSame(2 * count($types), $props['stats']['total_items']);
-            $this->assertSame(count($types), $props['stats']['total_low_stock']);
+            $this->assertSame(2 * count($types), $props['stats']['total_low_stock']);
             $this->assertSame(count($types), $props['stats']['out_of_stock']);
+            $this->assertSame(count($types), $props['stats']['critical_stock']);
             $this->assertSame([count($types), count($types), 0], $props['charts']['severity_mix']['series']);
-            $this->assertSame([count($types)], $props['charts']['warehouse_exposure']['series']);
-            $this->assertCount(count($types), $props['charts']['replenishment_gap']['labels']);
+            $this->assertSame([2 * count($types)], $props['charts']['warehouse_exposure']['series']);
+            $this->assertCount(2 * count($types), $props['charts']['replenishment_gap']['labels']);
+            $this->assertSame('0.0000', $rows[0]['qty_available'], 'Empty positions sort first.');
             foreach ($rows as $row) {
                 $this->assertSame(['id', 'item_id', 'warehouse_id', 'qty_available', 'min_stock_level', 'reorder_point', 'item', 'warehouse'], array_keys($row));
                 $this->assertSame(['id', 'name', 'code', 'internal_code', 'needs_calibration', 'category'], array_keys($row['item']));
-                $this->assertSame('1.2500', $row['qty_available']);
+                $this->assertContains($row['qty_available'], ['0.0000', '1.2500']);
                 $this->assertSame(['id', 'name', 'location'], array_keys($row['warehouse']));
             }
         }
@@ -111,7 +112,7 @@ class InventoryCatalogueReportsAccessTest extends TestCase
         $props = $this->get(route(self::routeName($report), ['per_page' => 1]))->assertOk()->viewData('page')['props'];
         $this->assertCount(1, $props[self::rowsKey($report)]['data']);
         $this->assertSame(1, $props[self::rowsKey($report)]['per_page']);
-        $this->assertSame($report === 'stock' ? 2 : 4, $props[self::rowsKey($report)]['total']);
+        $this->assertSame(4, $props[self::rowsKey($report)]['total']);
     }
 
     #[DataProvider('reports')]
@@ -170,9 +171,10 @@ class InventoryCatalogueReportsAccessTest extends TestCase
         $items['equipment']['item']->category->delete();
         $warehouses['owned']->delete();
         $props = $this->get(route(self::routeName('stock')))->assertOk()->viewData('page')['props'];
-        $this->assertCount(1, $props['inventory']['data']);
-        $this->assertSame($items['equipment']['item']->id, $props['inventory']['data'][0]['item']['id']);
-        $this->assertSame($warehouses['owned']->name, $props['inventory']['data'][0]['warehouse']['name']);
+        $this->assertCount(2, $props['inventory']['data']);
+        $archived = collect($props['inventory']['data'])->firstWhere('item.id', $items['equipment']['item']->id);
+        $this->assertNotNull($archived);
+        $this->assertSame($warehouses['owned']->name, $archived['warehouse']['name']);
         $this->assertSame(2, $props['stats']['total_items']);
         $this->assertSame([1, 1, 0], $props['charts']['severity_mix']['series']);
         $filtered = $this->get(route(self::routeName('stock'), ['category_id' => $items['equipment']['item']->category_id]))
@@ -244,9 +246,9 @@ class InventoryCatalogueReportsAccessTest extends TestCase
             $emptyItem = InventoryItem::query()->create(['lab_id' => $lab->id, 'name' => 'Report zero '.$type, ...$data]);
             $peer = InventoryItem::query()->create(['lab_id' => $foreignLab->id, 'name' => 'Report peer '.$type, ...$data]);
             $stock = Inventory::query()->create(['item_id' => $item->id, 'warehouse_id' => $warehouses['owned']->id, 'qty_available' => '1.2500', 'min_stock_level' => 2, 'reorder_point' => 4]);
-            Inventory::query()->create(['item_id' => $emptyItem->id, 'warehouse_id' => $warehouses['owned']->id, 'qty_available' => 0, 'min_stock_level' => 2, 'reorder_point' => 4]);
+            $emptyStock = Inventory::query()->create(['item_id' => $emptyItem->id, 'warehouse_id' => $warehouses['owned']->id, 'qty_available' => 0, 'min_stock_level' => 2, 'reorder_point' => 4]);
             Inventory::query()->create(['item_id' => $peer->id, 'warehouse_id' => $warehouses['foreign']->id, 'qty_available' => 1, 'min_stock_level' => 2, 'reorder_point' => 4]);
-            $items[$type] = compact('item', 'emptyItem', 'stock');
+            $items[$type] = compact('item', 'emptyItem', 'stock', 'emptyStock');
         }
         $unclassified = InventoryItem::query()->create(['lab_id' => $lab->id, 'name' => 'Unclassified report item', 'next_calibration_date' => now()->addDays(10)->toDateString()]);
         Inventory::query()->create(['item_id' => $unclassified->id, 'warehouse_id' => $warehouses['owned']->id, 'qty_available' => 1, 'min_stock_level' => 2, 'reorder_point' => 4]);

@@ -1,236 +1,94 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Controlo de aprovisionamento</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot lims-status-dot-instrument" />
-              Necessidades de laboratório
-            </span>
-          </div>
-          <h1 class="ds-heading mt-3 text-2xl">Necessidades de laboratório e departamento</h1>
-          <p class="ds-copy mt-2 text-sm">
-            Consolide requisições por laboratório, acompanhe aprovação, bloqueios de fornecedor e conversão para pedidos de compra rastreáveis.
-          </p>
-        </div>
+  <div class="pl-page" data-template="queue">
+    <PageHeader :crumbs="[{ title: 'Inventário' }, { title: 'Necessidades' }]" title="Necessidades de laboratório" :lede="lede">
+      <template #actions>
+        <Link :href="route('vap-inventory.orders.index')" class="ds-button ds-button-quiet">Pedidos de compra</Link>
+        <Link :href="route('vap-inventory.needs.create')" class="ds-button ds-button-primary">Nova necessidade</Link>
+      </template>
+    </PageHeader>
 
-        <Link :href="route('vap-inventory.needs.create')" class="ds-button ds-button-primary shrink-0">
-          <PlusIcon class="h-4 w-4" />
-          Nova necessidade
-        </Link>
+    <StateCells class="mb-10" :items="cells" :model-value="localFilters.status" label="Filtrar estado das necessidades" @update:model-value="applyStatus($event)" />
+
+    <section v-if="procurementQueue?.length" class="pl-panel mb-10" aria-labelledby="needs-queue-title">
+      <div class="pl-panel-head">
+        <h2 id="needs-queue-title" class="pl-k">Aprovadas sem pedido de compra</h2>
+        <span class="pl-k pl-faint">{{ procurementQueue.length }} em fila</span>
       </div>
-
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] md:grid-cols-3 xl:grid-cols-6 xl:divide-y-0">
-        <div v-for="metric in statsCards" :key="metric.label" class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
-            <span class="lims-status-dot" :class="metric.dotClass" />
-            {{ metric.label }}
-          </dt>
-          <dd class="mt-2 text-2xl font-bold" :class="metric.valueClass">{{ metric.value }}</dd>
-        </div>
-      </dl>
+      <Link v-for="need in procurementQueue" :key="`queue-${need.id}`" :href="route('vap-inventory.needs.show', need.id)" class="pl-row">
+        <span class="grid min-w-0 gap-1">
+          <span class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span class="pl-num font-medium">{{ need.reference }}</span>
+            <span>{{ need.department?.name || 'Departamento por definir' }}<template v-if="need.lab"> · {{ need.lab.name }}</template></span>
+            <StatusChip :tone="urgencyTone(need)">{{ queueUrgencyLabel(need) }}</StatusChip>
+            <StatusChip :tone="readinessTone(need.supplier_readiness)">{{ readinessLabel(need.supplier_readiness) }}</StatusChip>
+          </span>
+          <span class="text-[12.5px] text-[var(--pl-muted)]">
+            {{ need.items_count }} {{ need.items_count === 1 ? 'item' : 'itens' }} · até {{ formatDate(need.needed_by_date) }} · {{ need.requested_by?.name || 'Solicitante por identificar' }}<template v-if="supplierSummaryText(need)"> · {{ supplierSummaryText(need) }}</template>
+          </span>
+        </span>
+        <ArrowRightIcon class="h-4 w-4" aria-hidden="true" />
+      </Link>
     </section>
 
-    <section class="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-      <article class="ds-panel overflow-hidden">
-        <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
-          <div class="flex items-start gap-3">
-            <ChartBarSquareIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
-            <div>
-              <h2 class="ds-heading text-base">Estado das necessidades</h2>
-              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-                Submissão, aprovação, aquisição e backlog sem pedido.
-              </p>
-            </div>
-          </div>
-          <span class="ds-chip">{{ statusOverviewTotal }} registos</span>
-        </div>
-
-        <div class="p-4">
-          <apexchart type="bar" height="300" :options="statusOverviewChartOptions" :series="statusOverviewChartSeries" />
-        </div>
-      </article>
-
-      <div class="grid gap-4">
-        <article class="ds-panel overflow-hidden">
-          <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
-            <div>
-              <h2 class="ds-heading text-base">Prontidão da fila</h2>
-              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Risco de fornecedor dentro da fila.</p>
-            </div>
-            <span class="ds-chip">
-              {{ queueReadinessTotal }} necessidades
-            </span>
-          </div>
-
-          <div class="p-4">
-            <apexchart type="donut" height="300" :options="queueReadinessChartOptions" :series="queueReadinessChartSeries" />
-          </div>
-        </article>
-
-        <article class="ds-panel overflow-hidden">
-          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading text-base">Pressão de procurement</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Fila, urgência, atraso e prontidão operacional.</p>
-          </div>
-
-          <div class="p-4">
-            <apexchart type="bar" height="250" :options="procurementPressureChartOptions" :series="procurementPressureChartSeries" />
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="ds-command-surface overflow-hidden">
-      <div class="flex flex-col gap-3 border-b border-[color:var(--ds-border)] px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
-        <div class="flex items-start gap-3">
-          <FunnelIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
-          <div>
-            <h2 class="ds-heading text-base">Filtros de necessidades</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Refine por referência, estado e departamento.</p>
-          </div>
-        </div>
-        <span class="ds-chip">{{ needs.total || 0 }} registos</span>
-      </div>
-
-      <div class="grid gap-4 p-5 md:grid-cols-4">
-        <BaseInput v-model="localFilters.search" type="search" placeholder="Pesquisar por referência, laboratório ou justificação" />
-        <BaseSelect v-model="localFilters.status">
-          <option value="">Todos os estados</option>
-          <option value="submitted">Submetida</option>
-          <option value="approved">Aprovada</option>
-          <option value="rejected">Rejeitada</option>
-          <option value="ordered">Convertida em pedido</option>
-        </BaseSelect>
-        <BaseSelect v-model="localFilters.department_id">
+    <form class="pl-filter" role="search" @submit.prevent="applyFilters">
+      <label for="needs-search" class="pl-filter-prompt">Filtro://</label>
+      <BaseInput id="needs-search" v-model="localFilters.search" type="search" data-bare class="pl-filter-input" maxlength="100" placeholder="referência, laboratório ou justificação" />
+      <div class="w-56">
+        <BaseSelect v-model="localFilters.department_id" aria-label="Departamento" @update:model-value="applyFilters">
           <option value="">Todos os departamentos</option>
-          <option v-for="department in departments" :key="department.id" :value="department.id">
-            {{ department.name }}
-          </option>
+          <option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }}</option>
         </BaseSelect>
-        <div class="flex gap-2">
-          <button type="button" class="ds-button ds-button-secondary flex-1" @click="resetFilters">
-            Limpar
-          </button>
-          <button type="button" class="ds-button ds-button-primary flex-1" @click="applyFilters">
-            <FunnelIcon class="h-4 w-4" />
-            Filtrar
-          </button>
-        </div>
       </div>
-    </section>
+      <button class="ds-button ds-button-quiet" type="submit">Procurar</button>
+      <button v-if="hasFilters" class="ds-chip" type="button" @click="resetFilters">Limpar filtros <XMarkIcon class="h-3.5 w-3.5" aria-hidden="true" /></button>
+    </form>
 
-    <section class="ds-panel overflow-hidden">
-      <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-4">
-        <div class="flex items-start gap-3">
-          <QueueListIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
-          <div>
-            <h2 class="ds-heading text-base">Fila de procurement</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Necessidades aprovadas ainda sem pedido de compra associado.</p>
-          </div>
-        </div>
-        <span class="ds-chip">{{ procurementQueue?.length || 0 }} em fila</span>
+    <section class="pl-panel" aria-label="Necessidades">
+      <DataTable v-if="needs.data.length">
+        <thead>
+          <tr>
+            <th scope="col">Necessidade</th>
+            <th scope="col">Âmbito</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Solicitante</th>
+            <th scope="col" class="text-right">Prazo</th>
+            <th scope="col"><span class="sr-only">Abrir</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="need in needs.data" :key="need.id">
+            <td class="!whitespace-normal">
+              <Link :href="route('vap-inventory.needs.show', need.id)" class="pl-num font-medium hover:text-[var(--pl-accent-text)]">{{ need.reference }}</Link>
+              <span class="block max-w-72 truncate text-[12.5px] text-[var(--pl-muted)]">{{ need.justification || 'Sem justificação adicional.' }}</span>
+            </td>
+            <td>
+              {{ need.department?.name || 'Departamento por definir' }}
+              <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ need.lab?.name || 'Laboratório não definido' }} · {{ need.items_count }} {{ need.items_count === 1 ? 'item' : 'itens' }}</span>
+            </td>
+            <td>
+              <StatusChip :tone="statusTone(need.status)">{{ formatStatus(need.status) }}</StatusChip>
+              <span v-if="need.inventory_order" class="pl-num block pt-1 text-[12px] text-[var(--pl-muted)]">{{ need.inventory_order.reference || `Pedido #${need.inventory_order.id}` }}</span>
+            </td>
+            <td>{{ need.requested_by?.name || '—' }}</td>
+            <td class="pl-num text-right">{{ formatDate(need.needed_by_date) }}</td>
+            <td class="text-right"><Link :href="route('vap-inventory.needs.show', need.id)" class="pl-k pl-acc" :aria-label="`Abrir necessidade ${need.reference}`">Abrir →</Link></td>
+          </tr>
+        </tbody>
+      </DataTable>
+      <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+        <span class="pl-k">{{ hasFilters ? 'Nenhuma necessidade neste filtro' : 'Ainda não há necessidades' }}</span>
+        <p class="text-sm text-[var(--pl-muted)]">{{ hasFilters ? 'Experimente outro termo, estado ou departamento.' : 'Registe uma necessidade para a submeter à aprovação e, depois, convertê-la em pedido de compra.' }}</p>
+        <Link v-if="!hasFilters" :href="route('vap-inventory.needs.create')" class="ds-button ds-button-primary mt-2">Nova necessidade</Link>
       </div>
-
-      <div v-if="procurementQueue?.length" class="grid gap-3 border-b border-[color:var(--ds-border)] p-5 md:grid-cols-2 xl:grid-cols-4">
-        <article
-          v-for="need in procurementQueue"
-          :key="`queue-${need.id}`"
-          class="ds-card border-l-4 p-4"
-          :class="queueCardBorderClass(need)"
-        >
-          <div class="flex items-center justify-between gap-3">
-            <span class="font-mono text-xs font-bold text-primary-800 dark:text-primary-200">{{ need.reference }}</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot" :class="queueUrgencyDotClass(need)" />
-              {{ queueUrgencyLabel(need) }}
-            </span>
-          </div>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <span class="ds-chip">
-              <span class="lims-status-dot" :class="readinessDotClass(need.supplier_readiness)" />
-              {{ readinessLabel(need.supplier_readiness) }}
-            </span>
-          </div>
-          <h3 class="mt-3 text-sm font-bold text-[color:var(--ds-text)]">{{ need.department?.name }}<span v-if="need.lab"> · {{ need.lab.name }}</span></h3>
-          <p class="mt-2 line-clamp-3 text-sm text-[color:var(--ds-text-muted)]">{{ need.justification || 'Sem justificação adicional.' }}</p>
-          <div class="mt-3 space-y-1 text-xs text-[color:var(--ds-text-soft)]">
-            <div>Itens: <span class="font-bold text-[color:var(--ds-text)]">{{ need.items_count }}</span></div>
-            <div>Necessário até: <span class="font-bold text-[color:var(--ds-text)]">{{ formatDate(need.needed_by_date) }}</span></div>
-            <div>Solicitante: <span class="font-bold text-[color:var(--ds-text)]">{{ need.requested_by?.name || '—' }}</span></div>
-          </div>
-          <div class="mt-3 space-y-1 text-xs text-[color:var(--ds-text-soft)]">
-            <div v-if="need.supplier_summary?.blocked_supplier_count">Fornecedores bloqueados: <span class="font-semibold text-rose-700">{{ need.supplier_summary.blocked_supplier_count }}</span></div>
-            <div v-if="need.supplier_summary?.missing_supplier_count">Itens sem fornecedor: <span class="font-semibold text-amber-700">{{ need.supplier_summary.missing_supplier_count }}</span></div>
-            <div v-if="need.supplier_summary?.unassessed_supplier_count">Sem avaliação: <span class="font-semibold text-amber-700">{{ need.supplier_summary.unassessed_supplier_count }}</span></div>
-            <div v-if="need.supplier_summary?.conditional_supplier_count">Acompanhamento reforçado: <span class="font-semibold text-cyan-700">{{ need.supplier_summary.conditional_supplier_count }}</span></div>
-          </div>
-          <Link :href="route('vap-inventory.needs.show', need.id)" class="ds-button ds-button-secondary mt-4 w-full">
-            <ArrowTopRightOnSquareIcon class="h-4 w-4" />
-            Abrir necessidade
-          </Link>
-        </article>
-      </div>
-
-      <div v-if="needs.data.length" class="ds-table-shell overflow-x-auto">
-        <DataTable class="min-w-[58rem]">
-          <thead class="ds-table-head">
-            <tr>
-              <th class="ds-table-cell text-left">Necessidade</th>
-              <th class="ds-table-cell text-left">Âmbito</th>
-              <th class="ds-table-cell text-left">Estado</th>
-              <th class="ds-table-cell text-left">Solicitante</th>
-              <th class="ds-table-cell text-left">Prazo</th>
-              <th class="ds-table-cell text-left">Acção</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="need in needs.data" :key="need.id" class="ds-table-row">
-              <td class="ds-table-cell align-top">
-                <p class="font-mono text-xs font-bold text-primary-800 dark:text-primary-200">{{ need.reference }}</p>
-                <p class="mt-1 max-w-72 text-sm font-bold text-[color:var(--ds-text)]">{{ need.justification || 'Sem justificação adicional.' }}</p>
-                <span v-if="need.inventory_order" class="ds-chip mt-2">{{ need.inventory_order.reference }}</span>
-              </td>
-              <td class="ds-table-cell align-top">
-                <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ need.department?.name || 'Departamento N/A' }}</p>
-                <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ need.lab?.name || 'Laboratório não definido' }}</p>
-                <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ need.items_count }} itens</p>
-              </td>
-              <td class="ds-table-cell align-top">
-                <span class="ds-chip">
-                  <span class="lims-status-dot" :class="statusDotClass(need.status)" />
-                  {{ formatStatus(need.status) }}
-                </span>
-              </td>
-              <td class="ds-table-cell align-top text-xs text-[color:var(--ds-text)]">{{ need.requested_by?.name || '—' }}</td>
-              <td class="ds-table-cell align-top text-xs text-[color:var(--ds-text)]">{{ formatDate(need.needed_by_date) }}</td>
-              <td class="ds-table-cell align-top">
-                <Link :href="route('vap-inventory.needs.show', need.id)" class="ds-table-action">
-                  Abrir detalhe
-                </Link>
-              </td>
-            </tr>
-          </tbody>
-        </DataTable>
-      </div>
-      <div v-else class="p-5">
-        <div class="ds-empty-state p-6 text-center">
-          <QueueListIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
-          <p class="mt-2 text-xs text-[color:var(--ds-text-soft)]">Ainda não existem necessidades registadas para os filtros actuais.</p>
-        </div>
-      </div>
-
-      <div v-if="needs.data.length" class="ds-table-summary px-5 py-4">
-        <p class="text-xs text-[color:var(--ds-text-soft)]">Mostrando {{ needs.from }}-{{ needs.to }} de {{ needs.total }}</p>
-        <div class="flex gap-2">
-          <Link v-if="needs.prev_page_url" :href="needs.prev_page_url" preserve-scroll preserve-state class="ds-button ds-button-secondary">Anterior</Link>
-          <span v-else class="ds-button ds-button-secondary opacity-50">Anterior</span>
-          <Link v-if="needs.next_page_url" :href="needs.next_page_url" preserve-scroll preserve-state class="ds-button ds-button-secondary">Próxima</Link>
-          <span v-else class="ds-button ds-button-secondary opacity-50">Próxima</span>
-        </div>
-      </div>
+      <Pagination
+        v-if="needs.data.length"
+        :links="needs.links"
+        :from="needs.from"
+        :to="needs.to"
+        :total="needs.total"
+        :current_page="needs.current_page"
+        :last_page="needs.last_page"
+      />
     </section>
   </div>
 </template>
@@ -238,19 +96,23 @@
 <script setup>
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
+import Pagination from '@/Components/pagination.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StateCells from '@/Components/plano/StateCells.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, router } from '@inertiajs/vue3'
 import { computed, reactive } from 'vue'
-import {
-  ExternalLink as ArrowTopRightOnSquareIcon,
-  ChartColumnBig as ChartBarSquareIcon,
-  Funnel as FunnelIcon,
-  Plus as PlusIcon,
-  Rows3 as QueueListIcon,
-} from '@lucide/vue'
+import { ArrowRight as ArrowRightIcon, X as XMarkIcon } from '@lucide/vue'
 
 defineOptions({ layout: Layout })
 
+/**
+ * Laboratory needs (Plano queue): what waits for approval, what was approved and still
+ * has no purchase order, and the full register filtered by state and department.
+ * The `charts` prop is still served by the controller (and pinned by its tests); the
+ * queue no longer draws it, the state cells carry the same counts.
+ */
 const props = defineProps({
   needs: Object,
   departments: Array,
@@ -259,155 +121,9 @@ const props = defineProps({
   procurementQueue: Array,
   charts: {
     type: Object,
-    default: () => ({})
+    default: () => ({}),
   },
 })
-
-const statsCards = computed(() => {
-  const stats = props.stats || {}
-
-  return [
-    {
-      label: 'Total',
-      value: stats.total || 0,
-      dotClass: 'lims-status-dot-instrument',
-      valueClass: 'text-[color:var(--ds-text)]',
-    },
-    {
-      label: 'Submetidas',
-      value: stats.submitted || 0,
-      dotClass: 'lims-status-dot-hold',
-      valueClass: 'text-amber-700 dark:text-amber-300',
-    },
-    {
-      label: 'Aprovadas',
-      value: stats.approved || 0,
-      dotClass: 'lims-status-dot-release',
-      valueClass: 'text-emerald-700 dark:text-emerald-300',
-    },
-    {
-      label: 'Em aquisição',
-      value: stats.ordered || 0,
-      dotClass: 'lims-status-dot-instrument',
-      valueClass: 'text-primary-800 dark:text-primary-200',
-    },
-    {
-      label: 'À espera de pedido',
-      value: stats.awaiting_order || 0,
-      dotClass: 'lims-status-dot-hold',
-      valueClass: 'text-amber-700 dark:text-amber-300',
-    },
-    {
-      label: 'Em atraso',
-      value: stats.overdue_procurement || 0,
-      dotClass: 'lims-status-dot-critical',
-      valueClass: 'text-rose-700 dark:text-rose-300',
-    },
-  ]
-})
-
-const statusOverviewChartSeries = computed(() => [
-  {
-    name: 'Necessidades',
-    data: props.charts?.status_overview?.series || []
-  }
-])
-
-const statusOverviewTotal = computed(() =>
-  (props.charts?.status_overview?.series || []).reduce((sum, value) => sum + Number(value || 0), 0)
-)
-
-const queueReadinessChartSeries = computed(() => props.charts?.queue_readiness?.series || [])
-
-const queueReadinessTotal = computed(() =>
-  queueReadinessChartSeries.value.reduce((sum, value) => sum + Number(value || 0), 0)
-)
-
-const procurementPressureChartSeries = computed(() => [
-  {
-    name: 'Fila',
-    data: props.charts?.procurement_pressure?.series || []
-  }
-])
-
-const statusOverviewChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit'
-  },
-  plotOptions: {
-    bar: {
-      borderRadius: 6,
-      distributed: true,
-      columnWidth: '48%'
-    }
-  },
-  colors: ['#e0902b', '#22a45d', '#14a3a8', '#7c5ce0'],
-  dataLabels: { enabled: false },
-  xaxis: {
-    categories: props.charts?.status_overview?.labels || [],
-    labels: { style: { fontSize: '12px' } }
-  },
-  yaxis: {
-    labels: {
-      formatter: (value) => Number(value || 0).toFixed(0)
-    }
-  },
-  grid: {
-    borderColor: '#eef0f3',
-    strokeDashArray: 4
-  },
-  legend: { show: false }
-}))
-
-const queueReadinessChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit'
-  },
-  labels: props.charts?.queue_readiness?.labels || [],
-  colors: ['#22a45d', '#14a3a8', '#e0902b', '#e5484d'],
-  dataLabels: {
-    enabled: true,
-    formatter: (value) => `${Math.round(value)}%`
-  },
-  legend: {
-    position: 'bottom'
-  },
-  stroke: {
-    colors: ['#ffffff']
-  }
-}))
-
-const procurementPressureChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit'
-  },
-  plotOptions: {
-    bar: {
-      borderRadius: 6,
-      distributed: true,
-      columnWidth: '52%'
-    }
-  },
-  colors: ['#334155', '#e5484d', '#e0902b', '#0f766e'],
-  dataLabels: { enabled: false },
-  xaxis: {
-    categories: props.charts?.procurement_pressure?.labels || [],
-    labels: { style: { fontSize: '12px' } }
-  },
-  yaxis: {
-    labels: {
-      formatter: (value) => Number(value || 0).toFixed(0)
-    }
-  },
-  grid: {
-    borderColor: '#eef0f3',
-    strokeDashArray: 4
-  },
-  legend: { show: false }
-}))
 
 const localFilters = reactive({
   search: props.filters?.search ?? '',
@@ -415,8 +131,36 @@ const localFilters = reactive({
   department_id: props.filters?.department_id ?? '',
 })
 
+const statusCount = (status) => Number(props.stats?.by_status?.[status] ?? 0)
+
+const cells = computed(() => [
+  { key: '', label: 'Todas', value: props.stats?.total ?? 0 },
+  { key: 'submitted', label: 'Por aprovar', value: statusCount('submitted'), tone: statusCount('submitted') ? 'bad' : undefined },
+  { key: 'approved', label: 'Aprovadas', value: statusCount('approved') },
+  { key: 'ordered', label: 'Em pedido', value: statusCount('ordered') },
+  { key: 'rejected', label: 'Rejeitadas', value: statusCount('rejected') },
+])
+
+const lede = computed(() => {
+  const awaiting = Number(props.stats?.awaiting_order || 0)
+  const overdue = Number(props.stats?.overdue_procurement || 0)
+
+  if (!awaiting) {
+    return 'Nenhuma necessidade aprovada espera pedido de compra. As requisições seguem submissão, aprovação e conversão em pedido.'
+  }
+
+  return `${awaiting} ${awaiting === 1 ? 'necessidade aprovada espera' : 'necessidades aprovadas esperam'} pedido de compra${overdue ? `, ${overdue} com o prazo ultrapassado` : ''}.`
+})
+
+const hasFilters = computed(() => Boolean(localFilters.search || localFilters.status || localFilters.department_id))
+
 const applyFilters = () => {
   router.get(route('vap-inventory.needs.index'), localFilters, { preserveState: true, preserveScroll: true })
+}
+
+const applyStatus = (status) => {
+  localFilters.status = status
+  applyFilters()
 }
 
 const resetFilters = () => {
@@ -428,23 +172,22 @@ const resetFilters = () => {
 
 const formatStatus = (status) => ({
   draft: 'Rascunho',
-  submitted: 'Submetida',
+  submitted: 'Por aprovar',
   approved: 'Aprovada',
   rejected: 'Rejeitada',
-  ordered: 'Convertida em pedido',
+  ordered: 'Em pedido',
   partially_fulfilled: 'Parcialmente satisfeita',
   fulfilled: 'Satisfeita',
 }[status] ?? status)
 
-const statusDotClass = (status) => ({
-  draft: 'lims-status-dot-instrument',
-  submitted: 'lims-status-dot-hold',
-  approved: 'lims-status-dot-release',
-  rejected: 'lims-status-dot-critical',
-  ordered: 'lims-status-dot-instrument',
-  partially_fulfilled: 'lims-status-dot-instrument',
-  fulfilled: 'lims-status-dot-release',
-}[status] ?? 'lims-status-dot-instrument')
+const statusTone = (status) => ({
+  submitted: 'wait',
+  approved: 'ok',
+  rejected: 'bad',
+  ordered: 'run',
+  partially_fulfilled: 'run',
+  fulfilled: 'done',
+}[status] ?? 'neutral')
 
 const formatDate = (value) => value ? new Date(value).toLocaleDateString('pt-PT') : '—'
 
@@ -474,31 +217,11 @@ const queueUrgencyLabel = (need) => {
   return 'Planeado'
 }
 
-const queueUrgencyDotClass = (need) => {
-  const label = queueUrgencyLabel(need)
-
-  if (label === 'Em atraso') {
-    return 'lims-status-dot-critical'
-  }
-
-  if (label === 'Urgente') {
-    return 'lims-status-dot-hold'
-  }
-
-  if (label === 'Próximo') {
-    return 'lims-status-dot-instrument'
-  }
-
-  return 'lims-status-dot-release'
-}
-
-const queueCardBorderClass = (need) => ({
-  'Em atraso': 'border-rose-500',
-  Urgente: 'border-amber-500',
-  Próximo: 'border-primary-500',
-  Planeado: 'border-emerald-500',
-  'Sem prazo': 'border-primary-500',
-}[queueUrgencyLabel(need)] ?? 'border-primary-500')
+const urgencyTone = (need) => ({
+  'Em atraso': 'bad',
+  Urgente: 'wait',
+  Próximo: 'run',
+}[queueUrgencyLabel(need)] ?? 'neutral')
 
 const readinessLabel = (value) => ({
   ready: 'Pronta para compra',
@@ -507,10 +230,21 @@ const readinessLabel = (value) => ({
   blocked: 'Bloqueada por fornecedor',
 }[value] ?? 'Sem avaliação')
 
-const readinessDotClass = (value) => ({
-  ready: 'lims-status-dot-release',
-  attention: 'lims-status-dot-instrument',
-  incomplete: 'lims-status-dot-hold',
-  blocked: 'lims-status-dot-critical',
-}[value] ?? 'lims-status-dot-instrument')
+const readinessTone = (value) => ({
+  ready: 'ok',
+  attention: 'wait',
+  incomplete: 'wait',
+  blocked: 'bad',
+}[value] ?? 'neutral')
+
+const supplierSummaryText = (need) => {
+  const summary = need.supplier_summary || {}
+
+  return [
+    summary.blocked_supplier_count ? `${summary.blocked_supplier_count} fornecedor(es) bloqueado(s)` : null,
+    summary.missing_supplier_count ? `${summary.missing_supplier_count} item(ns) sem fornecedor` : null,
+    summary.unassessed_supplier_count ? `${summary.unassessed_supplier_count} sem avaliação` : null,
+    summary.conditional_supplier_count ? `${summary.conditional_supplier_count} em acompanhamento reforçado` : null,
+  ].filter(Boolean).join(' · ')
+}
 </script>
