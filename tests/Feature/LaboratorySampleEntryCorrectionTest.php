@@ -232,17 +232,18 @@ class LaboratorySampleEntryCorrectionTest extends TestCase
         $entry = $this->intake('direct');
         $entry->update(['collected_by_lab' => true]);
 
-        $this->get(route('vap_samples.index'))->assertOk()->assertInertia(fn (Assert $page) => $page
+        $this->get(route('vap_samples.index', ['edit' => $entry->id]))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('VAPSamples/Index')
-            ->has('samples', 1)
-            ->where('samples.0.id', $entry->id)
-            ->where('samples.0.collection_product_id', $entry->collection_product_id)
-            ->where('samples.0.collected_by_lab', true)
-            ->where('samples.0.collected_at', $entry->collected_at->toISOString())
-            ->where('samples.0.received_at', $entry->received_at->toISOString())
-            ->where('samples.0.client_submitted_info.linked_lab_code_id', $entry->client_submitted_info['linked_lab_code_id'])
-            ->where('samples.0.client_submitted_info.required_parameter_count', $entry->client_submitted_info['required_parameter_count'])
+            ->missing('samples')
+            ->where('editingSample.id', $entry->id)
+            ->where('editingSample.collection_product_id', $entry->collection_product_id)
+            ->where('editingSample.collected_by_lab', true)
+            ->where('editingSample.collected_at', $entry->collected_at->toISOString())
+            ->where('editingSample.received_at', $entry->received_at->toISOString())
+            ->where('editingSample.client_submitted_info.linked_lab_code_id', $entry->client_submitted_info['linked_lab_code_id'])
+            ->where('editingSample.client_submitted_info.required_parameter_count', $entry->client_submitted_info['required_parameter_count'])
         );
+        $this->get(route('vap_samples.index'))->assertOk()->assertInertia(fn (Assert $page) => $page->where('editingSample', null));
     }
 
     #[DataProvider('collectionTypes')]

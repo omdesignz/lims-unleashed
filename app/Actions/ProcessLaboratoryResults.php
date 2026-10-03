@@ -110,6 +110,7 @@ class ProcessLaboratoryResults
                     if ($result->exists && ($result->approved_date || ($stage === 'analyze' && $result->verified_date))) {
                         throw ValidationException::withMessages(['results' => 'O resultado revisto não pode ser reescrito sem um fluxo de revisão autorizado.']);
                     }
+                    $this->stages->ensureIndependentReviewer($result, $stage, (int) $operator->id);
                     $result->fill($attributes);
                     $intended = clone $result;
                     if (! $result->save()) {

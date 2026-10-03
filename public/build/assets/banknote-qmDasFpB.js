@@ -1,1 +1,0 @@
-import{p as e}from"./app-CyZ-tDPm.js";const c={name:"banknote",size:24,node:[["rect",{width:"20",height:"12",x:"2",y:"6",rx:"2",key:"9lu3g6"}],["circle",{cx:"12",cy:"12",r:"2",key:"1c9p78"}],["path",{d:"M6 12h.01M18 12h.01",key:"113zkx"}]]},n=e(c);export{n as B};

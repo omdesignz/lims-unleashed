@@ -1,426 +1,156 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
-import RecordsTable from "@/Components/records-table.vue";
+import Pagination from "@/Components/pagination.vue";
 import confirmDialog from "@/Components/confirm-dialog.vue";
-import slideOver from "@/Components/slide-over.vue";
-import combobox from "@/Components/combobox-enhanced.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
+import StateCells from "@/Components/plano/StateCells.vue";
+import StatusChip from "@/Components/plano/StatusChip.vue";
+import { usePermission } from "@/Composables/usePermissions";
 import { computed, ref } from "vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
-import { trans } from "laravel-vue-i18n";
-import { Eye as EyeIcon } from "@lucide/vue";
-import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
+import { FileDown as DocumentArrowDownIcon, X as XMarkIcon } from "@lucide/vue";
 
+defineOptions({ layout: Layout });
+
+/**
+ * Certificates register (Plano queue). Certificates are created only from approved
+ * results in the laboratory workflow; this register opens, downloads and archives
+ * them. A validated certificate is an issued document and is never archived.
+ */
 const props = defineProps({
-  record: {
-    type: Object,
-    default: () => ({ data: [], meta: {} }),
-  },
-  fields: {
-    type: Array,
-    default: () => [],
-  },
-  model: {
-    type: String,
-    default: "",
-  },
-  abilities: {
-    type: Array,
-    default: () => [],
-  },
-  query: {
-    type: Object,
-    default: () => ({}),
-  },
-  slideOverEdit: {
-    type: Boolean,
-    default: false,
-  },
+  record: { type: Object, default: () => ({ data: [], meta: {} }) },
+  counts: { type: Object, default: () => ({}) },
+  filters: { type: Object, default: () => ({}) },
 });
 
-defineOptions({
-  layout: Layout,
-});
+const { hasPermission } = usePermission();
+const filter = useForm({ search: props.filters.search ?? "", state: props.filters.state ?? "" });
+const pendingArchive = ref(null);
+const archiving = ref(false);
 
-const form = useForm({
-  obs: "",
-  customer_id: null,
-  status: true,
-  warehouse_id: null,
-  invoice_id: null,
-  code: "",
-  cl_id: null,
-  id: null,
-});
-
-const actionId = ref(null);
-const openslideover = ref(false);
-const showDeleteConfirmation = ref(false);
-
-const visibleRecords = computed(() => props.record?.data ?? []);
-const totalRecords = computed(
-  () => props.record?.meta?.total ?? visibleRecords.value.length,
-);
-const validatedRecords = computed(
-  () => visibleRecords.value.filter((record) => Boolean(record.validated_at)).length,
-);
-const pendingRecords = computed(
-  () => visibleRecords.value.filter((record) => !record.validated_at && !record.deleted).length,
-);
-
-const registryMetrics = computed(() => [
-  {
-    label: "Registos no arquivo",
-    value: totalRecords.value,
-    note: "total pesquisavel",
-  },
-  {
-    label: "Validados nesta página",
-    value: validatedRecords.value,
-    note: "prontos para distribuição",
-  },
-  {
-    label: "Pendentes nesta página",
-    value: pendingRecords.value,
-    note: "a aguardar libertacao",
-  },
+const cells = computed(() => [
+  { key: "", label: "Todos", value: props.counts.all ?? 0 },
+  { key: "pending", label: "Por validar", value: props.counts.pending ?? 0, tone: props.counts.pending ? "bad" : undefined },
+  { key: "validated", label: "Validados", value: props.counts.validated ?? 0 },
+  { key: "archived", label: "Arquivados", value: props.counts.archived ?? 0 },
 ]);
 
-const actions = [
-  {
-    id: null,
-    label: "gestlab.actions.bulk_actions_text",
-  },
-  {
-    id: "delete",
-    label: "gestlab.actions.delete",
-  },
-  {
-    id: "restore",
-    label: "gestlab.actions.restore",
-  },
-];
+const lede = computed(() => {
+  const pending = props.counts.pending ?? 0;
 
-const slideOverDescription = computed(() => {
-  const translationKey = form.id
-    ? "gestlab.slideover.updating.description"
-    : "gestlab.slideover.creating.description";
-
-  return `${trans(translationKey)}${form.code || ""}`;
+  return pending
+    ? `${pending} ${pending === 1 ? "boletim espera" : "boletins esperam"} validação. Os boletins nascem dos resultados aprovados no fluxo laboratorial.`
+    : "Nenhum boletim espera validação. Os boletins nascem dos resultados aprovados no fluxo laboratorial.";
 });
 
-const slideOverTitle = computed(() => {
-  return trans(
-    form.id
-      ? "gestlab.slideover.updating.title"
-      : "gestlab.slideover.creating.title",
-  );
-});
+const formatDate = (value) => (value
+  ? new Intl.DateTimeFormat("pt-AO", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value))
+  : "—");
 
-const confirmationDialogTitle = computed(() => {
-  return trans(`gestlab.actions.confirmation_dialog_title.${actionId.value}`);
-});
-
-const confirmationDialogDescription = computed(() => {
-  return trans(`gestlab.actions.confirmation_dialog_description.${actionId.value}`);
-});
-
-function optionFromValue(value, label) {
-  if (!value) {
-    return null;
-  }
-
-  return {
-    value,
-    label: label || String(value),
-  };
+function search(state = filter.state) {
+  filter.state = state;
+  filter.get(route("qualitycertificates.index"), { preserveState: true, preserveScroll: true, replace: true });
 }
 
-function closeSlideover() {
-  openslideover.value = false;
-  form.clearErrors();
-  form.reset();
+function clearFilters() {
+  filter.search = "";
+  search("");
 }
 
-function openSlideoverWithData(data) {
-  openslideover.value = true;
-  form.id = data.id;
-  form.obs = data.obs ?? "";
-  form.code = data.code ?? "";
-  form.status = Boolean(data.status);
-  form.customer_id = optionFromValue(data.customer_id, data.customer);
-  form.warehouse_id = optionFromValue(data.warehouse_id, data.warehouse);
-  form.cl_id = optionFromValue(data.cl_id, data.lab_code);
-}
-
-function submit() {
-  const options = {
+function archive(certificate) {
+  const restoring = certificate.deleted;
+  archiving.value = true;
+  router.visit(route(restoring ? "qualitycertificates.restore" : "qualitycertificates.destroy"), {
+    method: restoring ? "patch" : "delete",
+    data: { recordIds: [certificate.id] },
     preserveScroll: true,
-    onSuccess: closeSlideover,
-  };
-
-  if (form.id) {
-    form.put(
-      route("qualitycertificates.update", { certificate: form.id }),
-      options,
-    );
-    return;
-  }
-
-  form.post(route("qualitycertificates.store"), options);
-}
-
-function prepareBulkAction(selectedActionId) {
-  actionId.value = selectedActionId;
-  showDeleteConfirmation.value = true;
-}
-
-function resetBulkAction() {
-  showDeleteConfirmation.value = false;
-  actionId.value = null;
-}
-
-function executeAction(selectedActionId) {
-  const recordIds = visibleRecords.value
-    .filter((record) => record.selected)
-    .map((record) => record.id);
-
-  if (!recordIds.length) {
-    resetBulkAction();
-    return;
-  }
-
-  const routeName = selectedActionId === "restore"
-    ? "qualitycertificates.restore"
-    : "qualitycertificates.destroy";
-
-  router.get(
-    route(routeName),
-    { recordIds },
-    {
-      preserveState: false,
-      preserveScroll: true,
-      onFinish: resetBulkAction,
+    onFinish: () => {
+      archiving.value = false;
+      pendingArchive.value = null;
     },
-  );
-}
-
-function confirmAction() {
-  executeAction(actionId.value);
-}
-
-function loadCustomers(query, setOptions) {
-  return loadSelectOptions(
-    "/customers/getCustomer",
-    query,
-    setOptions,
-    optionMappers.name,
-  );
-}
-
-function loadWarehouses(query, setOptions) {
-  return loadSelectOptions(
-    "/warehouses/getWarehouse",
-    query,
-    setOptions,
-    optionMappers.address,
-  );
-}
-
-function loadLabCodes(query, setOptions) {
-  return loadSelectOptions(
-    "/labcodes/getCode",
-    query,
-    setOptions,
-    optionMappers.code,
-  );
+  });
 }
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="max-w-3xl">
-          <p class="ds-kicker">Controlo documental</p>
-          <h1 class="ds-heading mt-2 text-2xl">Certificados de qualidade</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm"> Registo mestre dos certificados emitidos, com estado de validação, rastreabilidade laboratorial e acesso directo ao dossier final. </p>
-        </div>
+  <div class="pl-page" data-template="queue">
+    <PageHeader :crumbs="[{ title: 'Certificados' }, { title: 'Registo' }]" title="Certificados de qualidade" :lede="lede">
+      <template #actions>
+        <Link :href="route('laboratory-workflow.index', { stage: 'report_generation' })" class="ds-button ds-button-quiet">Gerar a partir do fluxo</Link>
+      </template>
+    </PageHeader>
 
-        <div class="lims-status-strip flex items-center gap-3 px-4 py-3">
-          <span class="lims-status-dot lims-status-dot-instrument" />
-          <div>
-            <p class="text-xs font-bold text-[var(--ds-text)]">Arquivo de emissão</p>
-            <p class="mt-0.5 text-xs font-semibold text-[var(--ds-text-muted)]"> Pesquisa, validação e distribuição </p>
-          </div>
-        </div>
+    <StateCells class="mb-10" :items="cells" :model-value="filter.state" label="Filtrar estado dos boletins" @update:model-value="search($event)" />
+
+    <form class="pl-filter" @submit.prevent="search()">
+      <label for="certificate-search" class="pl-filter-prompt">Filtro://</label>
+      <BaseInput id="certificate-search" v-model="filter.search" type="search" data-bare class="pl-filter-input" maxlength="100" placeholder="boletim, código laboratorial, cliente, produto" />
+      <button class="ds-button ds-button-quiet" type="submit" :disabled="filter.processing">{{ filter.processing ? "A procurar…" : "Procurar" }}</button>
+      <button v-if="filter.search || filter.state" class="ds-chip" type="button" @click="clearFilters">Limpar filtros <XMarkIcon class="h-3.5 w-3.5" aria-hidden="true" /></button>
+    </form>
+    <p v-if="filter.hasErrors" class="ds-field-error mb-3" role="alert">{{ Object.values(filter.errors)[0] }}</p>
+
+    <section class="pl-panel" aria-label="Boletins" :aria-busy="filter.processing">
+      <DataTable v-if="record.data.length">
+        <thead>
+          <tr>
+            <th scope="col">Boletim</th>
+            <th scope="col">Código laboratorial</th>
+            <th scope="col">Cliente</th>
+            <th scope="col">Produto</th>
+            <th scope="col">Estado</th>
+            <th scope="col" class="text-right">Emissão</th>
+            <th scope="col"><span class="sr-only">Acções</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="certificate in record.data" :key="certificate.id">
+            <td><Link :href="certificate.links.show_path" class="pl-num font-medium hover:text-[var(--pl-accent-text)]">{{ certificate.code || `#${certificate.id}` }}</Link></td>
+            <td class="pl-num">{{ certificate.lab_code || "—" }}</td>
+            <td>{{ certificate.customer || "Não associado" }}<span v-if="certificate.warehouse" class="block text-[12.5px] text-[var(--pl-muted)]">{{ certificate.warehouse }}</span></td>
+            <td>{{ certificate.product || "—" }}</td>
+            <td>
+              <StatusChip v-if="certificate.deleted" tone="neutral">Arquivado</StatusChip>
+              <StatusChip v-else-if="certificate.validated_at" tone="ok">Validado</StatusChip>
+              <StatusChip v-else tone="wait">Por validar</StatusChip>
+              <span v-if="certificate.validated_at" class="block pt-1 text-[12px] text-[var(--pl-muted)]">{{ certificate.validated_by_user }}</span>
+            </td>
+            <td class="pl-num text-right">{{ formatDate(certificate.validated_at || certificate.created_at) }}</td>
+            <td class="text-right">
+              <div class="flex justify-end gap-1">
+                <a :href="certificate.links.pdf_path" target="_blank" rel="noopener" class="ds-table-action" :aria-label="`PDF do boletim ${certificate.code}`"><DocumentArrowDownIcon class="h-4 w-4" aria-hidden="true" /></a>
+                <button
+                  v-if="!certificate.validated_at && hasPermission(certificate.deleted ? 'restore_quality_certificates' : 'delete_quality_certificates')"
+                  type="button"
+                  class="ds-table-action"
+                  :class="{ 'ds-table-action-danger': !certificate.deleted }"
+                  :disabled="archiving"
+                  @click="pendingArchive = certificate"
+                >{{ certificate.deleted ? "Restaurar" : "Arquivar" }}</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </DataTable>
+      <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+        <span class="pl-k">{{ filter.search || filter.state ? "Nenhum boletim neste filtro" : "Ainda não há boletins" }}</span>
+        <p class="text-sm text-[var(--pl-muted)]">{{ filter.search || filter.state ? "Experimente outro termo ou estado." : "Quando todos os resultados de uma amostra forem aprovados, gere o boletim no fluxo laboratorial." }}</p>
       </div>
-
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
-        <div
-          v-for="metric in registryMetrics"
-          :key="metric.label"
-          class="border-b border-[var(--ds-border)] px-5 py-4 last:border-b-0 sm:border-b-0"
-        >
-          <dt class="ds-table-heading">{{ metric.label }}</dt>
-          <dd class="mt-2 flex items-baseline gap-2">
-            <span class="ds-heading text-xl">{{ metric.value }}</span>
-            <span class="text-xs font-semibold text-[var(--ds-text-soft)]">
-              {{ metric.note }}
-            </span>
-          </dd>
-        </div>
-      </dl>
+      <Pagination v-if="record.meta?.total" v-bind="record.meta" />
     </section>
 
-    <RecordsTable
-      :create-action="false"
-      :model="props.model"
-      :abilities="props.abilities"
-      :record="props.record"
-      :fields="props.fields"
-      :slide-over-edit="props.slideOverEdit"
-      :query="props.query"
-      :actions="actions"
-      @execute-action="prepareBulkAction"
-      @slideover-on="openSlideoverWithData"
-    >
-      <template #actions="{ id }">
-        <Link
-          :href="route('qualitycertificates.show', { certificate: id })"
-          class="ds-table-action"
-          title="Abrir dossier do certificado"
-        >
-          <EyeIcon class="h-4 w-4" />
-          <span class="sr-only">Abrir dossier do certificado</span>
-        </Link>
-      </template>
-    </RecordsTable>
-
-    <slide-over
-      v-if="openslideover"
-      :title="slideOverTitle"
-      :description="slideOverDescription"
-      @close="closeSlideover"
-    >
-      <template #content>
-        <div class="space-y-0">
-          <div class="ds-command-surface m-5 p-5 sm:m-6">
-            <p class="ds-kicker">Dados de emissão</p>
-            <h2 class="ds-heading mt-2 text-base">Identificação do certificado</h2>
-            <p class="ds-copy mt-1 text-sm"> Confirme o cliente, local, código laboratorial e disponibilidade antes de guardar o registo. </p>
-          </div>
-
-          <div class="grid gap-5 border-t border-[var(--ds-border)] px-5 py-5 sm:grid-cols-2 sm:px-6">
-            <div class="ds-field-group">
-              <label class="ds-field-label" for="customer_id">
-                {{ $t("gestlab.general.labels.quality_certificates.customer_id") }}
-              </label>
-              <combobox
-                v-model="form.customer_id"
-                :has-error="Boolean(form.errors.customer_id)"
-                :load-options="loadCustomers"
-                placeholder="Pesquisar cliente"
-              />
-              <p v-if="form.errors.customer_id" class="ds-field-error">
-                {{ form.errors.customer_id }}
-              </p>
-            </div>
-
-            <div class="ds-field-group">
-              <label class="ds-field-label" for="warehouse_id">
-                {{ $t("gestlab.general.labels.quality_certificates.warehouse_id") }}
-              </label>
-              <combobox
-                v-model="form.warehouse_id"
-                :has-error="Boolean(form.errors.warehouse_id)"
-                :load-options="loadWarehouses"
-                placeholder="Pesquisar armazem"
-              />
-              <p v-if="form.errors.warehouse_id" class="ds-field-error">
-                {{ form.errors.warehouse_id }}
-              </p>
-            </div>
-
-            <div class="ds-field-group">
-              <label class="ds-field-label" for="cl_id">
-                {{ $t("gestlab.general.labels.quality_certificates.cl_id") }}
-              </label>
-              <combobox
-                v-model="form.cl_id"
-                :has-error="Boolean(form.errors.cl_id)"
-                :load-options="loadLabCodes"
-                placeholder="Pesquisar código laboratorial"
-              />
-              <p v-if="form.errors.cl_id" class="ds-field-error">
-                {{ form.errors.cl_id }}
-              </p>
-            </div>
-
-            <label class="ds-command-toolbar flex items-center justify-between gap-4 p-4">
-              <span>
-                <span class="ds-field-label block">
-                  {{ $t("gestlab.general.labels.quality_certificates.status") }}
-                </span>
-                <span class="ds-field-hint mt-1 block"> Disponível para operações de emissão. </span>
-              </span>
-              <CheckboxInput
-                v-model="form.status"
-                type="checkbox"
-                class="ds-checkbox"
-              />
-            </label>
-          </div>
-
-          <div class="ds-field-group border-t border-[var(--ds-border)] px-5 py-5 sm:px-6">
-            <label class="ds-field-label" for="obs">
-              {{ $t("gestlab.general.labels.quality_certificates.obs") }}
-            </label>
-            <textarea
-              id="obs"
-              v-model="form.obs"
-              rows="6"
-              class="ds-field"
-              :aria-invalid="Boolean(form.errors.obs)"
-              placeholder="Observações técnicas ou comerciais do certificado"
-            />
-            <p v-if="form.errors.obs" class="ds-field-error">
-              {{ form.errors.obs }}
-            </p>
-          </div>
-        </div>
-      </template>
-
-      <template #action_buttons>
-        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            class="ds-button ds-button-secondary"
-            @click="closeSlideover"
-          >
-            {{ $t("gestlab.general.buttons.cancel") }}
-          </button>
-          <button
-            v-if="form.isDirty"
-            type="button"
-            class="ds-button ds-button-primary"
-            :disabled="form.processing"
-            @click="submit"
-          >
-            {{ form.id ? $t("gestlab.general.buttons.update") : $t("gestlab.general.buttons.submit") }}
-          </button>
-        </div>
-      </template>
-    </slide-over>
-
     <confirm-dialog
-      v-if="showDeleteConfirmation"
-      :title="confirmationDialogTitle"
-      :description="confirmationDialogDescription"
-      confirm="Sim"
-      cancel="Não"
-      @canceled="resetBulkAction"
-      @close="resetBulkAction"
-      @confirmed="confirmAction"
+      v-if="pendingArchive"
+      :open="true"
+      :variant="pendingArchive.deleted ? 'question' : 'danger'"
+      :title="pendingArchive.deleted ? 'Restaurar boletim?' : 'Arquivar boletim?'"
+      :description="pendingArchive.deleted ? 'O boletim volta ao registo e ao fluxo laboratorial.' : 'O boletim sai do registo activo até ser restaurado. Só boletins por validar podem ser arquivados.'"
+      :confirm="pendingArchive.deleted ? 'Restaurar' : 'Arquivar'"
+      cancel="Manter"
+      :disabled="archiving"
+      keep-open-on-confirm
+      @canceled="pendingArchive = null"
+      @confirmed="archive(pendingArchive)"
     />
   </div>
 </template>

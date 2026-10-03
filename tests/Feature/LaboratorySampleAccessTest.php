@@ -240,15 +240,18 @@ class LaboratorySampleAccessTest extends TestCase
             ->getJson(route('vap_samples.samples.stats'))->assertForbidden();
     }
 
-    public function test_legacy_search_and_charts_stay_in_active_lab(): void
+    public function test_intake_page_stays_in_active_lab_and_loads_only_the_corrected_sample(): void
     {
         $lab = VAPLab::factory()->create();
         $local = VAPSampleEntry::factory()->create(['lab_id' => $lab->id, 'name' => 'Water local']);
         $peer = VAPSampleEntry::factory()->create(['code' => 'Water-secret']);
         $this->actingAs($this->operator($lab))->withSession(['active_lab_id' => $peer->lab_id])
             ->get(route('vap_samples.index', ['search' => 'Water']))->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->has('samples', 1)->where('samples.0.id', $local->id)
+            ->assertInertia(fn (Assert $page) => $page->missing('samples')->missing('charts')->where('editingSample', null)
                 ->where('stats.total_samples', 1)->has('labs', 1)->where('labs.0.id', $lab->id));
+        $this->get(route('vap_samples.index', ['edit' => $local->id]))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('editingSample.id', $local->id));
+        $this->get(route('vap_samples.index', ['edit' => $peer->id]))->assertNotFound();
     }
 
     public function test_reports_work_on_postgresql_and_cannot_expand_lab_scope(): void

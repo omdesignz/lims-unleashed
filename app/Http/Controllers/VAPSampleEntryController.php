@@ -53,84 +53,15 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class VAPSampleEntryController extends Controller
 {
+    /** The discard picker lists the longest-retained eligible samples first. */
+    private const DISCARD_PICKER_LIMIT = 200;
+
     public function __construct(
         private readonly NotificationTemplateService $notificationTemplates,
         private readonly SampleLaboratoryAccess $laboratoryAccess,
         private readonly PrepareSampleEntryPayload $preparePayload,
         private readonly SampleEntryValidation $sampleEntryValidation,
     ) {}
-
-    private function buildSampleIntakeTrendChart(): array
-    {
-        $window = collect(range(6, 0))
-            ->map(fn (int $daysAgo) => now()->copy()->startOfDay()->subDays($daysAgo));
-
-        $dailyCounts = $this->laboratoryAccess->samples()
-            ->selectRaw('DATE(created_at) as day_key, COUNT(*) as aggregate')
-            ->whereDate('created_at', '>=', $window->first()->toDateString())
-            ->groupBy('day_key')
-            ->pluck('aggregate', 'day_key');
-
-        return [
-            'categories' => $window->map(fn (Carbon $day) => $day->translatedFormat('d M'))->all(),
-            'series' => [
-                [
-                    'name' => 'Amostras recebidas',
-                    'data' => $window->map(
-                        fn (Carbon $day) => (int) ($dailyCounts[$day->toDateString()] ?? 0)
-                    )->all(),
-                ],
-            ],
-        ];
-    }
-
-    private function buildSampleLifecycleChart(): array
-    {
-        $statusCounts = $this->laboratoryAccess->samples()
-            ->selectRaw('status, COUNT(*) as aggregate')
-            ->groupBy('status')
-            ->pluck('aggregate', 'status');
-
-        return [
-            'labels' => [
-                'Por iniciar',
-                'Em progresso',
-                'Em pausa',
-                'Completado',
-                'Cancelado',
-            ],
-            'series' => [
-                (int) ($statusCounts['POR_INICIAR'] ?? 0),
-                (int) ($statusCounts['EN_PROGRESO'] ?? 0),
-                (int) ($statusCounts['EN_PAUSA'] ?? 0),
-                (int) ($statusCounts['COMPLETADO'] ?? 0),
-                (int) ($statusCounts['CANCELADO'] ?? 0),
-            ],
-        ];
-    }
-
-    private function buildSampleRetentionChart(): array
-    {
-        $retentionCounts = $this->laboratoryAccess->samples()
-            ->selectRaw('retention_status, COUNT(*) as aggregate')
-            ->groupBy('retention_status')
-            ->pluck('aggregate', 'retention_status');
-
-        return [
-            'labels' => [
-                'Retenção activa',
-                'Próximo descarte',
-                'Retenção vencida',
-                'Descartadas',
-            ],
-            'series' => [
-                (int) ($retentionCounts['active'] ?? 0),
-                (int) ($retentionCounts['due_soon'] ?? 0),
-                (int) ($retentionCounts['overdue'] ?? 0),
-                (int) $this->laboratoryAccess->discards()->count(),
-            ],
-        ];
-    }
 
     private function buildInternalQualityControlPath(): array
     {
@@ -193,11 +124,15 @@ class VAPSampleEntryController extends Controller
                 ->find($request->integer('proposal_id'))
             : null;
 
-        $discardableSamples = $this->laboratoryAccess->samples()->discardable()
+        $discardable = fn () => $this->laboratoryAccess->samples()->discardable()
             ->whereDoesntHave('discards')
             ->where(fn (Builder $query) => $query->whereNull('retention_status')->orWhere('retention_status', '!=', 'discarded'))
-            ->with(['customer', 'lab', 'department'])
-            ->get()
+            ->with(['customer', 'lab', 'department']);
+        $discardableSamples = $discardable()->orderBy('received_at')->orderBy('id')->limit(self::DISCARD_PICKER_LIMIT)->get();
+        if ($request->integer('discard') && ! $discardableSamples->contains('id', $request->integer('discard'))) {
+            $discardableSamples->push(...$discardable()->whereKey($request->integer('discard'))->get());
+        }
+        $discardableSamples = $discardableSamples
             ->map(function ($sample) {
                 return [
                     'id' => $sample->id,
@@ -243,16 +178,9 @@ class VAPSampleEntryController extends Controller
                 ->count(),
         ];
 
-        $samples = $this->laboratoryAccess->samples()->with(['customer', 'lab', 'department', 'warehouse'])
-            ->when($request->has('search'), function ($query) use ($request) {
-                $query->where(fn (Builder $search) => $search->whereLike('name', '%'.$request->search.'%')
-                    ->orWhereLike('code', '%'.$request->search.'%'));
-            })
-            ->when($request->has('status'), function ($query) use ($request) {
-                $query->where('status', $request->status);
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $editingSample = $request->integer('edit')
+            ? $this->laboratoryAccess->samples()->with(['customer', 'lab', 'department', 'warehouse'])->findOrFail($request->integer('edit'))
+            : null;
 
         return Inertia::render('VAPSamples/Index', [
             'title' => 'Gestão de Amostras',
@@ -273,12 +201,8 @@ class VAPSampleEntryController extends Controller
                     'service_location' => $proposalPrefill->service_location,
                 ] : null,
             ],
-            'charts' => [
-                'intake_trend' => $this->buildSampleIntakeTrendChart(),
-                'lifecycle_status' => $this->buildSampleLifecycleChart(),
-                'retention_pressure' => $this->buildSampleRetentionChart(),
-            ],
-            'samples' => SampleIntakeResource::collection($samples)->resolve($request),
+            'editingSample' => $editingSample ? SampleIntakeResource::make($editingSample)->resolve($request) : null,
+            'discardPickerLimit' => self::DISCARD_PICKER_LIMIT,
             'discardableSamples' => $discardableSamples,
             'recentDiscards' => $recentDiscards,
             'customers' => Customer::select('id', 'name', 'code')->orderBy('name')->get(),

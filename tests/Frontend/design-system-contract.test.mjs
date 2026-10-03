@@ -1329,12 +1329,13 @@ test('VAP proposal template library uses shared studio surfaces', () => {
 })
 
 test('VAP proposal workspace uses the operational LIMS design system', () => {
-  assert.match(vapProposalsIndexSource, /class="ds-command-surface/)
-  assert.match(vapProposalsIndexSource, /class="ds-table-shell/)
-  assert.match(vapProposalsIndexSource, /class="ds-data-table/)
-  assert.match(vapProposalsShowSource, /class="ds-panel overflow-hidden"/)
-  assert.match(vapProposalsShowSource, /class="ds-table-shell"/)
+  assert.match(vapProposalsIndexSource, /data-template="queue"/)
+  assert.match(vapProposalsIndexSource, /<StateCells/)
+  assert.match(vapProposalsIndexSource, /<DataTable/)
+  assert.match(vapProposalsShowSource, /data-template="dossier"/)
+  assert.match(vapProposalsShowSource, /<NextStepBar>/)
   assert.match(vapProposalsShowSource, /laboratoryDossier/)
+  assert.match(vapProposalsShowSource, /props\.proposal\.unique_hash \? route\('vap-proposals\.public\.show'/)
 
   for (const source of [vapProposalsIndexSource, vapProposalsCreateSource, vapProposalsEditSource, vapProposalsShowSource]) {
     assert.doesNotMatch(source, /commercialDocumentThemeClasses/)
@@ -1361,7 +1362,10 @@ test('VAP proposal template routes keep application chrome on semantic surfaces'
 
 test('VAP proposal create screen uses semantic commercial form surfaces', () => {
   assert.match(vapProposalsCreateSource, /class="ds-panel overflow-hidden"/)
-  assert.match(vapProposalsCreateSource, /class="ds-card bg-\[var\(--ds-panel-raised\)\] p-4"/)
+  assert.match(vapProposalsCreateSource, /data-template="form"/)
+  assert.match(vapProposalsCreateSource, /<PageHeader/)
+  assert.match(vapProposalsCreateSource, /<NextStepBar>/)
+  assert.doesNotMatch(vapProposalsCreateSource, /saveDraft|quickItems|nextProposalNo \}\}/)
   assert.match(vapProposalsCreateSource, /class="ds-field"/)
   assert.match(vapProposalsCreateSource, /class="ds-checkbox"/)
   assert.match(vapProposalsCreateSource, /class="ds-table-action/)
@@ -1378,7 +1382,10 @@ test('VAP proposal create screen uses semantic commercial form surfaces', () => 
 
 test('VAP proposal edit screen keeps revision controls on semantic surfaces', () => {
   assert.match(vapProposalsEditSource, /class="ds-panel overflow-hidden"/)
-  assert.match(vapProposalsEditSource, /class="ds-card bg-\[var\(--ds-panel-raised\)\] p-4"/)
+  assert.match(vapProposalsEditSource, /data-template="form"/)
+  assert.match(vapProposalsEditSource, /<PageHeader/)
+  assert.match(vapProposalsEditSource, /<NextStepBar>/)
+  assert.doesNotMatch(vapProposalsEditSource, /saveDraft|quickItems|nextProposalNo \}\}/)
   assert.match(vapProposalsEditSource, /class="ds-field"/)
   assert.match(vapProposalsEditSource, /class="ds-checkbox"/)
   assert.match(vapProposalsEditSource, /class="ds-table-action/)
@@ -1483,41 +1490,40 @@ test('quality certificate release workflow uses controlled dossier surfaces', ()
   ]
 
   for (const source of certificateWorkflowSources) {
-    assert.match(source, /min-w-0 space-y-/)
-    assert.match(source, /ds-/)
+    assert.match(source, /pl-|<PageHeader|<StateCells/)
     assert.doesNotMatch(source, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open/)
   }
 
-  assert.match(qualityCertificatesIndexSource, /class="ds-panel overflow-hidden"/)
-  assert.match(qualityCertificatesIndexSource, />Certificados de qualidade</)
-  assert.match(qualityCertificatesIndexSource, /<RecordsTable/)
-  assert.match(qualityCertificatesIndexSource, /<slide-over/)
+  // The queue: state cells, bounded search, archive behind a confirmation with real verbs.
+  assert.match(qualityCertificatesIndexSource, /<PageHeader/)
+  assert.match(qualityCertificatesIndexSource, /<StateCells/)
   assert.match(qualityCertificatesIndexSource, /<confirm-dialog/)
-  assert.match(qualityCertificatesIndexSource, /const registryMetrics = computed/)
-  assert.match(qualityCertificatesIndexSource, /routeName = selectedActionId === "restore"/)
-  assert.match(qualityCertificatesIndexSource, /router\.get\(/)
+  assert.match(qualityCertificatesIndexSource, /method: restoring \? "patch" : "delete"/)
+  assert.doesNotMatch(qualityCertificatesIndexSource, /qualitycertificates\.create/)
 
-  assert.match(qualityCertificatesShowSource, /const certificateMetrics = computed/)
-  assert.match(qualityCertificatesShowSource, /const laboratoryReference = computed/)
-  assert.match(qualityCertificatesShowSource, /const certificateDetails = computed/)
-  assert.match(qualityCertificatesShowSource, /const releaseChecks = computed/)
-  assert.match(qualityCertificatesShowSource, /const activityHistory = computed/)
-  assert.match(qualityCertificatesShowSource, /class="ds-command-surface overflow-hidden"/)
-  assert.match(qualityCertificatesShowSource, /:href="pdfUrl"/)
-  assert.match(qualityCertificatesShowSource, /route\("qualitycertificates\.getApprove"/)
-  assert.match(qualityCertificatesShowSource, /route\("qualitycertificates\.iso-revisions\.index"/)
+  // The dossier shows the same release rule the validation enforces.
+  assert.match(qualityCertificatesShowSource, /data-template="dossier"/)
+  assert.match(qualityCertificatesShowSource, /release: \{ type: Object/)
+  assert.match(qualityCertificatesShowSource, /<NextStepBar>/)
+  assert.match(qualityCertificatesShowSource, /route\(['"]qualitycertificates\.getApprove['"]/)
+  assert.match(qualityCertificatesShowSource, /route\(['"]qualitycertificates\.iso-revisions\.index['"]/)
+  assert.match(qualityCertificatesShowSource, /hasPermission\('edit_quality_certificates'\)/)
+  assert.match(qualityCertificatesShowSource, /validated_on_behalf_of_user/)
 
-  assert.match(qualityCertificatesEditSource, /const editMetrics = computed/)
-  assert.match(qualityCertificatesEditSource, /Registo laboratorial/)
-  assert.match(qualityCertificatesEditSource, /const releaseContext = computed/)
-  assert.match(qualityCertificatesEditSource, /role="switch"/)
-  assert.match(qualityCertificatesEditSource, /class="ds-field"/)
+  // Identity is fixed; only the observation is edited, until validation.
+  assert.match(qualityCertificatesEditSource, /data-template="form"/)
+  assert.match(qualityCertificatesEditSource, /useForm\(\{ obs:/)
   assert.match(qualityCertificatesEditSource, /form\.put\(/)
+  assert.doesNotMatch(qualityCertificatesEditSource, /customer_id|warehouse_id|cl_id/)
 
-  assert.match(validationModalSource, /class="ds-command-surface p-5"/)
-  assert.match(validationModalSource, /class="ds-panel overflow-hidden"/)
+  // Signing shows every result with who inserted, verified and approved it, and
+  // signing on behalf of an absent validator stays available.
+  assert.match(validationModalSource, /results: \{ type: Array/)
+  assert.match(validationModalSource, /\['inserted', 'verified', 'approved'\]/)
   assert.match(validationModalSource, /role="switch"/)
-  assert.match(validationModalSource, /class="ds-button ds-button-primary"/)
+  assert.match(validationModalSource, /approve_on_behalf_of/)
+  assert.match(validationModalSource, /signed_by_user_id/)
+  assert.match(validationModalSource, /:disabled="form\.processing \|\| !ready/)
 })
 
 test('quality certificate ISO revision workflow uses controlled audit surfaces', () => {
@@ -1586,8 +1592,8 @@ test('validation and process progress components follow the shared contract', ()
   assert.doesNotMatch(validationSignatureSource, /console\.log|alert\(/)
   assert.doesNotMatch(validationSignatureSource, /bg-white sm:rounded-lg/)
 
-  assert.match(validationModalSource, /form\.transform\(\(\) => payload\)\.post/)
-  assert.match(validationModalSource, /quality_certificates\.verify_description/)
+  assert.match(validationModalSource, /form\s*\.transform\(\(data\) => \(\{[\s\S]*\.post\(props\.url/)
+  assert.match(validationModalSource, /<DocumentValidationSignature/)
   assert.doesNotMatch(validationModalSource, /Por favor, assine digitalmente/)
   assert.doesNotMatch(validationModalSource, /bg-gradient-to-r/)
 
@@ -1839,11 +1845,13 @@ test('sample detail page uses traceability-focused LIMS surfaces', () => {
 })
 
 test('sample intake console uses accessioning and destruction-control surfaces', () => {
-  assert.match(vapSamplesIndexSource, /class="min-w-0 space-y-6 overflow-x-clip"/)
-  assert.match(vapSamplesIndexSource, /class="ds-panel overflow-hidden"/)
+  assert.match(vapSamplesIndexSource, /data-template="form"/)
+  assert.match(vapSamplesIndexSource, /<PageHeader/)
   assert.match(vapSamplesIndexSource, /class="ds-command-surface overflow-hidden"/)
   assert.match(vapSamplesIndexSource, /class="ds-table-shell"/)
-  assert.match(vapSamplesIndexSource, /class="ds-table-summary/)
+  // The register lives in the queue; the intake page loads only the sample being corrected.
+  assert.doesNotMatch(vapSamplesIndexSource, /page\.props\.samples|apexchart|filteredSamples/)
+  assert.match(vapSamplesIndexSource, /if \(page\.props\.editingSample\) \{\n    editSample\(page\.props\.editingSample\)/)
   assert.match(vapSamplesIndexSource, /class="ds-field/)
   assert.match(vapSamplesIndexSource, /class="ds-button ds-button-primary/)
   assert.match(vapSamplesIndexSource, /class="ds-table-action ds-table-action-danger"/)

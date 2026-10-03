@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToSampleLaboratory;
 use App\Traits\ISO17025Revisionable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class QualityCertificate extends Model implements HasMedia
 {
-    use CausesActivity, HasFactory, InteractsWithMedia, ISO17025Revisionable, SoftDeletes;
+    use BelongsToSampleLaboratory, CausesActivity, HasFactory, InteractsWithMedia, ISO17025Revisionable, SoftDeletes;
 
     public const MENU_NAME = 'quality_certificates';
 

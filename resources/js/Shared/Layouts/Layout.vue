@@ -687,12 +687,22 @@ const activeAreaKey = computed(() => {
 const activeArea = computed(() => navAreas.value.find((area) => area.key === activeAreaKey.value) ?? null)
 
 // Rebuilt Plano screens own their whole canvas; older screens get the content gutter.
-const planoPages = ['LaboratoryWorkbench', 'LabNetwork/Index', 'VAPSamples/Queue', 'VAPSamples/Show']
-const pageTemplate = computed(() => ({
+const planoTemplates = {
   LaboratoryWorkbench: 'today',
+  'LabNetwork/Index': 'page',
+  'VAPSamples/Index': 'form',
   'VAPSamples/Queue': 'queue',
   'VAPSamples/Show': 'dossier',
-}[page.component] ?? 'page'))
+  'VAPProposals/Index': 'queue',
+  'VAPProposals/Show': 'dossier',
+  'VAPProposals/Create': 'form',
+  'VAPProposals/Edit': 'form',
+  'QualityCertificates/Index': 'queue',
+  'QualityCertificates/Show': 'dossier',
+  'QualityCertificates/Edit': 'form',
+}
+const planoPages = Object.keys(planoTemplates)
+const pageTemplate = computed(() => planoTemplates[page.component] ?? 'page')
 
 const openCommandPalette = () => {
   commandPaletteQuery.value = ''

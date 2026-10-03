@@ -20,6 +20,7 @@ const props = defineProps({
 })
 const { hasPermission } = usePermission()
 const canEdit = computed(() => hasPermission('edit_samples'))
+const canDiscard = computed(() => hasPermission('delete_samples') && ['COMPLETADO', 'CANCELADO'].includes(props.sample.status) && !props.sample.discards?.length)
 const releaseGate = computed(() => props.workflowSummary.quality_control_release || {})
 const latestDecision = computed(() => releaseGate.value.current_decision)
 const resultCounts = computed(() => approvedResultCounts(props.analyses))
@@ -107,6 +108,8 @@ function submitQcDecision() {
       <template #lede>{{ sample.customer?.name || 'Cliente por associar' }} — {{ sample.name }}. {{ sample.lab?.name || 'Laboratório por associar' }} · recepção {{ sampleDate(sample.received_at) }}.</template>
       <template #actions>
         <a :href="route('vap_samples.samples.pdf', sample.id)" class="ds-button ds-button-quiet" target="_blank" rel="noopener"><span>PDF da entrada</span><DocumentArrowDownIcon aria-hidden="true" /><span class="sr-only"> (abre noutra janela)</span></a>
+        <Link v-if="canEdit" :href="route('vap_samples.index', { edit: sample.id })" class="ds-button ds-button-quiet">Corrigir registo</Link>
+        <Link v-if="canDiscard" :href="route('vap_samples.index', { discard: sample.id })" class="ds-button ds-button-quiet">Registar descarte</Link>
       </template>
     </PageHeader>
 

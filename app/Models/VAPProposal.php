@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Str;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -256,6 +257,7 @@ class VAPProposal extends Model
 
             $proposal->proposal_year = $year;
             $proposal->proposal_no = $proposal->proposal_no ?: "PROP {$departmentName}/{$sequence}/{$year}";
+            $proposal->unique_hash = $proposal->unique_hash ?: (string) Str::uuid();
 
             if (blank($proposal->details)) {
                 $proposal->details = [

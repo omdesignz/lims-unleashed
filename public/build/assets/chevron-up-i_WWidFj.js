@@ -1,1 +1,0 @@
-import{p as e}from"./app-CyZ-tDPm.js";const o={name:"chevron-up",size:24,node:[["path",{d:"m18 15-6-6-6 6",key:"153udz"}]]},a=e(o);export{a as C};

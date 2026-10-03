@@ -417,7 +417,18 @@ class LaboratoryResultConcurrencyTest extends IsolatedPostgresTestCase
                 break;
             }
             $this->runOperation($this->operation($operator, $lab, $root, $previous));
+            $this->attributeToColleague($root, $previous);
         }
+    }
+
+    /** Four-eyes review: an earlier stage belongs to someone other than the operator under test. */
+    private function attributeToColleague(Models\Analysis|Models\CounterAnalysis $root, string $stage): void
+    {
+        $prefix = match ($stage) {
+            'analyze' => 'inserted', 'verify' => 'verified', 'approve' => 'approved',
+        };
+        $colleague = Models\User::factory()->create(['is_active' => true]);
+        Models\Result::query()->where('sample_id', $root->sample_id)->update([$prefix.'_by_id' => $colleague->id]);
     }
 
     /** @param array<string, mixed> $operation */

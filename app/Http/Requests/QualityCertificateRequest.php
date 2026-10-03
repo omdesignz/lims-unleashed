@@ -2,11 +2,13 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class QualityCertificateRequest extends FormRequest
 {
-     /**
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -17,31 +19,14 @@ class QualityCertificateRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
-        if ($this->isMethod('post')) {
-            $rules = [
-                'customer_id' => 'required|exists:customers,id',
-                'cl_id' => 'required|exists:lab_codes,id',
-                'warehouse_id' => 'required|exists:warehouses,id',
-                'invoice_id' => 'nullable|exists:invoices,id',
-                'obs' => 'nullable',
-                'status' => 'boolean',
-            ];
-        } else {
-            $rules = [
-                'customer_id' => 'required|exists:customers,id',
-                'cl_id' => 'required|exists:lab_codes,id',
-                'warehouse_id' => 'required|exists:warehouses,id',
-                'invoice_id' => 'nullable|exists:invoices,id',
-                'obs' => 'nullable',
-                'status' => 'boolean',
-            ];
-        }
-
-        return $rules;
+        // Customer, laboratory code and site come from the accession and are never edited here.
+        return [
+            'obs' => ['nullable', 'string', 'max:5000'],
+        ];
     }
 
     /**
@@ -65,17 +50,17 @@ class QualityCertificateRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  Validator  $validator
      * @return void
      */
     public function prepareForValidation()
     {
         $this->merge([
-            'customer_id' => !is_null(request()->customer_id) ? request()->customer_id['value'] : null,
-            'warehouse_id' => !is_null(request()->warehouse_id) ? request()->warehouse_id['value'] : null,
-            'cl_id' => !is_null(request()->cl_id) ? request()->cl_id['value'] : null,
-            'product_id' => !is_null(request()->product_id) ? request()->product_id['value'] : null,
-            'invoice_id' => !is_null(request()->invoice_id) ? request()->invoice_id['value'] : null,
+            'customer_id' => ! is_null(request()->customer_id) ? request()->customer_id['value'] : null,
+            'warehouse_id' => ! is_null(request()->warehouse_id) ? request()->warehouse_id['value'] : null,
+            'cl_id' => ! is_null(request()->cl_id) ? request()->cl_id['value'] : null,
+            'product_id' => ! is_null(request()->product_id) ? request()->product_id['value'] : null,
+            'invoice_id' => ! is_null(request()->invoice_id) ? request()->invoice_id['value'] : null,
             'status' => request()->boolean('status'),
         ]);
     }
