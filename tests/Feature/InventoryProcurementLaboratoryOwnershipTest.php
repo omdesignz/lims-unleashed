@@ -127,6 +127,20 @@ class InventoryProcurementLaboratoryOwnershipTest extends TestCase
         $migration->down();
     }
 
+    public function test_order_queue_figures_follow_stored_uppercase_statuses_and_sorting_is_whitelisted(): void
+    {
+        $lab = VAPLab::factory()->create();
+        $user = $this->operator($lab);
+        $this->order($lab, $user)->forceFill(['total_amount' => '100.00'])->save();
+        $this->order($lab, $user)->forceFill(['status' => 'CANCELLED', 'total_amount' => '900.00'])->save();
+
+        $this->actingAs($user)->get(route('vap-inventory.orders.index'))->assertOk()
+            ->assertInertia(fn ($inertia) => $inertia->where('stats.pending_orders', 1)
+                ->where('stats.total_value', fn ($value) => (float) $value === 100.0));
+        $this->actingAs($user)->get(route('vap-inventory.orders.index', ['sort_by' => 'user_id; drop table i_orders', 'sort_direction' => 'sideways']))
+            ->assertOk()->assertInertia(fn ($inertia) => $inertia->where('orders.total', 2));
+    }
+
     private function order(VAPLab $lab, User $user): InventoryOrder
     {
         return InventoryOrder::query()->create([
