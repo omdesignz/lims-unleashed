@@ -18,7 +18,7 @@
       </template>
     </PageHeader>
 
-    <Journey v-if="journey.length" class="mb-10" :steps="journey" aria-label="Percurso do pedido" />
+    <Journey v-if="journey.length" class="mb-10" :steps="journey" label="Percurso do pedido" />
 
     <div class="pl-dossier-grid">
       <div class="grid min-w-0 gap-7">

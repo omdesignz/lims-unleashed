@@ -976,26 +976,8 @@ function handleDragStart(event: DragEvent, fileId: string) {
   const draggedFile = fileStore.files.find(f => f.id === fileId)
   if (draggedFile) {
     const dragImage = document.createElement('div')
-    const isDarkMode = document.documentElement.classList.contains('dark')
-    dragImage.className = [
-      'fixed',
-      'left-0',
-      'top-0',
-      'pointer-events-none',
-      'rounded-xl',
-      'border',
-      'p-3',
-      'text-sm',
-      'font-semibold',
-      'shadow-2xl',
-      isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-100' : 'border-slate-200 bg-white text-slate-900',
-    ].join(' ')
-    dragImage.innerHTML = `
-      <div class="flex items-center gap-2">
-        <span class="mr-2">${draggedFile.type === 'folder' ? '📁' : '📄'}</span>
-        <span>${draggedFile.name}</span>
-      </div>
-    `
+    dragImage.className = 'pointer-events-none fixed left-0 top-0 border border-[var(--pl-line-strong)] bg-[var(--pl-layer)] px-3 py-2 text-sm font-medium text-[var(--pl-fg)]'
+    dragImage.textContent = `${draggedFile.type === 'folder' ? 'Pasta' : 'Ficheiro'} · ${draggedFile.name}`
     document.body.appendChild(dragImage)
     event.dataTransfer.setDragImage(dragImage, 0, 0)
     setTimeout(() => document.body.removeChild(dragImage), 0)

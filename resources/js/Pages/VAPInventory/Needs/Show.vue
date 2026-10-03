@@ -12,7 +12,7 @@
       </template>
     </PageHeader>
 
-    <Journey v-if="journey.length" class="mb-10" :steps="journey" aria-label="Percurso da necessidade" />
+    <Journey v-if="journey.length" class="mb-10" :steps="journey" label="Percurso da necessidade" />
 
     <div class="pl-dossier-grid">
       <div class="grid min-w-0 gap-7">
