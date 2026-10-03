@@ -354,7 +354,7 @@ import {
   CircleX as XCircleIcon,
   FileUp as DocumentArrowUpIcon,
 } from '@lucide/vue'
-import Modal from '@/Components/Modal.vue'
+import Modal from '@/Components/modal.vue'
 
 const props = defineProps({
   show: Boolean,

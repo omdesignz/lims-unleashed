@@ -223,7 +223,7 @@ import {
   Plus as PlusIcon,
   Minus as MinusIcon,
 } from '@lucide/vue'
-import Modal from '@/Components/Modal.vue'
+import Modal from '@/Components/modal.vue'
 
 const props = defineProps({
   show: Boolean,

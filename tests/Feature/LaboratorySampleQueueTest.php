@@ -60,6 +60,19 @@ class LaboratorySampleQueueTest extends TestCase
             ->where('samples.meta.current_page', 2)->where('samples.meta.total', 27));
     }
 
+    public function test_status_counts_cover_only_the_active_lab_and_ignore_filters(): void
+    {
+        $lab = VAPLab::factory()->create();
+        VAPSampleEntry::factory()->count(2)->create(['lab_id' => $lab->id, 'status' => 'EN_PAUSA']);
+        VAPSampleEntry::factory()->create(['lab_id' => $lab->id, 'status' => 'EN_PROGRESO']);
+        VAPSampleEntry::factory()->create(['status' => 'EN_PAUSA']);
+        $this->actingAs($this->operator($lab))->get(route('vap_samples.queue', ['status' => 'EN_PROGRESO']))
+            ->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->where('counts.EN_PAUSA', 2)->where('counts.EN_PROGRESO', 1)
+                ->where('counts.POR_INICIAR', 0)->where('counts.COMPLETADO', 0)->where('counts.CANCELADO', 0)
+                ->has('samples.data', 1));
+    }
+
     public function test_filters_are_validated_and_wildcards_are_literal(): void
     {
         $lab = VAPLab::factory()->create();

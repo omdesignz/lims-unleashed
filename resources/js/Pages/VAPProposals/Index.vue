@@ -262,7 +262,7 @@ import {
 } from '@lucide/vue'
 import debounce from 'lodash/debounce'
 import { trans } from 'laravel-vue-i18n'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 import ConfirmationModal from '@/Components/dialog-modal.vue'
 import ArchiveMutationFeedback from '@/Components/archive-mutation-feedback.vue'
 import { useRecordArchive } from '@/Composables/useRecordArchive'

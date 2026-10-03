@@ -229,7 +229,7 @@ import {
   X as XMarkIcon,
   Box as CubeIcon,
 } from '@lucide/vue'
-import Modal from '@/Components/Modal.vue'
+import Modal from '@/Components/modal.vue'
 import datePickerEnhanced from '@/Components/date-picker-enhanced.vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 

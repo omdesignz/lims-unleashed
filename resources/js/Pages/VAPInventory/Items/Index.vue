@@ -532,7 +532,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Trash2 as TrashIcon,
 } from '@lucide/vue'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 import ConfirmationModal from '@/Components/confirm-dialog.vue'
 import ArchiveMutationFeedback from '@/Components/archive-mutation-feedback.vue'
 import { useRecordArchive } from '@/Composables/useRecordArchive'

@@ -353,7 +353,7 @@ import { Link, router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import {
   ArrowLeft as ArrowLeftIcon,

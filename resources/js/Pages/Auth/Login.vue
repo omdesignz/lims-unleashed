@@ -4,11 +4,10 @@ import EmptyLayout from '../../Shared/EmptyLayout.vue'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import {
-  LogOut as ArrowRightStartOnRectangleIcon,
+  ChevronRight as ChevronRightIcon,
   Eye as EyeIcon,
   EyeOff as EyeSlashIcon,
   Fingerprint as FingerPrintIcon,
-  Lock as LockClosedIcon,
 } from '@lucide/vue'
 import { computed, ref } from 'vue'
 
@@ -20,7 +19,6 @@ const brandSettings = computed(() => page.props.settings ?? {})
 const brandLoginHeadline = computed(() => brandSettings.value.login_headline || 'Bem-vindo de volta')
 const brandLoginSubheadline = computed(() => brandSettings.value.login_subheadline || 'Aceda a operação e mantenha a rastreabilidade do laboratório sob controlo.')
 const socialProviders = computed(() => page.props.socialAuth?.providers ?? [])
-const portalEnabled = computed(() => brandSettings.value.portal_enabled !== false)
 
 const showPassword = ref(false)
 const passkeyProcessing = ref(false)
@@ -75,6 +73,7 @@ const loginWithPasskey = async () => {
 <template>
   <Head title="Início de sessão" />
   <AuthExperienceShell
+    accent="Entrar."
     :title="brandLoginHeadline"
     eyebrow="Área interna"
     :description="brandLoginSubheadline"
@@ -85,12 +84,13 @@ const loginWithPasskey = async () => {
 
       <div
         v-if="status"
-        class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+        class="pl-banner pl-banner-ok mb-5 text-sm"
+        role="status"
       >
         {{ status }}
       </div>
 
-      <form class="space-y-4" @submit.prevent="submit">
+      <form class="space-y-5" @submit.prevent="submit">
         <div class="ds-field-group">
           <label for="email" class="ds-field-label">{{ $t('gestlab.pages.login.email_input_title') }}</label>
           <BaseInput
@@ -111,7 +111,7 @@ const loginWithPasskey = async () => {
         <div class="ds-field-group">
           <div class="flex items-center justify-between gap-4">
             <label for="password" class="ds-field-label">{{ $t('gestlab.pages.login.password_input_title') }}</label>
-            <Link :href="route('password.request')" class="text-xs font-semibold text-[rgb(var(--primary-700-rgb))] hover:underline dark:text-[rgb(var(--primary-200-rgb))]">
+            <Link :href="route('password.request')" class="pl-k pl-acc hover:underline">
               {{ $t('gestlab.pages.login.forgot_password') }}
             </Link>
           </div>
@@ -129,7 +129,7 @@ const loginWithPasskey = async () => {
             />
             <button
               type="button"
-              class="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-[var(--ds-text-soft)] transition hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]"
+              class="ds-icon-button absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
               :title="showPassword ? $t('gestlab.pages.login.hide_password') : $t('gestlab.pages.login.show_password')"
               @click="showPassword = !showPassword"
             >
@@ -147,15 +147,17 @@ const loginWithPasskey = async () => {
 
         <p v-if="$page.props.errors?.social" class="ds-field-error">{{ $page.props.errors.social }}</p>
 
-        <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing || passkeyProcessing">
-          <ArrowRightStartOnRectangleIcon class="h-4 w-4" aria-hidden="true" />
-          {{ form.processing ? $t('gestlab.pages.login.processing') : $t('gestlab.pages.login.login_button_title') }}
-        </button>
+        <div class="grid gap-3 pt-2 sm:grid-cols-2">
+          <button type="submit" class="ds-button ds-button-primary min-h-12 w-full justify-between" :disabled="form.processing || passkeyProcessing">
+            {{ form.processing ? $t('gestlab.pages.login.processing') : $t('gestlab.pages.login.login_button_title') }}
+            <ChevronRightIcon class="h-4 w-4" aria-hidden="true" />
+          </button>
 
-        <button type="button" class="ds-button ds-button-secondary w-full" :disabled="passkeyProcessing || form.processing" @click="loginWithPasskey">
-          <FingerPrintIcon class="h-4 w-4" aria-hidden="true" />
-          {{ passkeyProcessing ? $t('gestlab.pages.login.passkey_processing') : $t('gestlab.pages.login.passkey_button') }}
-        </button>
+          <button type="button" class="ds-button ds-button-secondary min-h-12 w-full justify-between" :disabled="passkeyProcessing || form.processing" @click="loginWithPasskey">
+            {{ passkeyProcessing ? $t('gestlab.pages.login.passkey_processing') : $t('gestlab.pages.login.passkey_button') }}
+            <FingerPrintIcon class="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
       </form>
 
       <form ref="passkeyLoginForm" :action="route('passkeys.login')" method="post" class="hidden">
@@ -164,8 +166,8 @@ const loginWithPasskey = async () => {
         <input type="hidden" name="start_authentication_response" :value="passkeyResponse" />
       </form>
 
-      <div v-if="socialProviders.length" class="mt-6 border-t border-[var(--ds-border)] pt-5">
-        <p class="mb-3 text-center text-xs text-[var(--ds-text-soft)]">Ou continue com</p>
+      <div v-if="socialProviders.length" class="mt-6 border-t border-[var(--pl-line)] pt-5">
+        <p class="pl-k pl-muted mb-3">Ou continue com</p>
         <div class="grid gap-2">
           <a
             v-for="provider in socialProviders"
@@ -178,12 +180,6 @@ const loginWithPasskey = async () => {
         </div>
       </div>
 
-      <div v-if="portalEnabled" class="mt-6 border-t border-[var(--ds-border)] pt-5">
-        <Link :href="route('portal.login')" class="ds-button ds-button-ghost w-full">
-          <LockClosedIcon class="h-4 w-4" aria-hidden="true" />
-          {{ $t('gestlab.pages.login.access_client_portal') }}
-        </Link>
-      </div>
     </div>
   </AuthExperienceShell>
 </template>

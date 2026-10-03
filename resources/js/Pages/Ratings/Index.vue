@@ -111,7 +111,7 @@ import { computed } from 'vue'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Link, useForm } from '@inertiajs/vue3'
 import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 
 const props = defineProps({
   ratings: {

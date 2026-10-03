@@ -1,6 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
-import Pagination from "@/Components/Pagination.vue";
+import Pagination from "@/Components/pagination.vue";
 import RestoreRevisionModal from "./Partials/RestoreRevisionModal.vue";
 import { computed, ref } from "vue";
 import { Link, router } from "@inertiajs/vue3";
