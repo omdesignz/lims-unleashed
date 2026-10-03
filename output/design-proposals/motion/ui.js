@@ -35,14 +35,14 @@ function buildTop(el) {
       <button class="avatar" aria-label="Conta">DR</button>
     </div>`;
 }
-if (location.search.includes('light')) document.documentElement.dataset.theme = 'light';
+if (location.search.includes('dark')) document.documentElement.dataset.theme = 'dark';
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('header.top[data-area]').forEach(buildTop);
   document.querySelectorAll('i[data-i]').forEach((el) => {
     const name = el.dataset.i;
     el.outerHTML = `<svg class="i ${el.className}" viewBox="0 0 24 24" aria-hidden="true">${ICON[name] || ''}</svg>`;
   });
-  const light = document.documentElement.dataset.theme === 'light';
+  const light = document.documentElement.dataset.theme !== 'dark';
   document.querySelectorAll('img[data-logo]').forEach((el) => {
     const want = el.dataset.logo;
     el.src = LOGO[want === 'auto' ? (light ? 'color' : 'white') : want];

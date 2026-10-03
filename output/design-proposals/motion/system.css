@@ -13,30 +13,7 @@
   --ease: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-move: cubic-bezier(0.77, 0, 0.175, 1);
 
-  /* Dark is the reference theme: VAP Dark deepened to an ink. */
-  --bg: #070f1c;
-  --layer: #0b1728;
-  --raised: #11213a;
-  --line: #1a2a43;
-  --line-strong: #2c405f;
-  --fg: #edf2f8;
-  --muted: #8c9cb3;
-  --faint: #5c6e88;
-  --band: #087cf0;
-  --band-ink: #04101f;
-  --accent: #087cf0;
-  --accent-ink: #04101f;
-  --accent-hover: #70b5ff;
-  --accent-hover-ink: #04101f;
-  --accent-text: #70b5ff;
-  --ok: #4cc38a;
-  --warn: #f2b441;
-  --bad: #ff6b6b;
-  --scrim: rgb(4 10 20 / 0.76);
-  color-scheme: dark;
-}
-
-:root[data-theme='light'] {
+  /* Light is the default theme: Navy ink on paper. */
   --bg: #ffffff;
   --layer: #f3f6fa;
   --raised: #e8eef5;
@@ -45,6 +22,8 @@
   --fg: #061f46;
   --muted: #52647a;
   --faint: #8595a9;
+  --band: #087cf0;
+  --band-ink: #04101f;
   --accent: #0757b5;
   --accent-ink: #ffffff;
   --accent-hover: #061f46;
@@ -55,6 +34,28 @@
   --bad: #b42332;
   --scrim: rgb(6 31 70 / 0.44);
   color-scheme: light;
+}
+
+/* Dark, switched by the user's toggle: VAP Dark deepened to an ink. */
+:root[data-theme='dark'] {
+  --bg: #070f1c;
+  --layer: #0b1728;
+  --raised: #11213a;
+  --line: #1a2a43;
+  --line-strong: #2c405f;
+  --fg: #edf2f8;
+  --muted: #8c9cb3;
+  --faint: #5c6e88;
+  --accent: #087cf0;
+  --accent-ink: #04101f;
+  --accent-hover: #70b5ff;
+  --accent-hover-ink: #04101f;
+  --accent-text: #70b5ff;
+  --ok: #4cc38a;
+  --warn: #f2b441;
+  --bad: #ff6b6b;
+  --scrim: rgb(4 10 20 / 0.76);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }

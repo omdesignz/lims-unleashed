@@ -1293,22 +1293,27 @@ better-ui and emil-design-eng guided these capability-matched controls, identity
 
 The new entry file initially reproduced **22 failures / one passing membership-denial case**. It now passes **25 cases / 141 assertions**. The prior classification matrix now follows edit redirects and checks the canonical destination's retained resource, rather than treating a missing-page HTTP payload as browser success. Final post-format affected regression passes **73 cases / 973 assertions**, with no failures/errors/skips. The four frontend files pass **55 checks**, including real Vue watcher behavior and success-before-finish ordering. Build passes in **21.24 seconds** with the existing chunk-size warning; Pint, tracked/untracked whitespace checks and read-only Laravel review pass. Evidence: `/private/tmp/lims-stock-entry-regression.log`, `-front.log` and `-build.log`. The approved complete checkpoint has **4,164 manifest cases / 193 classes** and uses `/private/tmp/lims-stock-entry-full-manifest.xml`, `-full.log`, `-full.xml` and `-full-before.sha256`; its outcome is pending. No competing tests, builds or source edits will occur during that invocation. No schemas, development records, credentials, account grants, dependencies, production settings or global PHP configuration were changed.
 
-## Phase 2 — VAP visual system (in progress; Claude Code)
+## Phase 2 — VAP visual system (in progress; "Plano" approved, implementation pending)
 
 Revised on 2026-10-03 at the user's request: the earlier pixel-match brief is replaced. The target is a unified, production-grade interface built from the VAP Brand Identity System 1.1 and the two video references, not a recolour of the previous screens.
 
-**Direction under review: "Plano"** (proposed 2026-10-03, awaiting the user's approval; nothing of it is implemented). The user rejected "Bancada" after seeing it across the app ("you're using the skeleton or surface that was already in the project") and asked for the flat design language of motion.dev carrying the VAP brand, designed from scratch, with proposals shown before any implementation.
+**Approved direction: "Plano"** (approved by the user on 2026-10-03; not implemented yet). The user rejected "Bancada" after seeing it across the app ("you're using the skeleton or surface that was already in the project") and asked for the flat design language of motion.dev carrying the VAP brand, designed from scratch, with proposals shown before any implementation.
+
+Decisions made with the approval:
+
+- **Light is the default theme.** Dark is available through a toggle (account menu, shortcut Shift+D) and the choice is remembered per user. `system.css` defines light on `:root` and dark on `:root[data-theme='dark']`.
+- **Eight areas.** Comercial and Clientes are merged into one area, "Comercial": Início, Amostras, Análise, Certificados, Comercial, Inventário, Qualidade, Admin.
 
 The proposal lives in `output/design-proposals/motion/`:
 
-- `system.css` — the reference stylesheet: tokens for dark (reference) and light, type, and every component with its hover, focus, pressed and disabled state. Port from this file; do not re-derive values.
+- `system.css` — the reference stylesheet: tokens for light (default) and dark, type, and every component with its hover, focus, pressed and disabled state. Port from this file; do not re-derive values.
 - `01-estrutura.html` — the three structural decisions, shell anatomy, application map (eight areas), six page templates, role journeys, motion rules, themes and breakpoints.
 - `02-componentes.html` — every component in every state.
-- `03-inicio.html`, `04-fila.html`, `05-registo.html`, `06-entrada.html` — Today, sample queue, sample dossier and sign-in built with the system. Append `?light` for the light theme. Renders are in `png/`.
+- `03-inicio.html`, `04-fila.html`, `05-registo.html`, `06-entrada.html` — Today, sample queue, sample dossier and sign-in built with the system. Append `?dark` for the dark theme. Renders are in `png/` (`*-dark.png` for dark).
 
 Summary of the language: zero radius and no shadows anywhere; 1px hairlines; panels that share edges instead of floating cards; TASA Orbiter (700, tight tracking) for titles and text, Geist Mono (11px uppercase, +0.10em) for labels, navigation, buttons and data; VAP Blue `#087CF0` as the only accent (action and current position), amber/green/red for state only; a 64px area bar across the top and a 240px text-only column per area replacing the icon rail and double column; a flat blue band with an ink panel cut into it on Today, sign-in and error pages; a fixed "next step" bar on dossiers and forms with the single primary action. Both typefaces are OFL and must be self-hosted in `resources/fonts` (the mockups load them from Google Fonts).
 
-Implementation order once approved: (1) tokens, fonts and Tailwind theme (radius 0, shadows none) replacing the Bancada values; (2) shell — area bar, area column, page header, next-step bar; (3) shared components (buttons, fields, select/combobox, date picker, checkbox/radio/switch, chips, tabs, state cells, pager, table, dialog, slide-over, menu, command palette, toast, banner, empty/loading states, chart defaults); (4) the six page templates; (5) every module page mapped to a template, area by area; (6) portal, auth and error pages. Remove the Bancada-only classes (`app-rail*`, `app-column*`, `app-sheet`, hero-flattening rules) as each layer is replaced.
+Implementation order: (1) tokens, fonts and Tailwind theme (radius 0, shadows none) replacing the Bancada values; (2) shell — area bar, area column, page header, next-step bar; (3) shared components (buttons, fields, select/combobox, date picker, checkbox/radio/switch, chips, tabs, state cells, pager, table, dialog, slide-over, menu, command palette, toast, banner, empty/loading states, chart defaults); (4) the six page templates; (5) every module page mapped to a template, area by area; (6) portal, auth and error pages. Remove the Bancada-only classes (`app-rail*`, `app-column*`, `app-sheet`, hero-flattening rules) as each layer is replaced.
 
 **Working tree state: proposal B, "Bancada"** (chosen 2026-10-03, then rejected the same day; this is what the code currently renders and what the new direction replaces). One sheet on a neutral canvas: an icon rail for areas, a context column listing that area's pages, and a work area whose header band carries the page title, context line and tabs. Neutral greys with near-black text, borderless white cards on a grey body, small radii (controls 6px, cards 10px at the 15px root), dense type. Icons are Lucide (`@lucide/vue`), with motion.dev gestures on the rail. Typeface: Inter with JetBrains Mono, self-hosted from `resources/fonts`. Charts share one language through `resources/js/Support/charts.js` applied as ApexCharts global defaults. The parts that survive the change of direction are the brand assets, Lucide icons, `motion-v` helpers, the control and surface contracts as a mechanism, custom error pages, chart defaults and the branding-default migration.
 
@@ -1336,7 +1341,7 @@ Open items:
 
 - Known defect in the Bancada shell: below the desktop breakpoint the rail and column render stacked above the page because the mobile hide rule does not match elements inside `div.contents`. Not worth fixing if "Plano" replaces the shell.
 
-Exit: the user approves "Plano" (or a revision of it), it is implemented across every module page, the representative screens are approved in light and dark at desktop and mobile sizes, the open items above are closed or explicitly deferred, and the complete PHP and frontend suites pass.
+Exit: "Plano" is implemented across every module page, the representative screens are approved in light and dark at desktop and mobile sizes, the open items above are closed or explicitly deferred, and the complete PHP and frontend suites pass.
 
 ## Phase 3 — Core laboratory journey
 
