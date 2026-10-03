@@ -141,7 +141,7 @@ test('edit form renders stock read-only and directs adjustments to the item page
 
   assert.match(surface, /v-if="mode === 'create'"[^>]*@click="emit\('add-warehouse'\)"/);
   assert.match(surface, /v-if="mode === 'create'"[^>]*@click="emit\('remove-warehouse', index\)"/);
-  assert.match(surface, /<dl v-else class="mt-4 grid gap-4 text-sm sm:grid-cols-3">/);
+  assert.match(surface, /<dl v-else class="pl-facts">/);
   assert.match(surface, /<Link v-else :href="backHref" class="ds-button ds-button-secondary">Ver movimentos<\/Link>/);
   assert.doesNotMatch(edit, /@add-warehouse|@remove-warehouse|@update-warehouse-info/);
 });
@@ -214,7 +214,7 @@ test('stock-register threshold edits cannot submit a balance change', () => {
   const compiled = compileTemplate({ id: 'inventory-index', source: descriptor.template.content, filename: 'Inventory/Index.vue' });
   assert.deepEqual(compiled.errors, []);
   assert.match(stockRegister, /<div v-if="!form\.id">[\s\S]*?v-model="form\.qty_available"[^>]*step="0\.0001"/);
-  assert.match(stockRegister, /<div v-else class="rounded-lg[\s\S]*?Ajustar existências<\/Link>/);
+  assert.match(stockRegister, /<div v-else class="[^"]*">[\s\S]*?Ajustar existências<\/Link>/);
 
   const body = stockRegister.match(/function submit\(\) \{([\s\S]*?)\n\}/)[1];
   const calls = [];

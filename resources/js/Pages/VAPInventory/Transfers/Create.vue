@@ -1,278 +1,17 @@
-<template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-        <div class="min-w-0">
-          <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--ds-text-soft)]">
-            Nova movimentação interna
-          </p>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <TruckIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Criar transferência</h1>
-              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Reserve existências na origem, defina o destino e registe o prazo de recepção numa única operação rastreável.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <button type="button" class="ds-button ds-button-secondary" @click="goBack">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Voltar à fila
-        </button>
-      </div>
-    </section>
-
-    <form class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]" @submit.prevent="submit">
-      <div class="space-y-6">
-        <section class="ds-card overflow-hidden">
-          <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Etapa 1</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Item e rota de armazéns</h2>
-          </div>
-
-          <div class="grid gap-6 p-5 xl:grid-cols-[15rem_minmax(0,1fr)]">
-            <div>
-              <div class="flex items-center gap-2 text-[var(--ds-text)]">
-                <CubeIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
-                <h3 class="font-black">Reserva na origem</h3>
-              </div>
-              <p class="mt-2 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Apenas armazéns com saldo disponível podem ser seleccionados como origem. O destino deve ser diferente.
-              </p>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <div class="ds-field-group md:col-span-2">
-                <label class="ds-field-label">Item <span class="ds-field-required">*</span></label>
-                <comboboxEnhanced
-                  v-model="selectedItemOption"
-                  :has-error="Boolean(form.errors.item_id)"
-                  :options="itemOptions"
-                  placeholder="Pesquisar item com existências disponível"
-                />
-                <p v-if="form.errors.item_id" class="ds-field-error">{{ form.errors.item_id }}</p>
-              </div>
-
-              <div class="ds-field-group">
-                <label class="ds-field-label">Armazém de origem <span class="ds-field-required">*</span></label>
-                <comboboxEnhanced
-                  v-model="selectedSourceWarehouseOption"
-                  :disabled="!form.item_id || loadingStock"
-                  :has-error="Boolean(form.errors.source_id)"
-                  :options="sourceWarehouseOptions"
-                  placeholder="Seleccionar origem"
-                />
-                <p v-if="form.errors.source_id" class="ds-field-error">{{ form.errors.source_id }}</p>
-              </div>
-
-              <div class="ds-field-group">
-                <label class="ds-field-label">Armazém de destino <span class="ds-field-required">*</span></label>
-                <comboboxEnhanced
-                  v-model="selectedDestinationWarehouseOption"
-                  :disabled="!form.item_id"
-                  :has-error="Boolean(form.errors.destination_id)"
-                  :options="destinationWarehouseOptions"
-                  placeholder="Seleccionar destino"
-                />
-                <p v-if="form.errors.destination_id" class="ds-field-error">{{ form.errors.destination_id }}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="ds-card overflow-hidden">
-          <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Etapa 2</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Quantidade e janela logística</h2>
-          </div>
-
-          <div class="grid gap-6 p-5 xl:grid-cols-[15rem_minmax(0,1fr)]">
-            <div>
-              <div class="flex items-center gap-2 text-[var(--ds-text)]">
-                <CalendarDaysIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
-                <h3 class="font-black">Despacho planeado</h3>
-              </div>
-              <p class="mt-2 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                A quantidade não pode ultrapassar o saldo disponível. A data prevista sustenta alertas de atraso na fila.
-              </p>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <label class="ds-field-group">
-                <span class="ds-field-label">Quantidade <span class="ds-field-required">*</span></span>
-                <span class="relative block">
-                  <BaseInput
-                    v-model="form.qty"
-                    type="number"
-                    min="0.0001"
-                    step="0.0001"
-                    :max="maxQuantity"
-                    class="ds-field pr-20"
-                    :aria-invalid="Boolean(form.errors.qty)"
-                    required
-                  />
-                  <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-black text-[var(--ds-text-soft)]">
-                    / {{ maxQuantity }}
-                  </span>
-                </span>
-                <span class="ds-field-hint">Saldo disponível no armazém de origem.</span>
-                <span v-if="form.errors.qty" class="ds-field-error">{{ form.errors.qty }}</span>
-              </label>
-
-              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
-                <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Saldo após reserva</p>
-                <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">{{ remainingSourceStock }}</p>
-                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Unidades remanescentes na origem</p>
-              </div>
-
-              <label class="ds-field-group">
-                <span class="ds-field-label">Data de envio</span>
-                <DateTimePicker v-model="form.sent_date" type="date" :min="minDate" class="ds-field" :aria-invalid="Boolean(form.errors.sent_date)" />
-                <span v-if="form.errors.sent_date" class="ds-field-error">{{ form.errors.sent_date }}</span>
-              </label>
-
-              <label class="ds-field-group">
-                <span class="ds-field-label">Recepção esperada</span>
-                <DateTimePicker v-model="form.expected_date" type="date" :min="form.sent_date || minDate" class="ds-field" :aria-invalid="Boolean(form.errors.expected_date)" />
-                <span v-if="form.errors.expected_date" class="ds-field-error">{{ form.errors.expected_date }}</span>
-              </label>
-
-              <label class="ds-field-group md:col-span-2">
-                <span class="ds-field-label">Observações logísticas</span>
-                <textarea
-                  v-model="form.obs"
-                  rows="4"
-                  class="ds-field"
-                  :aria-invalid="Boolean(form.errors.obs)"
-                  placeholder="Condições de transporte, instruções de manuseamento ou cadeia de frio"
-                ></textarea>
-                <span v-if="form.errors.obs" class="ds-field-error">{{ form.errors.obs }}</span>
-              </label>
-            </div>
-          </div>
-        </section>
-
-        <section class="ds-table-shell">
-          <div class="ds-table-summary px-5 py-4">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Disponibilidade</p>
-              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Existências do item por armazém</h2>
-            </div>
-            <button type="button" class="ds-button ds-button-secondary" :disabled="!form.item_id || loadingStock" @click="fetchRealTimeStock">
-              <ArrowPathIcon :class="['h-4 w-4', loadingStock ? 'animate-spin' : '']" />
-              Actualizar
-            </button>
-          </div>
-
-          <div v-if="selectedItem" class="overflow-x-auto">
-            <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
-              <thead class="bg-[var(--ds-panel-subtle)]">
-                <tr>
-                  <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
-                  <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Localização</th>
-                  <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Disponível</th>
-                  <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Papel na rota</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
-                <tr v-for="warehouse in warehouseStockRows" :key="warehouse.id">
-                  <td class="px-5 py-3 font-black text-[var(--ds-text)]">{{ warehouse.name }}</td>
-                  <td class="px-5 py-3 font-semibold text-[var(--ds-text-muted)]">{{ warehouse.location?.name || 'Sem localização' }}</td>
-                  <td class="px-5 py-3 text-right text-lg font-black text-[var(--ds-text)]">{{ warehouse.available_stock }}</td>
-                  <td class="px-5 py-3 text-right">
-                    <span v-if="String(warehouse.id) === String(form.source_id)" class="inline-flex items-center gap-2 text-xs font-black text-rose-700 dark:text-rose-300">
-                      <span class="h-2 w-2 rounded-full bg-rose-600"></span> Origem
-                    </span>
-                    <span v-else-if="String(warehouse.id) === String(form.destination_id)" class="inline-flex items-center gap-2 text-xs font-black text-emerald-700 dark:text-emerald-300">
-                      <span class="h-2 w-2 rounded-full bg-emerald-600"></span> Destino
-                    </span>
-                    <span v-else class="text-xs font-semibold text-[var(--ds-text-soft)]">Disponível</span>
-                  </td>
-                </tr>
-              </tbody>
-            </DataTable>
-          </div>
-
-          <div v-else class="ds-empty-state p-8 text-center">
-            <CubeIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-            <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Seleccione um item para consultar o existências distribuído.</p>
-          </div>
-
-          <div v-if="stockRefreshError" class="border-t border-[var(--ds-border)] px-5 py-3 text-sm font-bold text-rose-700 dark:text-rose-300">
-            {{ stockRefreshError }}
-          </div>
-        </section>
-      </div>
-
-      <aside>
-        <section class="ds-command-surface p-5 xl:sticky xl:top-20">
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Resumo da transferência</p>
-          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Prontidão operacional</h2>
-
-          <ol class="mt-5 space-y-0">
-            <li v-for="(step, index) in readinessSteps" :key="step.label" class="relative flex gap-3 pb-6 last:pb-0">
-              <span v-if="index < readinessSteps.length - 1" class="absolute left-[0.4375rem] top-4 h-[calc(100%-0.5rem)] w-px bg-[var(--ds-border)]"></span>
-              <span :class="['relative mt-1 h-4 w-4 shrink-0 rounded-full border-4 border-[var(--ds-panel-raised)]', step.complete ? 'bg-emerald-600' : 'bg-[var(--ds-border-strong)]']"></span>
-              <div>
-                <p class="text-sm font-black text-[var(--ds-text)]">{{ step.label }}</p>
-                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ step.detail }}</p>
-              </div>
-            </li>
-          </ol>
-
-          <dl class="mt-6 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
-            <div class="flex items-start justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Item</dt>
-              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ selectedItem?.name || 'Por seleccionar' }}</dd>
-            </div>
-            <div class="flex items-start justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Origem</dt>
-              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ sourceWarehouse?.name || 'Por seleccionar' }}</dd>
-            </div>
-            <div class="flex items-start justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Destino</dt>
-              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ destinationWarehouse?.name || 'Por seleccionar' }}</dd>
-            </div>
-            <div class="flex items-start justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Quantidade</dt>
-              <dd class="text-right text-sm font-black text-[var(--ds-text)]">{{ Number(form.qty || 0) }} / {{ maxQuantity }}</dd>
-            </div>
-          </dl>
-
-          <div v-if="form.hasErrors" class="mt-5 rounded-lg border border-rose-300/60 bg-rose-50 p-3 text-sm font-bold text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200">
-            Reveja os campos assinalados antes de criar a transferência.
-          </div>
-
-          <button type="submit" class="ds-button ds-button-primary mt-5 w-full" :disabled="form.processing || !isFormValid">
-            <PaperAirplaneIcon class="h-4 w-4" />
-            {{ form.processing ? 'A criar...' : 'Criar transferência' }}
-          </button>
-          <button type="button" class="ds-button ds-button-secondary mt-2 w-full" @click="goBack">
-            Cancelar
-          </button>
-        </section>
-      </aside>
-    </form>
-  </div>
-</template>
-
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
-import {
-  ArrowLeft as ArrowLeftIcon,
-  RefreshCw as ArrowPathIcon,
-  CalendarDays as CalendarDaysIcon,
-  Box as CubeIcon,
-  Send as PaperAirplaneIcon,
-  Truck as TruckIcon,
-} from '@lucide/vue'
+import { RefreshCw as ArrowPathIcon } from '@lucide/vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import NextStepBar from '@/Components/plano/NextStepBar.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 
+/**
+ * New transfer (Plano form). Creating it reserves the quantity at the source in
+ * one operation; only warehouses holding the item can be the source and the
+ * destination must differ from it.
+ */
 const props = defineProps({
   items: {
     type: Array,
@@ -333,7 +72,7 @@ const destinationWarehouses = computed(() => props.warehouses.filter((warehouse)
 
 const itemOptions = computed(() => props.items.map((item) => ({
   value: item.id,
-  label: `${item.name}${item.internal_code || item.code ? ` (${item.internal_code || item.code})` : ''}${hasStockInAnyWarehouse(item) ? '' : ' - Sem existências disponível'}`,
+  label: `${item.name}${item.internal_code || item.code ? ` (${item.internal_code || item.code})` : ''}${hasStockInAnyWarehouse(item) ? '' : ' - Sem existências disponíveis'}`,
   disabled: !hasStockInAnyWarehouse(item),
 })))
 
@@ -356,30 +95,14 @@ const isFormValid = computed(() => (
   && Number(form.qty) <= maxQuantity.value
 ))
 
-const readinessSteps = computed(() => [
-  {
-    label: 'Item identificado',
-    detail: selectedItem.value?.name || 'Seleccione o material a movimentar.',
-    complete: Boolean(form.item_id),
-  },
-  {
-    label: 'Rota válida',
-    detail: sourceWarehouse.value && destinationWarehouse.value
-      ? `${sourceWarehouse.value.name} → ${destinationWarehouse.value.name}`
-      : 'Defina origem e destino diferentes.',
-    complete: Boolean(form.source_id && form.destination_id && String(form.source_id) !== String(form.destination_id)),
-  },
-  {
-    label: 'Quantidade disponível',
-    detail: Number(form.qty) > 0 ? `${form.qty} de ${maxQuantity.value} unidades` : 'Informe a quantidade.',
-    complete: Number(form.qty) > 0 && Number(form.qty) <= maxQuantity.value,
-  },
-  {
-    label: 'Pronta para registo',
-    detail: isFormValid.value ? 'A reserva será aplicada ao confirmar.' : 'Complete os campos obrigatórios.',
-    complete: isFormValid.value,
-  },
-])
+/** The one thing still missing before the transfer can be created. */
+const nextStep = computed(() => {
+  if (!form.item_id) return 'Seleccione o item a movimentar.'
+  if (!form.source_id) return 'Escolha o armazém de origem com saldo disponível.'
+  if (!form.destination_id || String(form.destination_id) === String(form.source_id)) return 'Escolha um destino diferente da origem.'
+  if (!(Number(form.qty) > 0) || Number(form.qty) > maxQuantity.value) return `Indique uma quantidade entre 0,0001 e ${maxQuantity.value}.`
+  return `${form.qty} de ${selectedItem.value?.name} de ${sourceWarehouse.value?.name} para ${destinationWarehouse.value?.name}. A reserva é aplicada ao criar.`
+})
 
 function stockForWarehouse(warehouseId) {
   if (!form.item_id || !warehouseId) return 0
@@ -449,10 +172,6 @@ function submit() {
   })
 }
 
-function goBack() {
-  router.visit(route('vap-inventory.transfers.index'))
-}
-
 watch(selectedItemOption, async (option) => {
   const nextItemId = option?.value || ''
   if (String(nextItemId) === String(form.item_id)) return
@@ -493,4 +212,155 @@ onMounted(() => {
     fetchRealTimeStock()
   }
 })
+
 </script>
+
+<template>
+  <form class="pl-page" data-template="form" @submit.prevent="submit">
+    <PageHeader
+      :crumbs="[{ title: 'Inventário', url: route('vap-inventory.items.index') }, { title: 'Transferências', url: route('vap-inventory.transfers.index') }, { title: 'Nova' }]"
+      title="Nova transferência"
+      lede="Reserve existências na origem, indique o destino e o prazo de recepção numa única operação rastreável."
+    />
+
+    <p v-if="form.hasErrors" class="ds-field-error mb-6" role="alert">Reveja os campos assinalados antes de criar a transferência.</p>
+
+    <section class="pl-form-section">
+      <header>
+        <h2 class="pl-d3">Item e rota</h2>
+        <p>Só armazéns com saldo do item podem ser origem. O destino tem de ser diferente da origem. Todos os campos desta secção são obrigatórios.</p>
+      </header>
+      <div class="pl-form-grid">
+        <div class="ds-field-group pl-span-2">
+          <comboboxEnhanced
+            v-model="selectedItemOption"
+            title-label="Item"
+            :has-error="Boolean(form.errors.item_id)"
+            :options="itemOptions"
+            placeholder="Pesquisar item com existências disponíveis"
+          />
+          <p v-if="form.errors.item_id" class="ds-field-error" role="alert">{{ form.errors.item_id }}</p>
+        </div>
+
+        <div class="ds-field-group">
+          <comboboxEnhanced
+            v-model="selectedSourceWarehouseOption"
+            title-label="Armazém de origem"
+            :disabled="!form.item_id || loadingStock"
+            :has-error="Boolean(form.errors.source_id)"
+            :options="sourceWarehouseOptions"
+            placeholder="Seleccionar origem"
+          />
+          <p v-if="form.errors.source_id" class="ds-field-error" role="alert">{{ form.errors.source_id }}</p>
+        </div>
+
+        <div class="ds-field-group">
+          <comboboxEnhanced
+            v-model="selectedDestinationWarehouseOption"
+            title-label="Armazém de destino"
+            :disabled="!form.item_id"
+            :has-error="Boolean(form.errors.destination_id)"
+            :options="destinationWarehouseOptions"
+            placeholder="Seleccionar destino"
+          />
+          <p v-if="form.errors.destination_id" class="ds-field-error" role="alert">{{ form.errors.destination_id }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pl-form-section">
+      <header>
+        <h2 class="pl-d3">Quantidade e prazos</h2>
+        <p>A quantidade não pode ultrapassar o saldo da origem. A data prevista alimenta o alerta de atraso na fila.</p>
+      </header>
+      <div class="pl-form-grid">
+        <div class="ds-field-group">
+          <label for="transfer-qty" class="ds-field-label">Quantidade <span class="ds-field-required">*</span></label>
+          <BaseInput
+            id="transfer-qty"
+            v-model="form.qty"
+            type="number"
+            min="0.0001"
+            step="0.0001"
+            :max="maxQuantity"
+            class="ds-field"
+            :aria-invalid="Boolean(form.errors.qty)"
+            required
+          />
+          <span class="ds-field-hint">Saldo na origem: <span class="pl-num">{{ maxQuantity }}</span> · fica <span class="pl-num">{{ remainingSourceStock }}</span> após a reserva.</span>
+          <span v-if="form.errors.qty" class="ds-field-error" role="alert">{{ form.errors.qty }}</span>
+        </div>
+
+        <DateTimePicker v-model="form.sent_date" type="date" label="Data de envio" :min="minDate" :error="form.errors.sent_date" />
+
+        <DateTimePicker v-model="form.expected_date" type="date" label="Recepção esperada" :min="form.sent_date || minDate" :error="form.errors.expected_date" />
+
+        <div class="ds-field-group pl-span-2">
+          <label for="transfer-obs" class="ds-field-label">Observações logísticas</label>
+          <textarea
+            id="transfer-obs"
+            v-model="form.obs"
+            rows="4"
+            class="ds-field"
+            :aria-invalid="Boolean(form.errors.obs)"
+            placeholder="Condições de transporte, instruções de manuseamento ou cadeia de frio"
+          ></textarea>
+          <span v-if="form.errors.obs" class="ds-field-error" role="alert">{{ form.errors.obs }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="pl-form-section">
+      <header>
+        <h2 class="pl-d3">Existências do item</h2>
+        <p>Saldo disponível do item em cada armazém do laboratório.</p>
+      </header>
+      <div class="pl-panel">
+        <div class="pl-panel-head">
+          <h3 class="pl-k">Por armazém</h3>
+          <button type="button" class="ds-button ds-button-quiet" :disabled="!form.item_id || loadingStock" @click="fetchRealTimeStock">
+            <ArrowPathIcon :class="['h-4 w-4', loadingStock ? 'animate-spin' : '']" aria-hidden="true" />
+            Actualizar
+          </button>
+        </div>
+        <DataTable v-if="selectedItem">
+          <thead>
+            <tr>
+              <th scope="col">Armazém</th>
+              <th scope="col">Localização</th>
+              <th scope="col" class="text-right">Disponível</th>
+              <th scope="col">Papel na rota</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="warehouse in warehouseStockRows" :key="warehouse.id">
+              <td>{{ warehouse.name }}</td>
+              <td class="text-[var(--pl-muted)]">{{ warehouse.location?.name || 'Sem localização' }}</td>
+              <td class="pl-num text-right">{{ warehouse.available_stock }}</td>
+              <td>
+                <StatusChip v-if="String(warehouse.id) === String(form.source_id)" tone="run">Origem</StatusChip>
+                <StatusChip v-else-if="String(warehouse.id) === String(form.destination_id)" tone="ok">Destino</StatusChip>
+                <span v-else class="text-[var(--pl-faint)]">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </DataTable>
+        <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+          <span class="pl-k">Nenhum item seleccionado</span>
+          <p class="text-sm text-[var(--pl-muted)]">Seleccione um item para consultar as existências por armazém.</p>
+        </div>
+        <p v-if="stockRefreshError" class="ds-field-error border-t border-[var(--pl-line)] px-4 py-3" role="alert">{{ stockRefreshError }}</p>
+      </div>
+    </section>
+
+    <NextStepBar>
+      {{ nextStep }}
+      <template #actions>
+        <Link :href="route('vap-inventory.transfers.index')" class="ds-button ds-button-quiet">Cancelar</Link>
+        <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !isFormValid">
+          {{ form.processing ? 'A criar…' : 'Criar transferência' }}
+        </button>
+      </template>
+    </NextStepBar>
+  </form>
+</template>

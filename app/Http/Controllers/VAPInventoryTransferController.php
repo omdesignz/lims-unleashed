@@ -60,6 +60,8 @@ class VAPInventoryTransferController extends Controller
             'warehouses' => InventoryItemWarehouse::query()->where('lab_id', $labId)->with('location')->orderBy('name')->get(),
             'stats' => [
                 'pending_transfers' => (clone $counts)->whereNull('received_date')->count(),
+                'in_transit' => (clone $counts)->whereNotNull('sent_date')->whereNull('received_date')->count(),
+                'received' => (clone $counts)->whereNotNull('received_date')->count(),
                 'sent_today' => (clone $counts)->whereDate('sent_date', today())->count(),
                 'received_today' => (clone $counts)->whereDate('received_date', today())->count(),
                 'total_transfers' => $counts->count(),
@@ -102,9 +104,6 @@ class VAPInventoryTransferController extends Controller
         $transfer->load(['item.category', 'item.unit', 'source.location', 'destination.location']);
         $sourceStock = Inventory::query()->where('item_id', $transfer->item_id)->where('warehouse_id', $transfer->source_id)->first();
         $destinationStock = Inventory::query()->where('item_id', $transfer->item_id)->where('warehouse_id', $transfer->destination_id)->first();
-        $daysInTransfer = max((int) $transfer->created_at?->startOfDay()->diffInDays(today()), 0);
-        $daysUntilExpected = $transfer->expected_date
-            ? (int) today()->diffInDays($transfer->expected_date->startOfDay(), false) : 0;
         $canReceive = $transfer->received_date === null && $transfer->sent_date !== null;
         $canCancel = $transfer->received_date === null;
 
@@ -114,20 +113,6 @@ class VAPInventoryTransferController extends Controller
             'destinationStock' => $destinationStock,
             'canReceive' => $canReceive && $request->user()->can('edit_itransfers'),
             'canCancel' => $canCancel && $request->user()->can('delete_itransfers'),
-            'charts' => [
-                'quantity_flow' => [
-                    'labels' => ['Quantidade transferida', 'Existências na origem', 'Existências no destino'],
-                    'series' => [(float) $transfer->qty, (float) ($sourceStock?->qty_available ?? 0), (float) ($destinationStock?->qty_available ?? 0)],
-                ],
-                'timing_pressure' => [
-                    'labels' => ['Dias em curso', 'Dias até expectativa', 'Dias em atraso'],
-                    'series' => [$daysInTransfer, max($daysUntilExpected, 0), $transfer->is_overdue ? $transfer->days_overdue : 0],
-                ],
-                'execution_pulse' => [
-                    'labels' => ['Gap destino', 'Pode receber', 'Pode cancelar'],
-                    'series' => [max((float) $transfer->qty - (float) ($destinationStock?->qty_available ?? 0), 0), $canReceive ? 1 : 0, $canCancel ? 1 : 0],
-                ],
-            ],
         ]);
     }
 

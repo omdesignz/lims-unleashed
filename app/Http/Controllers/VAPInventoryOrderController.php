@@ -93,6 +93,12 @@ class VAPInventoryOrderController extends Controller
             'open_items' => InventoryOrderDetail::whereIn('status', ['pending', 'ordered', 'partially_received'])
                 ->where('lab_id', $labId)
                 ->count(),
+            'by_status' => InventoryOrder::forLaboratory($labId)
+                ->toBase()
+                ->selectRaw('upper(status) as status_key, count(*) as aggregate')
+                ->groupByRaw('upper(status)')
+                ->pluck('aggregate', 'status_key')
+                ->map(fn ($count): int => (int) $count),
         ];
 
         $orders = $query->paginate(15)->withQueryString();

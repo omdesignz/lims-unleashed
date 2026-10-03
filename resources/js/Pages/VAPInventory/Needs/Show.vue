@@ -1,242 +1,193 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Procurement evidence</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot" :class="statusDotClass" />
-              {{ statusLabel }}
-            </span>
-            <span class="ds-chip">{{ need.reference }}</span>
+  <div class="pl-page" data-template="dossier">
+    <PageHeader
+      :crumbs="[{ title: 'Inventário' }, { title: 'Necessidades', url: route('vap-inventory.needs.index') }, { title: need.reference }]"
+      :title="`Necessidade ${need.reference}`"
+      :lede="[needTitle, need.needed_by_date ? `necessária até ${formatDate(need.needed_by_date)}` : null, `${itemRows.length} ${itemRows.length === 1 ? 'linha' : 'linhas'}`].filter(Boolean).join(' · ')"
+    >
+      <template #badges><StatusChip :tone="statusTone">{{ statusLabel }}</StatusChip></template>
+      <template #actions>
+        <a :href="route('vap-inventory.needs.pdf', need.id)" target="_blank" rel="noopener noreferrer" class="ds-button ds-button-secondary">Exportar PDF<span class="sr-only"> (abre noutra janela)</span></a>
+        <Link v-if="need.inventory_order" :href="route('vap-inventory.orders.show', need.inventory_order.id)" class="ds-button ds-button-quiet">Pedido {{ need.inventory_order.reference || `#${need.inventory_order.id}` }}</Link>
+      </template>
+    </PageHeader>
+
+    <Journey v-if="journey.length" class="mb-10" :steps="journey" aria-label="Percurso da necessidade" />
+
+    <div class="pl-dossier-grid">
+      <div class="grid min-w-0 gap-7">
+        <section class="pl-panel" aria-labelledby="need-lines-title">
+          <div class="pl-panel-head">
+            <h2 id="need-lines-title" class="pl-k">Linhas da necessidade</h2>
+            <span class="pl-k pl-faint">{{ approvedLineCount }} de {{ itemRows.length }} aprovadas</span>
           </div>
-          <h1 class="ds-heading mt-3 text-2xl">{{ needTitle }}</h1>
-          <p class="ds-copy mt-2 text-sm">{{ need.justification || 'Sem justificação adicional.' }}</p>
-        </div>
-
-        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-          <Link :href="route('vap-inventory.needs.index')" class="ds-button ds-button-secondary">
-            Voltar
-          </Link>
-          <a :href="route('vap-inventory.needs.pdf', need.id)" target="_blank" rel="noopener noreferrer" class="ds-button ds-button-secondary">
-            Exportar PDF
-          </a>
-          <button v-if="canApprove" type="button" class="ds-button ds-button-primary" :disabled="actionForm.processing" @click="approve">
-            Aprovar
-          </button>
-          <button v-if="canApprove" type="button" class="ds-button ds-button-danger" :disabled="actionForm.processing" @click="reject">
-            Rejeitar
-          </button>
-          <button v-if="canConvertToOrder" type="button" class="ds-button ds-button-primary" :disabled="conversionForm.processing" @click="convertToOrder">
-            Converter em pedido
-          </button>
-        </div>
-      </div>
-
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] md:grid-cols-4 xl:grid-cols-6 xl:divide-y-0">
-        <div v-for="metric in summaryCards" :key="metric.label" class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
-            <span class="lims-status-dot" :class="metric.dotClass" />
-            {{ metric.label }}
-          </dt>
-          <dd class="mt-2 text-xl font-bold" :class="metric.valueClass">{{ metric.value }}</dd>
-          <p class="mt-1 truncate text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ metric.caption }}</p>
-        </div>
-      </dl>
-    </section>
-
-    <section class="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-      <article class="ds-panel overflow-hidden">
-        <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
-          <div>
-            <h2 class="ds-heading text-base">Âmbito de aprovação</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Linhas solicitadas, aprovadas e pendentes. Quantidades mantidas por unidade.</p>
+          <DataTable v-if="itemRows.length">
+            <thead>
+              <tr>
+                <th scope="col">Item</th>
+                <th scope="col" class="text-right">Solicitado</th>
+                <th scope="col" class="text-right">Aprovado</th>
+                <th scope="col">Armazém</th>
+                <th scope="col" class="text-right">Preço estimado</th>
+                <th scope="col">Notas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in itemRows" :key="item.id">
+                <td>
+                  <span class="font-medium">{{ item.inventory_item?.name || 'Item não identificado' }}</span>
+                  <span class="pl-num block text-[12.5px] text-[var(--pl-muted)]">{{ item.inventory_item?.code || 'Sem código' }}</span>
+                </td>
+                <td class="pl-num text-right">{{ formatQuantity(item.quantity_requested) }} {{ item.inventory_item?.unit?.code }}</td>
+                <td class="pl-num text-right">{{ item.quantity_approved ? `${formatQuantity(item.quantity_approved)} ${item.inventory_item?.unit?.code || ''}` : '—' }}</td>
+                <td>{{ item.warehouse?.name || 'A definir' }}</td>
+                <td class="pl-num text-right">{{ formatMoney(item.estimated_unit_price) }}</td>
+                <td class="max-w-xs !whitespace-normal text-[var(--pl-muted)]"><span class="line-clamp-2">{{ item.notes || '—' }}</span></td>
+              </tr>
+            </tbody>
+          </DataTable>
+          <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+            <span class="pl-k">Sem linhas</span>
+            <p class="text-sm text-[var(--pl-muted)]">Esta necessidade não tem itens registados.</p>
           </div>
-          <span class="ds-chip">{{ itemRows.length }} linhas</span>
-        </div>
-        <div class="p-4">
-          <apexchart type="bar" height="300" :options="quantityScopeChartOptions" :series="quantityScopeChartSeries" />
-        </div>
-      </article>
+          <dl class="pl-facts pl-facts-2 border-t border-[var(--pl-line)]">
+            <div class="pl-fact"><dt>Linhas aprovadas</dt><dd class="pl-num">{{ approvedLineCount }} / {{ itemRows.length }}</dd></div>
+            <div class="pl-fact"><dt>Valor estimado</dt><dd class="pl-num">{{ formatMoney(estimatedNeedValue) }}</dd></div>
+          </dl>
+        </section>
 
-      <div class="grid gap-4">
-        <article class="ds-panel overflow-hidden">
-          <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
-            <div>
-              <h2 class="ds-heading text-base">Mix de valor</h2>
-              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Distribuição do valor estimado por item.</p>
-            </div>
-            <span class="ds-chip">{{ itemValueMixTotal }}</span>
+        <section v-if="canApprove" class="pl-panel" aria-labelledby="need-decision-title">
+          <div class="pl-panel-head">
+            <h2 id="need-decision-title" class="pl-k">Decisão de aprovação</h2>
+            <span class="pl-k pl-faint">Quantidades até ao solicitado</span>
           </div>
-          <div class="p-4">
-            <apexchart type="donut" height="300" :options="itemValueMixChartOptions" :series="itemValueMixChartSeries" />
+          <DataTable>
+            <thead>
+              <tr>
+                <th scope="col">Item</th>
+                <th scope="col" class="text-right">Solicitado</th>
+                <th scope="col">Quantidade aprovada</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in actionForm.items" :key="item.id">
+                <td>{{ item.name }}</td>
+                <td class="pl-num text-right">{{ formatQuantity(itemRows[index]?.quantity_requested) }} {{ itemRows[index]?.inventory_item?.unit?.code }}</td>
+                <td class="w-48">
+                  <BaseInput
+                    :id="`need-approved-${item.id}`"
+                    v-model="item.quantity_approved"
+                    type="number"
+                    min="0.0001"
+                    step="0.0001"
+                    :max="itemRows[index]?.quantity_requested"
+                    :aria-label="`Quantidade aprovada de ${item.name}`"
+                    :error="actionForm.errors[`items.${index}.quantity_approved`]"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </DataTable>
+          <div class="grid gap-3 border-t border-[var(--pl-line)] p-4">
+            <BaseTextarea
+              id="need-approval-notes"
+              v-model="actionForm.approval_notes"
+              :rows="3"
+              label="Notas da decisão"
+              hint="Obrigatórias para rejeitar."
+              placeholder="Notas de aprovação, motivo da rejeição ou instruções para a compra."
+              :error="actionForm.errors.approval_notes"
+            />
+            <p v-if="actionForm.errors.items" class="ds-field-error" role="alert">{{ actionForm.errors.items }}</p>
           </div>
-        </article>
+        </section>
 
-        <article class="ds-panel overflow-hidden">
-          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading text-base">Pulso de governação</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Itens, prazo, conversão e valor financeiro estimado.</p>
+        <section v-if="canConvertToOrder" class="pl-panel" aria-labelledby="need-conversion-title">
+          <div class="pl-panel-head">
+            <h2 id="need-conversion-title" class="pl-k">Conversão em pedido de compra</h2>
+            <span class="pl-k pl-faint">{{ approvedLineCount }} linhas aprovadas</span>
           </div>
-          <div class="p-4">
-            <apexchart type="bar" height="250" :options="governancePulseChartOptions" :series="governancePulseChartSeries" />
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="grid gap-4 xl:grid-cols-[1fr_22rem]">
-      <div class="space-y-4">
-        <article class="ds-panel overflow-hidden">
-          <div class="ds-table-summary px-5 py-4">
-            <div class="flex items-start gap-3">
-              <div>
-                <h2 class="ds-heading text-base">Itens aprovados para aquisição</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Materiais, quantidade, armazém e preço estimado.</p>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="itemRows.length" class="ds-table-shell overflow-x-auto">
-            <DataTable class="min-w-[58rem]">
-              <thead class="ds-table-head">
-                <tr>
-                  <th class="ds-table-cell text-left">Item</th>
-                  <th class="ds-table-cell text-left">Quantidade</th>
-                  <th class="ds-table-cell text-left">Armazém</th>
-                  <th class="ds-table-cell text-left">Preço estimado</th>
-                  <th class="ds-table-cell text-left">Notas</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in itemRows" :key="item.id" class="ds-table-row">
-                  <td class="ds-table-cell align-top">
-                    <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ item.inventory_item?.name || 'Item N/A' }}</p>
-                    <p class="mt-1 font-mono text-xs text-[color:var(--ds-text-soft)]">{{ item.inventory_item?.code || 'Sem código' }}</p>
-                  </td>
-                  <td class="ds-table-cell align-top text-sm text-[color:var(--ds-text)]">
-                    <div>Solicitado: <span class="font-bold">{{ formatQuantity(item.quantity_requested) }} {{ item.inventory_item?.unit?.code }}</span></div>
-                    <div>Aprovado: <span class="font-bold">{{ item.quantity_approved ? `${formatQuantity(item.quantity_approved)} ${item.inventory_item?.unit?.code || ''}` : '—' }}</span></div>
-                  </td>
-                  <td class="ds-table-cell align-top text-sm font-semibold text-[color:var(--ds-text)]">{{ item.warehouse?.name || 'A definir' }}</td>
-                  <td class="ds-table-cell align-top text-sm font-semibold text-[color:var(--ds-text)]">{{ formatMoney(item.estimated_unit_price) }}</td>
-                  <td class="ds-table-cell max-w-xs align-top text-sm text-[color:var(--ds-text-muted)]">
-                    <span class="line-clamp-2">{{ item.notes || '—' }}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </DataTable>
-          </div>
-
-          <div v-else class="p-5">
-            <div class="ds-empty-state p-6 text-center">
-              <p class="text-sm font-semibold text-[color:var(--ds-text-soft)]">Sem itens registados nesta necessidade.</p>
-            </div>
-          </div>
-        </article>
-
-        <article v-if="managementActionAvailable" class="ds-command-surface overflow-hidden">
-          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading text-base">Acção de gestão</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Aprovação, rejeição ou conversão para pedido de compra.</p>
-          </div>
-
-          <div class="space-y-4 p-5">
-            <BaseTextarea v-model="actionForm.approval_notes" rows="4" label="Notas" placeholder="Notas de aprovação, rejeição ou instruções para a compra." />
-
-            <div v-if="canApprove" class="ds-table-shell overflow-x-auto">
-              <DataTable class="min-w-[36rem]">
-                <thead class="ds-table-head">
-                  <tr>
-                    <th class="ds-table-cell text-left">Item</th>
-                    <th class="ds-table-cell text-left">Quantidade aprovada</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in actionForm.items" :key="item.id" class="ds-table-row">
-                    <td class="ds-table-cell text-sm font-semibold text-[color:var(--ds-text)]">{{ item.name }}</td>
-                    <td class="ds-table-cell">
-                      <BaseInput v-model="item.quantity_approved" type="number" min="0.0001" step="0.0001" :max="item.quantity_requested" />
-                    </td>
-                  </tr>
-                </tbody>
-              </DataTable>
-            </div>
-
-            <div v-if="canConvertToOrder" class="space-y-4">
+          <div class="pl-form-grid p-4">
+            <div class="ds-field-group pl-span-2">
               <comboboxEnhanced
                 v-model="selectedSupplierOption"
+                title-label="Fornecedor"
                 :has-error="Boolean(conversionForm.errors.supplier_id)"
                 :options="supplierOptions"
                 placeholder="Pesquisar fornecedor aprovado"
               />
-              <p v-if="conversionForm.errors.supplier_id" class="ds-field-error">{{ conversionForm.errors.supplier_id }}</p>
+              <p v-if="conversionForm.errors.supplier_id" class="ds-field-error" role="alert">{{ conversionForm.errors.supplier_id }}</p>
+            </div>
 
-              <div v-if="selectedSupplierAssessment" class="ds-card border-l-4 p-4" :class="supplierAssessmentPanelClass">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div class="text-sm font-bold text-[color:var(--ds-text)]">Avaliação do fornecedor</div>
-                    <div class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-                      Estado {{ supplierAssessmentStatus }} · Risco {{ supplierAssessmentRisk }}
-                    </div>
-                  </div>
-                  <div class="text-right text-xs font-semibold text-[color:var(--ds-text-soft)]">
-                    <div>Score {{ selectedSupplierAssessment.total_score ?? '—' }}</div>
-                    <div>Próxima revisão {{ supplierAssessmentReviewLabel }}</div>
-                  </div>
-                </div>
-                <p v-if="!selectedSupplierAssessment.approved_supplier" class="mt-3 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                  Este fornecedor não está marcado como aprovado. Reveja a avaliação antes de concluir a conversão.
-                </p>
-              </div>
-
-              <div v-else-if="selectedSupplier" class="ds-card border-l-4 border-amber-500 p-4">
-                <p class="text-sm font-semibold text-[color:var(--ds-text)]">
-                  Este fornecedor ainda não tem avaliação registada. Recomenda-se revisão antes de concluir a compra.
-                </p>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-2">
-                <BaseInput v-model="conversionForm.date" type="date" label="Data do pedido" />
-                <BaseInput v-model="conversionForm.expected_date" type="date" label="Data esperada" />
+            <div v-if="selectedSupplierAssessment" class="pl-banner pl-span-2 text-sm" :class="supplierAssessmentBannerClass">
+              <div class="grid gap-1">
+                <span class="pl-k">Avaliação do fornecedor</span>
+                <span>Estado {{ supplierAssessmentStatus }} · Risco {{ supplierAssessmentRisk }} · Score {{ selectedSupplierAssessment.total_score ?? '—' }} · Próxima revisão {{ supplierAssessmentReviewLabel }}</span>
+                <span v-if="!selectedSupplierAssessment.approved_supplier">Este fornecedor não está marcado como aprovado. Reveja a avaliação antes de concluir a conversão.</span>
               </div>
             </div>
+            <p v-else-if="selectedSupplier" class="pl-banner pl-banner-warn pl-span-2 text-sm">
+              Este fornecedor ainda não tem avaliação registada. Recomenda-se revisão antes de concluir a compra.
+            </p>
+
+            <BaseInput id="need-order-date" v-model="conversionForm.date" type="date" label="Data do pedido" :error="conversionForm.errors.date" />
+            <BaseInput id="need-order-expected" v-model="conversionForm.expected_date" type="date" label="Data esperada" :error="conversionForm.errors.expected_date" />
           </div>
-        </article>
+        </section>
+
+        <section class="pl-panel" aria-labelledby="need-history-title">
+          <div class="pl-panel-head">
+            <h2 id="need-history-title" class="pl-k">Histórico de decisão</h2>
+            <span class="pl-k pl-faint">{{ statusLabel }}</span>
+          </div>
+          <article v-for="event in decisionHistory" :key="event.label" class="grid gap-1 border-b border-[var(--pl-line)] p-4 last:border-b-0">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <span class="font-medium">{{ event.label }}</span>
+              <span class="pl-k pl-faint">{{ event.at }}</span>
+            </div>
+            <p class="text-sm text-[var(--pl-muted)]">{{ event.detail }}</p>
+            <p v-if="event.notes" class="whitespace-pre-line text-sm">{{ event.notes }}</p>
+          </article>
+        </section>
       </div>
 
-      <aside class="space-y-4">
-        <article class="ds-panel overflow-hidden">
-          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading text-base">Rastreabilidade</h2>
-          </div>
-          <dl class="divide-y divide-[color:var(--ds-border)]">
-            <div v-for="field in traceabilityFields" :key="field.label" class="flex items-start justify-between gap-4 px-5 py-3 text-sm">
-              <dt class="font-semibold text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
-              <dd class="text-right font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
-            </div>
+      <aside class="grid min-w-0 gap-7">
+        <section class="pl-panel" aria-labelledby="need-facts-title">
+          <div class="pl-panel-head"><h2 id="need-facts-title" class="pl-k">Dossier</h2><span class="pl-k pl-faint">{{ need.reference }}</span></div>
+          <dl class="pl-facts">
+            <div v-for="field in traceabilityFields" :key="field.label" class="pl-fact"><dt>{{ field.label }}</dt><dd>{{ field.value }}</dd></div>
           </dl>
-        </article>
-
-        <article class="ds-panel overflow-hidden">
-          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading text-base">Fluxo</h2>
+          <div class="grid gap-2 border-t border-[var(--pl-line)] p-4">
+            <h3 class="pl-k pl-muted">Justificação</h3>
+            <p class="whitespace-pre-line text-sm">{{ need.justification || 'Sem justificação adicional.' }}</p>
           </div>
-          <ol class="space-y-4 p-5">
-            <li v-for="step in workflowSteps" :key="step.label" class="flex gap-3">
-              <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-panel-subtle)]">
-                <span class="lims-status-dot" :class="step.dotClass" />
-              </span>
-              <div>
-                <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ step.label }}</p>
-                <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ step.caption }}</p>
-              </div>
-            </li>
-          </ol>
-        </article>
+        </section>
+
+        <section class="pl-panel" aria-label="Ligações">
+          <Link v-if="need.inventory_order" :href="route('vap-inventory.orders.show', need.inventory_order.id)" class="pl-row"><span>Pedido de compra <span class="pl-num">{{ need.inventory_order.reference || `#${need.inventory_order.id}` }}</span></span><ArrowRightIcon class="h-4 w-4" aria-hidden="true" /></Link>
+          <a :href="route('vap-inventory.needs.pdf', need.id)" target="_blank" rel="noopener noreferrer" class="pl-row"><span>PDF da necessidade<span class="sr-only"> (abre noutra janela)</span></span><DownloadIcon class="h-4 w-4" aria-hidden="true" /></a>
+          <Link :href="route('vap-inventory.needs.index')" class="pl-row"><span>Todas as necessidades</span><ArrowRightIcon class="h-4 w-4" aria-hidden="true" /></Link>
+        </section>
       </aside>
-    </section>
+    </div>
+
+    <NextStepBar>
+      <template v-if="canApprove">Reveja as quantidades aprovadas e registe a decisão. A rejeição exige notas.</template>
+      <template v-else-if="canConvertToOrder">{{ conversionForm.supplier_id ? `Converter ${approvedLineCount} ${approvedLineCount === 1 ? 'linha aprovada' : 'linhas aprovadas'} num pedido de compra a ${selectedSupplier?.name || 'este fornecedor'}.` : 'Escolha o fornecedor para converter as linhas aprovadas num pedido de compra.' }}</template>
+      <template v-else-if="need.status === 'rejected'">Rejeitada por {{ need.approved_by?.name || '—' }} em {{ formatDateTime(need.rejected_at) }}. A necessidade está fechada.</template>
+      <template v-else-if="need.inventory_order">Convertida no pedido {{ need.inventory_order.reference || `#${need.inventory_order.id}` }}. A recepção acompanha-se no pedido de compra.</template>
+      <template v-else>{{ statusLabel }}. Sem decisão pendente.</template>
+      <template #actions>
+        <template v-if="canApprove">
+          <button type="button" class="ds-button ds-button-quiet" :disabled="actionForm.processing" @click="reject">Rejeitar</button>
+          <button type="button" class="ds-button ds-button-primary" :disabled="actionForm.processing" @click="approve">{{ actionForm.processing ? 'A registar…' : 'Aprovar' }}</button>
+        </template>
+        <button v-else-if="canConvertToOrder" type="button" class="ds-button ds-button-primary" :disabled="conversionForm.processing" @click="convertToOrder">
+          {{ conversionForm.processing ? 'A converter…' : 'Converter em pedido' }}
+        </button>
+        <Link v-else-if="need.inventory_order" :href="route('vap-inventory.orders.show', need.inventory_order.id)" class="ds-button ds-button-secondary">Ver pedido</Link>
+      </template>
+    </NextStepBar>
   </div>
 </template>
 
@@ -244,12 +195,23 @@
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import Journey from '@/Components/plano/Journey.vue'
+import NextStepBar from '@/Components/plano/NextStepBar.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ArrowRight as ArrowRightIcon, Download as DownloadIcon } from '@lucide/vue'
+import { computed, ref, watch } from 'vue'
 
 defineOptions({ layout: Layout })
 
+/**
+ * The need dossier: its lines, the approval decision and the conversion into a purchase
+ * order. `canApprove` and `canConvertToOrder` come from the controller, which also
+ * enforces the permission on every action. The `charts` prop is still served (and
+ * pinned by the controller tests) but the dossier shows the counts as facts instead.
+ */
 const props = defineProps({
   need: {
     type: Object,
@@ -273,43 +235,7 @@ const props = defineProps({
   },
 })
 
-const isDarkMode = ref(false)
 const selectedSupplierOption = ref(null)
-let themeObserver
-
-const chartTextColor = computed(() => (isDarkMode.value ? '#d7dbe0' : '#6b7482'))
-const chartGridColor = computed(() => (isDarkMode.value ? '#1e293b' : '#eef0f3'))
-const chartTooltipTheme = computed(() => (isDarkMode.value ? 'dark' : 'light'))
-
-const syncDarkMode = () => {
-  if (typeof document === 'undefined') {
-    return
-  }
-
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
-
-const quantityScopeChartSeries = computed(() => [
-  {
-    name: 'Linhas',
-    data: props.charts?.quantity_scope?.series || [],
-  },
-])
-
-const itemValueMixChartSeries = computed(() => props.charts?.item_value_mix?.series || [])
-
-const itemValueMixRawTotal = computed(() => (
-  itemValueMixChartSeries.value.reduce((sum, value) => sum + Number(value || 0), 0)
-))
-
-const itemValueMixTotal = computed(() => formatMoney(itemValueMixRawTotal.value))
-
-const governancePulseChartSeries = computed(() => [
-  {
-    name: 'Indicador',
-    data: props.charts?.governance_pulse?.series || [],
-  },
-])
 
 const needTitle = computed(() => {
   const department = props.need.department?.name || 'Departamento'
@@ -330,104 +256,6 @@ const estimatedNeedValue = computed(() => itemRows.value.reduce((sum, item) => {
 
   return sum + (quantity * unitPrice)
 }, 0))
-
-const quantityScopeChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  plotOptions: {
-    bar: {
-      borderRadius: 6,
-      distributed: true,
-      columnWidth: '48%',
-    },
-  },
-  colors: ['#061f46', '#22a45d', '#e0902b'],
-  dataLabels: { enabled: false },
-  xaxis: {
-    categories: props.charts?.quantity_scope?.labels || [],
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } },
-  },
-  yaxis: {
-    labels: {
-      formatter: (value) => Number(value || 0).toFixed(0),
-      style: { colors: chartTextColor.value },
-    },
-  },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4,
-  },
-  tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false },
-}))
-
-const itemValueMixChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  labels: props.charts?.item_value_mix?.labels || [],
-  colors: ['#14a3a8', '#0f766e', '#4f46e5', '#e0902b', '#e5484d', '#334155'],
-  dataLabels: {
-    enabled: true,
-    formatter: (value) => `${Math.round(value)}%`,
-  },
-  legend: {
-    position: 'bottom',
-    labels: { colors: chartTextColor.value },
-  },
-  stroke: {
-    colors: [isDarkMode.value ? '#020617' : '#ffffff'],
-  },
-  tooltip: { theme: chartTooltipTheme.value },
-}))
-
-const governancePulseChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  plotOptions: {
-    bar: {
-      borderRadius: 6,
-      distributed: true,
-      columnWidth: '52%',
-    },
-  },
-  colors: ['#334155', '#e0902b', '#14a3a8', '#22a45d'],
-  dataLabels: { enabled: false },
-  xaxis: {
-    categories: props.charts?.governance_pulse?.labels || [],
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } },
-  },
-  yaxis: {
-    labels: {
-      formatter: (value) => Number(value || 0).toFixed(0),
-      style: { colors: chartTextColor.value },
-    },
-  },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4,
-  },
-  tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false },
-}))
 
 const actionForm = useForm({
   approval_notes: props.need.approval_notes || '',
@@ -459,95 +287,100 @@ const selectedSupplier = computed(() => props.suppliers.find((supplier) => Strin
 const selectedSupplierAssessment = computed(() => selectedSupplier.value?.latest_assessment ?? null)
 
 const statusLabel = computed(() => ({
-  submitted: 'Submetida',
+  submitted: 'Por aprovar',
   approved: 'Aprovada',
   rejected: 'Rejeitada',
-  ordered: 'Convertida em pedido',
+  ordered: 'Em pedido',
   partially_fulfilled: 'Parcialmente satisfeita',
   fulfilled: 'Satisfeita',
 }[props.need.status] ?? props.need.status))
 
-const statusDotClass = computed(() => ({
-  submitted: 'lims-status-dot-hold',
-  approved: 'lims-status-dot-release',
-  fulfilled: 'lims-status-dot-release',
-  rejected: 'lims-status-dot-critical',
-  ordered: 'lims-status-dot-instrument',
-  partially_fulfilled: 'lims-status-dot-instrument',
-}[props.need.status] ?? 'lims-status-dot-instrument'))
+const statusTone = computed(() => ({
+  submitted: 'wait',
+  approved: 'ok',
+  rejected: 'bad',
+  ordered: 'run',
+  partially_fulfilled: 'run',
+  fulfilled: 'done',
+}[props.need.status] ?? 'neutral'))
 
-const summaryCards = computed(() => [
-  {
-    label: 'Itens',
-    value: formatQuantity(itemRows.value.length),
-    caption: 'Linhas da necessidade',
-    dotClass: 'lims-status-dot-instrument',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Solicitadas',
-    value: formatQuantity(itemRows.value.length),
-    caption: 'Linhas pedidas',
-    dotClass: 'lims-status-dot-hold',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Aprovadas',
-    value: formatQuantity(approvedLineCount.value),
-    caption: 'Linhas aprovadas',
-    dotClass: approvedLineCount.value ? 'lims-status-dot-release' : 'lims-status-dot-hold',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Valor',
-    value: formatMoney(estimatedNeedValue.value),
-    caption: 'Estimativa financeira',
-    dotClass: 'lims-status-dot-instrument',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Prazo',
-    value: formatDate(props.need.needed_by_date),
-    caption: 'Necessário até',
-    dotClass: 'lims-status-dot-hold',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Pedido',
-    value: props.need.inventory_order?.reference || '—',
-    caption: props.need.inventory_order ? 'Convertido' : 'Sem pedido',
-    dotClass: props.need.inventory_order ? 'lims-status-dot-release' : 'lims-status-dot-hold',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-])
+/**
+ * Submitted → approved → ordered → fulfilled. A rejected need leaves the sequence, so
+ * the strip is hidden and the decision history tells the story.
+ */
+const journey = computed(() => {
+  const sequence = ['submitted', 'approved', 'ordered', 'fulfilled']
+  const position = sequence.indexOf(props.need.status === 'partially_fulfilled' ? 'ordered' : props.need.status)
+
+  if (position < 0) {
+    return []
+  }
+
+  const stateOf = (index) => {
+    if (index <= position) {
+      return 'done'
+    }
+
+    return index === position + 1 ? 'current' : 'todo'
+  }
+  const orderReference = props.need.inventory_order ? (props.need.inventory_order.reference || `#${props.need.inventory_order.id}`) : null
+
+  return [
+    { label: 'Submetida', state: stateOf(0), title: props.need.requested_by?.name, note: formatDateTime(props.need.submitted_at) },
+    { label: 'Aprovada', state: stateOf(1), title: props.need.approved_by?.name || 'Por decidir', note: formatDateTime(props.need.approved_at) },
+    { label: 'Em pedido', state: stateOf(2), title: orderReference || 'Sem pedido', note: orderReference ? 'Pedido de compra' : null },
+    { label: 'Satisfeita', state: stateOf(3), title: props.need.status === 'partially_fulfilled' ? 'Parcialmente' : null, note: null },
+  ]
+})
 
 const traceabilityFields = computed(() => [
+  ['Departamento', props.need.department?.name || '—'],
+  ['Laboratório', props.need.lab?.name || 'Não definido'],
+  ['Necessária até', formatDate(props.need.needed_by_date)],
   ['Solicitante', props.need.requested_by?.name || '—'],
-  ['Aprovador', props.need.approved_by?.name || '—'],
   ['Submetida em', formatDateTime(props.need.submitted_at)],
-  ['Aprovada em', formatDateTime(props.need.approved_at)],
-  ['Pedido criado', props.need.inventory_order?.reference || '—'],
+  [props.need.status === 'rejected' ? 'Decisor' : 'Aprovador', props.need.approved_by?.name || '—'],
+  [props.need.status === 'rejected' ? 'Rejeitada em' : 'Aprovada em', formatDateTime(props.need.status === 'rejected' ? props.need.rejected_at : props.need.approved_at)],
+  ['Pedido criado', props.need.inventory_order?.reference || (props.need.inventory_order ? `#${props.need.inventory_order.id}` : '—')],
 ].map(([label, value]) => ({ label, value })))
 
-const workflowSteps = computed(() => [
-  {
-    label: 'Submissão',
-    caption: formatDateTime(props.need.submitted_at),
-    dotClass: props.need.submitted_at ? 'lims-status-dot-release' : 'lims-status-dot-hold',
-  },
-  {
-    label: 'Aprovação',
-    caption: formatDateTime(props.need.approved_at),
-    dotClass: props.need.approved_at ? 'lims-status-dot-release' : 'lims-status-dot-hold',
-  },
-  {
-    label: 'Conversão',
-    caption: props.need.inventory_order?.reference || 'A aguardar pedido',
-    dotClass: props.need.inventory_order ? 'lims-status-dot-release' : 'lims-status-dot-hold',
-  },
-])
+const decisionHistory = computed(() => {
+  const events = [
+    {
+      label: 'Submetida para aprovação',
+      at: formatDateTime(props.need.submitted_at),
+      detail: `Por ${props.need.requested_by?.name || '—'} · ${itemRows.value.length} ${itemRows.value.length === 1 ? 'linha' : 'linhas'}.`,
+    },
+  ]
 
-const managementActionAvailable = computed(() => props.canApprove || props.canConvertToOrder)
+  if (props.need.status === 'rejected') {
+    events.push({
+      label: 'Rejeitada',
+      at: formatDateTime(props.need.rejected_at),
+      detail: `Por ${props.need.approved_by?.name || '—'}.`,
+      notes: props.need.approval_notes,
+    })
+  } else if (props.need.approved_at) {
+    events.push({
+      label: 'Aprovada',
+      at: formatDateTime(props.need.approved_at),
+      detail: `Por ${props.need.approved_by?.name || '—'} · ${approvedLineCount.value} de ${itemRows.value.length} linhas aprovadas.`,
+      notes: props.need.approval_notes,
+    })
+  } else {
+    events.push({ label: 'Decisão', at: '—', detail: 'Aguarda aprovação ou rejeição.' })
+  }
+
+  if (props.need.inventory_order) {
+    events.push({
+      label: 'Convertida em pedido de compra',
+      at: props.need.inventory_order.reference || `#${props.need.inventory_order.id}`,
+      detail: 'As linhas aprovadas seguem no pedido de compra até à recepção.',
+    })
+  }
+
+  return events
+})
 
 const supplierAssessmentStatus = computed(() => ({
   approved: 'Aprovado',
@@ -565,20 +398,22 @@ const supplierAssessmentRisk = computed(() => ({
 
 const supplierAssessmentReviewLabel = computed(() => formatDate(selectedSupplierAssessment.value?.next_review_at))
 
-const supplierAssessmentPanelClass = computed(() => {
-  if (!selectedSupplierAssessment.value) {
-    return 'border-[color:var(--ds-border-strong)]'
+const supplierAssessmentBannerClass = computed(() => {
+  const assessment = selectedSupplierAssessment.value
+
+  if (!assessment) {
+    return ''
   }
 
-  if (['suspended', 'rejected'].includes(selectedSupplierAssessment.value.status) || selectedSupplierAssessment.value.risk_level === 'critical') {
-    return 'border-rose-500'
+  if (['suspended', 'rejected'].includes(assessment.status) || assessment.risk_level === 'critical') {
+    return 'pl-banner-bad'
   }
 
-  if (selectedSupplierAssessment.value.status === 'conditional' || selectedSupplierAssessment.value.risk_level === 'high') {
-    return 'border-amber-500'
+  if (assessment.status === 'conditional' || assessment.risk_level === 'high' || !assessment.approved_supplier) {
+    return 'pl-banner-warn'
   }
 
-  return 'border-emerald-500'
+  return 'pl-banner-ok'
 })
 
 const approve = () => {
@@ -615,20 +450,4 @@ function formatMoney(value) {
 
 const formatDateTime = (value) => (value ? new Date(value).toLocaleString('pt-PT') : '—')
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString('pt-PT') : '—')
-
-onMounted(() => {
-  syncDarkMode()
-
-  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
-    themeObserver = new MutationObserver(syncDarkMode)
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    })
-  }
-})
-
-onBeforeUnmount(() => {
-  themeObserver?.disconnect()
-})
 </script>

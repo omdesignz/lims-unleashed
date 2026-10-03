@@ -1,333 +1,229 @@
 <template>
-  <div class="space-y-6">
-    <section class="ds-command-surface p-5 sm:p-6">
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <BaseSelect v-model="filters.dateRange" label="Período analítico">
-          <option value="7d">Últimos 7 dias</option>
-          <option value="30d">Últimos 30 dias</option>
-          <option value="90d">Últimos 90 dias</option>
-          <option value="1y">Último ano</option>
-          <option value="custom">Período personalizado</option>
-        </BaseSelect>
-
-        <BaseSelect v-model="filters.categoryId" label="Categoria">
-          <option value="">Todas as categorias</option>
-          <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
-        </BaseSelect>
-
-        <BaseSelect v-model="filters.warehouseId" label="Armazém">
-          <option value="">Todos os armazéns</option>
-          <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
-        </BaseSelect>
-
-        <div v-if="filters.dateRange === 'custom'" class="grid grid-cols-2 gap-3">
-          <BaseInput v-model="filters.startDate" type="date" label="Início" />
-          <BaseInput v-model="filters.endDate" type="date" label="Fim" />
+  <div class="space-y-8">
+    <div>
+      <form class="pl-filter" role="search" aria-label="Âmbito da análise" @submit.prevent>
+        <label for="analytics-period" class="pl-filter-prompt">Filtro://</label>
+        <div class="w-48">
+          <BaseSelect id="analytics-period" v-model="filters.dateRange" aria-label="Período analítico">
+            <option value="7d">Últimos 7 dias</option>
+            <option value="30d">Últimos 30 dias</option>
+            <option value="90d">Últimos 90 dias</option>
+            <option value="1y">Último ano</option>
+            <option value="custom">Período personalizado</option>
+          </BaseSelect>
         </div>
-        <div v-else class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Âmbito activo</p>
-          <p class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ periodLabel }}</p>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Actualização automática dos indicadores.</p>
+        <template v-if="filters.dateRange === 'custom'">
+          <div class="w-40"><BaseInput v-model="filters.startDate" type="date" aria-label="Data inicial" /></div>
+          <div class="w-40"><BaseInput v-model="filters.endDate" type="date" aria-label="Data final" /></div>
+        </template>
+        <div class="w-52">
+          <BaseSelect v-model="filters.categoryId" aria-label="Categoria">
+            <option value="">Todas as categorias</option>
+            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+          </BaseSelect>
         </div>
-      </div>
-
-      <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <p class="text-sm font-bold text-[var(--ds-text)]">{{ consumptionHistory.length }} eventos de consumo na amostra</p>
-            <span v-if="isLoading" class="ds-chip">
-              <ArrowPathIcon class="h-3.5 w-3.5 animate-spin" />
-              A actualizar
-            </span>
-          </div>
-          <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
-            <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
-          </div>
+        <div class="w-52">
+          <BaseSelect v-model="filters.warehouseId" aria-label="Armazém">
+            <option value="">Todos os armazéns</option>
+            <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
+          </BaseSelect>
         </div>
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <button type="button" class="ds-button ds-button-secondary" :disabled="!hasScopedFilters" @click="clearScopedFilters">
-            <FunnelIcon class="h-4 w-4" />
-            Limpar âmbito
-          </button>
-          <button type="button" class="ds-button ds-button-primary" @click="$emit('request-report', 'consumption')">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar análise
-          </button>
+        <span class="pl-k pl-faint ml-auto" role="status">{{ isLoading ? 'A actualizar…' : periodLabel }}</span>
+        <button v-if="hasScopedFilters" type="button" class="ds-chip" @click="clearScopedFilters">
+          Limpar âmbito
+          <XMarkIcon class="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      </form>
+
+      <dl class="pl-panel pl-facts pl-facts-2" aria-label="Indicadores do período" :aria-busy="isLoading">
+        <div v-for="card in metricCards" :key="card.label" class="pl-fact">
+          <dt>{{ card.label }}</dt>
+          <dd>
+            <span class="pl-num font-medium" :class="{ 'text-[var(--pl-bad)]': card.bad }">{{ card.value }}</span>
+            <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ card.detail }}</span>
+          </dd>
         </div>
-      </div>
+      </dl>
+      <p v-if="requestError" class="pl-banner pl-banner-bad mt-3 text-sm" role="alert">{{ requestError }}</p>
+    </div>
 
-      <div v-if="requestError" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300" role="alert">
-        {{ requestError }}
-      </div>
-    </section>
+    <slot name="areas" />
 
-    <section class="ds-command-surface overflow-hidden">
-      <div class="ds-table-summary px-5 py-4">
-        <div>
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Operational metrics</p>
-          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Consumo, valor e carga de alerta</h2>
+    <div class="grid gap-6 xl:grid-cols-2" :class="{ 'opacity-70': isLoading }">
+      <section class="pl-panel min-w-0" aria-labelledby="analytics-trend">
+        <div class="pl-panel-head">
+          <h2 id="analytics-trend" class="pl-k">Tendência de consumo</h2>
+          <span class="pl-k pl-faint">Volume diário</span>
         </div>
-        <span :class="['ds-chip', usageChangeTone]">{{ usageChangeLabel }}</span>
-      </div>
-
-      <div class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
-        <article v-for="card in metricCards" :key="card.label" class="min-w-0 p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
-              <p class="mt-3 truncate text-2xl font-black tabular-nums text-[var(--ds-text)]">{{ card.value }}</p>
-            </div>
-            <component :is="card.icon" :class="['h-5 w-5 shrink-0', card.tone]" />
-          </div>
-          <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="ds-command-surface overflow-hidden" :class="isLoading ? 'opacity-70' : ''">
-      <div class="ds-table-summary px-5 py-4">
-        <div>
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Analytical workspace</p>
-          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Fluxo, distribuição e concentração</h2>
+        <div v-if="consumptionTrend.length" class="min-h-72 p-4">
+          <apexchart type="line" height="288" :options="consumptionChartOptions" :series="consumptionChartSeries" />
         </div>
-        <span class="ds-chip">{{ periodLabel }}</span>
-      </div>
-
-      <div class="grid divide-y divide-[var(--ds-border)] xl:grid-cols-2 xl:divide-x">
-        <article class="min-w-0 p-5">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Tendência de consumo</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Volume diário de reagentes consumidos.</p>
-            </div>
-            <ChartBarSquareIcon class="h-5 w-5 text-rose-700 dark:text-rose-300" />
-          </div>
-          <div v-if="consumptionTrend.length" class="mt-4 min-h-72">
-            <apexchart type="line" height="288" :options="consumptionChartOptions" :series="consumptionChartSeries" />
-          </div>
-          <div v-else class="ds-empty-state mt-4 grid min-h-72 place-items-center p-6 text-center">
-            <div>
-              <BeakerIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-              <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem consumo no período</p>
-            </div>
-          </div>
-        </article>
-
-        <article class="min-w-0 p-5">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Existências por categoria</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Distribuição das unidades disponíveis.</p>
-            </div>
-            <span class="ds-chip">{{ stockDistribution.length }} categorias</span>
-          </div>
-          <div v-if="stockDistribution.length" class="mt-4 min-h-72">
-            <apexchart type="donut" height="288" :options="stockChartOptions" :series="stockChartSeries" />
-          </div>
-          <div v-else class="ds-empty-state mt-4 grid min-h-72 place-items-center p-6 text-center">
-            <div>
-              <CircleStackIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-              <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem existências distribuído</p>
-            </div>
-          </div>
-        </article>
-
-        <article class="min-w-0 border-t border-[var(--ds-border)] p-5 xl:border-t">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Comparação mensal</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Ano actual comparado com o período homólogo.</p>
-            </div>
-            <ArrowsRightLeftIcon class="h-5 w-5 text-violet-700 dark:text-violet-300" />
-          </div>
-          <div v-if="monthlyComparison.length" class="mt-4 min-h-72">
-            <apexchart type="bar" height="288" :options="monthlyChartOptions" :series="monthlyChartSeries" />
-          </div>
-          <div v-else class="ds-empty-state mt-4 grid min-h-72 place-items-center p-6 text-center">
-            <p class="text-sm font-black text-[var(--ds-text)]">Sem comparação mensal disponível</p>
-          </div>
-        </article>
-
-        <article class="min-w-0 border-t border-[var(--ds-border)] p-5">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Reagentes mais consumidos</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Concentração do consumo nos principais itens.</p>
-            </div>
-            <TrophyIcon class="h-5 w-5 text-amber-700 dark:text-amber-300" />
-          </div>
-          <div v-if="topReagents.length" class="mt-4 min-h-72">
-            <apexchart type="bar" height="288" :options="topReagentsChartOptions" :series="topReagentsChartSeries" />
-          </div>
-          <div v-else class="ds-empty-state mt-4 grid min-h-72 place-items-center p-6 text-center">
-            <p class="text-sm font-black text-[var(--ds-text)]">Sem consumo por reagente</p>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]">
-      <div class="ds-command-surface overflow-hidden">
-        <div class="ds-table-summary px-5 py-4">
-          <div>
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Supply assurance</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Desempenho de fornecedores</h2>
-          </div>
-          <span class="ds-chip">Meta: 90% no prazo</span>
+        <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+          <span class="pl-k">Sem consumo no período</span>
+          <p class="text-sm text-[var(--pl-muted)]">Alargue o período ou retire o filtro de categoria ou armazém.</p>
         </div>
-        <div v-if="supplierPerformance.length" class="min-h-80 p-5">
+      </section>
+
+      <section class="pl-panel min-w-0" aria-labelledby="analytics-distribution">
+        <div class="pl-panel-head">
+          <h2 id="analytics-distribution" class="pl-k">Existências por categoria</h2>
+          <span class="pl-k pl-faint">{{ stockDistribution.length }} categorias</span>
+        </div>
+        <div v-if="stockDistribution.length" class="min-h-72 p-4">
+          <apexchart type="donut" height="288" :options="stockChartOptions" :series="stockChartSeries" />
+        </div>
+        <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+          <span class="pl-k">Sem existências distribuídas</span>
+          <p class="text-sm text-[var(--pl-muted)]">Não há unidades disponíveis neste âmbito.</p>
+        </div>
+      </section>
+
+      <section class="pl-panel min-w-0" aria-labelledby="analytics-monthly">
+        <div class="pl-panel-head">
+          <h2 id="analytics-monthly" class="pl-k">Comparação mensal</h2>
+          <span class="pl-k pl-faint">Ano actual e anterior</span>
+        </div>
+        <div v-if="monthlyComparison.length" class="min-h-72 p-4">
+          <apexchart type="bar" height="288" :options="monthlyChartOptions" :series="monthlyChartSeries" />
+        </div>
+        <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+          <span class="pl-k">Sem comparação mensal disponível</span>
+        </div>
+      </section>
+
+      <section class="pl-panel min-w-0" aria-labelledby="analytics-top">
+        <div class="pl-panel-head">
+          <h2 id="analytics-top" class="pl-k">Reagentes mais consumidos</h2>
+          <span class="pl-k pl-faint">Top 8</span>
+        </div>
+        <div v-if="topReagents.length" class="min-h-72 p-4">
+          <apexchart type="bar" height="288" :options="topReagentsChartOptions" :series="topReagentsChartSeries" />
+        </div>
+        <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+          <span class="pl-k">Sem consumo por reagente</span>
+        </div>
+      </section>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]">
+      <section class="pl-panel min-w-0" aria-labelledby="analytics-suppliers">
+        <div class="pl-panel-head">
+          <h2 id="analytics-suppliers" class="pl-k">Desempenho de fornecedores</h2>
+          <span class="pl-k pl-faint">Meta: 90% no prazo</span>
+        </div>
+        <div v-if="supplierPerformance.length" class="min-h-80 p-4">
           <apexchart type="bar" height="320" :options="supplierChartOptions" :series="supplierChartSeries" />
         </div>
-        <div v-else class="ds-empty-state m-5 grid min-h-72 place-items-center p-6 text-center">
-          <div>
-            <TruckIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-            <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem entregas avaliáveis</p>
-            <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">O indicador aparece quando existirem ordens com datas de entrega.</p>
-          </div>
+        <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+          <span class="pl-k">Sem entregas avaliáveis</span>
+          <p class="text-sm text-[var(--pl-muted)]">O indicador aparece quando existirem ordens com datas de entrega.</p>
         </div>
-      </div>
+      </section>
 
-      <div class="grid gap-6">
-        <section v-for="alert in alertGroups" :key="alert.label" class="ds-panel overflow-hidden">
-          <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ alert.kicker }}</p>
-              <h3 class="mt-1 text-sm font-black text-[var(--ds-text)]">{{ alert.label }}</h3>
-            </div>
-            <span :class="['ds-chip', alert.tone]">{{ alert.count }}</span>
+      <div class="grid content-start gap-6">
+        <section v-for="alert in alertGroups" :key="alert.key" class="pl-panel" :aria-labelledby="`analytics-alert-${alert.key}`">
+          <div class="pl-panel-head">
+            <h2 :id="`analytics-alert-${alert.key}`" class="pl-k">{{ alert.label }}</h2>
+            <span class="pl-k pl-num" :class="alert.count ? 'text-[var(--pl-bad)]' : 'pl-faint'">{{ alert.count }}</span>
           </div>
-          <ul v-if="alert.items.length" class="divide-y divide-[var(--ds-border)]">
-            <li v-for="item in alert.items" :key="item" class="flex items-start gap-3 px-5 py-3">
-              <span :class="['mt-1.5 h-2 w-2 shrink-0 rounded-full', alert.dot]"></span>
-              <span class="min-w-0 text-sm font-bold leading-5 text-[var(--ds-text)]">{{ item }}</span>
-            </li>
+          <ul v-if="alert.items.length">
+            <li v-for="item in alert.items" :key="item" class="pl-row"><span class="min-w-0">{{ item }}</span></li>
           </ul>
-          <div v-else class="px-5 py-4 text-sm font-semibold text-[var(--ds-text-muted)]">Sem ocorrências nesta categoria.</div>
+          <p v-else class="px-4 py-3 text-sm text-[var(--pl-muted)]">Sem ocorrências nesta categoria.</p>
+          <div v-if="alert.key === 'critical' && alert.count > 0" class="border-t border-[var(--pl-line)] px-4 py-3">
+            <button type="button" class="ds-button ds-button-secondary" @click="restockDialogOpen = true">
+              <ShoppingCartIcon class="h-4 w-4" aria-hidden="true" />
+              Criar rascunho de reposição
+            </button>
+          </div>
         </section>
-
-        <button v-if="Number(metrics.criticalAlerts || 0) > 0" type="button" class="ds-button ds-button-primary w-full" @click="restockDialogOpen = true">
-          <ShoppingCartIcon class="h-4 w-4" />
-          Criar rascunho de reposição
-        </button>
       </div>
-    </section>
+    </div>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
-      <section class="ds-table-shell">
-        <div class="ds-table-summary px-5 py-4">
-          <div>
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Reagent stewardship</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Histórico de consumo</h2>
-          </div>
-          <span class="ds-chip">{{ consumptionHistory.length }} eventos</span>
+      <section class="pl-panel min-w-0" aria-labelledby="analytics-history">
+        <div class="pl-panel-head">
+          <h2 id="analytics-history" class="pl-k">Histórico de consumo</h2>
+          <span class="pl-k pl-faint">{{ consumptionHistory.length }} eventos</span>
         </div>
-
-        <div v-if="consumptionHistory.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
-          <article v-for="event in consumptionHistory" :key="`mobile-${event.id}`" class="space-y-4 p-5">
-            <div class="flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <p class="font-mono text-xs font-bold text-[var(--ds-text-soft)]">{{ formatDate(event.date) }}</p>
-                <h3 class="mt-1 text-base font-black text-[var(--ds-text)]">{{ event.reagent_name || 'Reagente não identificado' }}</h3>
-                <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ event.warehouse?.name || 'Sem armazém' }}</p>
-              </div>
-              <span class="ds-chip shrink-0">{{ formatNumber(event.quantity_used) }} un.</span>
-            </div>
-            <dl class="grid grid-cols-2 gap-3">
-              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Operador</dt>
-                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ event.used_by || 'N/D' }}</dd>
-              </div>
-              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Existências actual</dt>
-                <dd :class="['mt-2 text-sm font-black', stockTone(event)]">{{ formatNumber(event.current_stock) }} un.</dd>
-              </div>
-            </dl>
-            <p class="text-sm font-semibold leading-5 text-[var(--ds-text-muted)]">{{ event.remarks || 'Sem observações.' }}</p>
-          </article>
-        </div>
-
-        <div v-if="consumptionHistory.length" class="hidden overflow-x-auto lg:block">
-          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
-            <thead class="bg-[var(--ds-panel-subtle)]">
+        <div v-if="consumptionHistory.length" class="overflow-x-auto">
+          <DataTable>
+            <thead>
               <tr>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Data</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Reagente</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Consumo</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Operador</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Saúde do existências</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Cobertura</th>
+                <th scope="col">Data</th>
+                <th scope="col">Reagente</th>
+                <th scope="col">Armazém</th>
+                <th scope="col" class="text-right">Consumo</th>
+                <th scope="col">Operador</th>
+                <th scope="col">Existências</th>
+                <th scope="col" class="text-right">Cobertura</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
-              <tr v-for="event in consumptionHistory" :key="event.id" class="transition-colors hover:bg-[var(--ds-panel-subtle)]">
-                <td class="whitespace-nowrap px-5 py-4 align-top font-mono text-xs font-black text-[var(--ds-text)]">{{ formatDate(event.date) }}</td>
-                <td class="px-5 py-4 align-top">
-                  <p class="font-black text-[var(--ds-text)]">{{ event.reagent_name || 'Reagente não identificado' }}</p>
-                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ event.item?.code || 'Sem código' }}</p>
-                  <p class="mt-1 max-w-xs text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ event.remarks || 'Sem observações.' }}</p>
+            <tbody>
+              <tr v-for="event in consumptionHistory" :key="event.id">
+                <td class="pl-num whitespace-nowrap">{{ formatDate(event.date) }}</td>
+                <td>
+                  <span class="font-medium">{{ event.reagent_name || 'Reagente não identificado' }}</span>
+                  <span class="pl-num block text-[12px] text-[var(--pl-muted)]">{{ event.item?.code || 'Sem código' }}</span>
+                  <span class="block max-w-xs text-[12.5px] text-[var(--pl-muted)]">{{ event.remarks || 'Sem observações.' }}</span>
                 </td>
-                <td class="px-5 py-4 align-top font-bold text-[var(--ds-text)]">{{ event.warehouse?.name || 'N/D' }}</td>
-                <td class="px-5 py-4 text-right align-top font-mono font-black tabular-nums text-rose-700 dark:text-rose-300">{{ formatNumber(event.quantity_used) }}</td>
-                <td class="px-5 py-4 align-top font-bold text-[var(--ds-text)]">{{ event.used_by || 'N/D' }}</td>
-                <td class="min-w-44 px-5 py-4 align-top">
+                <td>{{ event.warehouse?.name || 'N/D' }}</td>
+                <td class="pl-num text-right">{{ formatNumber(event.quantity_used) }}</td>
+                <td>{{ event.used_by || 'N/D' }}</td>
+                <td class="min-w-44">
                   <div class="flex items-center justify-between gap-3">
-                    <span :class="['text-xs font-black', stockTone(event)]">{{ stockLabel(event) }}</span>
-                    <span class="font-mono text-xs font-bold text-[var(--ds-text-soft)]">{{ formatNumber(event.current_stock) }} / {{ formatNumber(Number(event.min_level || 0) * 2) }}</span>
+                    <StatusChip :tone="stockTone(event)">{{ stockLabel(event) }}</StatusChip>
+                    <span class="pl-num text-[12px] text-[var(--pl-muted)]">{{ formatNumber(event.current_stock) }} / {{ formatNumber(Number(event.min_level || 0) * 2) }}</span>
                   </div>
-                  <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ds-panel-muted)]">
-                    <div :class="['h-full rounded-full', stockBarTone(event)]" :style="{ width: `${stockPercentage(event)}%` }"></div>
-                  </div>
+                  <div class="pl-bar mt-2"><i :class="{ 'pl-bar-late': stockTone(event) !== 'ok' }" :style="{ width: `${stockPercentage(event)}%` }"></i></div>
                 </td>
-                <td class="whitespace-nowrap px-5 py-4 text-right align-top">
-                  <p :class="['font-black tabular-nums', coverageTone(event)]">{{ coverageLabel(event) }}</p>
-                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ event.predicted_out_date ? `até ${formatDate(event.predicted_out_date)}` : 'sem previsão' }}</p>
+                <td class="whitespace-nowrap text-right">
+                  <span class="pl-num block" :class="coverageTone(event)">{{ coverageLabel(event) }}</span>
+                  <span class="block text-[12px] text-[var(--pl-muted)]">{{ event.predicted_out_date ? `até ${formatDate(event.predicted_out_date)}` : 'sem previsão' }}</span>
                 </td>
               </tr>
             </tbody>
           </DataTable>
         </div>
-
-        <div v-else class="ds-empty-state m-5 p-8 text-center">
-          <BeakerIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-          <h3 class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem histórico de consumo</h3>
-          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Ajuste o período ou confirme a existência de registos.</p>
+        <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+          <span class="pl-k">Sem histórico de consumo</span>
+          <p class="text-sm text-[var(--pl-muted)]">Ajuste o período ou confirme a existência de registos.</p>
         </div>
       </section>
 
-      <aside class="space-y-6">
-        <section class="ds-panel overflow-hidden">
-          <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Predição de rutura</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Cobertura mais curta</h2>
+      <aside class="grid content-start gap-6">
+        <section class="pl-panel" aria-labelledby="analytics-depletion">
+          <div class="pl-panel-head">
+            <h2 id="analytics-depletion" class="pl-k">Cobertura mais curta</h2>
+            <span class="pl-k pl-faint">Predição de rutura</span>
           </div>
-          <ol v-if="depletionRisks.length" class="divide-y divide-[var(--ds-border)]">
-            <li v-for="(risk, index) in depletionRisks" :key="`${risk.id}-${index}`" class="px-5 py-3">
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-black text-[var(--ds-text)]">{{ risk.reagent_name || 'Reagente' }}</p>
-                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ risk.warehouse?.name || 'Sem armazém' }}</p>
-                </div>
-                <span :class="['shrink-0 font-mono text-xs font-black tabular-nums', coverageTone(risk)]">{{ coverageLabel(risk) }}</span>
-              </div>
+          <ol v-if="depletionRisks.length">
+            <li v-for="(risk, index) in depletionRisks" :key="`${risk.id}-${index}`" class="pl-row">
+              <span class="min-w-0">
+                <span class="block truncate font-medium">{{ risk.reagent_name || 'Reagente' }}</span>
+                <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ risk.warehouse?.name || 'Sem armazém' }}</span>
+              </span>
+              <span class="pl-num text-[12.5px]" :class="coverageTone(risk)">{{ coverageLabel(risk) }}</span>
             </li>
           </ol>
-          <div v-else class="px-5 py-4 text-sm font-semibold text-[var(--ds-text-muted)]">Sem risco calculável no período.</div>
+          <p v-else class="px-4 py-3 text-sm text-[var(--pl-muted)]">Sem risco calculável no período.</p>
         </section>
 
-        <section class="ds-panel overflow-hidden">
-          <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Concentração</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Top reagentes</h2>
+        <section class="pl-panel" aria-labelledby="analytics-concentration">
+          <div class="pl-panel-head">
+            <h2 id="analytics-concentration" class="pl-k">Concentração do consumo</h2>
+            <span class="pl-k pl-faint">Top 7</span>
           </div>
-          <ol v-if="topReagents.length" class="divide-y divide-[var(--ds-border)]">
-            <li v-for="(reagent, index) in topReagents.slice(0, 7)" :key="reagent.id || index" class="flex items-center gap-3 px-5 py-3">
-              <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-xs font-black text-[var(--ds-text-soft)]">{{ index + 1 }}</span>
-              <span class="min-w-0 flex-1 truncate text-sm font-black text-[var(--ds-text)]">{{ reagent.name || 'Sem nome' }}</span>
-              <span class="shrink-0 font-mono text-xs font-black tabular-nums text-rose-700 dark:text-rose-300">{{ formatNumber(reagent.consumption) }}</span>
+          <ol v-if="topReagents.length">
+            <li v-for="(reagent, index) in topReagents.slice(0, 7)" :key="reagent.id || index" class="pl-row">
+              <span class="flex min-w-0 items-center gap-3">
+                <span class="pl-num pl-faint w-5 shrink-0 text-[12px]">{{ String(index + 1).padStart(2, '0') }}</span>
+                <span class="truncate font-medium">{{ reagent.name || 'Sem nome' }}</span>
+              </span>
+              <span class="pl-num text-[12.5px]">{{ formatNumber(reagent.consumption) }}</span>
             </li>
           </ol>
-          <div v-else class="px-5 py-4 text-sm font-semibold text-[var(--ds-text-muted)]">Sem dados por reagente.</div>
+          <p v-else class="px-4 py-3 text-sm text-[var(--pl-muted)]">Sem dados por reagente.</p>
         </section>
       </aside>
     </div>
@@ -341,19 +237,16 @@
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
             <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:scale-[0.97]" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-out duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:scale-[0.97]">
               <DialogPanel class="ds-modal-panel w-full max-w-lg overflow-hidden text-left transition-all">
-                <div class="px-5 py-5 sm:px-6">
-                  <span class="grid h-11 w-11 place-items-center rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
-                    <ShoppingCartIcon class="h-5 w-5" />
-                  </span>
-                  <DialogTitle class="mt-4 text-lg font-black text-[var(--ds-text)]">Criar rascunho de reposição?</DialogTitle>
-                  <p class="mt-2 text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">Será criado um rascunho para os itens atualmente sem existências. A ordem continuará sujeita a revisão e aprovação.</p>
+                <div class="grid gap-2 px-5 py-5 sm:px-6">
+                  <DialogTitle class="pl-d3">Criar rascunho de reposição?</DialogTitle>
+                  <p class="text-sm leading-6 text-[var(--pl-muted)]">Será criado um rascunho para os itens actualmente sem existências. A ordem continuará sujeita a revisão e aprovação.</p>
                 </div>
-                <div class="flex flex-col-reverse gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-                  <button type="button" class="ds-button ds-button-secondary" :disabled="creatingDrafts" @click="restockDialogOpen = false">Cancelar</button>
+                <div class="flex flex-col-reverse gap-3 border-t border-[var(--pl-line)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+                  <button type="button" class="ds-button ds-button-quiet" :disabled="creatingDrafts" @click="restockDialogOpen = false">Cancelar</button>
                   <button type="button" class="ds-button ds-button-primary" :disabled="creatingDrafts" @click="createRestockDraft">
-                    <ArrowPathIcon v-if="creatingDrafts" class="h-4 w-4 animate-spin" />
-                    <ShoppingCartIcon v-else class="h-4 w-4" />
-                    {{ creatingDrafts ? 'A criar...' : 'Criar rascunho' }}
+                    <ArrowPathIcon v-if="creatingDrafts" class="h-4 w-4 animate-spin" aria-hidden="true" />
+                    <ShoppingCartIcon v-else class="h-4 w-4" aria-hidden="true" />
+                    {{ creatingDrafts ? 'A criar…' : 'Criar rascunho' }}
                   </button>
                 </div>
               </DialogPanel>
@@ -372,19 +265,11 @@ import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } fro
 import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import {
-  Download as ArrowDownTrayIcon,
   RefreshCw as ArrowPathIcon,
-  ArrowLeftRight as ArrowsRightLeftIcon,
-  Banknote as BanknotesIcon,
-  FlaskConical as BeakerIcon,
-  BellRing as BellAlertIcon,
-  ChartColumnBig as ChartBarSquareIcon,
-  Database as CircleStackIcon,
-  Funnel as FunnelIcon,
   ShoppingCart as ShoppingCartIcon,
-  Trophy as TrophyIcon,
-  Truck as TruckIcon,
+  X as XMarkIcon,
 } from '@lucide/vue'
 
 const props = defineProps({
@@ -392,8 +277,6 @@ const props = defineProps({
   categories: { type: Array, default: () => [] },
   warehouses: { type: Array, default: () => [] },
 })
-
-defineEmits(['request-report'])
 
 const analyticsData = ref(normalizeData(props.initialData))
 const isLoading = ref(false)
@@ -430,13 +313,6 @@ const periodLabel = computed(() => {
   return ({ '7d': 'Últimos 7 dias', '30d': 'Últimos 30 dias', '90d': 'Últimos 90 dias', '1y': 'Último ano' })[filters.dateRange] || 'Últimos 30 dias'
 })
 
-const activeFilterPills = computed(() => {
-  const pills = [periodLabel.value]
-  if (filters.categoryId) pills.push(`Categoria: ${categoryName(filters.categoryId)}`)
-  if (filters.warehouseId) pills.push(`Armazém: ${warehouseName(filters.warehouseId)}`)
-  return pills
-})
-
 const hasScopedFilters = computed(() => filters.dateRange !== '30d' || Boolean(filters.categoryId || filters.warehouseId))
 const totalAlerts = computed(() => Number(metrics.value.reorderAlerts || 0) + Number(metrics.value.criticalAlerts || 0) + Number(metrics.value.expiringAlerts || 0))
 const usageChangeLabel = computed(() => {
@@ -444,65 +320,49 @@ const usageChangeLabel = computed(() => {
   if (change === 0) return 'Sem variação vs. período anterior'
   return `${change > 0 ? '+' : ''}${formatNumber(change)}% vs. período anterior`
 })
-const usageChangeTone = computed(() => Number(metrics.value.usageChange || 0) > 0
-  ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300'
-  : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300')
 
 const metricCards = computed(() => [
   {
     label: 'Consumo total',
     value: formatNumber(metrics.value.totalConsumption),
     detail: `${formatNumber(metrics.value.monthlyConsumption)} unidades no mês`,
-    icon: BeakerIcon,
-    tone: 'text-rose-700 dark:text-rose-300',
   },
   {
     label: 'Média diária',
     value: formatNumber(metrics.value.dailyAverage),
     detail: usageChangeLabel.value,
-    icon: ChartBarSquareIcon,
-    tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
   },
   {
-    label: 'Carga de alerta',
-    value: totalAlerts.value,
+    label: 'Alertas activos',
+    value: formatNumber(totalAlerts.value),
     detail: `${metrics.value.criticalAlerts || 0} ocorrências críticas`,
-    icon: BellAlertIcon,
-    tone: totalAlerts.value ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300',
+    bad: Number(metrics.value.criticalAlerts || 0) > 0,
   },
   {
     label: 'Valor em existências',
     value: formatCurrency(metrics.value.inventoryValue),
     detail: 'Âmbito seleccionado',
-    icon: BanknotesIcon,
-    tone: 'text-emerald-700 dark:text-emerald-300',
   },
 ])
 
 const alertGroups = computed(() => [
   {
-    kicker: 'Controlo crítico',
+    key: 'critical',
     label: 'Sem existências ou expirado',
     count: Number(metrics.value.criticalAlerts || 0),
     items: arrayValue(metrics.value.alertDetails?.critical),
-    tone: 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300',
-    dot: 'bg-rose-500',
   },
   {
-    kicker: 'Reposição',
+    key: 'reorder',
     label: 'Abaixo do nível mínimo',
     count: Number(metrics.value.reorderAlerts || 0),
     items: arrayValue(metrics.value.alertDetails?.reorder),
-    tone: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300',
-    dot: 'bg-amber-500',
   },
   {
-    kicker: 'Controlo de validade',
+    key: 'expiring',
     label: 'Validade próxima',
     count: Number(metrics.value.expiringAlerts || 0),
     items: arrayValue(metrics.value.alertDetails?.expiring),
-    tone: 'border-violet-200 bg-violet-50 text-violet-800 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300',
-    dot: 'bg-violet-500',
   },
 ])
 
@@ -648,14 +508,6 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('pt-AO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(value))
 }
 
-function categoryName(id) {
-  return props.categories.find((category) => String(category.id) === String(id))?.name || 'N/D'
-}
-
-function warehouseName(id) {
-  return props.warehouses.find((warehouse) => String(warehouse.id) === String(id))?.name || 'N/D'
-}
-
 function clearScopedFilters() {
   Object.assign(filters, {
     dateRange: '30d',
@@ -704,20 +556,14 @@ function stockPercentage(event) {
 
 function stockLabel(event) {
   if (Number(event.current_stock || 0) <= 0) return 'Sem existências'
-  if (Number(event.current_stock || 0) <= Number(event.min_level || 0)) return 'Existências baixo'
+  if (Number(event.current_stock || 0) <= Number(event.min_level || 0)) return 'Existências baixas'
   return 'Saudável'
 }
 
 function stockTone(event) {
-  if (Number(event.current_stock || 0) <= 0) return 'text-rose-700 dark:text-rose-300'
-  if (Number(event.current_stock || 0) <= Number(event.min_level || 0)) return 'text-amber-700 dark:text-amber-300'
-  return 'text-emerald-700 dark:text-emerald-300'
-}
-
-function stockBarTone(event) {
-  if (Number(event.current_stock || 0) <= 0) return 'bg-rose-500'
-  if (Number(event.current_stock || 0) <= Number(event.min_level || 0)) return 'bg-amber-500'
-  return 'bg-emerald-500'
+  if (Number(event.current_stock || 0) <= 0) return 'bad'
+  if (Number(event.current_stock || 0) <= Number(event.min_level || 0)) return 'wait'
+  return 'ok'
 }
 
 function coverageLabel(event) {
@@ -727,10 +573,10 @@ function coverageLabel(event) {
 
 function coverageTone(event) {
   const days = Number(event.days_remaining)
-  if (event.days_remaining === null || event.days_remaining === undefined) return 'text-[var(--ds-text-soft)]'
-  if (days <= 7) return 'text-rose-700 dark:text-rose-300'
-  if (days <= 30) return 'text-amber-700 dark:text-amber-300'
-  return 'text-emerald-700 dark:text-emerald-300'
+  if (event.days_remaining === null || event.days_remaining === undefined) return 'text-[var(--pl-faint)]'
+  if (days <= 7) return 'text-[var(--pl-bad)]'
+  if (days <= 30) return 'text-[var(--pl-warn)]'
+  return 'text-[var(--pl-ok)]'
 }
 
 function createRestockDraft() {

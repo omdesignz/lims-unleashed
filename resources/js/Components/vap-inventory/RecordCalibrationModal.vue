@@ -6,7 +6,7 @@
           <WrenchScrewdriverIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
           Registrar Calibração de Equipamento
         </h3>
-        <button type="button" @click="close" class="ds-icon-button">
+        <button type="button" @click="close" class="ds-icon-button" aria-label="Fechar">
           <XMarkIcon class="h-5 w-5" />
         </button>
       </div>

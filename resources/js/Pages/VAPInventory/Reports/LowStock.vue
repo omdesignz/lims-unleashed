@@ -1,328 +1,191 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-        <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Existências assurance</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot lims-status-dot-hold"></span>
-              Fila de reabastecimento
-            </span>
-          </div>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-rose-700 dark:text-rose-300">
-              <ExclamationTriangleIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Relatório de existências baixo</h1>
-              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Priorize ruturas, gaps de reposição e exposição por armazém antes de abrir pedidos de compra.
-              </p>
-            </div>
-          </div>
-        </div>
+  <div class="pl-page" data-template="page">
+    <PageHeader
+      :crumbs="[{ title: 'Inventário', url: route('vap-inventory.items.index') }, { title: 'Relatórios' }, { title: 'Existências baixas' }]"
+      title="Existências baixas"
+      :lede="lede"
+    >
+      <template #actions>
+        <InventoryReportExportButton report-type="low_stock" :filters="filters" />
+        <button type="button" class="ds-button ds-button-primary" :disabled="!recommendedOrders.length" @click="generateOrder">
+          <ShoppingCartIcon class="h-4 w-4" aria-hidden="true" />
+          Criar pedido consolidado
+        </button>
+      </template>
+    </PageHeader>
 
-        <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
-          <InventoryReportExportButton report-type="low_stock" :filters="filters" />
-          <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-primary">
-            <ArrowLeftIcon class="h-4 w-4" />
-            Voltar ao inventário
-          </Link>
-        </div>
-      </div>
-
-      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <article v-for="card in summaryCards" :key="card.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
-              <p class="mt-3 text-2xl font-black text-[var(--ds-text)]">{{ card.value }}</p>
-            </div>
-            <component :is="card.icon" :class="['h-5 w-5', card.tone]" />
-          </div>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="ds-command-surface p-5 sm:p-6">
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <BaseSelect v-model="filters.warehouse_id" label="Armazém">
+    <form class="pl-filter" role="search" aria-label="Filtrar existências baixas" @submit.prevent>
+      <span class="pl-filter-prompt">Filtro://</span>
+      <div class="w-52">
+        <BaseSelect v-model="filters.warehouse_id" aria-label="Armazém">
           <option value="">Todos os armazéns</option>
           <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
         </BaseSelect>
-
-        <BaseSelect v-model="filters.category_id" label="Categoria">
+      </div>
+      <div class="w-52">
+        <BaseSelect v-model="filters.category_id" aria-label="Categoria">
           <option value="">Todas as categorias</option>
           <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
         </BaseSelect>
-
-        <BaseSelect v-model="filters.severity" label="Severidade">
+      </div>
+      <div class="w-60">
+        <BaseSelect v-model="filters.severity" aria-label="Severidade">
           <option value="">Todos os níveis</option>
           <option value="critical">Crítico / sem existências</option>
           <option value="low">Abaixo do ponto de reposição</option>
         </BaseSelect>
-
-        <BaseSelect v-model="filters.sort_by" label="Ordenar por">
+      </div>
+      <div class="w-52">
+        <BaseSelect v-model="filters.sort_by" aria-label="Ordenar por">
           <option value="severity">Severidade</option>
-          <option value="current_stock">Existências actual</option>
+          <option value="current_stock">Existências actuais</option>
           <option value="reorder_point">Ponto de reposição</option>
           <option value="item_name">Nome do item</option>
         </BaseSelect>
       </div>
+      <button v-if="hasActiveFilters" type="button" class="ds-chip ml-auto" @click="clearFilters">
+        Limpar filtros
+        <XMarkIcon class="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    </form>
 
-      <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div>
-          <p class="text-sm font-bold text-[var(--ds-text)]">{{ inventory.total || inventory.data?.length || 0 }} registos na fila</p>
-          <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
-            <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
-          </div>
-          <p v-else class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">A mostrar toda a exposição de existências baixo.</p>
-        </div>
-        <button type="button" class="ds-button ds-button-secondary" :disabled="!hasActiveFilters" @click="clearFilters">
-          <FunnelIcon class="h-4 w-4" />
-          Limpar filtros
-        </button>
+    <dl class="pl-panel pl-facts pl-facts-2 mb-8" aria-label="Resumo das existências baixas">
+      <div v-for="card in summaryCards" :key="card.label" class="pl-fact">
+        <dt>{{ card.label }}</dt>
+        <dd>
+          <span class="pl-num font-medium" :class="{ 'text-[var(--pl-bad)]': card.bad && Number(card.value) > 0 }">{{ card.value }}</span>
+          <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ card.detail }}</span>
+        </dd>
       </div>
-    </section>
+    </dl>
 
-    <section class="ds-command-surface overflow-hidden">
-      <div class="ds-table-summary px-5 py-4">
-        <div>
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Análise de risco</p>
-          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Severidade, exposição e gap de reposição</h2>
+    <div class="mb-8 grid gap-6 xl:grid-cols-2">
+      <section class="pl-panel min-w-0 xl:row-span-2" aria-labelledby="low-stock-severity">
+        <div class="pl-panel-head">
+          <h2 id="low-stock-severity" class="pl-k">Severidade da fila</h2>
+          <span class="pl-k pl-faint">{{ severityMixTotal }} itens em atenção</span>
         </div>
-        <span class="ds-chip">{{ severityMixTotal }} itens em atenção</span>
-      </div>
-
-      <div class="grid gap-4 p-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <article class="ds-card p-5">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Severidade da fila</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Itens sem existências, críticos e abaixo do ponto de reposição.</p>
-            </div>
-            <span class="text-xl font-black text-[var(--ds-text)]">{{ severityMixTotal }}</span>
-          </div>
-          <div class="mt-4 min-h-72">
-            <apexchart type="bar" height="288" :options="severityMixChartOptions" :series="severityMixChartSeries" />
-          </div>
-        </article>
-
-        <div class="grid gap-4">
-          <article class="ds-card p-5">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <h3 class="text-sm font-black text-[var(--ds-text)]">Exposição por armazém</h3>
-                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Concentração da pressão de reabastecimento.</p>
-              </div>
-              <span class="ds-chip">{{ warehouseExposureTotal }} locais</span>
-            </div>
-            <div class="mt-4 min-h-64">
-              <apexchart type="donut" height="256" :options="warehouseExposureChartOptions" :series="warehouseExposureChartSeries" />
-            </div>
-          </article>
-
-          <article class="ds-card p-5">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <h3 class="text-sm font-black text-[var(--ds-text)]">Gap de reabastecimento</h3>
-                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Maiores distâncias até ao nível desejado.</p>
-              </div>
-              <ChartBarSquareIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
-            </div>
-            <div class="mt-4 min-h-56">
-              <apexchart type="bar" height="224" :options="replenishmentGapChartOptions" :series="replenishmentGapChartSeries" />
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
-      <section class="ds-table-shell">
-        <div class="ds-table-summary px-5 py-4">
-          <div>
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Fila de reabastecimento</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Itens com existências baixo</h2>
-          </div>
-          <button type="button" class="ds-button ds-button-primary" :disabled="!recommendedOrders.length" @click="generateOrder">
-            <ShoppingCartIcon class="h-4 w-4" />
-            Criar pedido
-          </button>
-        </div>
-
-        <div v-if="inventoryRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
-          <article v-for="item in inventoryRows" :key="`mobile-${item.id}`" class="space-y-4 p-5">
-            <div class="flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <p class="font-mono text-xs font-bold text-[var(--ds-text-soft)]">{{ item.item?.internal_code || item.item?.code || 'Sem código' }}</p>
-                <h3 class="mt-1 text-base font-black text-[var(--ds-text)]">{{ item.item?.name || 'Item sem identificação' }}</h3>
-                <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ item.warehouse?.name || 'Sem armazém' }}</p>
-              </div>
-              <span class="inline-flex items-center gap-2 text-xs font-black" :class="statusTextClass(item)">
-                <span :class="['h-2 w-2 rounded-full', statusDotClass(item)]"></span>
-                {{ statusText(item) }}
-              </span>
-            </div>
-
-            <dl class="grid gap-3 sm:grid-cols-3">
-              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Actual</dt>
-                <dd class="mt-2 text-lg font-black text-[var(--ds-text)]">{{ item.qty_available }}</dd>
-              </div>
-              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Mínimo</dt>
-                <dd class="mt-2 text-lg font-black text-[var(--ds-text)]">{{ item.min_stock_level }}</dd>
-              </div>
-              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Gap</dt>
-                <dd class="mt-2 text-lg font-black text-rose-700 dark:text-rose-300">{{ reorderGap(item) }}</dd>
-              </div>
-            </dl>
-
-            <div class="h-1.5 overflow-hidden rounded-full bg-[var(--ds-border)]">
-              <div :class="['h-full rounded-full', stockBarClass(item)]" :style="{ width: `${stockPercentage(item)}%` }"></div>
-            </div>
-
-            <div class="flex flex-wrap gap-2">
-              <Link :href="route('vap-inventory.items.show', item.item_id)" class="ds-table-action">
-                <EyeIcon class="h-4 w-4" />
-                Abrir
-              </Link>
-              <Link :href="route('vap-inventory.items.edit', item.item_id)" class="ds-table-action">
-                <PencilSquareIcon class="h-4 w-4" />
-                Ajustar
-              </Link>
-              <button type="button" class="ds-table-action" @click="createOrderForItem(item)">
-                <ShoppingCartIcon class="h-4 w-4" />
-                Comprar
-              </button>
-            </div>
-          </article>
-        </div>
-
-        <div v-if="inventoryRows.length" class="hidden overflow-x-auto lg:block">
-          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
-            <thead class="bg-[var(--ds-panel-subtle)]">
-              <tr>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Item</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Postura de existências</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Estado</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Acções</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
-              <tr v-for="item in inventoryRows" :key="item.id" class="transition-colors hover:bg-[var(--ds-panel-subtle)]">
-                <td class="px-5 py-4 align-top">
-                  <p class="font-black text-[var(--ds-text)]">{{ item.item?.name || 'Item sem identificação' }}</p>
-                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ item.item?.internal_code || item.item?.code || 'Sem código' }}</p>
-                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ item.item?.category?.name || 'Sem categoria' }}</p>
-                </td>
-                <td class="px-5 py-4 align-top">
-                  <p class="font-bold text-[var(--ds-text)]">{{ item.warehouse?.name || 'N/D' }}</p>
-                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ item.warehouse?.location?.name || 'Sem localização' }}</p>
-                </td>
-                <td class="min-w-64 px-5 py-4 align-top">
-                  <div class="grid grid-cols-3 gap-3">
-                    <div><p class="text-xs font-bold text-[var(--ds-text-soft)]">Actual</p><p class="mt-1 font-black text-[var(--ds-text)]">{{ item.qty_available }}</p></div>
-                    <div><p class="text-xs font-bold text-[var(--ds-text-soft)]">Reposição</p><p class="mt-1 font-black text-[var(--ds-text)]">{{ item.reorder_point }}</p></div>
-                    <div><p class="text-xs font-bold text-[var(--ds-text-soft)]">Gap</p><p class="mt-1 font-black text-rose-700 dark:text-rose-300">{{ reorderGap(item) }}</p></div>
-                  </div>
-                  <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--ds-border)]">
-                    <div :class="['h-full rounded-full', stockBarClass(item)]" :style="{ width: `${stockPercentage(item)}%` }"></div>
-                  </div>
-                </td>
-                <td class="px-5 py-4 align-top">
-                  <span class="inline-flex items-center gap-2 text-xs font-black" :class="statusTextClass(item)">
-                    <span :class="['h-2 w-2 rounded-full', statusDotClass(item)]"></span>
-                    {{ statusText(item) }}
-                  </span>
-                  <p v-if="item.item?.needs_calibration" class="mt-2 text-xs font-bold text-violet-700 dark:text-violet-300">Calibração necessária</p>
-                </td>
-                <td class="px-5 py-4 align-top">
-                  <div class="flex justify-end gap-2">
-                    <Link :href="route('vap-inventory.items.show', item.item_id)" class="ds-table-action" title="Abrir item">
-                      <EyeIcon class="h-4 w-4" />
-                      <span class="sr-only">Abrir {{ item.item?.name }}</span>
-                    </Link>
-                    <Link :href="route('vap-inventory.items.edit', item.item_id)" class="ds-table-action" title="Ajustar existências">
-                      <PencilSquareIcon class="h-4 w-4" />
-                      <span class="sr-only">Ajustar {{ item.item?.name }}</span>
-                    </Link>
-                    <button type="button" class="ds-table-action" title="Criar pedido" @click="createOrderForItem(item)">
-                      <ShoppingCartIcon class="h-4 w-4" />
-                      <span class="sr-only">Criar pedido para {{ item.item?.name }}</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </DataTable>
-        </div>
-
-        <div v-if="!inventoryRows.length" class="ds-empty-state p-10 text-center">
-          <CheckCircleIcon class="mx-auto h-9 w-9 text-emerald-600 dark:text-emerald-300" />
-          <h3 class="mt-4 text-base font-black text-[var(--ds-text)]">Sem itens com existências baixo</h3>
-          <p class="mx-auto mt-2 max-w-md text-sm font-medium text-[var(--ds-text-muted)]">Nenhuma rutura ou nível abaixo do ponto de reposição foi encontrado para os filtros actuais.</p>
-        </div>
-
-        <div v-if="inventoryRows.length" class="border-t border-[var(--ds-border)] px-5 py-4">
-          <Pagination :links="inventory.links" />
+        <div class="min-h-72 p-4">
+          <apexchart type="bar" height="288" :options="severityMixChartOptions" :series="severityMixChartSeries" />
         </div>
       </section>
+      <section class="pl-panel min-w-0" aria-labelledby="low-stock-warehouses">
+        <div class="pl-panel-head">
+          <h2 id="low-stock-warehouses" class="pl-k">Exposição por armazém</h2>
+          <span class="pl-k pl-faint">{{ warehouseExposureTotal }} locais</span>
+        </div>
+        <div class="min-h-64 p-4">
+          <apexchart type="donut" height="256" :options="warehouseExposureChartOptions" :series="warehouseExposureChartSeries" />
+        </div>
+      </section>
+      <section class="pl-panel min-w-0" aria-labelledby="low-stock-gap">
+        <div class="pl-panel-head">
+          <h2 id="low-stock-gap" class="pl-k">Falta até à reposição</h2>
+          <span class="pl-k pl-faint">Maiores distâncias</span>
+        </div>
+        <div class="min-h-56 p-4">
+          <apexchart type="bar" height="224" :options="replenishmentGapChartOptions" :series="replenishmentGapChartSeries" />
+        </div>
+      </section>
+    </div>
 
-      <aside class="space-y-5">
-        <section class="ds-card p-5">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Recomendação de compra</p>
-              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Reposição sugerida</h2>
-            </div>
-            <ShoppingCartIcon class="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <section class="pl-panel min-w-0" aria-labelledby="low-stock-items">
+        <div class="pl-panel-head">
+          <h2 id="low-stock-items" class="pl-k">Itens com existências baixas</h2>
+          <span class="pl-k pl-faint">{{ inventory.total || inventoryRows.length }} registos</span>
+        </div>
+        <DataTable v-if="inventoryRows.length">
+          <thead>
+            <tr>
+              <th scope="col">Item</th>
+              <th scope="col">Armazém</th>
+              <th scope="col">Existências</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="sr-only">Acções</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in inventoryRows" :key="item.id">
+              <td>
+                <Link :href="route('vap-inventory.items.show', item.item_id)" class="font-medium hover:text-[var(--pl-accent-text)]">{{ item.item?.name || 'Item sem identificação' }}</Link>
+                <span class="pl-num block text-[12px] text-[var(--pl-muted)]">{{ item.item?.internal_code || item.item?.code || 'Sem código' }}</span>
+                <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ item.item?.category?.name || 'Sem categoria' }}</span>
+              </td>
+              <td>
+                {{ item.warehouse?.name || 'N/D' }}
+                <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ item.warehouse?.location?.name || 'Sem localização' }}</span>
+              </td>
+              <td class="min-w-64">
+                <dl class="grid grid-cols-3 gap-3">
+                  <div><dt class="pl-k pl-faint">Actual</dt><dd class="pl-num mt-1">{{ item.qty_available }}</dd></div>
+                  <div><dt class="pl-k pl-faint">Reposição</dt><dd class="pl-num mt-1">{{ item.reorder_point }}</dd></div>
+                  <div><dt class="pl-k pl-faint">Falta</dt><dd class="pl-num mt-1 text-[var(--pl-bad)]">{{ reorderGap(item) }}</dd></div>
+                </dl>
+                <div class="pl-bar mt-3"><i :class="{ 'pl-bar-late': statusTone(item) === 'bad' }" :style="{ width: `${stockPercentage(item)}%` }"></i></div>
+              </td>
+              <td>
+                <StatusChip :tone="statusTone(item)">{{ statusText(item) }}</StatusChip>
+                <span v-if="item.item?.needs_calibration" class="block pt-1 text-[12px] text-[var(--pl-muted)]">Calibração necessária</span>
+              </td>
+              <td class="text-right">
+                <div class="flex justify-end gap-1">
+                  <Link :href="route('vap-inventory.items.show', item.item_id)" class="ds-table-action" :aria-label="`Abrir ${item.item?.name || 'item'}`">
+                    <EyeIcon class="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                  <Link :href="route('vap-inventory.items.edit', item.item_id)" class="ds-table-action" :aria-label="`Ajustar ${item.item?.name || 'item'}`">
+                    <PencilSquareIcon class="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                  <button type="button" class="ds-table-action" :aria-label="`Criar pedido para ${item.item?.name || 'item'}`" @click="createOrderForItem(item)">
+                    <ShoppingCartIcon class="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </DataTable>
+        <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+          <span class="pl-k">Sem itens com existências baixas</span>
+          <p class="text-sm text-[var(--pl-muted)]">Nenhuma rutura ou nível abaixo do ponto de reposição foi encontrado para os filtros actuais.</p>
+        </div>
+        <Pagination
+          v-if="inventoryRows.length"
+          :links="inventory.links"
+          :total="inventory.total"
+          :from="inventory.from"
+          :to="inventory.to"
+          :last_page="inventory.last_page"
+          :current_page="inventory.current_page"
+        />
+      </section>
+
+      <aside class="grid content-start gap-6">
+        <section class="pl-panel" aria-labelledby="low-stock-recommendation">
+          <div class="pl-panel-head">
+            <h2 id="low-stock-recommendation" class="pl-k">Reposição sugerida</h2>
           </div>
-
-          <dl class="mt-5 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
-            <div class="flex items-center justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Itens sugeridos</dt>
-              <dd class="text-lg font-black text-[var(--ds-text)]">{{ recommendedOrders.length }}</dd>
-            </div>
-            <div class="flex items-center justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Unidades</dt>
-              <dd class="text-lg font-black text-[var(--ds-text)]">{{ recommendedUnitTotal }}</dd>
-            </div>
-            <div class="flex items-center justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Valor estimado</dt>
-              <dd class="text-right text-sm font-black text-[var(--ds-text)]">{{ formatMoney(recommendedValueTotal) }}</dd>
-            </div>
+          <dl class="pl-facts">
+            <div class="pl-fact"><dt>Itens sugeridos</dt><dd class="pl-num">{{ recommendedOrders.length }}</dd></div>
+            <div class="pl-fact"><dt>Unidades</dt><dd class="pl-num">{{ recommendedUnitTotal }}</dd></div>
+            <div class="pl-fact"><dt>Valor estimado</dt><dd class="pl-num">{{ formatMoney(recommendedValueTotal) }}</dd></div>
           </dl>
-
-          <button type="button" class="ds-button ds-button-primary mt-5 w-full" :disabled="!recommendedOrders.length" @click="generateOrder">
-            <ShoppingCartIcon class="h-4 w-4" />
-            Criar pedido consolidado
-          </button>
         </section>
 
-        <section class="ds-card overflow-hidden">
-          <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Itens prioritários</p>
+        <section class="pl-panel" aria-labelledby="low-stock-priority">
+          <div class="pl-panel-head">
+            <h2 id="low-stock-priority" class="pl-k">Itens prioritários</h2>
           </div>
-          <ul v-if="topRecommendedOrders.length" class="divide-y divide-[var(--ds-border)]">
-            <li v-for="item in topRecommendedOrders" :key="item.id" class="p-4">
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-black text-[var(--ds-text)]">{{ item.name }}</p>
-                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ item.code || 'Sem código' }}</p>
-                </div>
-                <span class="ds-chip shrink-0">+{{ item.recommended_qty }}</span>
-              </div>
-              <p class="mt-2 text-xs font-semibold text-[var(--ds-text-muted)]">{{ item.supplier?.name || 'Fornecedor por definir' }}</p>
-              <p class="mt-1 text-xs font-black text-[var(--ds-text)]">{{ formatMoney(item.recommended_qty * item.unit_price) }}</p>
+          <ul v-if="topRecommendedOrders.length">
+            <li v-for="item in topRecommendedOrders" :key="item.id" class="pl-row">
+              <span class="min-w-0">
+                <span class="block truncate font-medium">{{ item.name }}</span>
+                <span class="pl-num block text-[12px] text-[var(--pl-muted)]">{{ item.code || 'Sem código' }}</span>
+                <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ item.supplier?.name || 'Fornecedor por definir' }} · {{ formatMoney(item.recommended_qty * item.unit_price) }}</span>
+              </span>
+              <span class="pl-num text-[12.5px]">+{{ item.recommended_qty }}</span>
             </li>
           </ul>
-          <div v-else class="ds-empty-state p-5 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem recomendações.</div>
+          <p v-else class="px-4 py-3 text-sm text-[var(--pl-muted)]">Sem recomendações.</p>
         </section>
       </aside>
     </div>
@@ -336,18 +199,13 @@ import { debounce } from 'lodash'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import Pagination from '@/Components/pagination.vue'
 import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import {
-  ArrowLeft as ArrowLeftIcon,
-  ChartColumnBig as ChartBarSquareIcon,
-  CircleCheck as CheckCircleIcon,
-  Box as CubeIcon,
-  CircleAlert as ExclamationCircleIcon,
-  TriangleAlert as ExclamationTriangleIcon,
   Eye as EyeIcon,
-  Funnel as FunnelIcon,
   SquarePen as PencilSquareIcon,
   ShoppingCart as ShoppingCartIcon,
-  CircleX as XCircleIcon,
+  X as XMarkIcon,
 } from '@lucide/vue'
 
 const props = defineProps({
@@ -395,34 +253,39 @@ const inventoryRows = computed(() => props.inventory?.data || [])
 
 const summaryCards = computed(() => [
   {
-    label: 'Existências crítico',
+    label: 'Existências críticas',
     value: props.stats?.critical_stock || 0,
     detail: 'No mínimo ou abaixo dele',
-    icon: ExclamationTriangleIcon,
-    tone: 'text-rose-700 dark:text-rose-300',
+    bad: true,
   },
   {
-    label: 'Existências baixo',
+    label: 'Existências baixas',
     value: Math.max(Number(props.stats?.total_low_stock || 0) - Number(props.stats?.critical_stock || 0), 0),
     detail: 'Abaixo do ponto de reposição',
-    icon: ExclamationCircleIcon,
-    tone: 'text-amber-600 dark:text-amber-300',
   },
   {
     label: 'Sem existências',
     value: props.stats?.out_of_stock || 0,
     detail: 'Rutura confirmada',
-    icon: XCircleIcon,
-    tone: 'text-rose-700 dark:text-rose-300',
+    bad: true,
   },
   {
     label: 'Itens monitorizados',
     value: props.stats?.total_items || 0,
     detail: 'Base do inventário filtrado',
-    icon: CubeIcon,
-    tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
   },
 ])
+
+const lede = computed(() => {
+  const low = Number(props.stats?.total_low_stock || 0)
+  const out = Number(props.stats?.out_of_stock || 0)
+
+  if (!low && !out) {
+    return 'Nenhum item abaixo do ponto de reposição. Não há reposição a preparar neste âmbito.'
+  }
+
+  return `${low} ${low === 1 ? 'item está' : 'itens estão'} abaixo do ponto de reposição e ${out} ${out === 1 ? 'está' : 'estão'} sem existências. Priorize as ruturas antes de abrir o pedido de compra.`
+})
 
 const activeFilterPills = computed(() => {
   const pills = []
@@ -528,18 +391,8 @@ function statusText(item) {
   return 'Baixo'
 }
 
-function statusDotClass(item) {
-  return statusText(item) === 'Baixo' ? 'bg-amber-500' : 'bg-rose-600'
-}
-
-function statusTextClass(item) {
-  return statusText(item) === 'Baixo'
-    ? 'text-amber-800 dark:text-amber-200'
-    : 'text-rose-800 dark:text-rose-200'
-}
-
-function stockBarClass(item) {
-  return statusText(item) === 'Baixo' ? 'bg-amber-500' : 'bg-rose-600'
+function statusTone(item) {
+  return statusText(item) === 'Baixo' ? 'wait' : 'bad'
 }
 
 function stockPercentage(item) {

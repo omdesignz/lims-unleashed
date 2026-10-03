@@ -1,12 +1,11 @@
 <template>
-  <div>
-  <p v-if="documentMessage" :role="documentFailed ? 'alert' : 'status'" class="mb-4 text-sm">{{ documentMessage }}</p>
   <InventoryItemFormSurface
     mode="edit"
-    :title="'Editar item: ' + item.name"
-    description="Actualize os dados técnicos, anexos e controlos metrológicos. As existências são ajustadas separadamente, com registo de movimentos."
+    :crumbs="[{ title: 'Inventário' }, { title: 'Itens', url: route('vap-inventory.items.index') }, { title: item.name, url: route('vap-inventory.items.show', item.id) }, { title: 'Modificar' }]"
+    :title="'Modificar ' + item.name"
+    description="Actualize os dados técnicos, os documentos e os controlos metrológicos. As existências não se alteram aqui: ajustam-se no dossier do item, com registo de movimento."
     :back-href="route('vap-inventory.items.show', item.id)"
-    back-label="Voltar ao item"
+    back-label="Cancelar"
     submit-label="Guardar alterações"
     :form="form"
     :attachment-processing="documentProcessing"
@@ -36,8 +35,11 @@
     v-model:selected-packaging-category="selectedPackagingCategory"
     @submit="submit"
     @delete-attachment="deleteAttachment"
-  />
-  </div>
+  >
+    <template #notice>
+      <p v-if="documentMessage" :role="documentFailed ? 'alert' : 'status'" class="mb-4 text-sm" :class="{ 'ds-field-error': documentFailed }">{{ documentMessage }}</p>
+    </template>
+  </InventoryItemFormSurface>
 </template>
 <script setup>
 import { useRecordArchive } from '@/Composables/useRecordArchive'

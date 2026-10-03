@@ -1,227 +1,19 @@
-<template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Controlo de reagentes</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot lims-status-dot-release" />
-              {{ consumption.reversal ? 'Revertido' : 'Registado' }}
-            </span>
-            <span class="ds-chip">#{{ consumption.id }}</span>
-          </div>
-          <h1 class="ds-heading mt-3 text-2xl">Registo de consumo #{{ consumption.id }}</h1>
-          <p class="ds-copy mt-2 text-sm">
-            Reveja material, quantidade, armazém, responsável e impacto de existências associados a este consumo.
-          </p>
-        </div>
-
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <button type="button" class="ds-button ds-button-secondary" @click="goBack">
-            <ArrowLeftIcon class="h-4 w-4" />
-            Voltar
-          </button>
-          <button v-if="hasPermission('delete_reagent_consumption') && !consumption.reversal" type="button" class="ds-button ds-button-danger" :disabled="reversal.processing.value" @click="reversal.open(consumption)">
-            <ArrowUturnLeftIcon class="h-4 w-4" />
-            Reverter consumo
-          </button>
-        </div>
-      </div>
-
-      <p v-if="consumption.reversal" class="ds-copy px-5 py-4 text-sm">
-        Existências repostas em {{ formatDateTime(consumption.reversal.reversed_at) }}
-        por {{ consumption.reversal.user?.name || 'operador registado' }}.
-        Consumo e movimentos originais preservados.
-      </p>
-
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] md:grid-cols-4 md:divide-y-0">
-        <div v-for="metric in summaryCards" :key="metric.label" class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
-            <span class="lims-status-dot" :class="metric.dotClass" />
-            {{ metric.label }}
-          </dt>
-          <dd class="mt-2 text-xl font-bold" :class="metric.valueClass">{{ metric.value }}</dd>
-          <p class="mt-1 truncate text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ metric.caption }}</p>
-        </div>
-      </dl>
-    </section>
-
-    <section class="grid gap-4 xl:grid-cols-[1fr_22rem]">
-      <div class="space-y-4">
-        <article class="ds-panel overflow-hidden">
-          <div class="ds-table-summary px-5 py-4">
-            <div class="flex items-start gap-3">
-              <ClipboardDocumentListIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
-              <div>
-                <h2 class="ds-heading text-base">Detalhes do consumo</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Rastreabilidade do registo e da saída de existências.</p>
-              </div>
-            </div>
-          </div>
-
-          <dl class="grid divide-y divide-[color:var(--ds-border)] md:grid-cols-2 md:divide-x md:divide-y-0">
-            <div class="space-y-4 p-5">
-              <div v-for="field in primaryFields" :key="field.label" class="flex items-start gap-3">
-                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-panel-subtle)] text-primary-700 dark:text-primary-300">
-                  <component :is="field.icon" class="h-4 w-4" />
-                </span>
-                <div class="min-w-0">
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
-                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
-                  <p v-if="field.caption" class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ field.caption }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="space-y-3 p-5">
-              <div v-for="field in auditFields" :key="field.label" class="flex items-start justify-between gap-4 text-sm">
-                <dt class="font-semibold text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
-                <dd class="text-right font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
-              </div>
-            </div>
-          </dl>
-
-          <div v-if="consumption.remarks" class="border-t border-[color:var(--ds-border)] p-5">
-            <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Observações</p>
-            <p class="mt-2 whitespace-pre-line text-sm text-[color:var(--ds-text-muted)]">{{ consumption.remarks }}</p>
-          </div>
-        </article>
-
-        <article v-if="consumption.item" class="ds-panel overflow-hidden">
-          <div class="ds-table-summary px-5 py-4">
-            <div class="flex items-start gap-3">
-              <InformationCircleIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
-              <div>
-                <h2 class="ds-heading text-base">Dossier do reagente</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Identificação do material afectado por este consumo.</p>
-              </div>
-            </div>
-          </div>
-
-          <dl class="grid divide-y divide-[color:var(--ds-border)] md:grid-cols-2 md:divide-x md:divide-y-0">
-            <div class="p-5">
-              <div v-for="field in reagentIdentityFields" :key="field.label" class="flex items-start justify-between gap-4 py-2 text-sm">
-                <dt class="font-semibold text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
-                <dd class="text-right font-bold" :class="field.valueClass">{{ field.value }}</dd>
-              </div>
-            </div>
-            <div class="p-5">
-              <div v-for="field in reagentSupplyFields" :key="field.label" class="flex items-start justify-between gap-4 py-2 text-sm">
-                <dt class="font-semibold text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
-                <dd class="text-right font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
-              </div>
-            </div>
-          </dl>
-        </article>
-      </div>
-
-      <aside class="space-y-4">
-        <section class="ds-command-surface p-5">
-          <h2 class="ds-heading text-base">Acções</h2>
-          <div class="mt-4 grid gap-2">
-            <Link v-if="consumption.item && !consumption.item.is_archived" :href="route('vap-inventory.items.show', consumption.reagent_id)" class="ds-button ds-button-secondary w-full">
-              <PencilIcon class="h-4 w-4" />
-              Ver reagente
-            </Link>
-            <p v-else class="text-sm text-[color:var(--ds-text-soft)]">Reagente arquivado. Identificação preservada neste registo.</p>
-            <button type="button" class="ds-button ds-button-secondary w-full" @click="printConsumption">
-              <PrinterIcon class="h-4 w-4" />
-              Imprimir registo
-            </button>
-          </div>
-        </section>
-
-        <section class="ds-panel overflow-hidden">
-          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading text-base">Linha do tempo</h2>
-          </div>
-          <ol class="space-y-4 p-5">
-            <li v-for="item in timelineItems" :key="item.label" class="flex gap-3">
-              <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-panel-subtle)] text-primary-700 dark:text-primary-300">
-                <component :is="item.icon" class="h-4 w-4" />
-              </span>
-              <div>
-                <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ item.label }}</p>
-                <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ item.timestamp }}</p>
-                <p class="mt-1 text-xs text-[color:var(--ds-text-muted)]">{{ item.caption }}</p>
-              </div>
-            </li>
-          </ol>
-        </section>
-
-        <section class="ds-panel overflow-hidden">
-          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading text-base">Impacto no existências</h2>
-          </div>
-          <div class="grid gap-3 p-5">
-            <div v-for="item in stockImpactCards" :key="item.label" class="ds-card p-4">
-              <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ item.label }}</p>
-              <p class="mt-2 text-xl font-bold" :class="item.valueClass">{{ item.value }}</p>
-              <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ item.caption }}</p>
-            </div>
-          </div>
-        </section>
-
-        <section v-if="isReagentExpired" class="ds-card border-l-4 border-amber-500 p-4">
-          <div class="flex items-start gap-3">
-            <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 text-amber-700 dark:text-amber-300" />
-            <div>
-              <h3 class="text-sm font-bold text-[color:var(--ds-text)]">Reagente vencido</h3>
-              <p class="mt-1 text-sm text-[color:var(--ds-text-soft)]">
-                Validade: {{ formatDate(consumption.item.reagent_expiry_date) }}.
-              </p>
-            </div>
-          </div>
-        </section>
-      </aside>
-    </section>
-
-    <confirm-dialog
-      v-if="reversal.pending.value"
-      title="Reverter consumo"
-      description="Esta acção repõe as existências uma única vez. O consumo original e o movimento de reposição ficam preservados."
-      :confirm="reversal.processing.value ? 'A reverter…' : 'Reverter consumo'"
-      cancel="Manter registo"
-      variant="danger"
-      keep-open-on-confirm
-      :disabled="reversal.processing.value"
-      @confirmed="reversal.confirm"
-      @canceled="reversal.close"
-    >
-      <p v-if="reversal.error.value" role="alert" class="mt-3 text-sm text-red-700 dark:text-red-300">{{ reversal.error.value }}</p>
-      <div class="mt-4 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] p-4 text-left">
-        <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ consumption.reagent_name }}</p>
-        <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-          {{ formatQuantity(consumption.quantity_used) }} em {{ consumption.warehouse?.name || 'armazém não definido' }}
-        </p>
-      </div>
-    </confirm-dialog>
-  </div>
-</template>
-
 <script setup>
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import NextStepBar from '@/Components/plano/NextStepBar.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import { useConsumptionReversal } from '@/Composables/useConsumptionReversal'
 import { usePermission } from '@/Composables/usePermissions'
-import { Link, router } from '@inertiajs/vue3'
-import {
-  ArrowLeft as ArrowLeftIcon,
-  FlaskConical as BeakerIcon,
-  Store as BuildingStorefrontIcon,
-  Check as CheckIcon,
-  ClipboardList as ClipboardDocumentListIcon,
-  Clock as ClockIcon,
-  Box as CubeIcon,
-  TriangleAlert as ExclamationTriangleIcon,
-  Info as InformationCircleIcon,
-  Pencil as PencilIcon,
-  Printer as PrinterIcon,
-  Undo2 as ArrowUturnLeftIcon,
-  User as UserIcon,
-} from '@lucide/vue'
+import { Link } from '@inertiajs/vue3'
+import { ArrowRight as ArrowRightIcon, TriangleAlert as ExclamationTriangleIcon, Undo2 as ArrowUturnLeftIcon } from '@lucide/vue'
 import { computed } from 'vue'
 
+/**
+ * Consumption dossier (Plano). The record is evidence and is never deleted: a
+ * reversal restores the stock once through a compensating movement and keeps
+ * the original consumption alongside it.
+ */
 const props = defineProps({
   consumption: {
     type: Object,
@@ -238,6 +30,8 @@ const reversal = useConsumptionReversal({
   reverseUrl: id => route('vap-inventory.reagents.consumption.reverse', id),
 })
 
+const unit = computed(() => props.consumption.item?.unit?.code || 'unidades')
+
 const isReagentExpired = computed(() => {
   if (!props.consumption.item?.reagent_expiry_date) {
     return false
@@ -246,126 +40,52 @@ const isReagentExpired = computed(() => {
   return new Date(props.consumption.item.reagent_expiry_date) < new Date()
 })
 
-const summaryCards = computed(() => [
-  {
-    label: 'Quantidade',
-    value: formatQuantity(props.consumption.quantity_used),
-    caption: props.consumption.item?.unit?.code || 'unidades',
-    dotClass: 'lims-status-dot-critical',
-    valueClass: 'text-rose-700 dark:text-rose-300',
-  },
-  {
-    label: 'Consumo',
-    value: formatDate(props.consumption.date),
-    caption: 'Data operacional',
-    dotClass: 'lims-status-dot-hold',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Armazém',
-    value: props.consumption.warehouse?.name || 'N/A',
-    caption: props.consumption.warehouse?.location?.name || 'Local não definido',
-    dotClass: 'lims-status-dot-instrument',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Estado',
-    value: isReagentExpired.value ? 'Atenção' : 'Registado',
-    caption: isReagentExpired.value ? 'Validade expirada' : 'Rastreabilidade activa',
-    dotClass: isReagentExpired.value ? 'lims-status-dot-hold' : 'lims-status-dot-release',
-    valueClass: isReagentExpired.value ? 'text-amber-700 dark:text-amber-300' : 'text-[color:var(--ds-text)]',
-  },
-])
-
-const primaryFields = computed(() => [
-  {
-    label: 'Reagente',
-    value: props.consumption.reagent_name,
-    caption: props.consumption.item?.internal_code || props.consumption.item?.internalcode || 'Código N/A',
-    icon: BeakerIcon,
-  },
-  {
-    label: 'Quantidade usada',
-    value: formatQuantity(props.consumption.quantity_used),
-    caption: props.consumption.item?.unit?.code || 'unidades',
-    icon: CubeIcon,
-  },
-  {
-    label: 'Armazém',
-    value: props.consumption.warehouse?.name || 'N/A',
-    caption: props.consumption.warehouse?.location?.name || 'Localização N/A',
-    icon: BuildingStorefrontIcon,
-  },
-  {
-    label: 'Usado por',
-    value: props.consumption.used_by,
-    caption: `Registado por ${props.consumption.user?.name || 'Sistema'}`,
-    icon: UserIcon,
-  },
-])
-
-const auditFields = computed(() => [
+const consumptionFacts = computed(() => [
+  ['Reagente', props.consumption.reagent_name],
+  ['Código interno', props.consumption.item?.internal_code || props.consumption.item?.internalcode || 'N/A'],
+  ['Quantidade usada', `${formatQuantity(props.consumption.quantity_used)} ${unit.value}`],
+  ['Armazém', [props.consumption.warehouse?.name || 'N/A', props.consumption.warehouse?.location?.name].filter(Boolean).join(' · ')],
+  ['Usado por', props.consumption.used_by],
+  ['Registado por', props.consumption.user?.name || 'Sistema'],
   ['Data de consumo', formatDate(props.consumption.date)],
-  ['Data de registo', formatDateTime(props.consumption.created_at)],
   ['Usado em', formatDateTime(props.consumption.used_at)],
-  ['ID de registo', `#${props.consumption.id}`],
-  ['Estado', 'Registado'],
-].map(([label, value]) => ({ label, value })))
+])
 
-const reagentIdentityFields = computed(() => [
+const reagentFacts = computed(() => [
   ['Nome', props.consumption.item?.name || 'N/A'],
-  ['Código interno', props.consumption.item?.internalcode || props.consumption.item?.internal_code || 'N/A'],
   ['Categoria', props.consumption.item?.category?.name || 'N/A'],
   ['Unidade', props.consumption.item?.unit?.code || 'N/A'],
-  [
-    'Validade',
-    props.consumption.item?.reagent_expiry_date ? formatDate(props.consumption.item.reagent_expiry_date) : 'N/A',
-    isReagentExpired.value ? 'text-rose-700 dark:text-rose-300' : 'text-[color:var(--ds-text)]',
-  ],
-].map(([label, value, valueClass = 'text-[color:var(--ds-text)]']) => ({ label, value, valueClass })))
-
-const reagentSupplyFields = computed(() => [
+  ['Validade', props.consumption.item?.reagent_expiry_date ? formatDate(props.consumption.item.reagent_expiry_date) : 'N/A'],
   ['Marca', props.consumption.item?.brand || 'N/A'],
   ['Modelo', props.consumption.item?.model || 'N/D'],
   ['Número de série', props.consumption.item?.serial_number || 'N/A'],
   ['Fornecedor', props.consumption.item?.supplier?.name || 'N/A'],
-].map(([label, value]) => ({ label, value })))
-
-const timelineItems = computed(() => [
-  {
-    label: 'Registo de consumo',
-    timestamp: formatDateTime(props.consumption.created_at),
-    caption: `por ${props.consumption.user?.name || 'Sistema'}`,
-    icon: CheckIcon,
-  },
-  {
-    label: 'Existências actualizado',
-    timestamp: formatDateTime(props.consumption.created_at),
-    caption: `Existências reduzido em ${formatQuantity(props.consumption.quantity_used)}.`,
-    icon: CubeIcon,
-  },
 ])
 
-const stockImpactCards = computed(() => [
-  {
-    label: 'Quantidade consumida',
-    value: formatQuantity(props.consumption.quantity_used),
-    caption: props.consumption.item?.unit?.code || 'unidades',
-    valueClass: 'text-rose-700 dark:text-rose-300',
-  },
-  {
-    label: 'Existências actual',
-    value: formatQuantity(getCurrentStockInWarehouse()),
-    caption: props.consumption.warehouse?.name || 'Armazém N/A',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Impacto',
-    value: 'Saída',
-    caption: `Redução aplicada ao ${props.consumption.warehouse?.name || 'armazém'}.`,
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-])
+const movements = computed(() => {
+  const rows = [
+    {
+      label: 'Consumo registado',
+      timestamp: formatDateTime(props.consumption.created_at),
+      caption: `por ${props.consumption.user?.name || 'Sistema'}`,
+    },
+    {
+      label: `Saída de ${formatQuantity(props.consumption.quantity_used)} ${unit.value}`,
+      timestamp: formatDateTime(props.consumption.created_at),
+      caption: props.consumption.warehouse?.name || 'Armazém N/A',
+    },
+  ]
+
+  if (props.consumption.reversal) {
+    rows.push({
+      label: `Reposição de ${formatQuantity(props.consumption.quantity_used)} ${unit.value}`,
+      timestamp: formatDateTime(props.consumption.reversal.reversed_at),
+      caption: `Revertido por ${props.consumption.reversal.user?.name || 'operador registado'}`,
+    })
+  }
+
+  return rows
+})
 
 function formatQuantity(value) {
   const numericValue = Number(value ?? 0)
@@ -428,8 +148,116 @@ function getCurrentStockInWarehouse() {
 function printConsumption() {
   window.print()
 }
-
-function goBack() {
-  router.visit(route('vap-inventory.reagents.consumption.index'))
-}
 </script>
+
+<template>
+  <div class="pl-page" data-template="dossier">
+    <PageHeader
+      :crumbs="[{ title: 'Inventário', url: route('vap-inventory.items.index') }, { title: 'Consumo de reagentes', url: route('vap-inventory.reagents.consumption.index') }, { title: `#${consumption.id}` }]"
+      :title="`Consumo #${consumption.id}`"
+      :lede="`${consumption.reagent_name} · ${formatQuantity(consumption.quantity_used)} ${unit} · ${consumption.warehouse?.name || 'armazém não definido'}`"
+    >
+      <template #badges>
+        <StatusChip :tone="consumption.reversal ? 'done' : 'ok'">{{ consumption.reversal ? 'Revertido' : 'Registado' }}</StatusChip>
+        <StatusChip v-if="isReagentExpired" tone="wait">Reagente vencido</StatusChip>
+      </template>
+      <template #actions>
+        <button type="button" class="ds-button ds-button-secondary" @click="printConsumption">Imprimir</button>
+      </template>
+    </PageHeader>
+
+    <div class="pl-dossier-grid">
+      <div class="grid min-w-0 gap-7">
+        <p v-if="consumption.reversal" class="pl-banner pl-banner-ok text-sm">
+          <ArrowUturnLeftIcon aria-hidden="true" />
+          <span>
+            Existências repostas em {{ formatDateTime(consumption.reversal.reversed_at) }}
+            por {{ consumption.reversal.user?.name || 'operador registado' }}.
+            Consumo e movimentos originais preservados.
+          </span>
+        </p>
+
+        <section class="pl-panel" aria-labelledby="consumption-facts-title">
+          <div class="pl-panel-head"><h2 id="consumption-facts-title" class="pl-k">Consumo</h2><span class="pl-k pl-faint">Registado {{ formatDateTime(consumption.created_at) }}</span></div>
+          <dl class="pl-facts pl-facts-2">
+            <div v-for="[label, value] in consumptionFacts" :key="label" class="pl-fact"><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+          </dl>
+          <div v-if="consumption.remarks" class="grid gap-2 border-t border-[var(--pl-line)] p-4">
+            <h3 class="pl-k pl-muted">Observações</h3>
+            <p class="whitespace-pre-line text-sm">{{ consumption.remarks }}</p>
+          </div>
+        </section>
+
+        <section class="pl-panel" aria-labelledby="consumption-movements-title">
+          <div class="pl-panel-head"><h2 id="consumption-movements-title" class="pl-k">Movimentos</h2><span class="pl-k pl-faint">{{ movements.length }} registos</span></div>
+          <ol>
+            <li v-for="movement in movements" :key="movement.label" class="pl-row">
+              <span>{{ movement.label }}<span class="block text-[12.5px] text-[var(--pl-muted)]">{{ movement.caption }}</span></span>
+              <span class="pl-num text-[var(--pl-muted)]">{{ movement.timestamp }}</span>
+            </li>
+          </ol>
+        </section>
+      </div>
+
+      <aside class="grid min-w-0 gap-7">
+        <section class="pl-panel" aria-labelledby="consumption-stock-title">
+          <div class="pl-panel-head"><h2 id="consumption-stock-title" class="pl-k">Existências</h2><span class="pl-k pl-faint">{{ consumption.warehouse?.name || 'Armazém N/A' }}</span></div>
+          <dl class="pl-facts">
+            <div class="pl-fact"><dt>Consumido</dt><dd class="pl-num">{{ formatQuantity(consumption.quantity_used) }} {{ unit }}</dd></div>
+            <div class="pl-fact"><dt>Disponível agora</dt><dd class="pl-num">{{ formatQuantity(getCurrentStockInWarehouse()) }} {{ unit }}</dd></div>
+          </dl>
+        </section>
+
+        <section v-if="consumption.item" class="pl-panel" aria-labelledby="consumption-reagent-title">
+          <div class="pl-panel-head"><h2 id="consumption-reagent-title" class="pl-k">Reagente</h2><span class="pl-k pl-faint">{{ consumption.item?.code || 'Sem código' }}</span></div>
+          <p v-if="isReagentExpired" class="pl-banner pl-banner-warn m-4 text-sm">
+            <ExclamationTriangleIcon aria-hidden="true" />
+            <span>Validade expirada em {{ formatDate(consumption.item.reagent_expiry_date) }}.</span>
+          </p>
+          <dl class="pl-facts">
+            <div v-for="[label, value] in reagentFacts" :key="label" class="pl-fact"><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+          </dl>
+        </section>
+
+        <section class="pl-panel">
+          <div class="pl-panel-head"><h2 class="pl-k">Dossier</h2><span class="pl-k pl-faint">#{{ consumption.id }}</span></div>
+          <Link v-if="consumption.item && !consumption.item.is_archived" :href="route('vap-inventory.items.show', consumption.reagent_id)" class="pl-row"><span>Ver reagente</span><ArrowRightIcon class="h-4 w-4" aria-hidden="true" /></Link>
+          <p v-else class="px-4 py-3 text-sm text-[var(--pl-muted)]">Reagente arquivado. Identificação preservada neste registo.</p>
+          <Link :href="route('vap-inventory.reagents.consumption.index')" class="pl-row"><span>Registo de consumos</span><ArrowRightIcon class="h-4 w-4" aria-hidden="true" /></Link>
+        </section>
+      </aside>
+    </div>
+
+    <NextStepBar>
+      <template v-if="consumption.reversal">Consumo revertido. As existências foram repostas uma vez e não há mais acções sobre este registo.</template>
+      <template v-else-if="hasPermission('delete_reagent_consumption')">Consumo registado. Se foi lançado por engano, reverta-o: as existências são repostas e o registo original fica preservado.</template>
+      <template v-else>Consumo registado. A reversão exige permissão para reverter consumos.</template>
+      <template #actions>
+        <button v-if="hasPermission('delete_reagent_consumption') && !consumption.reversal" type="button" class="ds-button ds-button-danger" :disabled="reversal.processing.value" @click="reversal.open(consumption)">
+          <ArrowUturnLeftIcon class="h-4 w-4" aria-hidden="true" />
+          Reverter consumo
+        </button>
+      </template>
+    </NextStepBar>
+
+    <confirm-dialog
+      v-if="reversal.pending.value"
+      title="Reverter consumo"
+      description="Esta acção repõe as existências uma única vez. O consumo original e o movimento de reposição ficam preservados."
+      :confirm="reversal.processing.value ? 'A reverter…' : 'Reverter consumo'"
+      cancel="Manter registo"
+      variant="danger"
+      keep-open-on-confirm
+      :disabled="reversal.processing.value"
+      @confirmed="reversal.confirm"
+      @canceled="reversal.close"
+    >
+      <p v-if="reversal.error.value" role="alert" class="ds-field-error mt-3">{{ reversal.error.value }}</p>
+      <dl class="pl-panel pl-facts mt-4 text-left">
+        <div class="pl-fact"><dt>Reagente</dt><dd>{{ consumption.reagent_name }}</dd></div>
+        <div class="pl-fact"><dt>Quantidade</dt><dd class="pl-num">{{ formatQuantity(consumption.quantity_used) }}</dd></div>
+        <div class="pl-fact"><dt>Armazém</dt><dd>{{ consumption.warehouse?.name || 'armazém não definido' }}</dd></div>
+      </dl>
+    </confirm-dialog>
+  </div>
+</template>

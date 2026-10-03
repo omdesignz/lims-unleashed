@@ -46,6 +46,13 @@ class InventoryProcurementLaboratoryOwnershipTest extends TestCase
         $this->assertSame(1, data_get($page, 'props.orders.total'));
         $this->assertSame($local->id, data_get($page, 'props.orders.data.0.id'));
         $this->assertSame(1, data_get($page, 'props.stats.total_orders'));
+        $this->assertSame(['PENDING' => 1], data_get($page, 'props.stats.by_status'));
+        $this->actingAs($user)->get(route('vap-inventory.orders.index', ['status' => 'PENDING']))
+            ->assertOk()
+            ->assertInertia(fn ($inertia) => $inertia->where('orders.total', 1));
+        $this->actingAs($user)->get(route('vap-inventory.orders.index', ['status' => 'RECEIVED']))
+            ->assertOk()
+            ->assertInertia(fn ($inertia) => $inertia->where('orders.total', 0));
 
         $this->get(route('vap-inventory.orders.show', $foreign))->assertNotFound();
         $this->get(route('vap-inventory.orders.edit', $foreign))->assertNotFound();

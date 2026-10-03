@@ -1,272 +1,172 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-        <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Procurement intake</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot lims-status-dot-instrument"></span>
-              Submissão para aprovação
-            </span>
-          </div>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <ClipboardDocumentListIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Nova necessidade operacional</h1>
-              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Consolide materiais, reagentes e equipamentos numa requisição com âmbito, prazo, armazém alvo e estimativa financeira.
-              </p>
-            </div>
-          </div>
+  <form class="pl-page" data-template="form" @submit.prevent="submit">
+    <PageHeader
+      :crumbs="[{ title: 'Inventário' }, { title: 'Necessidades', url: route('vap-inventory.needs.index') }, { title: 'Nova' }]"
+      title="Nova necessidade"
+      lede="Reúna materiais, reagentes e equipamentos numa requisição com âmbito, prazo, armazém de destino e estimativa. A submissão abre o fluxo de aprovação."
+    />
+
+    <section class="pl-form-section">
+      <header>
+        <h2 class="pl-d3">Âmbito e prazo</h2>
+        <p>O laboratório disponível acompanha o departamento seleccionado, para evitar requisições fora do âmbito organizacional.</p>
+      </header>
+      <div class="pl-form-grid">
+        <BaseSelect
+          id="need-department"
+          v-model="form.department_id"
+          label="Departamento"
+          :error="form.errors.department_id"
+          required
+        >
+          <option value="">Seleccione o departamento</option>
+          <option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }}</option>
+        </BaseSelect>
+
+        <BaseSelect
+          id="need-lab"
+          v-model="form.lab_id"
+          label="Laboratório"
+          hint="Opcional; filtrado pelo departamento."
+          :error="form.errors.lab_id"
+          :disabled="!form.department_id"
+        >
+          <option value="">Sem laboratório específico</option>
+          <option v-for="lab in filteredLabs" :key="lab.id" :value="lab.id">{{ lab.name }}</option>
+        </BaseSelect>
+
+        <BaseInput
+          id="need-date"
+          v-model="form.needed_by_date"
+          type="date"
+          label="Necessário até"
+          :min="minimumNeedDate"
+          :error="form.errors.needed_by_date"
+        />
+
+        <div class="ds-field-group">
+          <span class="ds-field-label">Urgência calculada</span>
+          <p class="mt-1.5 flex items-center gap-3 text-sm">
+            <StatusChip :tone="urgencyTone">{{ urgencyLabel }}</StatusChip>
+            <span class="text-[var(--pl-muted)]">Pela data necessária.</span>
+          </p>
         </div>
 
-        <Link :href="route('vap-inventory.needs.index')" class="ds-button ds-button-secondary">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Voltar à fila
-        </Link>
+        <div class="pl-span-2">
+          <BaseTextarea
+            id="need-justification"
+            v-model="form.justification"
+            label="Justificação operacional"
+            :rows="4"
+            placeholder="Explique o impacto no serviço, a finalidade e eventuais restrições técnicas"
+            :error="form.errors.justification"
+          />
+        </div>
       </div>
     </section>
 
-    <form class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]" @submit.prevent="submit">
-      <div class="space-y-6">
-        <section class="ds-card overflow-hidden">
-          <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Contexto da requisição</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Departamento, laboratório e prazo</h2>
-          </div>
-
-          <div class="grid gap-6 p-5 xl:grid-cols-[15rem_minmax(0,1fr)]">
-            <div>
-              <div class="flex items-center gap-2 text-[var(--ds-text)]">
-                <BuildingOffice2Icon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
-                <h3 class="font-black">Âmbito responsável</h3>
-              </div>
-              <p class="mt-2 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                O laboratório disponível acompanha o departamento seleccionado para evitar requisições fora do âmbito organizacional.
-              </p>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <BaseSelect
-                id="need-department"
-                v-model="form.department_id"
-                label="Departamento"
-                :error="form.errors.department_id"
-                required
-              >
-                <option value="">Seleccione o departamento</option>
-                <option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }}</option>
-              </BaseSelect>
-
-              <BaseSelect
-                id="need-lab"
-                v-model="form.lab_id"
-                label="Laboratório"
-                hint="Opcional; filtrado pelo departamento."
-                :error="form.errors.lab_id"
-                :disabled="!form.department_id"
-              >
-                <option value="">Sem laboratório específico</option>
-                <option v-for="lab in filteredLabs" :key="lab.id" :value="lab.id">{{ lab.name }}</option>
-              </BaseSelect>
-
-              <BaseInput
-                id="need-date"
-                v-model="form.needed_by_date"
-                type="date"
-                label="Necessário até"
-                :min="minimumNeedDate"
-                :error="form.errors.needed_by_date"
-              />
-
-              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
-                <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Urgência calculada</p>
-                <div class="mt-2 flex items-center gap-2">
-                  <span :class="['h-2 w-2 rounded-full', urgencyTone]"></span>
-                  <p class="text-sm font-black text-[var(--ds-text)]">{{ urgencyLabel }}</p>
-                </div>
-                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Baseada na data necessária.</p>
-              </div>
-
-              <div class="md:col-span-2">
-                <BaseTextarea
-                  id="need-justification"
-                  v-model="form.justification"
-                  label="Justificação operacional"
-                  :rows="4"
-                  placeholder="Explique o impacto no serviço, a finalidade e eventuais restrições técnicas"
-                  :error="form.errors.justification"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="ds-panel overflow-hidden">
-          <div class="ds-table-summary px-5 py-4">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Âmbito de aquisição</p>
-              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Itens solicitados</h2>
-              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Especificação, quantidade, destino e preço unitário estimado.</p>
-            </div>
-            <button type="button" class="ds-button ds-button-secondary" @click="addItem">
-              <PlusIcon class="h-4 w-4" />
-              Adicionar item
+    <section class="pl-form-section">
+      <header>
+        <h2 class="pl-d3">Itens solicitados</h2>
+        <p>Especificação, quantidade, armazém de destino e preço unitário estimado. As quantidades aceitam até quatro casas decimais, na unidade de cada item.</p>
+      </header>
+      <div class="grid min-w-0 gap-5">
+        <article v-for="(item, index) in form.items" :key="item.client_id" class="pl-panel" :aria-labelledby="`need-item-title-${item.client_id}`">
+          <div class="pl-panel-head">
+            <h3 :id="`need-item-title-${item.client_id}`" class="pl-k min-w-0 truncate">Item {{ index + 1 }} · {{ inventoryItemName(item.inventory_item_id) }}</h3>
+            <button
+              v-if="form.items.length > 1"
+              type="button"
+              class="ds-table-action ds-table-action-danger"
+              :aria-label="`Remover item ${index + 1}`"
+              @click="removeItem(index)"
+            >
+              <TrashIcon class="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
 
-          <div class="divide-y divide-[var(--ds-border)]">
-            <article v-for="(item, index) in form.items" :key="item.client_id" class="bg-[var(--ds-panel-raised)] p-5">
-              <div class="mb-4 flex items-start justify-between gap-4">
-                <div class="flex min-w-0 items-start gap-3">
-                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-                    <CubeIcon class="h-4 w-4" />
-                  </span>
-                  <div class="min-w-0">
-                    <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Item {{ index + 1 }}</p>
-                    <h3 class="mt-1 truncate text-sm font-black text-[var(--ds-text)]">{{ inventoryItemName(item.inventory_item_id) }}</h3>
-                  </div>
-                </div>
+          <div class="pl-form-grid p-4">
+            <div class="ds-field-group pl-span-2">
+              <comboboxEnhanced
+                :model-value="item.inventory_item_option"
+                :has-error="Boolean(form.errors[`items.${index}.inventory_item_id`])"
+                :options="itemOptions"
+                title-label="Item"
+                placeholder="Pesquisar por nome ou código"
+                @update:model-value="selectInventoryItem(item, $event)"
+              />
+              <p v-if="form.errors[`items.${index}.inventory_item_id`]" class="ds-field-error" role="alert">
+                {{ form.errors[`items.${index}.inventory_item_id`] }}
+              </p>
+            </div>
 
-                <button
-                  v-if="form.items.length > 1"
-                  type="button"
-                  class="ds-table-action ds-table-action-danger"
-                  :title="`Remover item ${index + 1}`"
-                  @click="removeItem(index)"
-                >
-                  <TrashIcon class="h-4 w-4" />
-                  <span class="sr-only">Remover item {{ index + 1 }}</span>
-                </button>
-              </div>
+            <BaseInput
+              :id="`need-quantity-${index}`"
+              v-model="item.quantity_requested"
+              type="number"
+              min="0.0001"
+              step="0.0001"
+              :label="`Quantidade${selectedItemUnit(item.inventory_item_id) ? ` (${selectedItemUnit(item.inventory_item_id)})` : ''}`"
+              :error="form.errors[`items.${index}.quantity_requested`]"
+              required
+            />
 
-              <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div class="ds-field-group xl:col-span-2">
-                  <label class="ds-field-label">Item <span class="ds-field-required">*</span></label>
-                  <comboboxEnhanced
-                    :model-value="item.inventory_item_option"
-                    :has-error="Boolean(form.errors[`items.${index}.inventory_item_id`])"
-                    :options="itemOptions"
-                    placeholder="Pesquisar por nome ou código"
-                    @update:model-value="selectInventoryItem(item, $event)"
-                  />
-                  <p v-if="form.errors[`items.${index}.inventory_item_id`]" class="ds-field-error">
-                    {{ form.errors[`items.${index}.inventory_item_id`] }}
-                  </p>
-                </div>
+            <BaseSelect
+              :id="`need-warehouse-${index}`"
+              v-model="item.warehouse_id"
+              label="Armazém de destino"
+              :error="form.errors[`items.${index}.warehouse_id`]"
+            >
+              <option value="">A definir</option>
+              <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
+            </BaseSelect>
 
-                <BaseInput
-                  :id="`need-quantity-${index}`"
-                  v-model="item.quantity_requested"
-                  type="number"
-                  min="0.0001"
-                  step="0.0001"
-                  :label="`Quantidade${selectedItemUnit(item.inventory_item_id) ? ` (${selectedItemUnit(item.inventory_item_id)})` : ''}`"
-                  :error="form.errors[`items.${index}.quantity_requested`]"
-                  required
-                />
+            <BaseInput
+              :id="`need-price-${index}`"
+              v-model="item.estimated_unit_price"
+              type="number"
+              min="0"
+              step="0.01"
+              label="Preço unitário estimado"
+              :error="form.errors[`items.${index}.estimated_unit_price`]"
+            />
 
-                <BaseSelect
-                  :id="`need-warehouse-${index}`"
-                  v-model="item.warehouse_id"
-                  label="Armazém alvo"
-                  :error="form.errors[`items.${index}.warehouse_id`]"
-                >
-                  <option value="">A definir</option>
-                  <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
-                </BaseSelect>
-
-                <BaseInput
-                  :id="`need-price-${index}`"
-                  v-model="item.estimated_unit_price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  label="Preço unitário estimado"
-                  :error="form.errors[`items.${index}.estimated_unit_price`]"
-                />
-
-                <div class="md:col-span-2 xl:col-span-3">
-                  <BaseInput
-                    :id="`need-notes-${index}`"
-                    v-model="item.notes"
-                    label="Especificação e notas"
-                    placeholder="Marca, referência, pureza, tolerância ou condição de armazenamento"
-                    :error="form.errors[`items.${index}.notes`]"
-                  />
-                </div>
-              </div>
-            </article>
+            <BaseInput
+              :id="`need-notes-${index}`"
+              v-model="item.notes"
+              label="Especificação e notas"
+              placeholder="Marca, referência, pureza, tolerância ou armazenamento"
+              :error="form.errors[`items.${index}.notes`]"
+            />
           </div>
+        </article>
 
-          <div v-if="form.errors.items" class="border-t border-[var(--ds-border)] px-5 py-3">
-            <p class="ds-field-error">{{ form.errors.items }}</p>
-          </div>
+        <p v-if="form.errors.items" class="ds-field-error" role="alert">{{ form.errors.items }}</p>
 
-          <div class="ds-table-summary px-5 py-4">
-            <p class="text-sm font-bold text-[var(--ds-text)]">{{ itemCount }} itens · {{ validQuantityCount }} quantidades verificadas</p>
-            <p class="text-sm font-black text-[var(--ds-text)]">Estimativa: {{ formatMoney(estimatedValue) }}</p>
-          </div>
-        </section>
-      </div>
-
-      <aside>
-        <section class="ds-command-surface p-5 xl:sticky xl:top-20">
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Resumo da submissão</p>
-          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Prontidão da requisição</h2>
-
-          <ol class="mt-5 space-y-0">
-            <li v-for="(step, index) in readinessSteps" :key="step.label" class="relative flex gap-3 pb-6 last:pb-0">
-              <span v-if="index < readinessSteps.length - 1" class="absolute left-[0.4375rem] top-4 h-[calc(100%-0.5rem)] w-px bg-[var(--ds-border)]"></span>
-              <span :class="['relative mt-1 h-4 w-4 shrink-0 rounded-full border-4 border-[var(--ds-panel-raised)]', step.complete ? 'bg-emerald-600' : 'bg-[var(--ds-border-strong)]']"></span>
-              <div>
-                <p class="text-sm font-black text-[var(--ds-text)]">{{ step.label }}</p>
-                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ step.detail }}</p>
-              </div>
-            </li>
-          </ol>
-
-          <dl class="mt-6 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
-            <div class="flex items-start justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Departamento</dt>
-              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ selectedDepartment?.name || 'Por seleccionar' }}</dd>
-            </div>
-            <div class="flex items-start justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Laboratório</dt>
-              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ selectedLab?.name || 'Não definido' }}</dd>
-            </div>
-            <div class="flex items-center justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Itens</dt>
-              <dd class="text-lg font-black text-[var(--ds-text)]">{{ itemCount }}</dd>
-            </div>
-            <div class="flex items-center justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Quantidades válidas</dt>
-              <dd class="text-lg font-black text-[var(--ds-text)]">{{ validQuantityCount }}/{{ form.items.length }}</dd>
-            </div>
-            <div class="flex items-center justify-between gap-4 py-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Estimativa</dt>
-              <dd class="text-right text-sm font-black text-[var(--ds-text)]">{{ formatMoney(estimatedValue) }}</dd>
-            </div>
-          </dl>
-
-          <div v-if="form.hasErrors" class="mt-5 rounded-lg border border-rose-300/60 bg-rose-50 p-3 text-sm font-bold text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200">
-            Reveja os campos assinalados antes de submeter.
-          </div>
-
-          <button type="submit" class="ds-button ds-button-primary mt-5 w-full" :disabled="form.processing || !isFormReady">
-            <PaperAirplaneIcon class="h-4 w-4" />
-            {{ form.processing ? 'A submeter...' : 'Submeter necessidade' }}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <button type="button" class="ds-button ds-button-secondary" @click="addItem">
+            <PlusIcon class="h-4 w-4" aria-hidden="true" />
+            Adicionar item
           </button>
-          <Link :href="route('vap-inventory.needs.index')" class="ds-button ds-button-secondary mt-2 w-full">
-            Cancelar
-          </Link>
-        </section>
-      </aside>
-    </form>
-  </div>
+          <p class="pl-k pl-muted">
+            <span class="pl-num">{{ itemCount }}</span> {{ itemCount === 1 ? 'item' : 'itens' }} · <span class="pl-num">{{ validQuantityCount }}/{{ form.items.length }}</span> quantidades válidas · estimativa <span class="pl-num">{{ formatMoney(estimatedValue) }}</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <p v-if="form.hasErrors" class="pl-banner pl-banner-bad text-sm" role="alert">Reveja os campos assinalados antes de submeter.</p>
+
+    <NextStepBar>
+      {{ nextStepMessage }}
+      <template #actions>
+        <Link :href="route('vap-inventory.needs.index')" class="ds-button ds-button-quiet">Cancelar</Link>
+        <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !isFormReady">
+          {{ form.processing ? 'A submeter…' : 'Submeter necessidade' }}
+        </button>
+      </template>
+    </NextStepBar>
+  </form>
 </template>
 
 <script setup>
@@ -276,19 +176,18 @@ import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import NextStepBar from '@/Components/plano/NextStepBar.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import {
-  ArrowLeft as ArrowLeftIcon,
-  Building2 as BuildingOffice2Icon,
-  ClipboardList as ClipboardDocumentListIcon,
-  Box as CubeIcon,
-  Send as PaperAirplaneIcon,
-  Plus as PlusIcon,
-  Trash2 as TrashIcon,
-} from '@lucide/vue'
+import { Plus as PlusIcon, Trash2 as TrashIcon } from '@lucide/vue'
 
 defineOptions({ layout: Layout })
 
+/**
+ * A new laboratory need (Plano form). It is submitted straight into approval; the
+ * approver later confirms the quantities and converts it into a purchase order.
+ */
 const props = defineProps({
   departments: {
     type: Array,
@@ -320,12 +219,13 @@ const form = useForm({
 })
 
 const filteredLabs = computed(() => {
-  if (!form.department_id) return []
+  if (!form.department_id) {
+    return []
+  }
+
   return props.labs.filter((lab) => String(lab.department_id) === String(form.department_id))
 })
 
-const selectedDepartment = computed(() => props.departments.find((department) => String(department.id) === String(form.department_id)) || null)
-const selectedLab = computed(() => props.labs.find((lab) => String(lab.id) === String(form.lab_id)) || null)
 const itemOptions = computed(() => props.items.map((item) => ({
   value: item.id,
   label: `${item.name}${item.code ? ` · ${item.code}` : ''}`,
@@ -344,47 +244,52 @@ const isFormReady = computed(() => (
   && form.items.every((item) => Boolean(item.inventory_item_id) && isValidQuantity(item.quantity_requested))
 ))
 
+const nextStepMessage = computed(() => {
+  if (!form.department_id) {
+    return 'Seleccione o departamento responsável.'
+  }
+
+  if (itemCount.value < form.items.length) {
+    return `Identifique o item em ${form.items.length - itemCount.value} ${form.items.length - itemCount.value === 1 ? 'linha' : 'linhas'}.`
+  }
+
+  if (validQuantityCount.value < form.items.length) {
+    return `${validQuantityCount.value} de ${form.items.length} linhas com quantidade válida. Corrija as restantes.`
+  }
+
+  return `${itemCount.value} ${itemCount.value === 1 ? 'item pronto' : 'itens prontos'} · estimativa ${formatMoney(estimatedValue.value)}. A submissão abre o fluxo de aprovação.`
+})
+
 const urgencyLabel = computed(() => {
-  if (!form.needed_by_date) return 'Sem prazo definido'
+  if (!form.needed_by_date) {
+    return 'Sem prazo definido'
+  }
+
   const today = new Date(minimumNeedDate)
   const needed = new Date(`${form.needed_by_date}T00:00:00`)
   const days = Math.ceil((needed.getTime() - today.getTime()) / 86400000)
-  if (days < 0) return 'Prazo ultrapassado'
-  if (days <= 3) return 'Urgente'
-  if (days <= 10) return 'Próxima'
+
+  if (days < 0) {
+    return 'Prazo ultrapassado'
+  }
+
+  if (days <= 3) {
+    return 'Urgente'
+  }
+
+  if (days <= 10) {
+    return 'Próxima'
+  }
+
   return 'Planeada'
 })
 
 const urgencyTone = computed(() => ({
-  'Prazo ultrapassado': 'bg-rose-600',
-  'Urgente': 'bg-rose-600',
-  'Próxima': 'bg-amber-500',
-  'Planeada': 'bg-emerald-600',
-  'Sem prazo definido': 'bg-[var(--ds-border-strong)]',
-}[urgencyLabel.value]))
-
-const readinessSteps = computed(() => [
-  {
-    label: 'Âmbito definido',
-    detail: selectedDepartment.value?.name || 'Seleccione o departamento responsável.',
-    complete: Boolean(form.department_id),
-  },
-  {
-    label: 'Itens identificados',
-    detail: itemCount.value ? `${itemCount.value} itens válidos na requisição.` : 'Adicione pelo menos um item.',
-    complete: itemCount.value > 0 && itemCount.value === form.items.length,
-  },
-  {
-    label: 'Quantidades verificadas',
-    detail: `${validQuantityCount.value} de ${form.items.length} linhas com quantidade válida.`,
-    complete: itemCount.value > 0 && validQuantityCount.value === form.items.length,
-  },
-  {
-    label: 'Pronta para aprovação',
-    detail: isFormReady.value ? 'A submissão abrirá o fluxo de aprovação.' : 'Complete os campos obrigatórios.',
-    complete: isFormReady.value,
-  },
-])
+  'Prazo ultrapassado': 'bad',
+  Urgente: 'bad',
+  Próxima: 'wait',
+  Planeada: 'ok',
+}[urgencyLabel.value] ?? 'neutral'))
 
 function newNeedItem(clientId = nextClientId++) {
   return {
@@ -400,11 +305,13 @@ function newNeedItem(clientId = nextClientId++) {
 
 function inventoryItemName(itemId) {
   const item = props.items.find((candidate) => String(candidate.id) === String(itemId))
-  return item?.name || 'Item por seleccionar'
+
+  return item?.name || 'por seleccionar'
 }
 
 function selectedItemUnit(itemId) {
   const item = props.items.find((candidate) => String(candidate.id) === String(itemId))
+
   return item?.unit?.code || item?.unit?.description || ''
 }
 
@@ -422,7 +329,10 @@ function addItem() {
 }
 
 function removeItem(index) {
-  if (form.items.length <= 1) return
+  if (form.items.length <= 1) {
+    return
+  }
+
   form.items.splice(index, 1)
   form.clearErrors()
 }
@@ -436,7 +346,9 @@ function formatMoney(value) {
 }
 
 function submit() {
-  if (!isFormReady.value) return
+  if (!isFormReady.value) {
+    return
+  }
 
   form.transform((data) => ({
     ...data,
@@ -451,8 +363,14 @@ function submit() {
 }
 
 watch(() => form.department_id, () => {
-  if (!form.lab_id) return
+  if (!form.lab_id) {
+    return
+  }
+
   const selectedLabStillMatchesDepartment = filteredLabs.value.some((lab) => String(lab.id) === String(form.lab_id))
-  if (!selectedLabStillMatchesDepartment) form.lab_id = ''
+
+  if (!selectedLabStillMatchesDepartment) {
+    form.lab_id = ''
+  }
 })
 </script>

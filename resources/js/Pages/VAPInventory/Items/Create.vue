@@ -1,10 +1,11 @@
 <template>
   <InventoryItemFormSurface
     mode="create"
-    title="Adicionar item"
-    description="Registe reagentes, equipamentos e consumíveis com existências inicial, rastreabilidade, anexos e controlos metrológicos desde a entrada."
+    :crumbs="[{ title: 'Inventário' }, { title: 'Itens', url: route('vap-inventory.items.index') }, { title: 'Novo item' }]"
+    title="Novo item de inventário"
+    description="Registe o reagente, equipamento ou consumível com o saldo inicial por armazém, a rastreabilidade e os documentos técnicos. A categoria decide que controlos se aplicam: validade e lote para reagentes, calibração e metrologia para equipamentos."
     :back-href="route('vap-inventory.items.index')"
-    back-label="Voltar para itens"
+    back-label="Cancelar"
     submit-label="Criar item"
     :form="form"
     :errors="errors"

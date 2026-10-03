@@ -78,10 +78,12 @@ test('dialog uses its actual props and events and preserves feedback until succe
 test('active/archived filtering preserves accessible labels and suppresses unsupported archived exports and links', () => {
   assert.match(source, /<select v-model="localFilters\.archive_state"/)
   assert.match(source, /<option value="archived">Itens arquivados<\/option>/)
-  assert.equal((source.match(/canExport && localFilters\.archive_state !== 'archived'/g) ?? []).length, 2)
-  assert.equal((source.match(/v-if="!item\.is_archived"/g) ?? []).length, 2)
-  assert.equal((source.match(/v-if="item\.can_restore"/g) ?? []).length, 2)
-  assert.match(source, /<span class="sr-only">Restaurar<\/span>/)
+  // One responsive register table: each guard appears once (export in the page header).
+  assert.equal((source.match(/canExport && localFilters\.archive_state !== 'archived'/g) ?? []).length, 1)
+  assert.equal((source.match(/v-if="!item\.is_archived"/g) ?? []).length, 1)
+  assert.match(source, /<Link v-if="!item\.is_archived" :href="route\('vap-inventory\.items\.show', item\.id\)"/)
+  assert.equal((source.match(/v-if="item\.can_restore"/g) ?? []).length, 1)
+  assert.match(source, /v-if="item\.can_restore"[^>]*@click="requestArchive\(item, 'restore'\)">\s*Restaurar\s*<\/button>/)
   assert.match(source, /restoreUrl: ids => route\('vap-inventory\.items\.restore', ids\[0\]\)/)
 })
 

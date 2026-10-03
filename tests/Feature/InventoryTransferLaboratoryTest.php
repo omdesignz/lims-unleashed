@@ -133,6 +133,31 @@ class InventoryTransferLaboratoryTest extends TestCase
         $this->assertSame(3, InventoryTransaction::query()->where('item_id', $item->id)->count());
     }
 
+    public function test_transfer_queue_counts_match_its_status_filters(): void
+    {
+        $lab = VAPLab::factory()->create();
+        $user = $this->operator($lab);
+        [$item, $source, $destination] = $this->stockFixture($lab);
+
+        $this->actingAs($user)->post(route('vap-inventory.transfers.store'), $this->transferPayload($item, $source, $destination, 4))->assertRedirect();
+        $this->post(route('vap-inventory.transfers.store'), $this->transferPayload($item, $source, $destination, 4))->assertRedirect();
+        $received = InventoryItemTransfer::query()->orderBy('id')->firstOrFail();
+        $this->post(route('vap-inventory.transfers.receive', $received), [
+            'actual_qty' => 4, 'received_date' => today()->toDateString(),
+        ])->assertRedirect();
+
+        $this->get(route('vap-inventory.transfers.index'))->assertInertia(fn (Assert $page) => $page
+            ->component('VAPInventory/Transfers/Index')
+            ->where('stats.total_transfers', 2)
+            ->where('stats.pending_transfers', 1)
+            ->where('stats.in_transit', 1)
+            ->where('stats.received', 1));
+        $this->get(route('vap-inventory.transfers.index', ['status' => 'received']))->assertInertia(fn (Assert $page) => $page
+            ->has('transfers.data', 1)->where('transfers.data.0.id', $received->id));
+        $this->get(route('vap-inventory.transfers.index', ['status' => 'sent']))->assertInertia(fn (Assert $page) => $page
+            ->has('transfers.data', 1)->whereNot('transfers.data.0.id', $received->id));
+    }
+
     public function test_cancel_returns_stock_once_and_peer_cannot_read_or_mutate_transfer(): void
     {
         $lab = VAPLab::factory()->create();
