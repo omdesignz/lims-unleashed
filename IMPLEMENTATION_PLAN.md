@@ -1379,12 +1379,13 @@ Journey 3 — analysis → results → review → certificate:
 Evidence:
 
 - `LaboratoryJourneyEndToEndTest` drives the whole chain over HTTP with two laboratories, a shared customer and six people (commercial, reception, analyst, verifier, approver, releaser) plus a peer in laboratory B: invalid inputs, retries, four-eyes refusals, on-behalf signing rules and every cross-laboratory read and write.
-- Browser check (dev server, real data, two-laboratory account): from laboratory B, laboratory A's proposal, sample and correction URLs return 404; from laboratory A they open. Proposal, certificate and intake screens checked at 1440px.
-- PHP suite: full run in progress at the time of writing; the result is recorded in the follow-up commit. Frontend suite: 426 pass. Production build passes.
+- Browser check (dev server, real data, two-laboratory account): from laboratory B, laboratory A's proposal, sample and correction URLs return 404; from laboratory A they open. Proposal, certificate and intake screens checked at 1440px, in dark, and at 390px.
+- 404s raised before the Inertia middleware (route-model binding, for example another laboratory's proposal) used to render a blank page because the error page had no shared routes; the exception handler now shares them (regression test in the journey test).
+- PHP suite (complete run on the Phase 3 source, PHP 8.4.11, PostgreSQL): **4,218 passed, 3 skipped, 2 failed (31,994 assertions)**. One failure was a sample-access test still reading the intake register this phase removed; it now asserts the bounded payload and the cross-laboratory 404 (20/20 pass). The other two `PhpTestLauncherTest` cases fail only in this environment: its hand-built PHP loads OPcache as a shared extension that the launcher fixture's ini does not load; the launcher and its test are unchanged by this phase. Changed files after the run were re-run (error pages, access, accession, smoke, portal, queue: all pass). Frontend suite: 426 pass. Production build passes.
+- This also closes the Phase 2 PHP checkpoint.
 
 Still open in Phase 3:
 
-- Bound-model 404s (for example another laboratory's proposal) rendered a blank page because the error page lacked shared routes; fixed in the exception handler (see the final commit).
 - Intake form options (all customers, all products with profiles and parameters) still load in full; they need searchable endpoints before customer and catalogue volumes grow.
 - Proposal and certificate numbering per laboratory remains with the later numbering slice (sample numbering is already per laboratory and year). Certificate codes are still timestamps.
 - Analysis queue and results bench keep their Phase 2 layout; they work but are not yet rebuilt on the Plano templates.

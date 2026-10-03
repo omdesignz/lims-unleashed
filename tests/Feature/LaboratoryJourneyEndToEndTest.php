@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
@@ -129,7 +130,10 @@ class LaboratoryJourneyEndToEndTest extends TestCase
         $this->assertSame($this->lab->id, $proposal->lab_id);
 
         // Laboratory B shares the customer but never the proposal.
-        $this->asPeer()->get(route('vap-proposals.show', $proposal))->assertNotFound();
+        // The 404 comes from route-model binding, before the Inertia middleware: the error page still needs its shared routes.
+        Inertia::flushShared();
+        $this->asPeer()->get(route('vap-proposals.show', $proposal))->assertNotFound()
+            ->assertInertia(fn (Assert $page) => $page->component('Error')->where('status', 404)->has('ziggy.routes')->has('auth'));
 
         $this->assertSame('30000.00', (string) $proposal->sub_total);
         $this->as('commercial')->get(route('vap-proposals.index', ['search' => 'cliente partilhado']))
