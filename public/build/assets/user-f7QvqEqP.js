@@ -1,0 +1,1 @@
+import{p as e}from"./app-D_CUhvl8.js";const c={name:"user",size:24,node:[["path",{d:"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2",key:"975kel"}],["circle",{cx:"12",cy:"7",r:"4",key:"17ys0d"}]]},o=e(c);export{o as U};

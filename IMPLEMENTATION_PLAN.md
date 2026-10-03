@@ -1,6 +1,6 @@
 # LIMS modernization — phased implementation plan
 
-Status: Phase 1 complete under all eight frozen gates; certified source publication is verified. Phase 2 (VAP visual system, "Plano") is implemented under Claude Code and awaits the user's visual approval and the PHP checkpoint — see its section; Phase 3 requires a later explicit user request. Updated 2026-10-03.
+Status: Phase 1 complete under all eight frozen gates; certified source publication is verified. Phase 2 (VAP visual system, "Plano") is implemented under Claude Code and awaits the user's visual approval and the PHP checkpoint — see its section; Phase 3 was requested by the user and is in progress under Claude Code — see its status section. Updated 2026-10-03.
 
 ## Authoritative Phase 1 acceptance contract — frozen 2026-10-03
 
@@ -1345,6 +1345,50 @@ Extract transactional business actions from controllers, use validated inputs an
 Exit: realistic workflows succeed with two laboratories, shared customers, different roles, invalid inputs, retries, and concurrent changes. Browser checks confirm the same flows in the approved UI.
 
 Approval gate: proposed changes to scientific review, report approval, retention, or other consequential business rules require explicit agreement before implementation.
+
+### Phase 3 status — 2026-10-03 (Claude Code)
+
+Decisions agreed by the user on 2026-10-03 under the approval gate:
+
+- **Three-person result review.** Whoever inserted a result cannot verify it; neither the inserter nor the verifier can approve it. Replays of one's own stage remain idempotent. The sign-in page now claims "Três etapas" instead of the earlier unbacked "Quatro olhos".
+- **Certificates come only from the workflow and lock once validated.** Manual certificate creation is removed; identity (customer, site, product, laboratory code, accession) is fixed; only the observation is editable until validation; after validation corrections go through the existing ISO revision workflow.
+- **Signing on behalf of an absent validator stays** (user request): the signed-in validator signs and stays accountable, and the absent validator is recorded alongside. The absent validator must be an active member of the same laboratory with validation rights and cannot be the signer.
+
+Journey 1 — shared customer → private proposal → decision/versions:
+
+- Totals are recomputed on the server (client totals ignored); a revision keeps the previous version's values and items in history; a repeated revision is refused (409) until the new version is sent; the public decision accepts once.
+- Laboratory B cannot open, revise or find laboratory A's proposal; the shared customer's page shows B nothing of A.
+- Proposals created outside the authoring form (imports, demo data) had no public link token, so they could not be sent and their page crashed. The model now always assigns one; a migration backfills missing tokens without changing tokens already shared.
+- Proposal and laboratory-workflow searches are case-insensitive.
+- Plano queue (state cells, search), dossier (journey from proposal to issued report, items and server totals, compliance evidence, version history, customer link, one next step) and create/revise forms (two-column fields, wider item rows). The dead "save draft" and quick-add controls, the misleading "expected code" tile and the unused activity chart query are removed.
+
+Journey 2 — accepted proposal or direct intake → registration → accession → analyses:
+
+- The intake page receives samples and corrects exactly one issued intake (opened from the sample dossier, `?edit=id`, laboratory-scoped). It no longer loads every sample, chart and shortcut: the register is the sample queue and trends are in sample reports.
+- The discard picker is bounded (200 eligible samples, longest retained first) and can be opened from the dossier with the sample preselected; other laboratories' samples are never offered.
+- The sample dossier offers "Corrigir registo" and "Registar descarte" to users holding those permissions.
+
+Journey 3 — analysis → results → review → certificate:
+
+- Certificates are laboratory-private (list, open, PDF, validate, lookups), including those of archived accessions.
+- One live certificate per accession (partial unique index plus row locking); repeated generation returns the same certificate.
+- Validation requires every result behind the certificate to be approved, is idempotent for the same validator and refuses a second validator. The dossier shows the same release rule; the validation dialog lists each result with who inserted, verified and approved it and when.
+- Results entry tells a reviewer up front when they inserted or verified the rows.
+- Archive/restore of certificates use DELETE/PATCH instead of GET.
+
+Evidence:
+
+- `LaboratoryJourneyEndToEndTest` drives the whole chain over HTTP with two laboratories, a shared customer and six people (commercial, reception, analyst, verifier, approver, releaser) plus a peer in laboratory B: invalid inputs, retries, four-eyes refusals, on-behalf signing rules and every cross-laboratory read and write.
+- Browser check (dev server, real data, two-laboratory account): from laboratory B, laboratory A's proposal, sample and correction URLs return 404; from laboratory A they open. Proposal, certificate and intake screens checked at 1440px.
+- PHP suite: full run in progress at the time of writing; the result is recorded in the follow-up commit. Frontend suite: 426 pass. Production build passes.
+
+Still open in Phase 3:
+
+- Bound-model 404s (for example another laboratory's proposal) rendered a blank page because the error page lacked shared routes; fixed in the exception handler (see the final commit).
+- Intake form options (all customers, all products with profiles and parameters) still load in full; they need searchable endpoints before customer and catalogue volumes grow.
+- Proposal and certificate numbering per laboratory remains with the later numbering slice (sample numbering is already per laboratory and year). Certificate codes are still timestamps.
+- Analysis queue and results bench keep their Phase 2 layout; they work but are not yet rebuilt on the Plano templates.
+- Concurrency for certificate generation and validation is covered by locking and the unique index; there is no multi-process race test for them yet.
 
 ## Phase 4 — Network stock and summary visibility
 
