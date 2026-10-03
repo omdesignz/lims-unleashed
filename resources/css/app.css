@@ -2911,6 +2911,14 @@ input[type="checkbox"]:not(.peer):not(.sr-only):disabled {
 .pl-bar > i { position: absolute; inset: 0 auto 0 0; background: var(--pl-accent-text); }
 .pl-bar > i.pl-bar-late { background: var(--pl-bad); }
 
+/* --- Toast: the layer plane, a strong hairline, a 3px edge in the state colour --- */
+.pl-toast {
+  border: 1px solid var(--pl-line-strong);
+  border-left: 3px solid var(--c, var(--pl-accent-text));
+  background: var(--pl-layer);
+  color: var(--pl-fg);
+}
+
 /* --- Tabs --- */
 .pl-tabs,
 .app-tabs {
@@ -3693,7 +3701,7 @@ tr:hover .pl-row-go,
    ============================================================ */
 @layer base {
   /* Dialogs: the layer plane and a strong hairline. */
-  [id^="headlessui-dialog-panel"]:not(.pl-drawer, .ds-command-palette, .lab-quick-panel, .ds-sidebar-panel, [class*="w-screen"], [class*="pointer-events-auto"]) {
+  [id^="headlessui-dialog-panel"]:not(.pl-drawer, .pl-slideover, .ds-command-palette, .ds-sidebar-panel, [class*="w-screen"], [class*="pointer-events-auto"]) {
     border: 1px solid var(--pl-line-strong) !important;
     border-radius: 0 !important;
     background-color: var(--pl-layer) !important;
@@ -3843,6 +3851,11 @@ tr:hover .pl-row-go,
     letter-spacing: -0.04em !important;
   }
 
+  /* No decorative icons: the icon tile that older headers put beside the title goes. */
+  .lims-backoffice-content > :where(div, form, section, main) > :where(section, header, div):first-child:is(.ds-panel, .ds-command-surface, .lims-dashboard-hero, .lims-laboratory-hero) :is(span, div)[class*="place-items-center"]:is([class~="h-10"], [class~="h-11"], [class~="h-12"], [class~="h-14"]):has(> svg:only-child) {
+    display: none !important;
+  }
+
   @media (max-width: 767px) {
     .lims-backoffice-content > :where(div, form, section, main) > :where(section, header, div):first-child:is(.ds-panel, .ds-command-surface, .lims-dashboard-hero, .lims-laboratory-hero) :is(h1, .ds-heading):first-of-type {
       font-size: 32px !important;
@@ -3872,6 +3885,15 @@ tr:hover .pl-row-go,
     --tw-backdrop-blur: ;
     backdrop-filter: none !important;
   }
+}
+
+/* Nothing spins in Plano: loading indicators blink in two steps instead. */
+@keyframes pl-step {
+  50% { opacity: 0.25; }
+}
+
+:where(.lims-app-shell, .auth-canvas, [id^="headlessui-dialog-panel"]) .animate-spin {
+  animation: pl-step 0.7s steps(2) infinite !important;
 }
 
 /* Lucide icons: square caps and mitred joins, like the Plano glyphs. */

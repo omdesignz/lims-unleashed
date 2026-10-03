@@ -5,8 +5,8 @@
         :closeable="closeable"
         @close="close"
     >
-        <div class="px-6 py-5">
-            <div class="ds-heading text-base">
+        <div class="px-[22px] py-[22px]">
+            <div class="pl-d3">
                 <slot name="title" />
             </div>
 
@@ -15,7 +15,7 @@
             </div>
         </div>
 
-        <div class="flex flex-row justify-end gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-6 py-3 text-right">
+        <div class="flex flex-row justify-end gap-2 border-t border-[var(--pl-line)] px-[22px] py-3.5 text-right">
             <slot name="footer" />
         </div>
     </Modal>

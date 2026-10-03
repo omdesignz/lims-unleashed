@@ -50,6 +50,7 @@ const textareaSource = readFileSync(new URL('../../resources/js/Components/base/
 const moduleHeroSource = readFileSync(new URL('../../resources/js/Components/base/ModuleHero.vue', import.meta.url), 'utf8')
 const sideNavSource = readFileSync(new URL('../../resources/js/Shared/Navigation/side-nav.vue', import.meta.url), 'utf8')
 const appSidebarSource = readFileSync(new URL('../../resources/js/Shared/Navigation/app-sidebar.vue', import.meta.url), 'utf8')
+const areaBarSource = readFileSync(new URL('../../resources/js/Shared/Navigation/area-bar.vue', import.meta.url), 'utf8')
 const premiumDocumentStyleSource = readFileSync(new URL('../../resources/views/PDFs/partials/premium-document-style.blade.php', import.meta.url), 'utf8')
 const documentLetterheadSource = readFileSync(new URL('../../resources/views/PDFs/partials/document-letterhead.blade.php', import.meta.url), 'utf8')
 const documentBrandLogoSource = readFileSync(new URL('../../resources/views/PDFs/partials/brand-logo.blade.php', import.meta.url), 'utf8')
@@ -311,9 +312,9 @@ const backupStatusesSource = readFileSync(new URL('../../resources/js/Components
 const backupsSource = readFileSync(new URL('../../resources/js/Components/backups.vue', import.meta.url), 'utf8')
 const backupRowSource = readFileSync(new URL('../../resources/js/Components/backup-row.vue', import.meta.url), 'utf8')
 const backupsPageSource = readFileSync(new URL('../../resources/js/Pages/Backups/Index.vue', import.meta.url), 'utf8')
-const vapLabelsIndexSource = readFileSync(new URL('../../resources/js/Pages/VapLabels/Index.vue', import.meta.url), 'utf8')
-const vapLabelsCreateSource = readFileSync(new URL('../../resources/js/Pages/VapLabels/Create.vue', import.meta.url), 'utf8')
-const vapLabelsShowSource = readFileSync(new URL('../../resources/js/Pages/VapLabels/Show.vue', import.meta.url), 'utf8')
+const vapLabelsIndexSource = readFileSync(new URL('../../resources/js/Pages/VAPLabels/Index.vue', import.meta.url), 'utf8')
+const vapLabelsCreateSource = readFileSync(new URL('../../resources/js/Pages/VAPLabels/Create.vue', import.meta.url), 'utf8')
+const vapLabelsShowSource = readFileSync(new URL('../../resources/js/Pages/VAPLabels/Show.vue', import.meta.url), 'utf8')
 const vapLabelTemplatesIndexSource = readFileSync(new URL('../../resources/js/Pages/VAPLabelTemplates/Index.vue', import.meta.url), 'utf8')
 const vapLabelTemplateFormSource = readFileSync(new URL('../../resources/js/Pages/VAPLabelTemplates/LabelTemplateForm.vue', import.meta.url), 'utf8')
 const vapProposalsIndexSource = readFileSync(new URL('../../resources/js/Pages/VAPProposals/Index.vue', import.meta.url), 'utf8')
@@ -429,14 +430,25 @@ test('defines a semantic product design contract for shared application surfaces
     assert.match(appCss, new RegExp(token))
   }
 
-  for (const className of ['.app-sheet', '.app-rail', '.app-column', '.app-work', '.app-rail-pill', '.app-page-header', '.ds-button-ghost']) {
+  // Plano: area bar, area column, page header, state cells, pager and the next-step bar.
+  for (const className of ['.pl-top', '.pl-area', '.pl-side', '.pl-side-link', '.pl-page-head', '.pl-cells', '.pl-pager', '.pl-nextbar', '.pl-band', '.pl-hero', '.ds-button-ghost']) {
     assert.match(appCss, new RegExp(className.replace('.', '\\.')))
   }
 
-  assert.match(appCss, /font-family: "Inter"/)
-  assert.match(appCss, /--font-sans: 'Inter'/)
-  assert.doesNotMatch(appCss, /fonts\.bunny\.net|fonts\.googleapis\.com|DM Sans|Manrope|IBM Plex/)
-  assert.match(appCss, /\.ds-button:active:not\(:disabled\) \{\s*scale: 0\.96;/)
+  for (const retired of ['.app-sheet', '.app-rail', '.app-column', '.app-work', '.app-rail-pill']) {
+    assert.doesNotMatch(appCss, new RegExp(`\\${retired}\\b`))
+  }
+
+  assert.match(appCss, /font-family: "TASA Orbiter"/)
+  assert.match(appCss, /font-family: "Geist Mono"/)
+  assert.match(appCss, /--pl-sans: 'TASA Orbiter'/)
+  assert.match(appCss, /--pl-bg: #ffffff;[\s\S]*--pl-fg: #061f46;[\s\S]*--pl-accent: #0757b5;/)
+  assert.match(appCss, /:root\[data-theme='dark'\],\n\.dark \{\n  --pl-bg: #070f1c;/)
+  assert.match(appCss, /--ds-radius-card: 0;/)
+  assert.match(appCss, /--shadow-md: none;/)
+  assert.match(appCss, /\*,\n  \*::before,\n  \*::after \{\n    border-radius: 0 !important;/)
+  assert.doesNotMatch(appCss, /fonts\.bunny\.net|fonts\.googleapis\.com|DM Sans|Manrope|IBM Plex|font-family: "Inter"|JetBrains Mono/)
+  assert.match(appCss, /\.ds-button:active:not\(:disabled\) \{\s*scale: 0\.97;/)
   assert.doesNotMatch(appCss, /transition: all/)
   assert.doesNotMatch(appCss, /#143d37|#d9b05f|#fffaf0|#ded3bf|#1f7a68/)
   assert.doesNotMatch(appCss, /radial-gradient\(circle/)
@@ -553,28 +565,34 @@ test('report studio editor chrome no longer uses the legacy warm workspace palet
 })
 
 test('shared shell and primitives consume semantic design classes', () => {
-  assert.match(layoutSource, /class="lims-app-shell min-h-dvh/)
-  assert.match(layoutSource, /<div id="desktop-navigation" class="app-sheet">/)
-  assert.match(layoutSource, /<div class="app-work">/)
-  assert.match(layoutSource, /<main ref="stageContent" class="app-content" scroll-region>/)
+  assert.match(layoutSource, /class="lims-app-shell pl-shell"/)
+  assert.match(layoutSource, /<area-bar/)
+  assert.match(layoutSource, /<aside id="area-column" class="pl-side"/)
+  assert.match(layoutSource, /<main ref="stageContent" class="pl-main"/)
+  assert.match(layoutSource, /<nav class="pl-bottom" aria-label="Áreas">/)
+  assert.match(layoutSource, /navAreas\.slice\(0, 4\)/)
   assert.match(layoutSource, /const areaDefinitions = \[/)
-  assert.match(layoutSource, /key: 'admin', primary:/)
+  assert.match(layoutSource, /key: 'commercial', label: 'Comercial'/)
+  assert.doesNotMatch(layoutSource, /key: 'customers'/)
+  assert.equal((layoutSource.match(/\{ key: '[a-z]+', label: '/g) ?? []).length, 8)
+  assert.match(layoutSource, /key: 'admin', label: 'Admin'/)
   assert.match(layoutSource, /import \{ animate \} from 'motion-v'/)
   assert.match(layoutSource, /prefersReducedMotion\(\)/)
   assert.match(layoutSource, /class="ds-command-palette/)
-  assert.match(layoutSource, /@click="openCommandPalette"/)
+  assert.match(layoutSource, /const openCommandPalette = \(\) =>/)
+  assert.match(layoutSource, /const visitCommand = \(command\) =>/)
+  assert.match(layoutSource, /@open-command-palette="openCommandPalette"/)
   assert.match(layoutSource, /@keydown\.enter\.prevent="activateCommandPaletteResult"/)
   assert.match(layoutSource, /@keydown\.down\.prevent="moveCommandSelection\(1\)"/)
   assert.match(layoutSource, /:areas="navAreas"/)
   assert.match(layoutSource, /:active-area-key="activeAreaKey"/)
   assert.match(layoutSource, /const filteredCommandGroups = computed/)
   assert.match(layoutSource, /window\.addEventListener\('keydown', handleCommandPaletteShortcut\)/)
+  assert.match(layoutSource, /isThemeShortcut\(event\)/)
   assert.match(layoutSource, /gestlab\.menu\.quality_compliance/)
   assert.match(layoutSource, /gestlab\.menu\.lab_operations/)
   assert.match(layoutSource, /gestlab\.menu\.inventory_analytics/)
-  assert.match(layoutSource, /:data-collapsed="!desktopSidebarOpen"/)
-  assert.match(layoutSource, /@open-command-palette="openCommandPaletteFromMobile"/)
-  assert.doesNotMatch(layoutSource, /items\.slice\(0, 8\)|\.slice\(0, 8\)/)
+  assert.doesNotMatch(layoutSource, /items\.slice\(0, 8\)|\.slice\(0, 8\)|brandingCssVariables/)
   assert.match(layoutSource, /const normalizeSearchValue = \(value\)/)
   assert.match(layoutSource, /\.normalize\('NFD'\)/)
   assert.doesNotMatch(layoutSource, /clockTime|operationalStatus|lims-status-strip/)
@@ -592,12 +610,16 @@ test('shared shell and primitives consume semantic design classes', () => {
   assert.match(sideNavSource, /import \{ AnimatePresence, motion \} from 'motion-v'/)
   assert.match(sideNavSource, /:aria-expanded="isOpen\(section\)"/)
   assert.match(sideNavSource, /:aria-current="activeHref === item\.href \? 'page' : undefined"/)
-  assert.match(appSidebarSource, /class="app-rail"/)
-  assert.match(appSidebarSource, /class="app-column"/)
-  assert.match(appSidebarSource, /:layout-id="pillId"/)
-  assert.match(appSidebarSource, /<AnimatedIcon/)
-  assert.match(appSidebarSource, /from '@lucide\/vue'/)
-  assert.match(appSidebarSource, /emit\('open-command-palette'\)/)
+  assert.match(sideNavSource, /:layout-id="planeId"/)
+  assert.match(appSidebarSource, /class="pl-lab"/)
+  assert.match(appSidebarSource, /labMarkStyle\(activeLab\)/)
+  assert.match(appSidebarSource, /<side-nav :area="activeArea"/)
+  assert.doesNotMatch(appSidebarSource, /app-rail|app-column|AnimatedIcon/)
+  assert.match(areaBarSource, /class="pl-top"/)
+  assert.match(areaBarSource, /:layout-id="underlineId"/)
+  assert.match(areaBarSource, /emit\('open-command-palette'\)/)
+  assert.match(areaBarSource, /<kbd class="pl-kbd">⇧D<\/kbd>/)
+  assert.match(areaBarSource, /from '@lucide\/vue'/)
 })
 
 test('shared navigation uses the LIMS application contract', () => {
@@ -624,7 +646,7 @@ test('shared navigation uses the LIMS application contract', () => {
 })
 
 test('calendar and reduced-motion behavior are part of the visual contract', () => {
-  assert.match(appCss, /\.vc-container,[\s\S]*var\(--ds-panel-raised\)/)
+  assert.match(appCss, /\.vc-container,[\s\S]*var\(--pl-layer\)/)
   assert.match(appCss, /@media \(prefers-reduced-motion: reduce\)/)
   assert.doesNotMatch(appCss, /\.form-select\s*\{\s*composes:/)
 })
@@ -706,7 +728,9 @@ test('VAP inventory item dossier uses stock and compliance surfaces', () => {
   assert.match(vapInventoryItemsShowSource, /class="ds-table-shell"/)
   assert.match(vapInventoryItemsShowSource, /class="ds-table-summary px-5 py-4"/)
   assert.match(vapInventoryItemsShowSource, /class="ds-button ds-button-primary/)
-  assert.match(vapInventoryItemsShowSource, /class="ds-table-action ds-table-action-danger"/)
+  // Phase 1: documents are archived and restorable, never destroyed from the dossier.
+  assert.match(vapInventoryItemsShowSource, /title="Arquivar documento"/)
+  assert.match(vapInventoryItemsShowSource, /@click="restoreAttachment\(document\.id\)"/)
   assert.match(vapInventoryItemsShowSource, /const overviewFields = computed/)
   assert.match(vapInventoryItemsShowSource, /const identificationFields = computed/)
   assert.match(vapInventoryItemsShowSource, /const technicalSpecFields = computed/)
@@ -960,7 +984,8 @@ test('VAP low-stock report uses replenishment assurance surfaces', () => {
   assert.match(vapInventoryLowStockReportSource, /function stockPercentage/)
   assert.match(vapInventoryLowStockReportSource, /router\.get\(route\('vap-inventory\.reports\.low-stock'/)
   assert.match(vapInventoryLowStockReportSource, /router\.visit\(route\('vap-inventory\.orders\.create'/)
-  assert.match(vapInventoryLowStockReportSource, /router\.post\(route\('vap-inventory\.reports\.export'/)
+  // Phase 1: downloads go through the validated, permission-scoped export button.
+  assert.match(vapInventoryLowStockReportSource, /<InventoryReportExportButton report-type="low_stock" :filters="filters" \/>/)
   assert.doesNotMatch(vapInventoryLowStockReportSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open/)
 })
 
@@ -978,7 +1003,8 @@ test('VAP inventory-value report uses reconciliation and financial-control surfa
   assert.match(vapInventoryValueReportSource, /function unitCost\(position\)/)
   assert.match(vapInventoryValueReportSource, /sort_by: 'qty_available'/)
   assert.match(vapInventoryValueReportSource, /router\.get\(route\('vap-inventory\.reports\.inventory-value'/)
-  assert.match(vapInventoryValueReportSource, /router\.post\(route\('vap-inventory\.reports\.export'/)
+  // Phase 1: downloads go through the validated, permission-scoped export button.
+  assert.match(vapInventoryValueReportSource, /<InventoryReportExportButton report-type="inventory_value" :filters="filters" \/>/)
   assert.doesNotMatch(vapInventoryValueReportSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
 })
 
@@ -997,7 +1023,8 @@ test('VAP consumption report uses reagent-stewardship and traceability surfaces'
   assert.match(vapInventoryConsumptionReportSource, /const activeFilterPills = computed/)
   assert.match(vapInventoryConsumptionReportSource, /function selectItem/)
   assert.match(vapInventoryConsumptionReportSource, /router\.get\(route\('vap-inventory\.reports\.consumption'/)
-  assert.match(vapInventoryConsumptionReportSource, /router\.post\(route\('vap-inventory\.reports\.export'/)
+  // Phase 1: downloads go through the validated, permission-scoped export button.
+  assert.match(vapInventoryConsumptionReportSource, /<InventoryReportExportButton report-type="consumption" :filters="filters" \/>/)
   assert.doesNotMatch(vapInventoryConsumptionReportSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
 })
 
@@ -1017,7 +1044,8 @@ test('VAP stock-movement report uses audit-trail and reconciliation surfaces', (
   assert.match(vapInventoryStockMovementReportSource, /function setView/)
   assert.match(vapInventoryStockMovementReportSource, /function quantityLabel/)
   assert.match(vapInventoryStockMovementReportSource, /router\.get\(route\('vap-inventory\.reports\.stock-movement'/)
-  assert.match(vapInventoryStockMovementReportSource, /router\.post\(route\('vap-inventory\.reports\.export'/)
+  // Phase 1: downloads go through the validated, permission-scoped export button.
+  assert.match(vapInventoryStockMovementReportSource, /<InventoryReportExportButton report-type="stock_movement" :filters="filters" \/>/)
   assert.doesNotMatch(vapInventoryStockMovementReportSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
 })
 
@@ -1068,7 +1096,10 @@ test('VAP inventory reagent consumption uses audit-ready operating surfaces', ()
   assert.match(vapInventoryReagentConsumptionSource, /const activeFilterCount = computed/)
   assert.match(vapInventoryReagentConsumptionSource, /filters\.get\(route\('vap-inventory\.reagents\.consumption\.index'\)/)
   assert.match(vapInventoryReagentConsumptionSource, /router\.post\(route\('vap-inventory\.reports\.export'\)/)
-  assert.match(vapInventoryReagentConsumptionSource, /router\.delete\(route\('vap-inventory\.reagents\.consumption\.destroy'/)
+  // Approved 2026-10-02: reversal keeps the original consumption and adds a compensating movement.
+  assert.match(vapInventoryReagentConsumptionSource, /reverseUrl: id => route\('vap-inventory\.reagents\.consumption\.reverse', id\)/)
+  assert.match(vapInventoryReagentConsumptionSource, /hasPermission\('delete_reagent_consumption'\) && !consumption\.reversal/)
+  assert.doesNotMatch(vapInventoryReagentConsumptionSource, /consumption\.destroy/)
   assert.match(vapInventoryReagentConsumptionSource, /<confirm-dialog/)
   assert.doesNotMatch(vapInventoryReagentConsumptionSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|confirm\(|alert\(|axios|console\.error|console\.log/)
 })
@@ -1090,14 +1121,15 @@ test('VAP inventory reagent consumption form and detail share the audit workflow
   assert.match(vapInventoryReagentConsumptionCreateSource, /const stockReview = computed/)
   assert.match(vapInventoryReagentConsumptionCreateSource, /const reagentFields = computed/)
   assert.match(vapInventoryReagentConsumptionCreateSource, /form\.post\(route\('vap-inventory\.reagents\.consumption\.store'\)/)
-  assert.match(vapInventoryReagentConsumptionCreateSource, /router\.visit\(route\('vap-inventory\.reagents\.consumption\.index'\)/)
+  assert.match(vapInventoryReagentConsumptionCreateSource, /router\.visit\(props\.backUrl \|\| route\('dashboard'\)\)/)
 
   assert.match(vapInventoryReagentConsumptionShowSource, /const summaryCards = computed/)
   assert.match(vapInventoryReagentConsumptionShowSource, /const primaryFields = computed/)
   assert.match(vapInventoryReagentConsumptionShowSource, /const timelineItems = computed/)
   assert.match(vapInventoryReagentConsumptionShowSource, /const stockImpactCards = computed/)
   assert.match(vapInventoryReagentConsumptionShowSource, /class="ds-button ds-button-danger"/)
-  assert.match(vapInventoryReagentConsumptionShowSource, /router\.delete\(route\('vap-inventory\.reagents\.consumption\.destroy'/)
+  assert.match(vapInventoryReagentConsumptionShowSource, /reverseUrl: id => route\('vap-inventory\.reagents\.consumption\.reverse', id\)/)
+  assert.doesNotMatch(vapInventoryReagentConsumptionShowSource, /consumption\.destroy/)
 })
 
 test('VAP nonconformity CAPA workflow uses quality dossier surfaces', () => {
@@ -1406,13 +1438,14 @@ test('commercial document create screens use the compact LIMS form language', ()
     assert.match(source, /class="ds-field/)
     assert.match(source, /class="ds-button ds-button-primary/)
     assert.match(source, /useCommercialDocumentOptions/)
-    assert.doesNotMatch(source, /results\.map/)
+    // Options come from the shared loader; only approved quote lines are prepared from source results.
+    assert.doesNotMatch(source, /results\.map\((?!prepareQuoteLine\))/)
     assert.doesNotMatch(source, /bg-white rounded-xl shadow-sm|rounded-2xl|space-y-8/)
   }
 
   assert.match(commercialDocumentSurfaceSource, /background: var\(--ds-panel-raised\)/)
-  assert.match(commercialDocumentSurfaceSource, /border-radius: 0\.5rem/)
-  assert.match(commercialDocumentSurfaceSource, /border-radius: 0\.375rem/)
+  assert.match(commercialDocumentSurfaceSource, /border-radius: 0;/)
+  assert.doesNotMatch(commercialDocumentSurfaceSource, /border-radius: 0\.\d/)
   assert.doesNotMatch(commercialDocumentSurfaceSource, /#fffdf7|#ded3bf|0 18px 55px|border-radius: 1rem/)
   assert.match(commercialDocumentOptionsSource, /Array\.isArray\(payload\?\.data\)/)
   assert.match(commercialDocumentOptionsSource, /Array\.isArray\(payload\?\.items\)/)
@@ -1584,12 +1617,14 @@ test('authentication keeps the login action above marketing content on mobile', 
   assert.doesNotMatch(portalLoginSource, /bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|bg-slate|border-slate|text-slate|shadow-sm/)
   assert.doesNotMatch(portalLoginSource, legacyWarmPalettePattern)
 
-  assert.match(authExperienceShellSource, /class="auth-canvas min-h-dvh bg-\[var\(--ds-canvas\)\]/)
+  assert.match(authExperienceShellSource, /class="auth-canvas min-h-dvh"/)
   assert.match(authExperienceShellSource, /<div class="auth-sheet">/)
-  assert.match(authExperienceShellSource, /<section class="auth-form">[\s\S]*<aside class="auth-trace"/)
+  assert.match(authExperienceShellSource, /<section class="auth-form">[\s\S]*<ol class="auth-trace"/)
   assert.match(authExperienceShellSource, /<MotionConfig reduced-motion="user">/)
-  assert.match(authExperienceShellSource, /buildBrandingCssVariables/)
+  assert.match(authExperienceShellSource, /<span v-if="accent" class="auth-title-accent">/)
+  assert.doesNotMatch(authExperienceShellSource, /buildBrandingCssVariables/)
   assert.match(authExperienceShellSource, /brandInitials/)
+  assert.match(staffLoginSource, /accent="Entrar\."/)
   assert.doesNotMatch(authExperienceShellSource, legacyWarmPalettePattern)
   assert.doesNotMatch(authExperienceShellSource, /rounded-\[2rem\]|radial-gradient/)
 })
@@ -1614,11 +1649,11 @@ test('portal and dashboard shortcuts share the LIMS product surfaces', () => {
 })
 
 test('laboratory workbench shows only the active laboratory operation', () => {
-  assert.match(workbenchSource, /O laboratório, em foco\./)
-  assert.match(workbenchSource, /Apenas \{\{ lab\.name \}\}/)
+  assert.match(workbenchSource, /<h1 id="today-title" class="pl-d0">Hoje<\/h1>/)
+  assert.match(workbenchSource, /Só \{\{ lab\.name \}\}/)
   assert.match(workbenchSource, /Na sua bancada/)
   assert.match(workbenchSource, /Encontrar materiais na rede/)
-  assert.match(workbenchSource, /Nenhum dado de outros laboratórios é mostrado/)
+  assert.match(workbenchSource, /nenhum dado de outros laboratórios é mostrado/)
   assert.doesNotMatch(workbenchSource, /dashboard\.export|Recebível em aberto|Fornecedores sob observação/)
 })
 
@@ -1788,16 +1823,18 @@ test('maintenance task create and show screens use operational form/detail surfa
 })
 
 test('sample detail page uses traceability-focused LIMS surfaces', () => {
-  assert.match(vapSamplesShowSource, /class="ds-panel overflow-hidden/)
-  assert.match(vapSamplesShowSource, /class="ds-card p-5"/)
-  assert.match(vapSamplesShowSource, /class="ds-command-surface mt-5 p-4"/)
-  assert.match(vapSamplesShowSource, /class="ds-table-shell"/)
-  assert.match(vapSamplesShowSource, /class="ds-table-summary px-5 py-4"/)
+  // Plano dossier: path, title and state, the journey, tabs, a facts rail and the next-step bar.
+  assert.match(vapSamplesShowSource, /data-template="dossier"/)
+  assert.match(vapSamplesShowSource, /<PageHeader/)
+  assert.match(vapSamplesShowSource, /<Journey class="mb-10" :steps="journey" \/>/)
+  assert.match(vapSamplesShowSource, /<TabList class="pl-tabs/)
+  assert.match(vapSamplesShowSource, /class="pl-facts/)
+  assert.match(vapSamplesShowSource, /<NextStepBar v-if="workflowSummary\.next_action">/)
   assert.match(vapSamplesShowSource, /class="ds-field/)
-  assert.match(vapSamplesShowSource, /const summaryCards = computed/)
+  assert.match(vapSamplesShowSource, /const journey = computed/)
   assert.match(vapSamplesShowSource, /const receptionFields = computed/)
-  assert.match(vapSamplesShowSource, /const releaseGateMetrics = computed/)
-  assert.match(vapSamplesShowSource, /const qcFields = computed/)
+  assert.match(vapSamplesShowSource, /const contextFields = computed/)
+  assert.match(vapSamplesShowSource, /const retentionFields = computed/)
   assert.doesNotMatch(vapSamplesShowSource, /ModuleHero|ModuleCard|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf/)
 })
 
@@ -2172,8 +2209,8 @@ test('customer portfolio uses a traceability-first directory, dossier, and share
   assert.match(customerSiteEditorSource, /route\("customers\.changePrimaryWarehouse"/)
   assert.match(customerSiteEditorSource, /Correio electrónico de facturação/)
   assert.match(customersShowSource, /Execução laboratorial recente/)
-  assert.match(customersShowSource, /Pedidos do portal/)
-  assert.match(customersShowSource, /Evidência documental/)
+  // Phase 1: the shared dossier shows only laboratory-owned work; unowned documents stay out.
+  assert.match(customersShowSource, /pedidos do portal e outros documentos sem titularidade laboratorial definida não são apresentados aqui/)
   assert.match(customersShowSource, /hasPermission\('edit_customers'\)/)
   assert.doesNotMatch(customersShowSource, /<apexchart|created_by|updated_by|last_synced/)
   assert.match(customerTaxIdentificationSource, /await fetch\(`/)
@@ -2467,11 +2504,12 @@ test('inventory delivery create and edit routes share one traceable dispatch for
   assert.match(inventoryDeliveriesCreateSource, /form\.post\(route\("ideliveries\.store"\)/)
   assert.match(inventoryDeliveriesEditSource, /form\.put\(route\("ideliveries\.update"/)
   assert.match(inventoryDeliveryFormSource, /class="ds-table-shell overflow-hidden"/)
-  assert.match(inventoryDeliveryFormSource, /const totalQuantity = computed/)
+  // Phase 1: fractional quantities with four decimals; lines are counted, not summed across units.
+  assert.match(inventoryDeliveryFormSource, /const validQuantityCount = computed/)
   assert.match(inventoryDeliveryFormSource, /:load-options="loadCustomers"/)
   assert.match(inventoryDeliveryFormSource, /:load-options="loadItems"/)
   assert.match(inventoryDeliveryFormSource, /:load-options="loadWarehouses"/)
-  assert.match(inventoryDeliveryFormSource, /type="number" min="1" step="1"/)
+  assert.match(inventoryDeliveryFormSource, /type="number" min="0\.0001" step="0\.0001"/)
   assert.match(inventoryDeliveryFormSource, /form\.processing \|\| !form\.isDirty/)
   assert.doesNotMatch(inventoryDeliveryFormSource, /commercialDocumentThemeClasses|v-motion|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|bg-blue-900|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-(xl|2xl)|console\.log|alert\(|confirm\(/)
 })
@@ -2817,11 +2855,10 @@ test('Fortify authentication flows share a focused application shell', () => {
   ]
 
   for (const source of authenticationSources) {
-    assert.match(source, /ds-/)
+    assert.match(source, /ds-|pl-/)
     assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
   }
 
-  assert.match(authExperienceShellSource, /buildBrandingCssVariables/)
   assert.match(authExperienceShellSource, /brandLabName/)
   assert.match(authRegisterSource, /form\.post\('\/register'/)
   assert.match(authForgotPasswordSource, /form\.post\('\/forgot-password'/)
@@ -3056,12 +3093,12 @@ test('public landing presents the LIMS as a professional laboratory control surf
 })
 
 test('application UI consistently inherits the laboratory workspace typeface', () => {
-  assert.match(appCss, /--font-sans: 'Inter'/)
-  assert.match(appCss, /--font-mono: 'JetBrains Mono'/)
+  assert.match(appCss, /--font-sans: var\(--pl-sans\)/)
+  assert.match(appCss, /--font-mono: var\(--pl-mono\)/)
   assert.doesNotMatch(appBladeSource, /family=manrope/)
   assert.match(publicLandingSource, /font-family: var\(--font-sans\)/)
   assert.doesNotMatch(publicLandingSource, /fonts\.bunny\.net\/css\?family=manrope|font-family: "Manrope"/)
-  assert.match(appCss, /\.vc-container,[\s\S]*font-family: var\(--font-sans\)/)
+  assert.match(appCss, /\.vc-container,[\s\S]*font-family: var\(--pl-sans\)/)
 })
 
 test('white-label fallbacks remain neutral across the application and generated documents', () => {

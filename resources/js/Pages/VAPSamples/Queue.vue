@@ -127,7 +127,7 @@ onUnmounted(() => { requestVersion++; detail.cancel() })
     <Dialog :open="previewOpen" class="relative z-50" @close="closePreview">
       <div class="ds-modal-backdrop fixed inset-0" aria-hidden="true"></div>
       <div class="fixed inset-0 flex justify-end">
-        <DialogPanel class="lab-quick-panel pl-slideover">
+        <DialogPanel class="pl-slideover">
           <header class="pl-panel-head h-auto py-4">
             <div><p class="pl-k pl-muted">Consulta · {{ lab.name }}</p><DialogTitle class="pl-d3 mt-2">{{ selected?.code || 'Detalhes da amostra' }}</DialogTitle></div>
             <button type="button" class="ds-icon-button" aria-label="Fechar consulta" @click="closePreview"><XMarkIcon aria-hidden="true" /></button>

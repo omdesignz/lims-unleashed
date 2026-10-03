@@ -611,7 +611,7 @@ const areaDefinitions = [
   { key: 'admin', label: 'Admin', groups: [{ label: 'Organização', paths: ['/vap-labs/labs', '/users', '/departments', '/roles', '/permissions'] }, { label: 'Sistema', paths: ['/general-settings', '/file-manager', '/exports', '/system-activity', '/system-backups/backups', '/security'] }], match: [] },
 ]
 
-const catalogueLabel = 'Catálogos e configuração'
+const catalogueLabel = 'Catálogos'
 
 const pathMatches = (path, prefix) => path === prefix || path.startsWith(`${prefix}/`)
 const areaKeyForPath = (path) => areaDefinitions
