@@ -1,61 +1,44 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="utf-8">
-    <title>Genealogia do Lote {{ $batch->batch_number }}</title>
-    <style>
-        @include('PDFs.partials.premium-document-style')
+@php
+    use App\Support\ControlledDocument;
 
-        @page {
-            margin: 18mm 14mm 16mm 14mm;
-        }
+    $documentTitle = 'Genealogia do Lote';
+    $documentNumber = (string) $batch->batch_number;
+    $issueDate = now()->format('d/m/Y H:i');
+    $controlRows = [
+        ['Lote', $documentNumber],
+        ['Movimentos', (string) $batch->transactions->count()],
+        ['Emissão', $issueDate],
+    ];
+    $footerNotice = 'Rastreabilidade dos movimentos do lote.';
+@endphp
 
-        body {
-            font-size: 10.5px;
-        }
+@extends('PDFs.partials.controlled-layout')
 
-        .report-shell {
-            border: 0.25mm solid #d9e2ef;
-            border-radius: 5mm;
-            padding: 7mm;
-        }
-
-        .report-heading {
-            margin-bottom: 6mm;
-            padding-bottom: 4mm;
-            border-bottom: 0.35mm solid #102a43;
-        }
-    </style>
-</head>
-<body class="pdf-document report-document">
-    <div class="report-shell keep-together">
-        <div class="report-heading">
-            <div class="bilingual-label">Inventory batch genealogy</div>
-            <h1 class="document-title">Genealogia do Lote {{ $batch->batch_number }}</h1>
-        </div>
-
-        <table class="report-table">
-            <thead>
+@section('content')
+    <table class="doc-results doc-plain" style="margin-top:3mm;">
+        <thead>
+            <tr>
+                <th style="width:16%;">Data</th>
+                <th style="width:20%;">Utilizador</th>
+                <th style="width:16%;">Movimento</th>
+                <th class="doc-num" style="width:12%;">Variação</th>
+                <th>Notas</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($batch->transactions as $transaction)
                 <tr>
-                    <th>Data</th>
-                    <th>Utilizador<br><span class="bilingual-label">User</span></th>
-                    <th>Acção<br><span class="bilingual-label">Action</span></th>
-                    <th>Variação<br><span class="bilingual-label">Qty change</span></th>
-                    <th>Notas<br><span class="bilingual-label">Notes</span></th>
+                    <td>{{ $transaction->created_at->format('d/m/Y H:i') }}</td>
+                    <td>{{ $transaction->user?->name ?: ControlledDocument::NOT_RECORDED }}</td>
+                    <td>{{ $transaction->type?->name ?: ControlledDocument::NOT_RECORDED }}</td>
+                    <td class="doc-num">{{ $transaction->qty }}</td>
+                    <td>{{ $transaction->reason }}</td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach($batch->transactions as $tx)
-                    <tr>
-                        <td>{{ $tx->created_at->format('d/m/Y H:i') }}</td>
-                        <td>{{ $tx->user->name }}</td>
-                        <td>{{ $tx->type->name }}</td>
-                        <td>{{ $tx->qty }}</td>
-                        <td>{{ $tx->reason }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-</body>
-</html>
+            @empty
+                <tr><td colspan="5">Sem movimentos registados.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    {!! ControlledDocument::endMark('documento') !!}
+@endsection

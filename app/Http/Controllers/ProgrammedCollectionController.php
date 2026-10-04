@@ -326,7 +326,7 @@ class ProgrammedCollectionController extends Controller
             'show_watermark' => false,
             'display_mode' => 'fullpage',
             'watermark_text_alpha' => 0.1,
-            'format' => 'A4-L',
+            'format' => 'A4',
             'showBarcodeNumbers' => false,
         ]);
 

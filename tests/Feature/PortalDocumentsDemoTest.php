@@ -74,9 +74,11 @@ class PortalDocumentsDemoTest extends TestCase
         $item->forceFill(['product_id' => null, 'country_id' => null, 'manufacturer' => '<b>Supplier</b>', 'brand' => null, 'lot' => null])->saveQuietly();
         $html = view('PDFs.contractguide', ['model' => $guide->load('items.product', 'items.country'),
             'settings' => app(GeneralSettings::class)])->render();
-        $this->assertStringContainsString('NÃO INFORMADO', $html);
-        $this->assertStringContainsString('&lt;B&gt;SUPPLIER&lt;/B&gt;', $html);
-        $this->assertStringNotContainsString('<B>SUPPLIER</B>', $html);
+        // A reference that was not recorded is marked as such, never filled with a phrase.
+        $this->assertStringContainsString('<td>—</td>', $html);
+        $this->assertStringNotContainsString('informado', mb_strtolower($html));
+        $this->assertStringContainsString('&lt;b&gt;Supplier&lt;/b&gt;', $html);
+        $this->assertStringNotContainsString('<b>Supplier</b>', $html);
     }
 
     public function test_contract_guide_uses_real_identity_and_separate_reference_fields_without_inventing_status(): void
@@ -88,7 +90,7 @@ class PortalDocumentsDemoTest extends TestCase
 
         $html = view('PDFs.contractguide', ['model' => $guide, 'settings' => app(GeneralSettings::class)])->render();
 
-        $this->assertStringContainsString(mb_strtoupper($guide->customer->name), $html);
+        $this->assertStringContainsString(e($guide->customer->name), $html);
         $this->assertStringContainsString($guide->warehouse->name, $html);
         $this->assertStringContainsString('BL-123', $html);
         $this->assertStringContainsString('REF-456', $html);
@@ -97,12 +99,16 @@ class PortalDocumentsDemoTest extends TestCase
         $this->assertStringNotContainsString('Registo válido até', $html);
         $this->assertStringNotContainsString('Documentação Completa', $html);
         $this->assertStringNotContainsString('sistema validado', $html);
-        $this->assertSame(1, substr_count($html, '<pagebreak />'));
-        $this->assertLessThan(strpos($html, '<pagebreak />'), strpos($html, 'Produtos para análise'));
+        // Products come before the terms, in one flow; the page breaks where the content does.
+        $this->assertStringNotContainsString('<pagebreak', $html);
+        $this->assertLessThan(strpos($html, 'Termos e condições'), strpos($html, 'Produtos para análise'));
         $this->assertStringNotContainsString('105mm', $html);
-        $this->assertStringContainsString($guide->guide_no.' | Página {PAGENO}', $html);
-        $this->assertStringContainsString('odd-footer-name: html_page-footer', $html);
-        $this->assertStringContainsString('even-footer-name: html_page-footer', $html);
+        // The number and the page of the total are on every page, with the letterhead on the first.
+        $this->assertStringContainsString('class="doc-control-title">Guia de Contratação</td>', $html);
+        $this->assertStringContainsString($guide->guide_no.' · Rev. 0', $html);
+        $this->assertStringContainsString('Página {PAGENO} de {nbpg}', $html);
+        $this->assertStringContainsString('footer: doc-footer;', $html);
+        $this->assertStringContainsString('header: doc-letterhead;', $html);
     }
 
     public function test_demo_is_forbidden_in_production_before_any_records_are_created(): void

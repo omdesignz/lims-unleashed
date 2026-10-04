@@ -35,6 +35,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  documentBaseCss: {
+    type: String,
+    default: '',
+  },
   systemPresets: {
     type: Array,
     default: () => [],
@@ -886,6 +890,7 @@ const onStudioTypeUpdate = (studioType) => {
       :preview-pdf-href="previewPdfHref"
       :draft-preview-href="route('report-studios.preview-draft-pdf')"
       :asset-library="props.studioAssets"
+      :document-base-css="props.documentBaseCss"
       :renderer-capabilities="props.rendererCapabilities"
       :initial-draft-label="editingTemplate?.name ? $t('gestlab.general.labels.vap_report_studios.index.workbench.editing_label', { name: editingTemplate.name }) : ''"
       :back-href="route('report-studios.index')"

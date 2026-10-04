@@ -86,8 +86,9 @@ class ReportStudioWorkflowTest extends TestCase
                 ->where('systemPresets.0.layout_schema.canvas_blocks.0.block_kind', 'qr_code')
                 ->where('systemPresets.0.layout_schema.canvas_blocks.1.block_kind', 'signature')
                 ->where('systemPresets.0.layout_schema.canvas_blocks.2.id', 'analysis-decision-rule-note')
-                ->where('systemPresets.0.layout_schema.page_background_color', '#f8fafc')
-                ->where('systemPresets.0.layout_schema.body_html', fn (string $bodyHtml): bool => str_contains($bodyHtml, '{results_table}'))
+                ->where('systemPresets.0.layout_schema.page_background_color', '#ffffff')
+                ->where('systemPresets.0.layout_schema.body_html', fn (string $bodyHtml): bool => str_contains($bodyHtml, '{results_block}'))
+                ->where('documentBaseCss', fn (string $css): bool => str_contains($css, '.doc-letterhead') && str_contains($css, '.doc-results'))
                 ->where('systemPresets.0.export_settings.paper_size', 'A4')
             );
     }
@@ -148,7 +149,9 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertContains('proposal-client-acceptance', $proposalBlocks);
         $this->assertContains('invoice-banking-details', $invoiceBlocks);
         $this->assertSame('{{record_verification_payload}}', data_get($presets->get('invoice'), 'layout_schema.canvas_blocks.0.qr_content'));
-        $this->assertFalse((bool) data_get($presets->get('invoice'), 'layout_schema.canvas_blocks.0.is_hidden'));
+        // The letterhead prints the verification code itself; the movable block stays available but hidden.
+        $this->assertTrue((bool) data_get($presets->get('invoice'), 'layout_schema.canvas_blocks.0.is_hidden'));
+        $this->assertStringContainsString('{{verification_qr}}', data_get($presets->get('invoice'), 'layout_schema.first_page_header_html'));
         $this->assertSame('chart_snapshot', data_get($presets->get('executive'), 'layout_schema.canvas_blocks.2.block_kind'));
         $this->assertSame('{executive_chart_values}', data_get($presets->get('executive'), 'layout_schema.canvas_blocks.2.chart_values'));
         $this->assertSame('chart_snapshot', data_get($presets->get('analysis'), 'layout_schema.canvas_blocks.3.block_kind'));
@@ -157,36 +160,55 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertTrue((bool) collect(data_get($presets->get('analysis'), 'layout_schema.canvas_blocks'))->firstWhere('id', 'analysis-results-chart')['is_hidden']);
         $this->assertTrue((bool) collect(data_get($presets->get('executive'), 'layout_schema.canvas_blocks'))->firstWhere('id', 'executive-studio-chart')['is_hidden']);
         $this->assertTrue((bool) collect(data_get($presets->get('invoice'), 'layout_schema.canvas_blocks'))->firstWhere('id', 'invoice-banking-details')['is_hidden']);
-        $this->assertSame('#f8fafc', data_get($presets->get('analysis'), 'layout_schema.page_background_color'));
-        $this->assertSame('#f8fafc', data_get($presets->get('invoice'), 'layout_schema.page_background_color'));
+        $this->assertSame('#ffffff', data_get($presets->get('analysis'), 'layout_schema.page_background_color'));
+        $this->assertSame('#ffffff', data_get($presets->get('invoice'), 'layout_schema.page_background_color'));
     }
 
     public function test_system_presets_include_backend_body_templates_for_generated_documents(): void
     {
         $presets = collect(ReportStudioDefaultTemplates::presets())->keyBy('category');
+        $body = fn (string $type): string => (string) data_get($presets->get($type), 'layout_schema.body_html');
+        $letterhead = fn (string $type): string => (string) data_get($presets->get($type), 'layout_schema.first_page_header_html');
 
-        $this->assertStringContainsString('{results_table}', data_get($presets->get('analysis'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('{analysis_chart_card}', data_get($presets->get('analysis'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('document-summary-table', data_get($presets->get('analysis'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('{executive_charts}', data_get($presets->get('executive'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('{banking_details}', data_get($presets->get('proposal'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('{proposal_content}', data_get($presets->get('proposal'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('{items_table}', data_get($presets->get('proposal'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('document-summary-cell', data_get($presets->get('proposal'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('{products_table}', data_get($presets->get('export_certificate'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('document-summary-table', data_get($presets->get('export_certificate'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('{items_table}', data_get($presets->get('import_certificate'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('document-summary-table', data_get($presets->get('import_certificate'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('Proforma {quote_number}', data_get($presets->get('quote'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('document-summary-table', data_get($presets->get('quote'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('Factura {document_number}', data_get($presets->get('invoice'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('Recibo {document_number}', data_get($presets->get('receipt'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('Nota de crédito {document_number}', data_get($presets->get('credit_note'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('style="margin-top:12px;">{signature_block}', data_get($presets->get('invoice'), 'layout_schema.body_html'));
-        $this->assertSame(26, data_get($presets->get('invoice'), 'export_settings.first_page_margin_top'));
-        $this->assertStringContainsString('background-color:#0f766e', data_get($presets->get('invoice'), 'layout_schema.body_html'));
-        $this->assertStringContainsString('border:1px solid #cbd5e1', json_encode($presets->values()->all(), JSON_THROW_ON_ERROR));
+        // The test report follows ISO/IEC 17025 clause 7.8, block by block and in order.
+        $analysisBlocks = ['{report_notices}', '{customer_block}', '{item_block}', '{sampling_block}', '{dates_block}', '{results_block}', '{conformity_block}', '{observations_block}', '{statements_block}', '{authorisation_block}', '{end_of_report}'];
+        $positions = array_map(fn (string $block): int|false => strpos($body('analysis'), $block), $analysisBlocks);
+        $this->assertNotContains(false, $positions);
+        $this->assertSame($positions, collect($positions)->sort()->values()->all());
+        $this->assertStringNotContainsString('{analysis_chart_card}', $body('analysis'));
+        $this->assertStringNotContainsString('{document_keywords}', $body('analysis'));
+        $this->assertStringContainsString('Relatório de Ensaio', $letterhead('analysis'));
+
+        $this->assertStringContainsString('{executive_charts}', $body('executive'));
+        $this->assertStringContainsString('{banking_details}', $body('proposal'));
+        $this->assertStringContainsString('{proposal_content}', $body('proposal'));
+        $this->assertStringContainsString('{items_table}', $body('proposal'));
+        $this->assertStringContainsString('doc-parties', $body('proposal'));
+        $this->assertStringContainsString('{products_table}', $body('export_certificate'));
+        $this->assertStringContainsString('doc-parties', $body('export_certificate'));
+        $this->assertStringContainsString('{items_table}', $body('import_certificate'));
+        $this->assertStringContainsString('doc-parties', $body('import_certificate'));
+
+        // Title and number live in the letterhead's control box, not in the body.
+        foreach (['quote' => 'Proforma comercial', 'invoice' => 'Factura fiscal', 'receipt' => 'Recibo de tesouraria', 'credit_note' => 'Nota de crédito'] as $type => $title) {
+            $this->assertStringContainsString($title, $letterhead($type));
+            $this->assertStringContainsString('{{document_code}}', $letterhead($type));
+            $this->assertStringContainsString('{items_table}', $body($type));
+            $this->assertStringContainsString('{summary_table}', $body($type));
+            $this->assertStringContainsString('<div class="doc-signature doc-keep">{signature_block}</div>', $body($type));
+            $this->assertStringNotContainsString('background-color', $body($type));
+            $this->assertStringNotContainsString('document-hero', $body($type));
+        }
+
+        foreach (ReportStudioDefaultTemplates::supportedTypes() as $type) {
+            $this->assertStringContainsString('doc-letterhead', $letterhead($type));
+            $this->assertStringContainsString('{{lab_identity}}', $letterhead($type));
+            $this->assertStringContainsString('Página {PAGENO} de {nbpg}', (string) data_get($presets->get($type), 'layout_schema.footer_html'));
+            $this->assertSame(40, data_get($presets->get($type), 'export_settings.first_page_margin_top'));
+        }
+
         $this->assertStringNotContainsString('linear-gradient', json_encode($presets->values()->all(), JSON_THROW_ON_ERROR));
+        $this->assertStringNotContainsString('border-radius', json_encode($presets->pluck('layout_schema.body_html')->all(), JSON_THROW_ON_ERROR));
         $this->assertStringNotContainsString('body { color:#17202a; background:', json_encode($presets->values()->all(), JSON_THROW_ON_ERROR));
     }
 
@@ -459,8 +481,12 @@ CSS,
         $this->assertStringContainsString('font-size:12px !important', $styles);
         $this->assertStringContainsString('padding:10px !important', $styles);
         $this->assertStringContainsString('.pdf-document table:not(.document-summary-table){border-collapse:collapse;}', $styles);
-        $this->assertStringContainsString('.pdf-document .document-summary-table{border-collapse:separate !important;border-spacing:0 8px !important;}', $styles);
-        $this->assertStringContainsString('.pdf-document .document-summary-cell{background:#f8fafc !important;border:1px solid #94a3b8 !important;border-radius:18px !important;padding:14px !important;vertical-align:top;}', $styles);
+        $this->assertStringContainsString('border-bottom:1px solid #94a3b8 !important', $styles);
+        $this->assertStringContainsString('.pdf-document table:not(.document-summary-table):not(.doc-plain) td,', $styles);
+        $this->assertStringContainsString('.pdf-document .document-summary-table{border-collapse:collapse !important;}', $styles);
+        $this->assertStringContainsString('.pdf-document .document-summary-cell{background:#f8fafc !important;border:1px solid #94a3b8 !important;padding:8px 10px !important;vertical-align:top;}', $styles);
+        $this->assertStringNotContainsString('border-radius', $styles);
+        $this->assertStringNotContainsString('text-transform:uppercase;}'."\n".'.pdf-document table:not', $styles);
         $this->assertStringContainsString('.pdf-document .document-summary-cell .value{display:block !important;color:#0f172a !important;', $styles);
         $this->assertStringContainsString('.pdf-document .document-summary-cell .muted{display:block !important;color:#475569 !important;', $styles);
         $this->assertStringContainsString('.pdf-document .document-financial-summary td{color:#0f172a;}', $styles);
@@ -623,8 +649,11 @@ CSS,
 
         $this->assertSame('Resumo executivo padrão', data_get($payload, 'data.documentTitle'));
         $this->assertStringContainsString('Resumo executivo', (string) data_get($payload, 'data.firstPageHeader'));
-        $this->assertStringContainsString('QR code', (string) data_get($payload, 'data.firstPageHeader'));
-        $this->assertStringContainsString('.document-hero', (string) data_get($payload, 'data.styles'));
+        $this->assertStringContainsString('doc-control-title', (string) data_get($payload, 'data.firstPageHeader'));
+        $this->assertStringContainsString('class="doc-letterhead-qr"', (string) data_get($payload, 'data.firstPageHeader'));
+        $this->assertStringContainsString('alt="Verificação"', (string) data_get($payload, 'data.firstPageHeader'));
+        $this->assertStringNotContainsString('{{', (string) data_get($payload, 'data.firstPageHeader'));
+        $this->assertStringContainsString('Leitura executiva para decisão técnica.', (string) data_get($payload, 'data.bodyHtml'));
         $this->assertNull(ReportStudioTemplate::resolveDefaultFor('executive'));
     }
 
@@ -665,7 +694,8 @@ CSS,
 
         $this->assertNull(ReportStudioTemplate::resolveDefaultFor('invoice'));
         $this->assertSame('Factura fiscal padrão', data_get($payload, 'data.documentTitle'));
-        $this->assertStringContainsString('Factura '.(string) $invoice->inv_no, (string) data_get($payload, 'data.bodyHtml'));
+        $this->assertStringContainsString('Factura fiscal', (string) data_get($payload, 'data.firstPageHeader'));
+        $this->assertStringContainsString((string) $invoice->inv_no, (string) data_get($payload, 'data.firstPageHeader'));
         $this->assertStringNotContainsString('wrong-template', (string) data_get($payload, 'data.bodyHtml'));
         $this->assertStringNotContainsString('{report_title}', (string) data_get($payload, 'data.bodyHtml'));
         $this->assertStringNotContainsString('{results_table}', (string) data_get($payload, 'data.bodyHtml'));
@@ -879,11 +909,12 @@ CSS,
 
         $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
 
-        $this->assertStringContainsString('document-summary-table', $bodyHtml);
-        $this->assertStringContainsString('document-summary-cell', $bodyHtml);
+        $this->assertStringContainsString('class="doc-parties doc-plain"', $bodyHtml);
+        $this->assertStringContainsString('class="doc-party"', $bodyHtml);
         $this->assertStringContainsString('class="report-table studio-avoid-break"', $bodyHtml);
-        $this->assertStringContainsString('document-financial-summary', $bodyHtml);
-        $this->assertStringContainsString('Pagamento', $bodyHtml);
+        $this->assertStringContainsString('class="doc-totals doc-plain document-financial-summary studio-avoid-break"', $bodyHtml);
+        $this->assertStringContainsString('class="doc-totals-grand"', $bodyHtml);
+        $this->assertStringContainsString('Dados bancários', $bodyHtml);
         $this->assertStringNotContainsString('Banking', $bodyHtml);
         $this->assertStringNotContainsString('border:1px solid #cbd5e1', $bodyHtml);
         $this->assertStringNotContainsString('border-bottom:1px solid #cbd5e1', $bodyHtml);
@@ -3076,19 +3107,22 @@ CSS,
 
         $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
 
+        // The optional status chart is still available to templates that ask for it.
         $this->assertStringContainsString('data-chart-type="bar"', $bodyHtml);
         $this->assertStringContainsString('Estado dos resultados analíticos', $bodyHtml);
         $this->assertStringContainsString('Aprovados', $bodyHtml);
-        $this->assertStringContainsString('Contra-análise', $bodyHtml);
-        $this->assertStringContainsString('class="report-table studio-avoid-break"', $bodyHtml);
-        $this->assertStringContainsString('Método', $bodyHtml);
-        $this->assertStringNotContainsString('Method', $bodyHtml);
-        $this->assertStringContainsString('Incerteza', $bodyHtml);
-        $this->assertStringContainsString('1.20 × 10^-5', $bodyHtml);
-        $this->assertStringContainsString('Ausência', $bodyHtml);
-        $this->assertStringContainsString('Contra-análise associada', $bodyHtml);
         $this->assertStringContainsString('2, 1, 1, 1, 1', $bodyHtml);
         $this->assertStringContainsString('5 parâmetro(s) associados ao certificado; 1 com contra-análise solicitada ou registada.', $bodyHtml);
+
+        // The results table reports results, not the workflow state of each one.
+        $this->assertStringContainsString('class="doc-results doc-plain"', $bodyHtml);
+        $this->assertStringContainsString('<th style="width:26%;">Parâmetro</th><th>Método</th><th class="doc-num">Resultado</th><th>Unidade</th>', $bodyHtml);
+        $this->assertStringNotContainsString('Method', $bodyHtml);
+        $this->assertStringContainsString('1.20 × 10<sup>-5</sup>', $bodyHtml);
+        $this->assertStringContainsString('Ausência', $bodyHtml);
+        foreach (['Verificado', 'Inserido', 'Pendente', 'Contra-análise associada'] as $workflowState) {
+            $this->assertStringNotContainsString('<td>'.$workflowState, $bodyHtml);
+        }
         $this->assertStringNotContainsString('border:1px solid #cbd5e1', $bodyHtml);
         $this->assertStringNotContainsString('border-bottom:1px solid #cbd5e1', $bodyHtml);
         $this->assertStringNotContainsString('{results_table}', $bodyHtml);

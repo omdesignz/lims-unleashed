@@ -1,192 +1,51 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="utf-8">
-    <title>Calendário de Manutenção</title>
-    <style>
-        @include('PDFs.partials.premium-document-style')
+@php
+    use App\Support\ControlledDocument;
 
-        @page {
-            margin: 16mm 14mm;
-        }
+    $settings = $settings ?? app(\App\Settings\GeneralSettings::class);
+    $days = collect($calendar)->filter(fn ($day): bool => collect($day['tasks'] ?? [])->isNotEmpty())->values();
+    $totalTasks = $days->sum(fn ($day): int => collect($day['tasks'])->count());
 
-        body {
-            color: #111827;
-            font-family: 'DejaVu Sans', sans-serif;
-            font-size: 10px;
-        }
+    $documentTitle = 'Calendário de Manutenção';
+    $documentNumber = 'MNT-CAL-'.$generated_at->format('Ymd-Hi');
+    $issueDate = $generated_at->format('d/m/Y H:i');
+    $controlRows = [
+        ['Laboratório', (string) ($labName ?? ControlledDocument::laboratoryName($settings))],
+        ['Dias com tarefas', (string) $days->count()],
+        ['Tarefas', (string) $totalTasks],
+        ['Emissão', $issueDate],
+    ];
+    $footerNotice = 'Planeamento de manutenção e calibração de equipamentos.';
+@endphp
 
-        .hero {
-            background: #0f172a;
-            border-radius: 16px 16px 10px 10px;
-            color: #ffffff;
-            margin-bottom: 16px;
-        }
+@extends('PDFs.partials.controlled-layout')
 
-        .hero-top {
-            background: #0f766e;
-            border-radius: 16px 16px 0 0;
-            padding: 14px 16px;
-        }
-
-        .hero-body {
-            color: #ccfbf1;
-            padding: 12px 16px 14px;
-        }
-
-        .hero-subtitle {
-            color: #ffffff;
-        }
-
-        .eyebrow {
-            color: #99f6e4;
-            font-size: 8px;
-            font-weight: 800;
-            letter-spacing: 1.6px;
-            text-transform: uppercase;
-        }
-
-        h1 {
-            color: #ffffff;
-            font-size: 21px;
-            margin: 4px 0 2px;
-        }
-
-        .meta {
-            color: #ccfbf1;
-            font-size: 9px;
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .calendar-table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        .calendar-table th {
-            background: #0f172a;
-            border: 1px solid #0f172a;
-            color: #ffffff;
-            font-size: 8px;
-            letter-spacing: .5px;
-            padding: 8px;
-            text-align: left;
-            text-transform: uppercase;
-        }
-
-        .calendar-table td {
-            border: 1px solid #dbe4f0;
-            padding: 8px;
-            vertical-align: top;
-        }
-
-        .calendar-table tr:nth-child(even) td {
-            background: #f8fafc;
-        }
-
-        .date-cell {
-            color: #0f172a;
-            font-weight: 800;
-            white-space: nowrap;
-            width: 18%;
-        }
-
-        .task-pill {
-            background: #ecfeff;
-            border: 1px solid #99f6e4;
-            border-radius: 10px;
-            color: #134e4a;
-            display: block;
-            line-height: 1.45;
-            margin-bottom: 5px;
-            padding: 6px 8px;
-        }
-
-        .empty {
-            color: #94a3b8;
-            font-style: italic;
-        }
-
-        .footer {
-            border-top: 1px solid #dbe4f0;
-            color: #64748b;
-            font-size: 8px;
-            line-height: 1.5;
-            margin-top: 18px;
-            padding-top: 9px;
-            text-align: center;
-        }
-    </style>
-</head>
-<body class="pdf-document">
-    @php
-        $settings = $settings ?? app(\App\Settings\GeneralSettings::class);
-        $labName = $labName ?? ($settings->app_client_lab_name ?: ($settings->app_name ?: config('app.name')));
-        $totalTasks = collect($calendar)->sum(fn ($day) => collect($day['tasks'] ?? [])->count());
-    @endphp
-
-    <div class="hero">
-        <div class="hero-top">
-            <table style="width: 100%;">
-                <tr>
-                    <td>
-                        <div class="eyebrow">{{ $labName }}</div>
-                        <h1>Calendário de Manutenção</h1>
-                        <div class="hero-subtitle">Planeamento e lembretes operacionais</div>
-                    </td>
-                    <td class="meta">
-                        Emitido em {{ $generated_at->format('d/m/Y H:i') }}<br>
-                        {{ count($calendar) }} dia(s) · {{ $totalTasks }} tarefa(s)
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <div class="hero-body">
-            Visão calendarizada das tarefas de manutenção para apoiar planeamento, execução, notificações e evidência ISO 17025.
-        </div>
-    </div>
-
-    <table class="calendar-table">
+@section('content')
+    <table class="doc-results doc-plain" style="margin-top:3mm;">
         <thead>
             <tr>
-                <th>Data</th>
-                <th>Tarefas planeadas</th>
+                <th style="width:16%;">Data</th>
+                <th style="width:18%;">Tarefa</th>
+                <th>Descrição</th>
+                <th style="width:22%;">Equipamento</th>
+                <th style="width:16%;">Categoria</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($calendar as $day)
-                @php $tasks = collect($day['tasks'] ?? []); @endphp
-                @if($tasks->isNotEmpty())
+            @forelse($days as $day)
+                @foreach(collect($day['tasks']) as $index => $task)
                     <tr>
-                        <td class="date-cell">{{ $day['date'] ?? 'N/A' }}<br>{{ $day['day'] ?? '' }}</td>
-                        <td>
-                            @foreach($tasks as $task)
-                                <div class="task-pill">
-                                    <strong>{{ $task->maintenance_task_no ?: $task->name }}</strong><br>
-                                    {{ $task->name ?: 'N/A' }} · {{ $task->equipment->name ?? 'Equipamento não informado' }} · {{ $task->category->name ?? 'Categoria não informada' }}
-                                </div>
-                            @endforeach
-                        </td>
+                        <td>@if($index === 0)<strong>{{ $day['date'] ?? '' }}</strong><br>{{ $day['day'] ?? '' }}@endif</td>
+                        <td>{{ $task->maintenance_task_no ?: ControlledDocument::NOT_RECORDED }}</td>
+                        <td>{{ $task->name }}</td>
+                        <td>{{ $task->equipment?->name ?: ControlledDocument::NOT_RECORDED }}</td>
+                        <td>{{ $task->category?->name ?: ControlledDocument::NOT_RECORDED }}</td>
                     </tr>
-                @endif
+                @endforeach
             @empty
-                <tr>
-                    <td colspan="2" class="empty">Sem calendário para os filtros seleccionados.</td>
-                </tr>
+                <tr><td colspan="5">Nenhuma tarefa planeada no período seleccionado.</td></tr>
             @endforelse
-
-            @if($totalTasks === 0)
-                <tr>
-                    <td colspan="2" class="empty">Nenhuma tarefa planeada no período seleccionado.</td>
-                </tr>
-            @endif
         </tbody>
     </table>
 
-    <div class="footer">
-        Documento controlado gerado pelo sistema. Palavras-chave: {{ $settings->app_document_keywords ?: 'manutenção; calendário; notificações; ISO 17025' }}.<br>
-        Controlled maintenance planning evidence generated by {{ $labName }}.
-    </div>
-</body>
-</html>
+    {!! ControlledDocument::endMark('calendário') !!}
+@endsection

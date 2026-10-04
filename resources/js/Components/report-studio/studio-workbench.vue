@@ -60,6 +60,11 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  // The controlled-document stylesheet the server prints with, so the canvas draws the same blocks.
+  documentBaseCss: {
+    type: String,
+    default: '',
+  },
   backHref: {
     type: String,
     required: true,
@@ -1686,7 +1691,7 @@ const previewStyleVariables = computed(() => ({
   '--studio-table-summary-muted-color': tableStyleSettings.value.table_summary_muted_color,
 }))
 
-const previewScopedCss = computed(() => buildReportStudioPreviewCss(props.layoutSchema.styles_css))
+const previewScopedCss = computed(() => buildReportStudioPreviewCss(props.layoutSchema.styles_css, props.documentBaseCss))
 
 const previewHeaderHtml = computed(() => {
   const html = previewMode.value === 'first-page'

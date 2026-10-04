@@ -131,11 +131,14 @@ for (const [name, source] of [['Index', index], ['Dashboard', dashboard]]) {
   })
 }
 
-test('PDF reports use renderer-compatible blocks and explicit subtitle contrast', () => {
+test('PDF reports are controlled documents built from renderer-compatible blocks', () => {
   for (const name of ['tasks', 'calendar']) {
     const source = readFileSync(new URL(`../../resources/views/exports/maintenance/${name}.blade.php`, import.meta.url), 'utf8')
-    assert.match(source, /\.hero-subtitle\s*\{\s*color: #ffffff;/)
-    assert.match(source, /<div class="hero-subtitle">/)
+    // The shared page gives them the letterhead, document number and page of total; they carry no styles of their own.
+    assert.match(source, /@extends\('PDFs\.partials\.controlled-layout'\)/)
+    assert.match(source, /\$documentTitle = '(?:Relatório|Calendário) de Manutenção'/)
+    assert.match(source, /<table class="doc-results doc-plain"/)
+    assert.doesNotMatch(source, /<style|hero|color: #/)
     assert.doesNotMatch(source, /<span class="(?:summary-label|summary-value|task-pill)">/)
   }
 })

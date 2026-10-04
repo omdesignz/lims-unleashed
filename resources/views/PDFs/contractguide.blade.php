@@ -1,554 +1,88 @@
-<!DOCTYPE html>
-<html lang="pt-AO">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        @include('PDFs.partials.premium-document-style')
+@php
+    use App\Support\ControlledDocument;
+    use Illuminate\Support\Carbon;
 
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 9pt;
-            margin: 0;
-            padding: 0;
-            color: #374151;
-            line-height: 1.5;
+    $documentDate = filled($model->date) ? (function ($value) {
+        try {
+            return Carbon::parse($value)->format('d/m/Y');
+        } catch (\Throwable) {
+            return (string) $value;
         }
-        
-        @page {
-            margin: 15mm 15mm 18mm 15mm;
-            odd-footer-name: html_page-footer;
-            even-footer-name: html_page-footer;
-            margin-header: 10mm;
-            margin-footer: 10mm;
-        }
-        
-        .section-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #111827;
-            text-align: center;
-            margin: 12px 0 8px 0;
-            page-break-after: avoid;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #1e3a8a;
-        }
-        
-        .watermark {
-            position: fixed;
-            left: 15mm;
-            top: -83.5mm;
-            opacity: 0.05;
-            z-index: -1;
-        }
-        
-        .legal-notice {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 15px;
-            margin: 15px 0;
-            font-size: 9px;
-            color: #6b7280;
-            line-height: 1.4;
-            border-left: 4px solid #1e3a8a;
-        }
-        
-        .info-section {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 0;
-            margin-bottom: 10px;
-            overflow: hidden;
-        }
-        
-        .section-header {
-            background: #1e3a8a;
-            color: white;
-            padding: 8px 12px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-        
-        .section-content {
-            padding: 10px;
-        }
-        
-        /* Two column table layout - Works with mPDF */
-        .two-column-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .two-column-table td {
-            vertical-align: top;
-            padding: 0;
-        }
-        
-        .column-cell {
-            width: 50%;
-        }
-        
-        .left-column {
-            padding-right: 15px;
-        }
-        
-        .right-column {
-            padding-left: 15px;
-            border-left: 1px solid #e5e7eb;
-        }
-        
-        .info-row {
-            margin-bottom: 15px;
-        }
-        
-        .info-label {
-            font-size: 11px;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 4px;
-        }
-        
-        .info-value {
-            font-size: 12px;
-            color: #111827;
-        }
-        
-        .highlight-value {
-            color: #1e3a8a;
-            font-weight: 600;
-        }
-        
-        .contact-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            border-top: 1px solid #f3f4f6;
-            padding-top: 15px;
-        }
-        
-        .contact-table td {
-            width: 33.33%;
-            padding: 5px 10px;
-            vertical-align: top;
-            border-right: 1px solid #f3f4f6;
-        }
-        
-        .contact-table td:last-child {
-            border-right: none;
-        }
-        
-        .contact-label {
-            font-size: 10px;
-            font-weight: 600;
-            color: #6b7280;
-            margin-bottom: 4px;
-        }
-        
-        .contact-value {
-            font-size: 12px;
-            font-weight: 600;
-            color: #1e3a8a;
-        }
-        
-        .document-section {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 0;
-            margin-bottom: 10px;
-            overflow: hidden;
-        }
-        
-        .document-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .document-table tr {
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .document-table tr:last-child {
-            border-bottom: none;
-        }
-        
-        .document-label {
-            font-size: 11px;
-            font-weight: 600;
-            color: #374151;
-            padding: 12px 15px;
-            width: 40%;
-            vertical-align: middle;
-            background-color: #f9fafb;
-        }
-        
-        .document-value {
-            font-size: 12px;
-            font-weight: 600;
-            color: #1e3a8a;
-            padding: 12px 15px;
-            vertical-align: middle;
-        }
-        
-        .signature-area {
-            margin-top: 15px;
-            padding-top: 10px;
-            page-break-inside: avoid;
-            border-top: 2px solid #1e3a8a;
-        }
-        
-        .product-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-        }
-        
-        .product-table th {
-            background: #1e3a8a;
-            color: white;
-            font-size: 11px;
-            font-weight: bold;
-            padding: 12px 10px;
-            text-align: left;
-        }
-        
-        .product-table td {
-            font-size: 11px;
-            color: #374151;
-            padding: 12px 10px;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .product-table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .status-indicator {
-            display: inline-block;
-            padding: 4px 10px;
-            background-color: #d1fae5;
-            color: #065f46;
-            font-size: 10px;
-            font-weight: 600;
-            border-radius: 4px;
-            border: 1px solid #a7f3d0;
-            margin-top: 15px;
-        }
-        
-        .date-badge {
-            display: inline-block;
-            padding: 8px 15px;
-            background-color: #f9fafb;
-            color: #1e3a8a;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: 6px;
-            border: 1px solid #e5e7eb;
-        }
-        
-        .document-status {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-        
-        .status-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .status-label-cell {
-            width: 60%;
-            vertical-align: top;
-        }
-        
-        .status-value-cell {
-            width: 40%;
-            text-align: right;
-            vertical-align: top;
-        }
-    </style>
-</head>
-<body class="pdf-document commercial-document">
+    })($model->date) : null;
 
-<div>
-    {{-- <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
-        <tr>
-            <td align="center">
-                <table cellpadding="0" cellspacing="0">
-                    <tr>
-                        <td align="center" style="padding-bottom: 8px;">
-                            <img src="{!! public_path() . '/images/aocrest.svg' !!}" style="width: 57px; height: 69px;" alt="">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center" style="padding-bottom: 3px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #1e3a8a;">VAP Soluções</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center">
-                            <div style="font-size: 15px; font-weight: 700; color: #111827;">{!! mb_strtoupper($settings->app_client_lab_name) !!}</div>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table> --}}
+    $documentTitle = 'Guia de Contratação';
+    $documentNumber = (string) $model->guide_no;
+    $issueDate = now()->format('d/m/Y');
+    $controlRows = [
+        ['N.º', $documentNumber],
+        ['Data', $documentDate ?: ControlledDocument::NOT_RECORDED],
+        ['Emissão', $issueDate],
+    ];
+    $footerNotice = 'Este documento não substitui o Boletim de Análises nem certifica a qualidade dos produtos.';
+    $verification = $documentNumber;
+@endphp
 
-    @if($settings->app_logo_url)
-        @include('PDFs.partials.document-letterhead', ['settings' => $settings])
-    @else
-        <div style="font-size: 12pt; font-weight: bold; margin-bottom: 5mm;">{{ $settings->app_client_lab_name ?: $settings->app_name }}</div>
-    @endif
-    
-    <!-- Main Header -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="background: #1e3a8a; color: white; border-radius: 8px; margin-bottom: 15px;">
-        <tr>
-            <td style="padding: 15px; text-align: center;">
-                <div style="font-size: 16px; font-weight: 700; color: white; font-weight:bold;">
-                    GUIA DE CONTRATAÇÃO {{ $model->guide_no }}
-                </div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.9); margin-top: 5px; font-weight: 500;">
-                    Documento oficial de pedido de serviços
-                </div>
-            </td>
-        </tr>
-    </table>
-</div>
+@extends('PDFs.partials.controlled-layout')
 
-<htmlpagefooter name="page-footer">
-    <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 10px;">
-        <tr>
-            <td>
-                <div style="font-size: 8px; color: #6b7280; line-height: 1.4;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                        <tr>
-                            <td>
-                                {{ $model->guide_no }} | Página {PAGENO} de {nb}
-                            </td>
-                            <td align="right">
-                                {{ implode(' | ', array_filter([$settings->app_client_address, $settings->app_client_email, $settings->app_client_contact])) }}
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </td>
-        </tr>
-    </table>
-</htmlpagefooter>
-<sethtmlpagefooter name="page-footer" page="ALL" value="on" />
+@section('content')
+    {!! ControlledDocument::sections([
+        ['Requerente', ControlledDocument::keyValueGrid([
+            ['label' => 'Empresa', 'value' => $model->customer?->name],
+            ['label' => 'NIF', 'value' => $model->nif],
+            ['label' => 'Estabelecimento', 'value' => $model->warehouse?->name],
+            ['label' => 'Local de recolha', 'value' => $model->collection_point],
+            ['label' => 'Telefone', 'value' => $model->contact],
+            ['label' => 'Email', 'value' => $model->email],
+        ])],
+        ['Documentação de suporte', ControlledDocument::keyValueGrid([
+            ['label' => 'Ponto de entrada', 'value' => $model->entry_point],
+            ['label' => 'B/L ou carta de porte', 'value' => $model->bl],
+            ['label' => 'Referência', 'value' => $model->ref_no],
+            ['label' => 'Documento único (DU)', 'value' => $model->du_no],
+        ])],
+    ]) !!}
 
-<!-- Main Content -->
-<div style="width: 100%; max-width: 100%;">
-
-    <!-- Applicant/Client Section - TWO COLUMN TABLE LAYOUT -->
-    <div class="section-title">Solicitante / Cliente</div>
-    
-    <div class="info-section">
-        <div class="section-header">
-            Informações do Solicitante
-        </div>
-        <div class="section-content">
-            <!-- Two Column Table Layout -->
-            <table class="two-column-table">
+    <div class="doc-section">
+        <div class="doc-section-title"><span class="doc-section-number">3.</span> Produtos para análise</div>
+        <table class="doc-results doc-plain">
+            <thead>
                 <tr>
-                    <!-- Left Column -->
-                    <td class="column-cell left-column">
-                        <!-- Company Information -->
-                        <div class="info-row">
-                            <div class="info-label">Empresa / Estabelecimento</div>
-                            <div class="info-value highlight-value">
-                                {{ mb_strtoupper($model->customer?->name ?? 'Não informado') }}
-                            </div>
-                        </div>
-                        
-                        <!-- NIF -->
-                        <div class="info-row">
-                            <div class="info-label">NIF</div>
-                            <div class="info-value highlight-value">
-                                {{ filled($model->nif) ? $model->nif : 'Não informado' }}
-                            </div>
-                        </div>
-                        
-                        <!-- Phone -->
-                        <div class="info-row">
-                            <div class="info-label">Telefone</div>
-                            <div class="info-value highlight-value">
-                                {{ filled($model->contact) ? $model->contact : 'Não informado' }}
-                            </div>
-                        </div>
-                    </td>
-                    
-                    <!-- Right Column -->
-                    <td class="column-cell right-column">
-                        <div class="info-row">
-                            <div class="info-label">Estabelecimento do cliente</div>
-                            <div class="info-value">{{ $model->warehouse?->name ?? 'Não informado' }}</div>
-                        </div>
-                        <!-- Collection Point -->
-                        <div class="info-row">
-                            <div class="info-label">Local de Recolha</div>
-                            <div class="info-value">
-                                {{ filled($model->collection_point) ? mb_strtoupper($model->collection_point) : 'Não informado' }}
-                            </div>
-                        </div>
-                        
-                        <!-- Email -->
-                        <div class="info-row">
-                            <div class="info-label">Email</div>
-                            <div class="info-value highlight-value">
-                                {{ filled($model->email) ? $model->email : 'Não informado' }}
-                            </div>
-                        </div>
-                        
-                        <!-- Contract Date -->
-                        <div class="info-row">
-                            <div class="info-label">Data do Contrato</div>
-                            <div class="info-value">
-                                {{ $model->date ?? 'Não informado' }}
-                            </div>
-                        </div>
-                    </td>
+                    <th style="width:30%;">Produto</th>
+                    <th>País de origem</th>
+                    <th>Fabricante ou produtor</th>
+                    <th>Marca</th>
+                    <th>Lote</th>
                 </tr>
-            </table>
-            
-        </div>
-    </div>
-
-    <!-- Supporting Documentation Section -->
-    <div class="section-title">Documentação de Suporte</div>
-    
-    <div class="info-section">
-        <div class="section-header">
-            Documentos de Referência
-        </div>
-        <div class="section-content">
-            <!-- Documents Table -->
-            <table class="document-table">
-                <tr>
-                    <td class="document-label">Porto / Aeroporto / Posto de Desembarque</td>
-                    <td class="document-value">{{ filled($model->entry_point) ? mb_strtoupper($model->entry_point) : 'Não informado' }}</td>
-                </tr>
-                <tr>
-                    <td class="document-label">B/L ou Carta de Porte</td>
-                    <td class="document-value">{{ filled($model->bl) ? $model->bl : 'Não informado' }}</td>
-                </tr>
-                <tr>
-                    <td class="document-label">Referência</td>
-                    <td class="document-value">{{ filled($model->ref_no) ? $model->ref_no : 'Não informado' }}</td>
-                </tr>
-                <tr>
-                    <td class="document-label">Nº do Documento Único (DU)</td>
-                    <td class="document-value">{{ filled($model->du_no) ? mb_strtoupper($model->du_no) : 'Não informado' }}</td>
-                </tr>
-            </table>
-            
-        </div>
-    </div>
-
-    <!-- Food Product Information Section -->
-    <div class="section-title">Produtos para análise</div>
-    
-    <div class="info-section" style="padding: 0;">
-        <div class="section-header">
-            Produtos para Análise
-        </div>
-        <div class="section-content" style="padding: 0;">
-            <table class="product-table">
-                <thead>
+            </thead>
+            <tbody>
+                @forelse($model->items as $item)
                     <tr>
-                        <th>Produto</th>
-                        <th>País de Origem</th>
-                        <th>Fabricante / Produtor</th>
-                        <th>Marca</th>
-                        <th>Lote</th>
+                        <td>{{ $item->product?->name ?: ControlledDocument::NOT_RECORDED }}</td>
+                        <td>{{ $item->country?->name ?: ControlledDocument::NOT_RECORDED }}</td>
+                        <td>{{ $item->manufacturer ?: ControlledDocument::NOT_RECORDED }}</td>
+                        <td>{{ $item->brand ?: ControlledDocument::NOT_RECORDED }}</td>
+                        <td>{{ $item->lot ?: ControlledDocument::NOT_RECORDED }}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach($model->items as $item)
-                    <tr>
-                        <td>{{ mb_strtoupper($item->product?->name ?? 'Não informado') }}</td>
-                        <td>{{ mb_strtoupper($item->country?->name ?? 'Não informado') }}</td>
-                        <td>{{ mb_strtoupper($item->manufacturer ?? '—') }}</td>
-                        <td>{{ mb_strtoupper($item->brand ?? '—') }}</td>
-                        <td>{{ mb_strtoupper($item->lot ?? '—') }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+                @empty
+                    <tr><td colspan="5">Sem produtos registados.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 
     @if(filled($model->obs))
-        <div class="section-title">Observações</div>
-        <div class="info-section"><div class="section-content">{!! nl2br(e($model->obs)) !!}</div></div>
+        {!! ControlledDocument::section(4, 'Observações', '<p class="doc-text">'.nl2br(e($model->obs), false).'</p>') !!}
     @endif
 
-    <pagebreak />
-    <div class="section-title">Guia de contratação {{ $model->guide_no }}</div>
-    <!-- Legal Notices Section -->
-    <div style="margin: 25px 0;">
-        <div class="legal-notice">
-            <div style="font-weight: 600; color: #111827; margin-bottom: 10px; font-size: 10px;">
-                Termos e Condições Legais
-            </div>
-            <ol style="margin: 0; padding-left: 15px;">
-                <li style="margin-bottom: 6px;">Nos termos do Decreto Presidencial nº179/18 de 2 de agosto, a VAP Soluções compromete-se em realizar as análises dos produtos descritos nesta Guia de Contratação.</li>
-                <li style="margin-bottom: 6px;">A VAP Soluções obriga-se a efectuar as referidas análises e apresentar o correspondente Boletim de Análises, no prazo máximo de 15 dias.</li>
-                <li>O presente documento não substitui o Boletim de Análises e não confere a certificação da qualidade do(s) produto(s).</li>
-            </ol>
-        </div>
-    </div>
+    {!! ControlledDocument::section(filled($model->obs) ? 5 : 4, 'Termos e condições', ControlledDocument::statements([
+        'Nos termos do Decreto Presidencial n.º 179/18, de 2 de Agosto, a VAP Soluções compromete-se a realizar as análises dos produtos descritos nesta Guia de Contratação.',
+        'A VAP Soluções obriga-se a efectuar as referidas análises e a apresentar o correspondente Boletim de Análises no prazo máximo de 15 dias.',
+        'O presente documento não substitui o Boletim de Análises e não confere a certificação da qualidade do(s) produto(s).',
+    ]), keepTogether: true) !!}
 
-    <!-- Date and Signature Section -->
-    <div class="signature-area">
-        <table width="100%" style="margin-bottom: 30px;">
-            <tr>
-                <td width="50%" valign="top">
-                    <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">Data do Documento</div>
-                    <div class="date-badge">
-                        {{ $model->date ?? 'Não informado' }}
-                    </div>
-                </td>
-                <td width="50%" valign="top" align="right">
-                    <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">Referência</div>
-                    <div style="font-size: 12px; font-weight: 600; color: #1e3a8a; padding: 6px 12px; background-color: #f9fafb; border-radius: 4px; border: 1px solid #e5e7eb; display: inline-block;">
-                        {{ $model->guide_no }}
-                    </div>
-                </td>
-            </tr>
-        </table>
-        
-        <div style="text-align: center;">
-            <div style="font-size: 13px; font-weight: 600; color: #1e3a8a; margin-bottom: 30px;">
-                O Director Geral
-            </div>
-            
-            <div style="display: inline-block; text-align: center;">
-                <div style="width: 200px; margin: 0 auto;">
-                    <div style="border-bottom: 2px solid #374151; padding-bottom: 15px; margin-bottom: 5px;"></div>
-                    <div style="font-size: 10px; color: #6b7280;">Nome e Assinatura</div>
-                    
-                    <div style="border-bottom: 1px solid #374151; padding-bottom: 15px; margin: 25px auto 5px auto; width: 180px;"></div>
-                    <div style="font-size: 10px; color: #6b7280;">Carimbo Oficial</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {!! ControlledDocument::section(filled($model->obs) ? 6 : 5, 'Assinatura', ControlledDocument::authorisation([
+        ['name' => 'O Director Geral', 'caption' => 'Nome, assinatura e carimbo'],
+    ]), keepTogether: true) !!}
 
-    <!-- Final Information -->
-    <div style="margin-top: 15px; padding-top: 10px; border-top: 2px solid #e5e7eb; page-break-inside: avoid;">
-        <div style="font-size: 9px; color: #6b7280; text-align: center; line-height: 1.4;">
-            <p>Sistema: <strong>{{ $settings->app_name }}</strong> • Gerado em: <strong>{{ Carbon\Carbon::now()->format('d/m/Y H:i:s') }}</strong></p>
-            <p style="color: #1e3a8a; font-weight: 600; margin-top: 5px;">Documento Confidencial - Uso Exclusivo do Solicitante</p>
-        </div>
-    </div>
-
-</div>
-
-</body>
-</html>
+    {!! ControlledDocument::endMark('documento') !!}
+@endsection

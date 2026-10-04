@@ -82,6 +82,7 @@ class ReportStudioController extends Controller
                 'chrome' => $templates->whereIn('renderer', ['chrome', 'browsershot'])->count(),
             ],
             'systemPresets' => ReportStudioDefaultTemplates::presets(),
+            'documentBaseCss' => view('PDFs.partials.premium-document-style')->render(),
             'studioAssets' => app(ReportStudioAssetLibrary::class)->assets(),
             'rendererCapabilities' => [
                 'mpdf' => [

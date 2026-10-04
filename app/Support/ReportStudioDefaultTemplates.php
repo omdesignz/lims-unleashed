@@ -7,6 +7,9 @@ use HeadlessChromium\BrowserFactory;
 
 class ReportStudioDefaultTemplates
 {
+    /** The text colour of every controlled document. */
+    private const INK = '#111827';
+
     /**
      * @return array<int, string>
      */
@@ -156,47 +159,84 @@ class ReportStudioDefaultTemplates
     /**
      * @return array<string, mixed>
      */
+    /**
+     * The system default layout of a document type.
+     *
+     * @return array<string, mixed>
+     */
+    public static function layout(string $studioType): array
+    {
+        return self::layoutFor(in_array($studioType, self::supportedTypes(), true) ? $studioType : 'analysis');
+    }
+
     private static function layoutFor(string $studioType): array
     {
         $isCommercial = in_array($studioType, ['proposal', 'quote', 'invoice', 'receipt', 'credit_note'], true);
-        $accent = in_array($studioType, ['export_certificate', 'import_certificate'], true) ? '#166534' : '#0f766e';
         $title = self::titleFor($studioType);
-        $subject = self::subjectTokenFor($studioType);
         $number = self::numberTokenFor($studioType);
 
         return [
-            'first_page_header_html' => self::firstPageHeaderHtml($title, $number, $subject, $accent),
-            'default_header_html' => '<div style="font-size:9px; color:#475569; border-bottom:1px solid #cbd5e1; padding-bottom:5px;">'.$title.' · {{document_code}} · '.$subject.'</div>',
-            'footer_html' => '<div style="font-size:8px; color:#64748b; border-top:1px solid #cbd5e1; padding-top:5px;">Documento controlado · {{document_code}} · Página {PAGENO}/{nbpg}</div>',
+            'first_page_header_html' => ControlledDocument::letterhead($title, self::controlRowsFor($studioType)),
+            'default_header_html' => ControlledDocument::runningHeader($title, $number),
+            'footer_html' => ControlledDocument::footer($number, self::footerNoticeFor($studioType)),
             'body_html' => self::bodyHtmlFor($studioType),
-            'styles_css' => self::stylesCss($accent),
+            'styles_css' => self::stylesCss(),
             'sections' => [
                 ['key' => 'identification', 'label' => 'Identificação', 'visible' => true],
                 ['key' => $isCommercial ? 'commercial_terms' : 'technical_scope', 'label' => $isCommercial ? 'Condições comerciais' : 'Âmbito técnico', 'visible' => true],
                 ['key' => 'validation', 'label' => 'Validação', 'visible' => true],
             ],
             'variable_catalog' => self::variableCatalogFor($studioType),
-            'canvas_blocks' => self::canvasBlocksFor($studioType, $accent),
-            'document_font_family' => 'Manrope, DejaVu Sans, sans-serif',
-            'page_background_color' => '#f8fafc',
+            'canvas_blocks' => self::canvasBlocksFor($studioType, self::INK),
+            'document_font_family' => 'DejaVu Sans, sans-serif',
+            'page_background_color' => '#ffffff',
             'background_image_path' => '',
             'background_size' => 'cover',
             'background_position' => 'center center',
             'background_repeat' => 'no-repeat',
-            'table_header_background' => $accent,
-            'table_header_text_color' => '#ffffff',
-            'table_border_color' => '#cbd5e1',
+            'table_header_background' => '#f3f4f6',
+            'table_header_text_color' => self::INK,
+            'table_border_color' => '#d1d5db',
             'table_font_size' => 10,
-            'table_cell_padding' => 8,
-            'table_summary_background' => '#f8fafc',
-            'table_summary_text_color' => '#17202a',
-            'table_summary_muted_color' => '#64748b',
+            'table_cell_padding' => 5,
+            'table_summary_background' => '#ffffff',
+            'table_summary_text_color' => self::INK,
+            'table_summary_muted_color' => '#4b5563',
             'show_canvas_grid' => true,
             'show_canvas_rulers' => true,
             'snap_to_grid' => true,
             'snap_grid_size' => 4,
             'page_safe_area' => true,
         ];
+    }
+
+    /**
+     * The lines of the document control box, under the title.
+     *
+     * @return array<int, array{0: string, 1: string}>
+     */
+    private static function controlRowsFor(string $studioType): array
+    {
+        $number = ['N.º', self::numberTokenFor($studioType)];
+
+        return match ($studioType) {
+            'analysis', 'export_certificate', 'import_certificate' => [$number, ['Revisão', '{{document_revision}}'], ['Emissão', '{{issue_date}}']],
+            'invoice' => [$number, ['Emissão', '{{issue_date}}'], ['Vencimento', '{{due_date}}']],
+            'quote' => [$number, ['Emissão', '{{issue_date}}'], ['Validade', '{{expiry_date}}']],
+            'proposal' => [$number, ['Emissão', '{{issue_date}}'], ['Validade', '{{expiry_date}}']],
+            default => [$number, ['Emissão', '{{issue_date}}']],
+        };
+    }
+
+    /** The notice printed at the foot of every page. */
+    private static function footerNoticeFor(string $studioType): string
+    {
+        return match ($studioType) {
+            'analysis' => 'Este relatório só pode ser reproduzido na íntegra, salvo autorização escrita do laboratório.',
+            'export_certificate', 'import_certificate' => 'Este certificado só pode ser reproduzido na íntegra, salvo autorização escrita do laboratório.',
+            'invoice', 'receipt', 'credit_note' => '{{hash_excerpt}}{if:agt_validation_number} · Processado por programa validado n.º {{agt_validation_number}}{endif:agt_validation_number}',
+            default => '{{lab_name}}',
+        };
     }
 
     /**
@@ -208,6 +248,10 @@ class ReportStudioDefaultTemplates
             '{document_code}' => 'Código do documento',
             '{issue_date}' => 'Data de emissão',
             '{lab_name}' => 'Laboratório',
+            '{lab_logo}' => 'Logótipo do laboratório',
+            '{lab_identity}' => 'Morada, contactos e NIF do laboratório',
+            '{document_revision}' => 'Revisão do documento',
+            '{verification_qr}' => 'Código QR de verificação',
             '{customer_name}' => 'Cliente',
             '{lab_details}' => 'Dados do laboratório',
             '{customer_details}' => 'Dados do cliente',
@@ -223,6 +267,17 @@ class ReportStudioDefaultTemplates
         $catalog = match ($studioType) {
             'analysis' => array_merge($common, [
                 '{report_title}' => 'Título do relatório',
+                '{report_notices}' => 'Avisos: relatório não autorizado, alteração',
+                '{customer_block}' => 'Secção: cliente',
+                '{item_block}' => 'Secção: item ensaiado',
+                '{sampling_block}' => 'Secção: amostragem',
+                '{dates_block}' => 'Secção: datas',
+                '{results_block}' => 'Secção: resultados e notas',
+                '{conformity_block}' => 'Secção: declaração de conformidade',
+                '{observations_block}' => 'Secção: observações',
+                '{statements_block}' => 'Secção: declarações',
+                '{authorisation_block}' => 'Secção: autorização',
+                '{end_of_report}' => 'Marca de fim do relatório',
                 '{certificate_code}' => 'Código do certificado',
                 '{sample_entry_code}' => 'Código de entrada da amostra',
                 '{lab_code}' => 'Código laboratorial',
@@ -372,37 +427,13 @@ class ReportStudioDefaultTemplates
         ];
     }
 
-    private static function firstPageHeaderHtml(string $title, string $number, string $subject, string $accent): string
+    /**
+     * Document-specific additions to the shared controlled-document stylesheet
+     * (`PDFs.partials.premium-document-style`), which already carries the layout.
+     */
+    private static function stylesCss(): string
     {
-        return <<<HTML
-<div style="min-height:72px; border:1px solid #cbd5e1; border-top:4px solid {$accent}; border-radius:8px; padding:13px 116px 13px 18px; background:#ffffff;">
-    <div style="font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:#0f766e; font-weight:800;">{$title}</div>
-    <div style="margin-top:6px; font-size:18px; color:#17202a; font-weight:800;">{$number}</div>
-    <div style="margin-top:4px; font-size:10px; color:#475569;">{$subject} · {{issue_date}}</div>
-</div>
-HTML;
-    }
-
-    private static function stylesCss(string $accent): string
-    {
-        return <<<CSS
-.pdf-document { color:#17202a; font-family: Manrope, DejaVu Sans, sans-serif; }
-.pdf-document h1, .pdf-document h2, .pdf-document h3 { color: {$accent}; letter-spacing: 0; }
-.pdf-document .report-table { border-collapse: collapse; width: 100%; font-size: 10px; }
-.pdf-document .report-table th { background: {$accent}; color: #ffffff; border: 1px solid {$accent}; padding: 7px; text-align: left; }
-.pdf-document .report-table td { border: 1px solid #cbd5e1; padding: 7px; vertical-align: top; }
-.pdf-document .report-table tbody tr:nth-child(even) td { background:#f8fafc; }
-.pdf-document .document-hero { background: {$accent}; border:1px solid {$accent}; border-radius: 10px; color: #ffffff; }
-.pdf-document .document-hero h1, .pdf-document .document-hero h2, .pdf-document .document-hero h3 { color:#ffffff; }
-.pdf-document .document-kicker { color: #a7f3d0; font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
-.pdf-document .studio-lead { color: #e2e8f0; font-size: 11px; line-height: 1.55; }
-.pdf-document .document-callout { background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid {$accent}; border-radius: 8px; padding: 12px 14px; }
-.pdf-document .document-summary-table { border-collapse: separate; border-spacing: 8px; margin:0; width: 100%; }
-.pdf-document .document-summary-cell { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; vertical-align: top; }
-.pdf-document .label { color: #64748b; display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
-.pdf-document .value { color: #17202a; display: block; font-size: 12px; font-weight: 800; margin-top: 4px; }
-.pdf-document .muted { color: #64748b; font-size: 10px; line-height: 1.55; }
-.pdf-document .bilingual-label { color:#64748b; display:block; font-size:8px; letter-spacing:0.08em; margin-top:2px; text-transform:uppercase; }
+        return <<<'CSS'
 .pdf-document .studio-avoid-break { page-break-inside: avoid; break-inside: avoid; }
 CSS;
     }
@@ -414,175 +445,148 @@ CSS;
             'proposal' => self::proposalBodyHtml(),
             'export_certificate' => self::exportCertificateBodyHtml(),
             'import_certificate' => self::importCertificateBodyHtml(),
-            'quote' => self::commercialBodyHtml('Proforma {quote_number}', 'Condições', 'Emissão: {issue_date}<br>Validade: {expiry_date}<br>Local: {service_location}'),
-            'invoice' => '{payment_status_badge}'.self::commercialBodyHtml('Factura {document_number}', 'Condições', 'Emissão: {issue_date}<br>Vencimento: {due_date}<br>Local: {service_location}'),
-            'receipt' => self::commercialBodyHtml('Recibo {document_number}', 'Recepção', 'Data: {issue_date}<br>Forma de pagamento: {payment_type}<br>Local: {service_location}'),
-            'credit_note' => self::commercialBodyHtml('Nota de crédito {document_number}', 'Motivo', '{reason_label}<br>Data: {issue_date}<br>Local: {service_location}'),
+            'quote' => self::commercialBodyHtml('Condições', 'Emissão: {issue_date}<br>Validade: {expiry_date}{if:service_location}<br>Local do serviço: {service_location}{endif:service_location}'),
+            'invoice' => '{payment_status_badge}'.self::commercialBodyHtml('Condições', 'Emissão: {issue_date}<br>Vencimento: {due_date}{if:service_location}<br>Local do serviço: {service_location}{endif:service_location}'),
+            'receipt' => self::commercialBodyHtml('Recebimento', 'Data: {issue_date}<br>Forma de pagamento: {payment_type}{if:service_location}<br>Local do serviço: {service_location}{endif:service_location}'),
+            'credit_note' => self::commercialBodyHtml('Motivo', '{reason_label}<br>Data: {issue_date}{if:service_location}<br>Local do serviço: {service_location}{endif:service_location}'),
             default => self::analysisBodyHtml(),
         };
     }
 
+    /**
+     * The test report, in the order a reader of ISO/IEC 17025 reports expects:
+     * who it is for, what was tested, how it was sampled, when, the results and
+     * their conformity, the statements, the authorisation and a marked end.
+     */
     private static function analysisBodyHtml(): string
     {
         return <<<'HTML'
-<section class="document-hero studio-avoid-break" style="padding:22px 24px; margin-bottom:18px; background-color:#0f766e; border:1px solid #0f766e; color:#ffffff;">
-    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">Relatório analítico</div>
-    <h1 style="margin:8px 0 0; color:#ffffff; font-size:25px; line-height:1.12;">{report_title}</h1>
-    <p style="margin:9px 0 0; font-size:11px; color:#e2e8f0;">{certificate_code} · {customer_name} · Entrada {sample_entry_code} · Código laboratorial {lab_code}</p>
-</section>
-<section style="margin-bottom:18px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
-        </tr>
-        <tr>
-            <td class="document-summary-cell"><div class="label">Amostra</div><div class="value">{sample_product}</div><div class="muted">Matriz: {sample_matrix}<br>Lote: {sample_lot}<br>Origem: {sample_origin}</div></td>
-            <td class="document-summary-cell"><div class="label">Recepção</div><div class="value">{warehouse_name}</div><div class="muted">Recebida em: {received_at}<br>Recolha: {collection_date}<br>Plano: {sampling_plan_ref}</div></td>
-        </tr>
-    </table>
-</section>
-<section style="margin:18px 0;">{sample_details}</section>
-<section style="margin:18px 0;">{collection_details}</section>
-<section style="margin:18px 0;">{analytical_scope}</section>
-<section style="margin:20px 0;">{results_table}</section>
-<section style="margin:20px 0;">{analysis_chart_card}</section>
-<section class="document-callout studio-avoid-break" style="margin-top:20px;">{uncertainty_statement}<br>{decision_rule}</section>
-<section style="margin-top:18px;">{conclusion}</section>
-<section style="margin-top:18px;">{document_keywords}</section>
-<section style="margin-top:24px;">{signature_block}</section>
+{report_notices}
+{customer_block}
+{item_block}
+{sampling_block}
+{dates_block}
+{results_block}
+{conformity_block}
+{observations_block}
+{statements_block}
+{authorisation_block}
+{end_of_report}
 HTML;
     }
 
     private static function executiveBodyHtml(): string
     {
         return <<<'HTML'
-<section class="document-hero studio-avoid-break" style="padding:22px 24px; margin-bottom:18px; background-color:#0f766e; border:1px solid #0f766e; color:#ffffff;">
-    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">{{lab_name}} · {{issue_date}}</div>
-    <h1 style="margin:8px 0 0; color:#ffffff; font-size:25px; line-height:1.12;">Resumo executivo</h1>
-    <p style="margin:9px 0 0; font-size:11px; color:#e2e8f0;">{executive_summary}</p>
-</section>
-{executive_kpis}
-<section style="margin:20px 0;">{executive_charts}</section>
-<section style="margin-top:18px;"><h2 style="font-size:16px; color:#143d37;">Clientes com maior actividade recente</h2>{top_customers_table}</section>
+<div class="doc-section">
+    <div class="doc-section-title">Síntese do período</div>
+    <p class="doc-text">{executive_summary}</p>
+</div>
+<div class="doc-section">
+    <div class="doc-section-title">Indicadores</div>
+    {executive_kpis}
+</div>
+<div class="doc-section">{executive_charts}</div>
+<div class="doc-section">
+    <div class="doc-section-title">Clientes com maior actividade recente</div>
+    {top_customers_table}
+</div>
 HTML;
     }
 
     private static function proposalBodyHtml(): string
     {
         return <<<'HTML'
-<section class="document-hero studio-avoid-break" style="padding:22px 24px; margin-bottom:18px; background-color:#0f766e; border:1px solid #0f766e; color:#ffffff;">
-    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">Proposta técnica-comercial</div>
-    <h1 style="margin:8px 0 0; color:#ffffff; font-size:25px; line-height:1.12;">Proposta {proposal_number}</h1>
-    <p style="margin:9px 0 0; font-size:11px; color:#e2e8f0;">{customer_name} · {service_location} · Válida até {expiry_date}</p>
-</section>
-<section style="margin-bottom:18px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
-        </tr>
-        <tr>
-            <td class="document-summary-cell"><div class="label">Âmbito</div><div class="value">Serviços laboratoriais propostos</div><div class="muted">O âmbito técnico deve ser aceite antes da execução.</div></td>
-            <td class="document-summary-cell"><div class="label">Condições</div><div class="value">Validade: {expiry_date}</div><div class="muted">Local: {service_location}<br>Regra de decisão: {decision_rule}</div></td>
-        </tr>
-    </table>
-</section>
-<section style="margin:20px 0;">{proposal_content}</section>
-<section style="margin:20px 0;">{items_table}</section>
-<section style="margin-top:20px; page-break-inside:avoid;">{summary_table}</section>
-<section class="document-callout studio-avoid-break" style="margin-top:20px;">{observations}</section>
-<section style="margin-top:20px;">{banking_details}</section>
-<section style="margin-top:20px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%; vertical-align:top;">{proposal_acceptance_evidence}</td>
-            <td class="document-summary-cell" style="width:50%; vertical-align:top;">{proposal_authenticity}</td>
-        </tr>
-    </table>
-</section>
-<section style="margin-top:18px;">{document_keywords}</section>
-<section style="margin-top:24px;">{signature_block}</section>
-<pagebreak />
-<section style="padding:26px; border-radius:24px; border:1px solid #ded3bf; background:#fffdf7;">
-    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">Aceitação do cliente</div>
-    <h2 style="margin:10px 0 8px; color:#143d37;">Confirmação de âmbito e condições</h2>
-    <p style="margin:0; color:#475a53;">O cliente confirma que o âmbito, a regra de decisão, os prazos e as condições comerciais foram revistos antes da execução dos serviços.</p>
-</section>
+<table class="doc-parties doc-plain"><tr>
+    <td class="doc-party"><div class="doc-party-label">Cliente</div><div class="doc-party-lines">{customer_details}</div></td>
+    <td class="doc-party"><div class="doc-party-label">Condições da proposta</div><div class="doc-party-lines">Válida até: {expiry_date}{if:service_location}<br>Local do serviço: {service_location}{endif:service_location}</div></td>
+</tr></table>
+<div class="doc-section">{proposal_content}</div>
+<div class="doc-section">
+    <div class="doc-section-title">Serviços propostos</div>
+    {items_table}
+</div>
+<table class="doc-split doc-plain"><tr>
+    <td class="doc-split-notes">
+        <div class="doc-party-label">Dados bancários</div><div class="doc-party-lines">{banking_details}</div>
+        {if:observations}<br><div class="doc-party-label">Observações</div><div class="doc-party-lines">{observations}</div>{endif:observations}
+    </td>
+    <td class="doc-split-totals">{summary_table}</td>
+</tr></table>
+<table class="doc-parties doc-plain doc-keep"><tr>
+    <td class="doc-party">{proposal_acceptance_evidence}</td>
+    <td class="doc-party">{proposal_authenticity}</td>
+</tr></table>
+<div class="doc-section doc-keep">{signature_block}</div>
 HTML;
     }
 
     private static function exportCertificateBodyHtml(): string
     {
         return <<<'HTML'
-<section style="margin-bottom:18px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Exportador</div><div class="value">{exporter_name}</div><div class="muted">{customer_details}</div></td>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
-        </tr>
-        <tr>
-            <td class="document-summary-cell"><div class="label">Origem</div><div class="value">{origin_city}, {origin_country}</div><div class="muted">Exportador: {exporter_name}</div></td>
-            <td class="document-summary-cell"><div class="label">Destino</div><div class="value">{destination_city}, {destination_country}</div><div class="muted">Transporte: {transport_type}</div></td>
-        </tr>
-    </table>
-</section>
-<section style="margin:20px 0;">{products_table}</section>
-<section class="document-callout studio-avoid-break" style="margin-top:18px;">Pessoal autorizado: {authorized_personnel}<br>Expedição: {expedition_location} · {expedition_date}</section>
-<section style="margin-top:20px;">{remarks}</section>
-<section style="margin-top:18px;">{document_keywords}</section>
-<section style="margin-top:24px;">{signature_block}</section>
+<table class="doc-parties doc-plain"><tr>
+    <td class="doc-party"><div class="doc-party-label">Exportador</div><div class="doc-party-lines">{customer_details}</div></td>
+    <td class="doc-party"><div class="doc-party-label">Expedição</div><div class="doc-party-lines">Origem: {origin_city}, {origin_country}<br>Destino: {destination_city}, {destination_country}<br>Transporte: {transport_type}<br>Local e data: {expedition_location} · {expedition_date}</div></td>
+</tr></table>
+<div class="doc-section">
+    <div class="doc-section-title">Produtos certificados</div>
+    {products_table}
+</div>
+{if:remarks}<div class="doc-section"><div class="doc-section-title">Observações</div><div class="doc-text">{remarks}</div></div>{endif:remarks}
+<div class="doc-section doc-keep">
+    <div class="doc-section-title">Autorização</div>
+    <p class="doc-text">Pessoal autorizado: {authorized_personnel}</p>
+    <div class="doc-signature">{signature_block}</div>
+</div>
+<div class="doc-end">*** Fim do certificado ***</div>
 HTML;
     }
 
     private static function importCertificateBodyHtml(): string
     {
         return <<<'HTML'
-<section style="margin-bottom:18px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Importador</div><div class="value">{importer_name}</div><div class="muted">{customer_details}</div></td>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
-        </tr>
-        <tr>
-            <td class="document-summary-cell"><div class="label">Importação</div><div class="value">{destination_country}</div><div class="muted">Importador: {importer_name}<br>Exportador: {exporter_name}</div></td>
-            <td class="document-summary-cell"><div class="label">Logística</div><div class="value">{transport_type}</div><div class="muted">Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}</div></td>
-        </tr>
-    </table>
-</section>
-<section style="margin:20px 0;">{items_table}</section>
-<section class="document-callout studio-avoid-break" style="margin-top:18px;">Pessoal autorizado: {authorized_personnel}<br>Emissão: {issue_date}</section>
-<section style="margin-top:20px;">{remarks}</section>
-<section style="margin-top:18px;">{document_keywords}</section>
-<section style="margin-top:24px;">{signature_block}</section>
+<table class="doc-parties doc-plain"><tr>
+    <td class="doc-party"><div class="doc-party-label">Importador</div><div class="doc-party-lines">{customer_details}</div></td>
+    <td class="doc-party"><div class="doc-party-label">Importação</div><div class="doc-party-lines">Exportador: {exporter_name}<br>País de destino: {destination_country}<br>Transporte: {transport_type}<br>Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}</div></td>
+</tr></table>
+<div class="doc-section">
+    <div class="doc-section-title">Produtos certificados</div>
+    {items_table}
+</div>
+{if:remarks}<div class="doc-section"><div class="doc-section-title">Observações</div><div class="doc-text">{remarks}</div></div>{endif:remarks}
+<div class="doc-section doc-keep">
+    <div class="doc-section-title">Autorização</div>
+    <p class="doc-text">Pessoal autorizado: {authorized_personnel}</p>
+    <div class="doc-signature">{signature_block}</div>
+</div>
+<div class="doc-end">*** Fim do certificado ***</div>
 HTML;
     }
 
-    private static function commercialBodyHtml(string $title, string $termsTitle, string $termsBody): string
+    /**
+     * Quote, invoice, receipt and credit note: who it is for and on what terms,
+     * the lines, the totals beside the payment details, and who issued it.
+     * The title and number are in the letterhead.
+     */
+    private static function commercialBodyHtml(string $termsTitle, string $termsBody): string
     {
         return <<<HTML
-<section class="document-hero studio-avoid-break" style="padding:18px 20px; margin-bottom:12px; background-color:#0f766e; border:1px solid #0f766e; color:#ffffff;">
-    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">Documento comercial controlado</div>
-    <h1 style="margin:8px 0 0; color:#ffffff; font-size:25px; line-height:1.12;">{$title}</h1>
-    <p style="margin:9px 0 0; font-size:11px; color:#e2e8f0;">{customer_name} · {service_location} · {issue_date}</p>
-</section>
-<section style="margin-bottom:10px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
-        </tr>
-        <tr>
-            <td class="document-summary-cell"><div class="label">{$termsTitle}</div><div class="value">Condições do documento</div><div class="muted">{$termsBody}</div></td>
-            <td class="document-summary-cell"><div class="label">Dados bancários</div><div class="value">Pagamento</div><div class="muted">{banking_details}</div></td>
-        </tr>
-    </table>
-</section>
-<section style="margin:12px 0;">{items_table}</section>
-<section style="margin-top:12px; page-break-inside:avoid;">{summary_table}</section>
-<section class="document-callout studio-avoid-break" style="margin-top:12px;">{observations}</section>
-<section style="margin-top:10px;">{document_keywords}</section>
-<section style="margin-top:12px;">{signature_block}</section>
+<table class="doc-parties doc-plain"><tr>
+    <td class="doc-party"><div class="doc-party-label">Cliente</div><div class="doc-party-lines">{customer_details}</div></td>
+    <td class="doc-party"><div class="doc-party-label">{$termsTitle}</div><div class="doc-party-lines">{$termsBody}</div></td>
+</tr></table>
+<div class="doc-section">
+    <div class="doc-section-title">Descrição</div>
+    {items_table}
+</div>
+<table class="doc-split doc-plain"><tr>
+    <td class="doc-split-notes">
+        <div class="doc-party-label">Dados bancários</div><div class="doc-party-lines">{banking_details}</div>
+        {if:observations}<br><div class="doc-party-label">Observações</div><div class="doc-party-lines">{observations}</div>{endif:observations}
+    </td>
+    <td class="doc-split-totals">{summary_table}</td>
+</tr></table>
+<div class="doc-signature doc-keep">{signature_block}</div>
 HTML;
     }
 
@@ -618,6 +622,8 @@ HTML;
             'qr_background_color' => '#ffffff',
             'qr_error_correction' => 'medium',
             'qr_margin' => 6,
+            // The letterhead prints the verification code itself; this block stays for layouts that place it elsewhere.
+            'is_hidden' => true,
         ];
     }
 
@@ -867,7 +873,7 @@ HTML;
             'invoice' => 'Factura fiscal',
             'receipt' => 'Recibo de tesouraria',
             'credit_note' => 'Nota de crédito',
-            default => 'Relatório analítico',
+            default => TestReportContent::TITLE,
         };
     }
 
@@ -898,16 +904,12 @@ HTML;
             'custom_page_width' => null,
             'custom_page_height' => null,
             'orientation' => 'P',
-            'margin_top' => 20,
-            'margin_bottom' => in_array($studioType, ['analysis'], true) ? 24 : 22,
-            'margin_left' => 14,
-            'margin_right' => 14,
-            'first_page_margin_top' => match ($studioType) {
-                'analysis' => 42,
-                'executive' => 38,
-                'export_certificate', 'import_certificate' => 40,
-                default => 26,
-            },
+            'margin_top' => 16,
+            'margin_bottom' => 20,
+            'margin_left' => 15,
+            'margin_right' => 15,
+            // Room for the letterhead where it is drawn as the first page's header.
+            'first_page_margin_top' => 40,
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Settings\GeneralSettings;
+use App\Support\ControlledDocument;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -243,7 +244,7 @@ class VAPProposalTemplate extends Model
     private static function generateBankingDetails(?GeneralSettings $settings): string
     {
         if (! $settings) {
-            return '<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#fffdf7; color:#58665f;">Dados bancários por configurar nas definições da aplicação.</section>';
+            return '<section style="padding:14px 16px; border:1px solid #d1d5db; background:#ffffff; color:#4b5563;">Dados bancários por configurar nas definições da aplicação.</section>';
         }
 
         $rows = collect([
@@ -255,18 +256,18 @@ class VAPProposalTemplate extends Model
         ])->filter();
 
         $details = $settings->app_bank_details
-            ? '<p style="margin:10px 0 0; color:#58665f; white-space:pre-line;">'.nl2br(e($settings->app_bank_details), false).'</p>'
+            ? '<p style="margin:10px 0 0; color:#4b5563; white-space:pre-line;">'.nl2br(e($settings->app_bank_details), false).'</p>'
             : '';
 
         if ($rows->isEmpty() && $details === '') {
-            return '<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#fffdf7; color:#58665f;">Dados bancários por configurar nas definições da aplicação.</section>';
+            return '<section style="padding:14px 16px; border:1px solid #d1d5db; background:#ffffff; color:#4b5563;">Dados bancários por configurar nas definições da aplicação.</section>';
         }
 
         $htmlRows = $rows
-            ->map(fn (string $value, string $label): string => '<div style="display:flex; justify-content:space-between; gap:18px; padding:6px 0; border-bottom:1px solid #eee4d3;"><span style="color:#738076;">'.e($label).'</span><strong style="color:#143d37; text-align:right;">'.e($value).'</strong></div>')
+            ->map(fn (string $value, string $label): string => '<div style="display:flex; justify-content:space-between; gap:18px; padding:6px 0; border-bottom:1px solid #d1d5db;"><span style="color:#4b5563;">'.e($label).'</span><strong style="color:#111827; text-align:right;">'.e($value).'</strong></div>')
             ->implode('');
 
-        return '<section style="padding:16px 18px; border:1px solid #ded3bf; border-radius:18px; background:#fffdf7;"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Dados bancários</div><div style="margin-top:10px;">'.$htmlRows.'</div>'.$details.'</section>';
+        return '<section style="padding:16px 18px; border:1px solid #d1d5db; background:#ffffff;"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#4b5563; font-weight:bold;">Dados bancários</div><div style="margin-top:10px;">'.$htmlRows.'</div>'.$details.'</section>';
     }
 
     private static function generateDocumentKeywords(?GeneralSettings $settings): string
@@ -282,10 +283,10 @@ class VAPProposalTemplate extends Model
         }
 
         $chips = $keywords
-            ->map(fn (string $keyword): string => '<span style="display:inline-block; margin:0 6px 6px 0; padding:5px 9px; border:1px solid #ded3bf; border-radius:999px; background:#fbf7ee; color:#143d37; font-size:9px; font-weight:700;">'.e($keyword).'</span>')
+            ->map(fn (string $keyword): string => '<span style="display:inline-block; margin:0 6px 6px 0; padding:5px 9px; border:1px solid #d1d5db; background:#f3f4f6; color:#111827; font-size:9px; font-weight:700;">'.e($keyword).'</span>')
             ->implode('');
 
-        return '<section style="margin-top:12px;"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800; margin-bottom:8px;">Palavras-chave</div>'.$chips.'</section>';
+        return '<section style="margin-top:12px;"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#4b5563; font-weight:bold; margin-bottom:8px;">Palavras-chave</div>'.$chips.'</section>';
     }
 
     private static function generateSignatureBlock(VAPProposal $proposal, ?GeneralSettings $settings): string
@@ -293,7 +294,10 @@ class VAPProposalTemplate extends Model
         $labSigner = $settings?->app_client_lab_director ?: $proposal->user?->name ?: 'Direcção técnica';
         $clientSigner = $proposal->customer?->name ?: 'Representante do cliente';
 
-        return '<section style="margin-top:24px;"><table style="width:100%; border-collapse:collapse;"><tr><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>'.e($labSigner).'</strong><br><span style="color:#58665f;">Validação técnica / comercial</span></td><td style="width:4%;"></td><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>'.e($clientSigner).'</strong><br><span style="color:#58665f;">Aceitação da proposta</span></td></tr></table></section>';
+        return ControlledDocument::authorisation([
+            ['name' => $labSigner, 'role' => 'Validação técnica e comercial'],
+            ['name' => $clientSigner, 'role' => 'Aceitação da proposta'],
+        ]);
     }
 
     private static function generateAuthenticityBlock(VAPProposal $proposal): string
@@ -308,22 +312,17 @@ class VAPProposalTemplate extends Model
         $escapedVerificationUrl = e($verificationUrl);
 
         return <<<HTML
-<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#fffdf7;">
-    <table style="width:100%; border-collapse:collapse;">
-        <tr>
-            <td style="width:70%; vertical-align:top; padding-right:14px;">
-                <div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Verificação da proposta</div>
-                <div style="margin-top:8px; color:#20332f;">Documento verificável por código QR e ligação pública segura.</div>
-                <div style="margin-top:8px; color:#58665f;">Estado: <strong style="color:#143d37;">{$escapedStatus}</strong></div>
-                <div style="margin-top:4px; color:#58665f;">Código de controlo: <strong style="color:#143d37;">{$escapedShortHash}</strong></div>
-                <div style="margin-top:8px; font-size:9px; color:#58665f; word-break:break-all;">{$escapedVerificationUrl}</div>
-            </td>
-            <td style="width:30%; vertical-align:top; text-align:right;">
-                <img src="{$qrDataUri}" alt="QR de verificação da proposta" style="display:inline-block; width:92px; height:92px;" />
-            </td>
-        </tr>
-    </table>
-</section>
+<table class="doc-plain" style="width:100%; border-collapse:collapse;">
+    <tr>
+        <td style="border:0; padding:0 3mm 0 0; vertical-align:top;">
+            <div class="doc-party-label">Verificação da proposta</div>
+            <div class="doc-party-lines">Documento verificável por código QR e ligação pública segura.<br>Estado: <strong>{$escapedStatus}</strong><br>Código de controlo: <strong>{$escapedShortHash}</strong><br><span style="font-size:6.6pt; word-break:break-all;">{$escapedVerificationUrl}</span></div>
+        </td>
+        <td style="border:0; padding:0; width:24mm; vertical-align:top; text-align:right;">
+            <img src="{$qrDataUri}" alt="QR de verificação da proposta" style="width:21mm; height:21mm;" />
+        </td>
+    </tr>
+</table>
 HTML;
     }
 
@@ -338,7 +337,6 @@ HTML;
         if ($acceptedAt) {
             $title = 'Aceite pelo cliente';
             $summary = 'Conformidade, confidencialidade e imparcialidade reconhecidas no portal.';
-            $tone = '#167a58';
             $evidenceRows = [
                 'Aceite em' => $acceptedAt,
                 'IP do cliente' => $agreement->client_ip,
@@ -349,7 +347,6 @@ HTML;
         } elseif ($rejectedAt) {
             $title = 'Rejeitada pelo cliente';
             $summary = $agreement?->rejection_reason ?: 'A proposta foi rejeitada pelo cliente.';
-            $tone = '#b42318';
             $evidenceRows = [
                 'Rejeitada em' => $rejectedAt,
                 'IP do cliente' => $agreement?->client_ip,
@@ -357,7 +354,6 @@ HTML;
         } else {
             $title = 'Aceite pendente';
             $summary = 'A proposta aguarda validação do cliente no portal.';
-            $tone = '#9a7a2f';
             $evidenceRows = [
                 'Estado' => $proposal->status_badge['text'] ?? $proposal->status ?? 'Pendente',
                 'Validade' => $proposal->expiry_date?->format('d/m/Y'),
@@ -366,18 +362,15 @@ HTML;
 
         $rows = collect($evidenceRows)
             ->filter()
-            ->map(fn (string $value, string $label): string => '<div style="display:flex; justify-content:space-between; gap:12px; padding:5px 0; border-bottom:1px solid #eee4d3;"><span style="color:#738076;">'.e($label).'</span><strong style="color:#143d37; text-align:right;">'.e($value).'</strong></div>')
+            ->map(fn (string $value, string $label): string => '<tr><td class="doc-kv-label" style="width:42%;">'.e($label).'</td><td class="doc-kv-value" style="width:58%;">'.e($value).'</td></tr>')
             ->implode('');
         $escapedTitle = e($title);
         $escapedSummary = e($summary);
 
         return <<<HTML
-<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#ffffff;">
-    <div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Evidência de aceite</div>
-    <div style="margin-top:8px; font-weight:800; color:{$tone};">{$escapedTitle}</div>
-    <div style="margin-top:6px; color:#58665f;">{$escapedSummary}</div>
-    <div style="margin-top:10px;">{$rows}</div>
-</section>
+<div class="doc-party-label">Evidência de aceite</div>
+<div class="doc-party-lines"><strong>{$escapedTitle}</strong><br>{$escapedSummary}</div>
+<table class="doc-kv doc-plain" style="margin-top:1.5mm;">{$rows}</table>
 HTML;
     }
 
@@ -460,58 +453,56 @@ HTML;
      */
     private static function generateItemsTable(VAPProposal $proposal): string
     {
-        $html = '<table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 9pt;">';
+        $html = '<table class="doc-results doc-plain">';
         $html .= '<thead>';
-        $html .= '<tr style="background: #143d37; color: #fffdf7;">';
-        $html .= '<th style="padding: 8px; border: 1px solid #143d37; text-align: left;">Item</th>';
-        $html .= '<th style="padding: 8px; border: 1px solid #143d37; text-align: left;">Descrição</th>';
-        $html .= '<th style="padding: 8px; border: 1px solid #143d37; text-align: center;">Norma</th>';
-        $html .= '<th style="padding: 8px; border: 1px solid #143d37; text-align: center;">Qtd.</th>';
-        $html .= '<th style="padding: 8px; border: 1px solid #143d37; text-align: center;">Unid.</th>';
-        $html .= '<th style="padding: 8px; border: 1px solid #143d37; text-align: right;">Preço unit.</th>';
-        $html .= '<th style="padding: 8px; border: 1px solid #143d37; text-align: right;">Desconto</th>';
-        $html .= '<th style="padding: 8px; border: 1px solid #143d37; text-align: right;">Imposto</th>';
-        $html .= '<th style="padding: 8px; border: 1px solid #143d37; text-align: right;">Total</th>';
+        $html .= '<tr>';
+        $html .= '<th>Item</th>';
+        $html .= '<th>Descrição</th>';
+        $html .= '<th class="doc-center">Norma</th>';
+        $html .= '<th class="doc-center">Qtd.</th>';
+        $html .= '<th class="doc-center">Unid.</th>';
+        $html .= '<th class="doc-num">Preço unit.</th>';
+        $html .= '<th class="doc-num">Desconto</th>';
+        $html .= '<th class="doc-num">Imposto</th>';
+        $html .= '<th class="doc-num">Total</th>';
         $html .= '</tr>';
         $html .= '</thead>';
         $html .= '<tbody>';
 
         foreach ($proposal->items as $index => $item) {
-            $rowStyle = $index % 2 === 0 ? 'background: #fffdf7;' : 'background: #ffffff;';
-
-            $html .= '<tr style="'.$rowStyle.'">';
-            $html .= '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: center; font-weight: bold; color:#143d37;">'.($index + 1).'</td>';
-            $html .= '<td style="padding: 8px; border: 1px solid #ded3bf;">';
+            $html .= '<tr>';
+            $html .= '<td>'.($index + 1).'</td>';
+            $html .= '<td>';
             $html .= '<div style="font-weight: bold;">'.htmlspecialchars($item->item_description).'</div>';
 
             if ($item->obs) {
-                $html .= '<div style="font-size: 8pt; color: #58665f; margin-top: 2px;">'.htmlspecialchars($item->obs).'</div>';
+                $html .= '<div style="font-size: 8pt; color: #4b5563; margin-top: 2px;">'.htmlspecialchars($item->obs).'</div>';
             }
 
             if ($item->itemable_type) {
                 $typeLabel = str_contains($item->itemable_type, 'Matrix') ? 'Matriz' : 'Parâmetro';
-                $html .= '<div style="font-size: 8pt; color: #58665f; margin-top: 2px;">'.$typeLabel.' #'.$item->itemable_id.'</div>';
+                $html .= '<div style="font-size: 8pt; color: #4b5563; margin-top: 2px;">'.$typeLabel.' #'.$item->itemable_id.'</div>';
             }
 
             if (! $item->charge_tax) {
-                $html .= '<div style="font-size: 8pt; color: #167a58; margin-top: 2px;">Isento de imposto</div>';
+                $html .= '<div style="font-size: 8pt; color: #4b5563; margin-top: 2px;">Isento de imposto</div>';
             }
 
             if ($item->exemption_code) {
-                $html .= '<div style="font-size: 8pt; color: #167a58; margin-top: 2px;">Código de isenção: '.$item->exemption_code.'</div>';
+                $html .= '<div style="font-size: 8pt; color: #4b5563; margin-top: 2px;">Código de isenção: '.$item->exemption_code.'</div>';
             }
 
             $html .= '</td>';
-            $html .= '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: center;">'.($item->standard->code ?? '-').'</td>';
-            $html .= '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: center;">'.number_format($item->qty, 2, ',', '.').'</td>';
-            $html .= '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: center;">'.($item->unit->code ?? '-').'</td>';
-            $html .= '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: right;">AOA '.number_format($item->unit_price, 2, ',', '.').'</td>';
+            $html .= '<td class="doc-center">'.($item->standard->code ?? '-').'</td>';
+            $html .= '<td class="doc-center">'.number_format($item->qty, 2, ',', '.').'</td>';
+            $html .= '<td class="doc-center">'.($item->unit->code ?? '-').'</td>';
+            $html .= '<td class="doc-num">AOA '.number_format($item->unit_price, 2, ',', '.').'</td>';
 
             // Discount cell
-            $html .= '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: right;">';
+            $html .= '<td class="doc-num">';
             if ($item->discount_amount > 0) {
                 if ($item->discount_id == 1) {
-                    $html .= '<div style="font-size: 8pt; color: #167a58;">'.number_format($item->discount_percentage, 2, ',', '.').'%</div>';
+                    $html .= '<div style="font-size: 8pt; color: #4b5563;">'.number_format($item->discount_percentage, 2, ',', '.').'%</div>';
                 }
                 $html .= '-AOA '.number_format($item->discount_amount, 2, ',', '.');
             } else {
@@ -520,9 +511,9 @@ HTML;
             $html .= '</td>';
 
             // Tax cell
-            $html .= '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: right;">';
+            $html .= '<td class="doc-num">';
             if ($item->tax_amount > 0) {
-                $html .= '<div style="font-size: 8pt; color: #9a7a2f;">'.number_format($item->tax_percentage, 2, ',', '.').'%</div>';
+                $html .= '<div style="font-size: 8pt; color: #4b5563;">'.number_format($item->tax_percentage, 2, ',', '.').'%</div>';
                 $html .= '+AOA '.number_format($item->tax_amount, 2, ',', '.');
             } else {
                 $html .= '-';
@@ -530,7 +521,7 @@ HTML;
             $html .= '</td>';
 
             // Total cell
-            $html .= '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: right; font-weight: bold; color:#143d37;">';
+            $html .= '<td class="doc-num doc-result-value">';
             $html .= 'AOA '.number_format($item->total, 2, ',', '.');
             $html .= '</td>';
 
@@ -551,7 +542,7 @@ HTML;
         $html = '<ul style="list-style-type: none; padding-left: 0; margin: 20px 0;">';
 
         foreach ($proposal->items as $index => $item) {
-            $html .= '<li style="margin-bottom: 15px; padding: 12px; border-left: 3px solid #d8b85f; background: #fffdf7;">';
+            $html .= '<li style="margin-bottom: 15px; padding: 12px; border-left: 3px solid #111827; background: #ffffff;">';
             $html .= '<div style="font-weight: bold;">'.($index + 1).'. '.htmlspecialchars($item->item_description).'</div>';
 
             $details = [];
@@ -576,10 +567,10 @@ HTML;
 
             $details[] = '<strong>Total: AOA '.number_format($item->total, 2, ',', '.').'</strong>';
 
-            $html .= '<div style="font-size: 9pt; color: #58665f; margin-top: 5px;">'.implode(' • ', $details).'</div>';
+            $html .= '<div style="font-size: 9pt; color: #4b5563; margin-top: 5px;">'.implode(' • ', $details).'</div>';
 
             if ($item->obs) {
-                $html .= '<div style="font-size: 8pt; color: #58665f; margin-top: 5px; font-style: italic;">'.htmlspecialchars($item->obs).'</div>';
+                $html .= '<div style="font-size: 8pt; color: #4b5563; margin-top: 5px; font-style: italic;">'.htmlspecialchars($item->obs).'</div>';
             }
 
             $html .= '</li>';
@@ -595,12 +586,12 @@ HTML;
      */
     private static function generateSummaryTable(VAPProposal $proposal): string
     {
-        $html = '<table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 10pt;">';
+        $html = '<table class="doc-totals doc-plain">';
 
         // Subtotal
         $html .= '<tr>';
-        $html .= '<td style="padding: 8px; border-bottom: 1px solid #ded3bf; text-align: right; font-weight: bold;">Subtotal:</td>';
-        $html .= '<td style="padding: 8px; border-bottom: 1px solid #ded3bf; text-align: right; width: 150px;">';
+        $html .= '<td>Subtotal</td>';
+        $html .= '<td style="text-align: right;">';
         $html .= 'AOA '.number_format($proposal->sub_total, 2, ',', '.');
         $html .= '</td>';
         $html .= '</tr>';
@@ -608,8 +599,8 @@ HTML;
         // Discount
         if ($proposal->discount > 0) {
             $html .= '<tr>';
-            $html .= '<td style="padding: 8px; border-bottom: 1px solid #ded3bf; text-align: right; font-weight: bold; color: #167a58;">Desconto total:</td>';
-            $html .= '<td style="padding: 8px; border-bottom: 1px solid #ded3bf; text-align: right; color: #167a58;">';
+            $html .= '<td>Desconto total</td>';
+            $html .= '<td style="text-align: right;">';
             $html .= '-AOA '.number_format($proposal->discount, 2, ',', '.');
             $html .= '</td>';
             $html .= '</tr>';
@@ -618,8 +609,8 @@ HTML;
         // Tax
         if ($proposal->tax > 0) {
             $html .= '<tr>';
-            $html .= '<td style="padding: 8px; border-bottom: 1px solid #ded3bf; text-align: right; font-weight: bold;">Impostos:</td>';
-            $html .= '<td style="padding: 8px; border-bottom: 1px solid #ded3bf; text-align: right;">';
+            $html .= '<td>Impostos</td>';
+            $html .= '<td style="text-align: right;">';
             $html .= '+AOA '.number_format($proposal->tax, 2, ',', '.');
             $html .= '</td>';
             $html .= '</tr>';
@@ -628,8 +619,8 @@ HTML;
         // Global discount
         if ($proposal->global_discount_amount > 0) {
             $html .= '<tr>';
-            $html .= '<td style="padding: 8px; border-bottom: 1px solid #ded3bf; text-align: right; font-weight: bold; color: #167a58;">Desconto global:</td>';
-            $html .= '<td style="padding: 8px; border-bottom: 1px solid #ded3bf; text-align: right; color: #167a58;">';
+            $html .= '<td>Desconto global</td>';
+            $html .= '<td style="text-align: right;">';
             $html .= '-AOA '.number_format($proposal->global_discount_amount, 2, ',', '.');
 
             if ($proposal->global_discount_percentage > 0) {
@@ -643,8 +634,8 @@ HTML;
         // Withholding tax
         if ($proposal->withholding_tax_amount > 0) {
             $html .= '<tr>';
-            $html .= '<td style="padding: 8px; border-bottom: 1px solid #ded3bf; text-align: right; font-weight: bold;">Imposto retido:</td>';
-            $html .= '<td style="padding: 8px; border-bottom: 1px solid #ded3bf; text-align: right;">';
+            $html .= '<td>Imposto retido</td>';
+            $html .= '<td style="text-align: right;">';
             $html .= 'AOA '.number_format($proposal->withholding_tax_amount, 2, ',', '.');
 
             if ($proposal->withholding_tax_percentage > 0) {
@@ -656,16 +647,16 @@ HTML;
         }
 
         // Grand Total
-        $html .= '<tr style="background: #fbf7ee;">';
-        $html .= '<td style="padding: 12px; border-top: 2px solid #143d37; text-align: right; font-weight: bold; font-size: 11pt; color: #143d37;">TOTAL GERAL:</td>';
-        $html .= '<td style="padding: 12px; border-top: 2px solid #143d37; text-align: right; font-weight: bold; font-size: 11pt; color: #143d37;">';
+        $html .= '<tr class="doc-totals-grand">';
+        $html .= '<td>Total geral</td>';
+        $html .= '<td style="text-align: right;">';
         $html .= 'AOA '.number_format($proposal->total, 2, ',', '.');
         $html .= '</td>';
         $html .= '</tr>';
 
         // Summary footer
         $html .= '<tr>';
-        $html .= '<td colspan="2" style="padding: 8px; text-align: right; font-size: 8pt; color: #58665f;">';
+        $html .= '<td colspan="2" class="doc-auth-role" style="text-align: right; border-bottom: 0;">';
         $html .= $proposal->items->count().' itens • ';
         $html .= $proposal->items->where('tax_amount', '>', 0)->count().' tributáveis';
         $html .= '</td>';

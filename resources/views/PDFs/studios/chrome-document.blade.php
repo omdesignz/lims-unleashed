@@ -67,9 +67,11 @@
             break-inside: avoid;
         }
 
+        {{-- The first-page header flows at the top of the first page, so it needs no offset here:
+             the first-page top margin only reserves room where the header is drawn in the margin (mPDF). --}}
         .studio-first-page-header {
-            margin-top: {{ $browserFirstPageTopOffset ?? 0 }}mm;
-            margin-bottom: 18px;
+            margin-top: 0;
+            margin-bottom: 0;
         }
 
         .studio-first-page-shell {

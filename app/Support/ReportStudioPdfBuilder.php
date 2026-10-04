@@ -28,6 +28,9 @@ class ReportStudioPdfBuilder
 
     private const PLACEHOLDER_PATTERN = '/\{\{\s*([\w.:\/-]+)\s*\}\}|\{\s*([\w.:\/-]+)\s*\}/';
 
+    /** @var array<string, string> verification code markup by the text it encodes */
+    private array $verificationCodes = [];
+
     private const DEFAULT_CHART_PALETTE = ['#143d37', '#d9b05f', '#0f766e', '#475569', '#7c2d12', '#3f6f58'];
 
     public function buildAnalysisReportPayload(
@@ -49,7 +52,7 @@ class ReportStudioPdfBuilder
         ]);
 
         $studio = $this->resolveStudio('analysis', $overrideStudio);
-        $layout = $studio?->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio?->export_settings ?? [];
 
         $placeholderValues = $this->analysisPlaceholderValues($certificate, $settings);
@@ -62,14 +65,7 @@ class ReportStudioPdfBuilder
         ];
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
 
-        $resultId = data_get($certificate->collection, 'result_id');
-        $bodyView = $resultId
-            ? "PDFs.includes.analysisreport.templates.{$resultId}"
-            : null;
-        $defaultBodyHtml = $bodyView && View::exists($bodyView)
-            ? View::make($bodyView, ['model' => $certificate])->render()
-            : $this->defaultAnalysisBodyHtml();
-        $bodyHtml = data_get($layout, 'body_html') ?: $defaultBodyHtml;
+        $bodyHtml = data_get($layout, 'body_html');
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
@@ -77,19 +73,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio?->name ?? 'Relatório Analítico',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultAnalysisFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · Emitido em {{issue_date}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultAnalysisFooter($settings),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -124,7 +120,7 @@ class ReportStudioPdfBuilder
         ReportStudioTemplate $studio,
         GeneralSettings $settings
     ): array {
-        $layout = $studio->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio->export_settings ?? [];
         $placeholderValues = $this->analysisPreviewPlaceholderValues($settings);
         $headerContext = [
@@ -136,7 +132,7 @@ class ReportStudioPdfBuilder
         ];
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = $this->renderTemplateHtml(
-            (string) (data_get($layout, 'body_html') ?: $this->defaultAnalysisBodyHtml()),
+            (string) (data_get($layout, 'body_html')),
             $placeholderValues
         );
 
@@ -145,19 +141,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio->name ?: 'Pré-visualização de Relatório Analítico',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultAnalysisFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · Emitido em {{issue_date}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultAnalysisFooter($settings),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -194,7 +190,7 @@ class ReportStudioPdfBuilder
         ?ReportStudioTemplate $overrideStudio = null
     ): array {
         $studio = $this->resolveStudio('executive', $overrideStudio);
-        $layout = $studio?->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio?->export_settings ?? [];
 
         $headerContext = [
@@ -220,19 +216,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio?->name ?? 'Relatório Executivo',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: '<h2 style="margin:0;">{{lab_name}}</h2><p style="margin-top:6px;">Relatório executivo emitido em {{issue_date}}</p>',
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">Resumo executivo · {{issue_date}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: '<div style="font-size:9px; color:#475a53;">Documento reservado para gestão. Página {PAGENO}/{nbpg}</div>',
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -326,7 +322,7 @@ class ReportStudioPdfBuilder
         $studio = $this->resolveStudio('proposal', $overrideStudio);
         $templateLayout = $this->normalizeStructuredArray($proposal->template?->layout_schema);
         $templateExport = $this->normalizeStructuredArray($proposal->template?->export_settings);
-        $layout = $this->mergeLayoutSchema($studio?->layout_schema ?? [], $templateLayout);
+        $layout = $this->layoutWithDefaults($studio, $this->mergeLayoutSchema($studio?->layout_schema ?? [], $templateLayout));
         $export = array_replace($studio?->export_settings ?? [], $templateExport);
 
         $headerContext = [
@@ -371,19 +367,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $proposal->template?->name ?? $studio?->name ?? 'Proposta Comercial',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultProposalFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{customer_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultProposalFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -419,7 +415,7 @@ class ReportStudioPdfBuilder
         $studio = $this->resolveStudio('proposal');
         $templateLayout = $this->normalizeStructuredArray($template->layout_schema);
         $templateExport = $this->normalizeStructuredArray($template->export_settings);
-        $layout = $this->mergeLayoutSchema($studio?->layout_schema ?? [], $templateLayout);
+        $layout = $this->layoutWithDefaults($studio, $this->mergeLayoutSchema($studio?->layout_schema ?? [], $templateLayout));
         $export = array_replace($studio?->export_settings ?? [], $templateExport);
 
         $headerContext = [
@@ -451,19 +447,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $template->name,
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultProposalFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · Modelo de proposta</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultProposalFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -498,7 +494,7 @@ class ReportStudioPdfBuilder
         ReportStudioTemplate $studio,
         GeneralSettings $settings
     ): array {
-        $layout = $studio->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio->export_settings ?? [];
 
         $headerContext = [
@@ -518,7 +514,7 @@ class ReportStudioPdfBuilder
         $previewValues['{parsed_content}'] = $previewValues['{proposal_content}'];
         $surfaceContext = $this->buildSurfaceContext($headerContext, $previewValues, $settings);
         $bodyHtml = $this->renderTemplateHtml(
-            (string) (data_get($layout, 'body_html') ?: $this->defaultProposalPreviewBodyHtml()),
+            (string) (data_get($layout, 'body_html')),
             $previewValues
         );
 
@@ -527,19 +523,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio->name ?: 'Pré-visualização de proposta',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultProposalFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{customer_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultProposalFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -576,7 +572,7 @@ class ReportStudioPdfBuilder
         ?ReportStudioTemplate $overrideStudio = null
     ): array {
         $studio = $this->resolveStudio('export_certificate', $overrideStudio);
-        $layout = $studio?->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio?->export_settings ?? [];
 
         $headerContext = [
@@ -591,7 +587,7 @@ class ReportStudioPdfBuilder
 
         $placeholderValues = $this->exportCertificatePlaceholderValues($certificate, $settings);
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
-        $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultExportCertificateBodyHtml();
+        $bodyHtml = data_get($layout, 'body_html');
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
@@ -599,19 +595,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio?->name ?? 'Certificado de Exportação',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultExportCertificateFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{exporter_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultExportCertificateFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -646,7 +642,7 @@ class ReportStudioPdfBuilder
         ReportStudioTemplate $studio,
         GeneralSettings $settings
     ): array {
-        $layout = $studio->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio->export_settings ?? [];
 
         $headerContext = [
@@ -660,7 +656,7 @@ class ReportStudioPdfBuilder
         ];
 
         $bodyHtml = $this->renderTemplateHtml(
-            data_get($layout, 'body_html') ?: $this->defaultExportCertificateBodyHtml(),
+            data_get($layout, 'body_html'),
             [
                 '{certificate_number}' => 'EXP-2026-0041',
                 '{exporter_name}' => 'Exportador alimentar certificado, Lda.',
@@ -695,19 +691,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio->name ?: 'Pré-visualização de certificado de exportação',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultExportCertificateFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $headerContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{exporter_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $headerContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultExportCertificateFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $headerContext
@@ -744,7 +740,7 @@ class ReportStudioPdfBuilder
         ?ReportStudioTemplate $overrideStudio = null
     ): array {
         $studio = $this->resolveStudio('import_certificate', $overrideStudio);
-        $layout = $studio?->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio?->export_settings ?? [];
 
         $headerContext = [
@@ -759,7 +755,7 @@ class ReportStudioPdfBuilder
 
         $placeholderValues = $this->importCertificatePlaceholderValues($certificate, $settings);
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
-        $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultImportCertificateBodyHtml();
+        $bodyHtml = data_get($layout, 'body_html');
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
@@ -767,19 +763,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio?->name ?? 'Certificado de Importação',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultImportCertificateFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{importer_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultImportCertificateFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -814,7 +810,7 @@ class ReportStudioPdfBuilder
         ReportStudioTemplate $studio,
         GeneralSettings $settings
     ): array {
-        $layout = $studio->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio->export_settings ?? [];
 
         $headerContext = [
@@ -828,7 +824,7 @@ class ReportStudioPdfBuilder
         ];
 
         $bodyHtml = $this->renderTemplateHtml(
-            data_get($layout, 'body_html') ?: $this->defaultImportCertificateBodyHtml(),
+            data_get($layout, 'body_html'),
             [
                 '{certificate_number}' => 'IMP-2026-0038',
                 '{importer_name}' => 'Importador alimentar certificado, Lda.',
@@ -864,19 +860,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio->name ?: 'Pré-visualização de certificado de importação',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultImportCertificateFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $headerContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{importer_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $headerContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultImportCertificateFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $headerContext
@@ -913,7 +909,7 @@ class ReportStudioPdfBuilder
         ?ReportStudioTemplate $overrideStudio = null
     ): array {
         $studio = $this->resolveStudio('quote', $overrideStudio);
-        $layout = $studio?->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio?->export_settings ?? [];
 
         $headerContext = [
@@ -927,7 +923,7 @@ class ReportStudioPdfBuilder
 
         $placeholderValues = $this->quotePlaceholderValues($quote, $settings);
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
-        $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultQuoteBodyHtml();
+        $bodyHtml = data_get($layout, 'body_html');
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
@@ -935,19 +931,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio?->name ?? 'Proforma / Orçamento',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultQuoteFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{customer_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -982,7 +978,7 @@ class ReportStudioPdfBuilder
         ReportStudioTemplate $studio,
         GeneralSettings $settings
     ): array {
-        $layout = $studio->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio->export_settings ?? [];
 
         $headerContext = [
@@ -1035,7 +1031,7 @@ class ReportStudioPdfBuilder
         );
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = $this->renderTemplateHtml(
-            data_get($layout, 'body_html') ?: $this->defaultQuoteBodyHtml(),
+            data_get($layout, 'body_html'),
             $placeholderValues
         );
 
@@ -1044,19 +1040,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio->name ?: 'Pré-visualização de proforma',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultQuoteFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{customer_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -1093,7 +1089,7 @@ class ReportStudioPdfBuilder
         ?ReportStudioTemplate $overrideStudio = null
     ): array {
         $studio = $this->resolveStudio('invoice', $overrideStudio);
-        $layout = $studio?->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio?->export_settings ?? [];
 
         $headerContext = [
@@ -1107,7 +1103,7 @@ class ReportStudioPdfBuilder
 
         $placeholderValues = $this->invoicePlaceholderValues($invoice, $settings);
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
-        $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultInvoiceBodyHtml();
+        $bodyHtml = data_get($layout, 'body_html');
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
         $bodyHtml = $this->ensureInvoicePaymentStatusBody($bodyHtml, $placeholderValues);
 
@@ -1116,19 +1112,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio?->name ?? 'Factura',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultInvoiceFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{customer_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultInvoiceFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -1165,7 +1161,7 @@ class ReportStudioPdfBuilder
         ?ReportStudioTemplate $overrideStudio = null
     ): array {
         $studio = $this->resolveStudio('receipt', $overrideStudio);
-        $layout = $studio?->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio?->export_settings ?? [];
 
         $headerContext = [
@@ -1178,7 +1174,7 @@ class ReportStudioPdfBuilder
 
         $placeholderValues = $this->receiptPlaceholderValues($receipt, $settings);
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
-        $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultReceiptBodyHtml();
+        $bodyHtml = data_get($layout, 'body_html');
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
@@ -1186,19 +1182,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio?->name ?? 'Recibo',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultReceiptFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{customer_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultReceiptFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -1235,7 +1231,7 @@ class ReportStudioPdfBuilder
         ?ReportStudioTemplate $overrideStudio = null
     ): array {
         $studio = $this->resolveStudio('credit_note', $overrideStudio);
-        $layout = $studio?->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio?->export_settings ?? [];
 
         $headerContext = [
@@ -1248,7 +1244,7 @@ class ReportStudioPdfBuilder
 
         $placeholderValues = $this->creditNotePlaceholderValues($creditNote, $settings);
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
-        $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultCreditNoteBodyHtml();
+        $bodyHtml = data_get($layout, 'body_html');
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
@@ -1256,19 +1252,19 @@ class ReportStudioPdfBuilder
             'data' => [
                 'documentTitle' => $studio?->name ?? 'Nota de Crédito',
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $this->defaultCreditNoteFirstPageHeader($settings),
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{customer_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultCreditNoteFooter(),
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -1305,9 +1301,6 @@ class ReportStudioPdfBuilder
             $studio,
             $settings,
             'Pré-visualização de factura',
-            $this->defaultInvoiceFirstPageHeader($settings),
-            $this->defaultInvoiceFooter(),
-            $this->defaultInvoiceBodyHtml(),
             [
                 '{document_number}' => 'FT 05/2026/0091',
                 '{customer_name}' => 'Cliente industrial de referência, Lda.',
@@ -1352,9 +1345,6 @@ class ReportStudioPdfBuilder
             $studio,
             $settings,
             'Pré-visualização de recibo',
-            $this->defaultReceiptFirstPageHeader($settings),
-            $this->defaultReceiptFooter(),
-            $this->defaultReceiptBodyHtml(),
             [
                 '{document_number}' => 'RG 05/2026/0042',
                 '{customer_name}' => 'Cliente industrial de referência, Lda.',
@@ -1389,9 +1379,6 @@ class ReportStudioPdfBuilder
             $studio,
             $settings,
             'Pré-visualização de nota de crédito',
-            $this->defaultCreditNoteFirstPageHeader($settings),
-            $this->defaultCreditNoteFooter(),
-            $this->defaultCreditNoteBodyHtml(),
             [
                 '{document_number}' => 'NC 05/2026/0017',
                 '{customer_name}' => 'Cliente industrial de referência, Lda.',
@@ -1454,6 +1441,42 @@ class ReportStudioPdfBuilder
     }
 
     /**
+     * What every controlled document carries on its letterhead: the issuing
+     * laboratory, the revision and a verification code. A document's own
+     * values win over these defaults.
+     *
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    private function withDocumentControl(array $context): array
+    {
+        if (array_key_exists('verification_qr', $context)) {
+            return $context;
+        }
+
+        $settings = app(GeneralSettings::class);
+        $verification = trim((string) ($context['record_verification_payload'] ?? ''));
+
+        if ($verification === '') {
+            $verification = implode(' · ', array_filter([
+                $context['document_code'] ?? $context['document_number'] ?? null,
+                $context['customer_name'] ?? null,
+                $context['issue_date'] ?? null,
+            ], fn ($part): bool => filled($part)));
+        }
+
+        $this->verificationCodes[$verification] ??= ControlledDocument::verificationCodeHtml($verification);
+
+        return array_merge([
+            'lab_name' => ControlledDocument::laboratoryName($settings),
+            'lab_logo' => ControlledDocument::laboratoryLogoHtml($settings),
+            'lab_identity' => ControlledDocument::laboratoryIdentityHtml($settings),
+            'document_revision' => '0',
+            'verification_qr' => $this->verificationCodes[$verification],
+        ], $context);
+    }
+
+    /**
      * @return array<string, string>
      */
     private function themePlaceholderContext(GeneralSettings $settings): array
@@ -1484,14 +1507,7 @@ class ReportStudioPdfBuilder
         $customerName = 'Cliente industrial, Lda.';
         $labSigner = $settings->app_client_lab_director ?: 'Direcção Técnica';
         $verificationUrl = url('/vap-proposals/proposal/preview-prop-2026-001');
-        $qrBlock = $this->renderQrCodeBlock([
-            'qr_content' => $verificationUrl,
-            'qr_label' => 'Verificar proposta PROP-2026-001',
-            'qr_foreground_color' => '#143d37',
-            'qr_background_color' => '#fffdf7',
-            'qr_error_correction' => 'medium',
-            'qr_margin' => 8,
-        ], []);
+        $qrBlock = ControlledDocument::verificationCodeHtml($verificationUrl, 'Verificar proposta');
 
         return [
             '{proposal_number}' => 'PROP-2026-001',
@@ -1541,10 +1557,13 @@ class ReportStudioPdfBuilder
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'proposta, análise, laboratório, ISO 17025'),
             '{lab_signature}' => $labSigner,
             '{client_signature}' => 'Representante do Cliente',
-            '{signature_block}' => '<section style="margin-top:24px;"><table style="width:100%; border-collapse:collapse;"><tr><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>'.e($labSigner).'</strong><br><span style="color:#58665f;">Validação técnica / comercial</span></td><td style="width:4%;"></td><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>Representante do Cliente</strong><br><span style="color:#58665f;">Aceitação da proposta</span></td></tr></table></section>',
+            '{signature_block}' => ControlledDocument::authorisation([
+                ['name' => $labSigner, 'role' => 'Validação técnica e comercial'],
+                ['name' => 'Representante do Cliente', 'role' => 'Aceitação da proposta'],
+            ]),
             '{verification_url}' => $verificationUrl,
-            '{proposal_authenticity}' => '<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#fffdf7;"><table style="width:100%; border-collapse:collapse;"><tr><td style="width:68%; vertical-align:top; padding-right:14px;"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Verificação da proposta</div><div style="margin-top:8px; color:#20332f;">Documento verificável por código QR e ligação pública segura.</div><div style="margin-top:8px; color:#58665f;">Estado: <strong style="color:#143d37;">Pré-visualização</strong></div><div style="margin-top:8px; font-size:9px; color:#58665f; word-break:break-all;">'.e($verificationUrl).'</div></td><td style="width:32%; vertical-align:top; text-align:right;">'.$qrBlock.'</td></tr></table></section>',
-            '{proposal_acceptance_evidence}' => '<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#ffffff;"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Evidência de aceite</div><div style="margin-top:8px; font-weight:800; color:#9a7a2f;">Aceite pendente</div><div style="margin-top:6px; color:#58665f;">A proposta aguarda validação do cliente no portal.</div></section>',
+            '{proposal_authenticity}' => '<table class="doc-plain" style="width:100%; border-collapse:collapse;"><tr><td style="border:0; padding:0 3mm 0 0; vertical-align:top;"><div class="doc-party-label">Verificação da proposta</div><div class="doc-party-lines">Documento verificável por código QR e ligação pública segura.<br>Estado: <strong>Pré-visualização</strong><br><span style="font-size:6.6pt; word-break:break-all;">'.e($verificationUrl).'</span></div></td><td style="border:0; padding:0; width:24mm; vertical-align:top; text-align:right;">'.$qrBlock.'</td></tr></table>',
+            '{proposal_acceptance_evidence}' => '<div class="doc-party-label">Evidência de aceite</div><div class="doc-party-lines"><strong>Aceite pendente</strong><br>A proposta aguarda validação do cliente no portal.</div>',
             '{lab_name}' => $labName,
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml(null, $customerName),
@@ -1673,6 +1692,29 @@ class ReportStudioPdfBuilder
         return [false, null];
     }
 
+    /**
+     * A template's layout, with every surface it leaves empty taken from the
+     * system default of its document type. There is one default per type, in
+     * `ReportStudioDefaultTemplates`. Pass `$layout` when the template's layout
+     * was merged with another one first.
+     *
+     * @param  array<string, mixed>|null  $layout
+     * @return array<string, mixed>
+     */
+    private function layoutWithDefaults(?ReportStudioTemplate $studio, ?array $layout = null): array
+    {
+        $layout ??= $studio?->layout_schema ?? [];
+        $defaults = ReportStudioDefaultTemplates::layout((string) ($studio?->studio_type ?: 'analysis'));
+
+        foreach (['first_page_header_html', 'default_header_html', 'footer_html', 'body_html'] as $surface) {
+            if (blank($layout[$surface] ?? null)) {
+                $layout[$surface] = $defaults[$surface];
+            }
+        }
+
+        return $layout;
+    }
+
     private function resolveStudio(string $studioType, ?ReportStudioTemplate $overrideStudio = null): ?ReportStudioTemplate
     {
         if ($overrideStudio && $overrideStudio->studio_type === $studioType) {
@@ -1681,162 +1723,6 @@ class ReportStudioPdfBuilder
 
         return ReportStudioTemplate::resolveDefaultFor($studioType)
             ?? ReportStudioDefaultTemplates::make($studioType);
-    }
-
-    private function defaultProposalPreviewBodyHtml(): string
-    {
-        return <<<'HTML'
-<section style="margin-bottom:18px;">
-    <div class="document-hero studio-avoid-break" style="padding:22px 24px;">
-        <div class="document-kicker">Proposta laboratorial · Documento controlado</div>
-        <h1 style="margin:8px 0 8px;">Proposta {proposal_number}</h1>
-        <p class="studio-lead">Âmbito técnico, condições comerciais, decisão de regra e aceite do cliente num documento único e rastreável.</p>
-    </div>
-</section>
-<section style="margin-bottom:18px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Cliente</span>
-                <span class="value">{customer_name}</span>
-                <div class="muted" style="margin-top:6px;">{service_location}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Condições</span>
-                <span class="value">Válida até {expiry_date}</span>
-                <div class="muted" style="margin-top:6px;">Tolerância: {tolerance_days} dias<br>Regra de decisão conforme proposta aprovada.</div>
-            </td>
-        </tr>
-    </table>
-</section>
-<section>{items_table}</section>
-<section style="margin-top:20px;">{summary_table}</section>
-<section class="document-callout studio-avoid-break" style="margin-top:20px;">{observations}</section>
-<section style="margin-top:20px;">
-    <table style="width:100%; border-collapse:collapse;">
-        <tr>
-            <td style="width:50%; vertical-align:top; padding-right:8px;">{proposal_acceptance_evidence}</td>
-            <td style="width:50%; vertical-align:top; padding-left:8px;">{proposal_authenticity}</td>
-        </tr>
-    </table>
-</section>
-<section style="margin-top:24px;">{signature_block}</section>
-HTML;
-    }
-
-    private function defaultAnalysisBodyHtml(): string
-    {
-        return <<<'HTML'
-<section style="margin-bottom:18px;">
-    <div class="document-hero studio-avoid-break" style="padding:22px 24px;">
-        <div class="document-kicker">Relatório analítico</div>
-        <h1 style="margin:8px 0 8px;">{report_title} {certificate_code}</h1>
-        <p class="studio-lead">Resultados emitidos para <strong>{customer_name}</strong>, com rastreabilidade ao código laboratorial <strong>{lab_code}</strong> e à entrada de amostra <strong>{sample_entry_code}</strong>.</p>
-    </div>
-</section>
-
-<section style="margin-bottom:18px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Cliente</span>
-                <span class="value">{customer_name}</span>
-                <div class="muted" style="margin-top:6px;">{customer_details}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Laboratório</span>
-                <span class="value">{lab_name}</span>
-                <div class="muted" style="margin-top:6px;">{lab_details}</div>
-            </td>
-        </tr>
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Amostra</span>
-                <span class="value">{sample_name}</span>
-                <div class="muted" style="margin-top:6px;">Produto: {sample_product}<br>Matriz: {sample_matrix}<br>Lote: {sample_lot}<br>Origem: {sample_origin}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Validação</span>
-                <span class="value">{validated_by}</span>
-                <div class="muted" style="margin-top:6px;">Emissão: {issue_date}<br>Regra de decisão: {decision_rule}</div>
-            </td>
-        </tr>
-    </table>
-</section>
-
-{sample_details}
-{collection_details}
-{analytical_scope}
-
-<section style="margin:20px 0;">{results_table}</section>
-<section style="margin:20px 0;">{analysis_chart_card}</section>
-<section class="document-callout studio-avoid-break" style="margin-top:20px;">{uncertainty_statement}</section>
-<section style="margin-top:18px;">{conclusion}</section>
-<section style="margin-top:18px;">{document_keywords}</section>
-<section style="margin-top:24px;">{signature_block}</section>
-HTML;
-    }
-
-    private function defaultCommercialFirstPageHeader(
-        GeneralSettings $settings,
-        string $title,
-        string $subtitle,
-        string $controlNote
-    ): string {
-        $labName = e($settings->app_client_lab_name ?: $settings->app_client_name ?: $settings->app_name ?: 'Laboratório');
-        $labSlogan = e($settings->app_client_lab_slogan ?: 'Gestão laboratorial, rastreabilidade e conformidade documental.');
-
-        return <<<HTML
-<div style="border:1px solid #d8cbb8; border-radius:18px; background:#fffdf7;">
-    <div style="background:#143d37; color:#fffdf7; padding:18px 22px; border-radius:17px 17px 0 0;">
-        <table style="width:100%; border-collapse:collapse;">
-            <tr>
-                <td style="vertical-align:top;">
-                    <div style="font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:#d9b05f; font-weight:800;">{$labName}</div>
-                    <h2 style="margin:8px 0 0; font-size:22px; line-height:1.15; color:#ffffff;">{$title}</h2>
-                    <p style="margin:8px 0 0; font-size:11px; color:#e7efe8;">{$subtitle}</p>
-                </td>
-                <td style="width:34%; vertical-align:top; text-align:right; font-size:9px; color:#dbe8df;">
-                    <div style="font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#d9b05f;">Documento controlado</div>
-                    <div style="margin-top:6px;">{$labSlogan}</div>
-                </td>
-            </tr>
-        </table>
-    </div>
-    <div style="padding:10px 22px; font-size:10px; color:#475a53; background:#f7f1e7; border-radius:0 0 17px 17px;">{$controlNote}</div>
-</div>
-HTML;
-    }
-
-    private function defaultCertificateFirstPageHeader(
-        GeneralSettings $settings,
-        string $title,
-        string $subtitle,
-        string $controlNote
-    ): string {
-        $labName = e($settings->app_client_lab_name ?: $settings->app_client_name ?: $settings->app_name ?: 'Laboratório');
-        $labSlogan = e($settings->app_client_lab_slogan ?: 'Certificação, rastreabilidade e validação técnica.');
-
-        return <<<HTML
-<div style="border:1px solid #d8cbb8; border-radius:18px; background:#fffdf7;">
-    <div style="background:#143d37; color:#fffdf7; padding:18px 22px; border-radius:17px 17px 0 0;">
-        <table style="width:100%; border-collapse:collapse;">
-            <tr>
-                <td style="vertical-align:top;">
-                    <div style="font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:#d9b05f; font-weight:800;">{$labName}</div>
-                    <h2 style="margin:8px 0 0; font-size:21px; line-height:1.15; color:#ffffff;">{$title}</h2>
-                    <p style="margin:8px 0 0; font-size:11px; color:#e7efe8;">{$subtitle}</p>
-                </td>
-                <td style="width:32%; vertical-align:top; text-align:right; font-size:9px; color:#dbe8df;">
-                    <div style="font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#d9b05f;">Certificado controlado</div>
-                    <div style="margin-top:6px;">{$labSlogan}</div>
-                </td>
-            </tr>
-        </table>
-    </div>
-    <div style="padding:10px 22px; font-size:10px; color:#475a53; background:#f7f1e7; border-radius:0 0 17px 17px;">{$controlNote}</div>
-</div>
-HTML;
     }
 
     private function labDetailsHtml(GeneralSettings $settings): string
@@ -1963,8 +1849,8 @@ HTML;
             : '<span>Assinatura completa pendente.</span>';
 
         return <<<HTML
-<section class="commercial-record-evidence studio-avoid-break" style="margin-top:6px; border-top:1px solid #ded3bf; padding-top:4px; font-size:8px; color:#475a53; line-height:1.35;">
-    <strong style="color:#143d37;">Evidência do registo:</strong> {$statusHtml} · Extracto {$hashExcerptHtml}{$validationHtml}<br>
+<section class="commercial-record-evidence doc-notes studio-avoid-break" style="margin-top:4mm; border-top:0.15mm solid #d1d5db; padding-top:1.2mm;">
+    <strong>Evidência do registo:</strong> {$statusHtml} · Extracto {$hashExcerptHtml}{$validationHtml}<br>
     {$signatureHtml}
 </section>
 HTML;
@@ -2012,28 +1898,10 @@ HTML;
         ?string $paidDate = null,
         ?string $paymentMethod = null
     ): string {
-        $presentation = match ($paymentStatus) {
-            'paid' => [
-                'label' => 'PAGA',
-                'eyebrow' => 'Pagamento confirmado',
-                'background' => '#ecfdf5',
-                'border' => '#86efac',
-                'text' => '#166534',
-            ],
-            'canceled' => [
-                'label' => 'ANULADA',
-                'eyebrow' => 'Documento anulado',
-                'background' => '#f8fafc',
-                'border' => '#cbd5e1',
-                'text' => '#475569',
-            ],
-            default => [
-                'label' => 'POR PAGAR',
-                'eyebrow' => 'Pagamento pendente',
-                'background' => '#fff7ed',
-                'border' => '#fdba74',
-                'text' => '#9a3412',
-            ],
+        [$label, $eyebrow] = match ($paymentStatus) {
+            'paid' => ['PAGA', 'Pagamento confirmado'],
+            'canceled' => ['ANULADA', 'Documento anulado'],
+            default => ['POR PAGAR', 'Pagamento pendente'],
         };
 
         $paidDetails = array_filter([
@@ -2049,24 +1917,16 @@ HTML;
             default => 'Valor pendente: AOA '.number_format(max(0, $amountDue), 2, ',', '.'),
         };
 
-        $label = e($presentation['label']);
-        $eyebrow = e($presentation['eyebrow']);
+        $label = e($label);
+        $eyebrow = e($eyebrow);
         $detail = e($detail);
-        $background = e($presentation['background']);
-        $border = e($presentation['border']);
-        $text = e($presentation['text']);
 
         return <<<HTML
-<section class="invoice-payment-status studio-avoid-break" style="margin-bottom:16px; border:1px solid {$border}; background:{$background}; padding:12px 14px; color:{$text};">
-    <table style="width:100%; border-collapse:collapse;">
+<section class="invoice-payment-status studio-avoid-break doc-notice">
+    <table class="doc-plain" style="width:100%; border-collapse:collapse;">
         <tr>
-            <td style="vertical-align:middle;">
-                <div style="font-size:8px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase;">{$eyebrow}</div>
-                <div style="margin-top:4px; font-size:10px; color:{$text};">{$detail}</div>
-            </td>
-            <td style="vertical-align:middle; text-align:right;">
-                <span style="display:inline-block; border:1px solid {$border}; background:#ffffff; padding:6px 10px; font-size:12px; font-weight:900; letter-spacing:0.08em; color:{$text};">{$label}</span>
-            </td>
+            <td style="border:0; padding:0; vertical-align:middle;"><span class="doc-notice-title">{$eyebrow}.</span> {$detail}</td>
+            <td style="border:0; padding:0; vertical-align:middle; text-align:right; font-weight:bold; letter-spacing:0.06em;">{$label}</td>
         </tr>
     </table>
 </section>
@@ -2148,13 +2008,11 @@ HTML;
     {
         $bodyHtml = collect($rows)
             ->map(function (array $row): string {
-                $isEmphasis = (bool) ($row['emphasis'] ?? false);
-                $labelStyle = $isEmphasis ? 'font-weight:800; color:#143d37;' : '';
-                $valueStyle = $isEmphasis ? 'font-weight:800; color:#143d37;' : 'font-weight:700;';
+                $class = ($row['emphasis'] ?? false) ? ' class="doc-totals-grand"' : '';
 
-                return '<tr>'
-                    .'<td style="'.$labelStyle.'">'.e((string) $row['label']).'</td>'
-                    .'<td style="text-align:right; '.$valueStyle.'">'.e((string) $row['value']).'</td>'
+                return '<tr'.$class.'>'
+                    .'<td>'.e((string) $row['label']).'</td>'
+                    .'<td style="text-align:right;">'.e((string) $row['value']).'</td>'
                     .'</tr>';
             })
             ->implode('');
@@ -2164,7 +2022,7 @@ HTML;
         }
 
         return <<<HTML
-<table class="report-table document-financial-summary studio-avoid-break" style="width:100%; border-collapse:collapse;">
+<table class="doc-totals doc-plain document-financial-summary studio-avoid-break">
     <tbody>
         {$bodyHtml}
     </tbody>
@@ -2182,275 +2040,6 @@ HTML;
         return in_array($alignment, ['left', 'center', 'right'], true) ? $alignment : 'left';
     }
 
-    private function defaultExportCertificateFirstPageHeader(GeneralSettings $settings): string
-    {
-        return $this->defaultCertificateFirstPageHeader(
-            $settings,
-            'Certificado de Exportação {{document_code}}',
-            '{{exporter_name}} · {{origin_country}} → {{destination_country}} · {{issue_date}}',
-            'Documento controlado para rastreabilidade logística e validação técnica de exportação.'
-        );
-    }
-
-    private function defaultExportCertificateFooter(): string
-    {
-        return '<table style="width:100%; border-top:1px solid #ded3bf; padding-top:6px; font-size:9px; color:#475a53;"><tr><td>Documento controlado de exportação</td><td style="text-align:right;">Página {PAGENO}/{nbpg}</td></tr></table>';
-    }
-
-    private function defaultExportCertificateBodyHtml(): string
-    {
-        return <<<'HTML'
-<section style="margin-bottom:18px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Exportador</span>
-                <span class="value">{exporter_name}</span>
-                <div class="muted" style="margin-top:6px;">{customer_details}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Laboratório</span>
-                <div class="muted" style="margin-top:6px;">{lab_details}</div>
-            </td>
-        </tr>
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Origem</span>
-                <span class="value">{origin_city}, {origin_country}</span>
-                <div class="muted" style="margin-top:6px;">Expedidor: {exporter_name}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Destino</span>
-                <span class="value">{destination_city}, {destination_country}</span>
-                <div class="muted" style="margin-top:6px;">Transporte: {transport_type}</div>
-            </td>
-        </tr>
-    </table>
-</section>
-<section style="margin:20px 0;">{products_table}</section>
-<section class="studio-avoid-break" style="margin-top:18px; border-left:4px solid #143d37; background:#fffdf7; padding:14px 16px; border-radius:14px;">
-    <strong>Pessoal autorizado:</strong> {authorized_personnel}<br>
-    <strong>Expedição:</strong> {expedition_location} · {expedition_date}
-</section>
-<section style="margin-top:20px;">{remarks}</section>
-<section style="margin-top:18px;">{document_keywords}</section>
-<section style="margin-top:24px;">{signature_block}</section>
-HTML;
-    }
-
-    private function defaultImportCertificateFirstPageHeader(GeneralSettings $settings): string
-    {
-        return $this->defaultCertificateFirstPageHeader(
-            $settings,
-            'Certificado de Importação {{document_code}}',
-            '{{importer_name}} · {{exporter_name}} → {{destination_country}} · {{issue_date}}',
-            'Documento controlado para rastreabilidade logística, lotes e validação técnica de importação.'
-        );
-    }
-
-    private function defaultImportCertificateFooter(): string
-    {
-        return '<table style="width:100%; border-top:1px solid #ded3bf; padding-top:6px; font-size:9px; color:#475a53;"><tr><td>Documento controlado de importação</td><td style="text-align:right;">Página {PAGENO}/{nbpg}</td></tr></table>';
-    }
-
-    private function defaultImportCertificateBodyHtml(): string
-    {
-        return <<<'HTML'
-<section style="margin-bottom:18px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Importador</span>
-                <span class="value">{importer_name}</span>
-                <div class="muted" style="margin-top:6px;">{customer_details}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Laboratório</span>
-                <div class="muted" style="margin-top:6px;">{lab_details}</div>
-            </td>
-        </tr>
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Importação</span>
-                <span class="value">{destination_country}</span>
-                <div class="muted" style="margin-top:6px;">Exportador: {exporter_name}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Logística</span>
-                <span class="value">{transport_type}</span>
-                <div class="muted" style="margin-top:6px;">Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}</div>
-            </td>
-        </tr>
-    </table>
-</section>
-<section style="margin:20px 0;">{items_table}</section>
-<section class="studio-avoid-break" style="margin-top:18px; border-left:4px solid #143d37; background:#fffdf7; padding:14px 16px; border-radius:14px;">
-    <strong>Pessoal autorizado:</strong> {authorized_personnel}<br>
-    <strong>Emissão:</strong> {issue_date}
-</section>
-<section style="margin-top:20px;">{remarks}</section>
-<section style="margin-top:18px;">{document_keywords}</section>
-<section style="margin-top:24px;">{signature_block}</section>
-HTML;
-    }
-
-    private function defaultQuoteFirstPageHeader(GeneralSettings $settings): string
-    {
-        return $this->defaultCommercialFirstPageHeader(
-            $settings,
-            'Factura Proforma {{document_code}}',
-            '{{customer_name}} · Emitida em {{issue_date}} · Válida até {{expiry_date}}',
-            'Documento comercial controlado para aprovação de âmbito, condições e valores.'
-        );
-    }
-
-    private function defaultQuoteFooter(): string
-    {
-        return '<table style="width:100%; border-top:1px solid #ded3bf; padding-top:6px; font-size:9px; color:#475a53;"><tr><td>Documento comercial controlado</td><td style="text-align:right;">Página {PAGENO}/{nbpg}</td></tr></table>';
-    }
-
-    private function defaultQuoteBodyHtml(): string
-    {
-        return <<<'HTML'
-<section style="margin-bottom:18px;">
-    <div class="document-hero studio-avoid-break" style="padding:22px 24px;">
-        <div class="document-kicker">Proposta comercial</div>
-        <h1 style="margin:8px 0 8px;">Proforma {quote_number}</h1>
-        <p class="studio-lead">Preparada para <strong>{customer_name}</strong>, com âmbito, condições e valores sujeitos à aceitação formal do cliente.</p>
-    </div>
-</section>
-
-<section style="margin-bottom:18px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Cliente</span>
-                <span class="value">{customer_name}</span>
-                <div class="muted" style="margin-top:6px;">{customer_details}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Laboratório</span>
-                <div class="muted" style="margin-top:6px;">{lab_details}</div>
-            </td>
-        </tr>
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Condições</span>
-                <div class="muted" style="margin-top:6px;">Emissão: {issue_date}<br>Validade: {expiry_date}<br>Local: {service_location}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Pagamento</span>
-                <div class="muted" style="margin-top:6px;">{banking_details}</div>
-            </td>
-        </tr>
-    </table>
-</section>
-<section style="margin:20px 0;">{items_table}</section>
-<section style="margin-top:20px; page-break-inside:avoid;">{summary_table}</section>
-<section class="document-callout studio-avoid-break" style="margin-top:20px;">{observations}</section>
-<section style="margin-top:18px;">{document_keywords}</section>
-<section style="margin-top:24px;">{signature_block}</section>
-HTML;
-    }
-
-    private function defaultInvoiceFirstPageHeader(GeneralSettings $settings): string
-    {
-        return $this->defaultCommercialFirstPageHeader(
-            $settings,
-            'Factura {{document_code}}',
-            '{{customer_name}} · Emitida em {{issue_date}} · Vencimento {{due_date}}',
-            'Documento fiscal controlado com dados comerciais, fiscais e bancários.'
-        );
-    }
-
-    private function defaultInvoiceFooter(): string
-    {
-        return '<table style="width:100%; border-top:1px solid #ded3bf; padding-top:6px; font-size:9px; color:#475a53;"><tr><td>Documento fiscal controlado</td><td style="text-align:right;">Página {PAGENO}/{nbpg}</td></tr></table>';
-    }
-
-    private function defaultInvoiceBodyHtml(): string
-    {
-        return '{payment_status_badge}'."\n".$this->defaultCommercialDocumentBodyHtml();
-    }
-
-    private function defaultReceiptFirstPageHeader(GeneralSettings $settings): string
-    {
-        return $this->defaultCommercialFirstPageHeader(
-            $settings,
-            'Recibo {{document_code}}',
-            '{{customer_name}} · Recebido em {{issue_date}}',
-            'Comprovativo de pagamento com rastreabilidade financeira.'
-        );
-    }
-
-    private function defaultReceiptFooter(): string
-    {
-        return '<table style="width:100%; border-top:1px solid #ded3bf; padding-top:6px; font-size:9px; color:#475a53;"><tr><td>Comprovativo de pagamento</td><td style="text-align:right;">Página {PAGENO}/{nbpg}</td></tr></table>';
-    }
-
-    private function defaultReceiptBodyHtml(): string
-    {
-        return $this->defaultCommercialDocumentBodyHtml('Recepção', 'Data: {issue_date}<br>Forma de pagamento: {payment_type}<br>Local: {service_location}');
-    }
-
-    private function defaultCreditNoteFirstPageHeader(GeneralSettings $settings): string
-    {
-        return $this->defaultCommercialFirstPageHeader(
-            $settings,
-            'Nota de Crédito {{document_code}}',
-            '{{customer_name}} · Emitida em {{issue_date}}',
-            'Documento de rectificação financeira com motivo e impacto rastreáveis.'
-        );
-    }
-
-    private function defaultCreditNoteFooter(): string
-    {
-        return '<table style="width:100%; border-top:1px solid #ded3bf; padding-top:6px; font-size:9px; color:#475a53;"><tr><td>Documento de rectificação</td><td style="text-align:right;">Página {PAGENO}/{nbpg}</td></tr></table>';
-    }
-
-    private function defaultCreditNoteBodyHtml(): string
-    {
-        return $this->defaultCommercialDocumentBodyHtml('Motivo', '{reason_label}<br>Data: {issue_date}<br>Local: {service_location}');
-    }
-
-    private function defaultCommercialDocumentBodyHtml(
-        string $termsTitle = 'Condições',
-        string $termsBody = 'Emissão: {issue_date}<br>Vencimento: {due_date}<br>Local: {service_location}'
-    ): string {
-        return <<<HTML
-<section style="margin-bottom:18px;">
-    <table class="document-summary-table studio-avoid-break">
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Cliente</span>
-                <span class="value">{customer_name}</span>
-                <div class="muted" style="margin-top:6px;">{customer_details}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Laboratório</span>
-                <div class="muted" style="margin-top:6px;">{lab_details}</div>
-            </td>
-        </tr>
-        <tr>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">{$termsTitle}</span>
-                <div class="muted" style="margin-top:6px;">{$termsBody}</div>
-            </td>
-            <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Pagamento</span>
-                <div class="muted" style="margin-top:6px;">{banking_details}</div>
-            </td>
-        </tr>
-    </table>
-</section>
-<section style="margin:20px 0;">{items_table}</section>
-<section style="margin-top:20px; page-break-inside:avoid;">{summary_table}</section>
-<section class="document-callout studio-avoid-break" style="margin-top:20px;">{observations}</section>
-<section style="margin-top:18px;">{document_keywords}</section>
-<section style="margin-top:24px;">{signature_block}</section>
-HTML;
-    }
-
     private function exportCertificatePlaceholderValues(ExportCertificate $certificate, GeneralSettings $settings): array
     {
         $productsTable = $this->reportTableHtml(
@@ -2460,7 +2049,7 @@ HTML;
             ],
             collect($certificate->items ?? [])
                 ->map(fn ($item): array => [
-                    $item->product?->name ?: 'Produto',
+                    $item->product?->name ?: ControlledDocument::NOT_RECORDED,
                     (string) $item->qty,
                 ])
                 ->values()
@@ -2470,20 +2059,20 @@ HTML;
 
         return [
             '{certificate_number}' => $certificate->cert_no,
-            '{exporter_name}' => $certificate->exporter?->name ?: 'Exportador',
-            '{origin_country}' => $certificate->country_origin?->name ?: 'País de origem',
-            '{destination_country}' => $certificate->country_destination?->name ?: 'País de destino',
-            '{origin_city}' => $certificate->origin_city ?: 'Cidade de origem',
-            '{destination_city}' => $certificate->destination_city ?: 'Cidade de destino',
-            '{transport_type}' => $certificate->trans_type?->name ?: 'Transporte',
-            '{authorized_personnel}' => $certificate->authorized_personnel ?: 'Pessoal autorizado',
+            '{exporter_name}' => $certificate->exporter?->name ?: ControlledDocument::NOT_RECORDED,
+            '{origin_country}' => $certificate->country_origin?->name ?: ControlledDocument::NOT_RECORDED,
+            '{destination_country}' => $certificate->country_destination?->name ?: ControlledDocument::NOT_RECORDED,
+            '{origin_city}' => $certificate->origin_city ?: ControlledDocument::NOT_RECORDED,
+            '{destination_city}' => $certificate->destination_city ?: ControlledDocument::NOT_RECORDED,
+            '{transport_type}' => $certificate->trans_type?->name ?: ControlledDocument::NOT_RECORDED,
+            '{authorized_personnel}' => $certificate->authorized_personnel ?: ControlledDocument::NOT_RECORDED,
             '{expedition_date}' => optional($certificate->expedition_date ?: $certificate->date)->format('d/m/Y') ?: now()->format('d/m/Y'),
-            '{expedition_location}' => $certificate->expedition_location ?: 'Local de expedição',
+            '{expedition_location}' => $certificate->expedition_location ?: ControlledDocument::NOT_RECORDED,
             '{products_table}' => $productsTable,
-            '{remarks}' => $certificate->obs ?: 'Sem observações adicionais.',
+            '{remarks}' => $certificate->obs ?: '',
             '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>'.e($certificate->authorized_personnel ?: 'Direcção Técnica').'</strong><br />Validação do certificado de exportação</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
-            '{customer_details}' => $this->customerDetailsHtml($certificate->exporter, $certificate->exporter?->name ?: 'Exportador'),
+            '{customer_details}' => $this->customerDetailsHtml($certificate->exporter, $certificate->exporter?->name ?: ControlledDocument::NOT_RECORDED),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'certificado, exportação, rastreabilidade, controlo documental'),
         ];
     }
@@ -2499,10 +2088,10 @@ HTML;
             ],
             collect($certificate->items ?? [])
                 ->map(fn ($item): array => [
-                    $item->product?->description ?: $item->product?->name ?: 'Produto',
-                    $item->lot ?: '—',
-                    $item->validity ?: '—',
-                    (string) ($item->qty ?: '—'),
+                    $item->product?->description ?: $item->product?->name ?: ControlledDocument::NOT_RECORDED,
+                    $item->lot ?: ControlledDocument::NOT_RECORDED,
+                    $item->validity ?: ControlledDocument::NOT_RECORDED,
+                    (string) ($item->qty ?: ControlledDocument::NOT_RECORDED),
                 ])
                 ->values()
                 ->all(),
@@ -2511,19 +2100,19 @@ HTML;
 
         return [
             '{certificate_number}' => $certificate->cert_no,
-            '{importer_name}' => $certificate->importer?->name ?: 'Importador',
-            '{exporter_name}' => $certificate->exporter?->name ?: 'Exportador',
-            '{destination_country}' => $certificate->destination_country?->name ?: 'Destino',
-            '{port_entry}' => $certificate->port_entry ?: '—',
-            '{port_exit}' => $certificate->port_exit ?: '—',
-            '{transport_type}' => $certificate->trans?->description ?: $certificate->trans?->name ?: 'Transporte',
-            '{authorized_personnel}' => $certificate->authorized_personnel ?: 'Pessoal autorizado',
+            '{importer_name}' => $certificate->importer?->name ?: ControlledDocument::NOT_RECORDED,
+            '{exporter_name}' => $certificate->exporter?->name ?: ControlledDocument::NOT_RECORDED,
+            '{destination_country}' => $certificate->destination_country?->name ?: ControlledDocument::NOT_RECORDED,
+            '{port_entry}' => $certificate->port_entry ?: ControlledDocument::NOT_RECORDED,
+            '{port_exit}' => $certificate->port_exit ?: ControlledDocument::NOT_RECORDED,
+            '{transport_type}' => $certificate->trans?->description ?: $certificate->trans?->name ?: ControlledDocument::NOT_RECORDED,
+            '{authorized_personnel}' => $certificate->authorized_personnel ?: ControlledDocument::NOT_RECORDED,
             '{issue_date}' => optional($certificate->date ?: $certificate->created_at)->format('d/m/Y') ?: now()->format('d/m/Y'),
             '{items_table}' => $itemsTable,
-            '{remarks}' => $certificate->obs ?: 'Sem observações adicionais.',
+            '{remarks}' => $certificate->obs ?: '',
             '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>'.e($certificate->authorized_personnel ?: 'Direcção Técnica').'</strong><br />Validação do certificado de importação</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
-            '{customer_details}' => $this->customerDetailsHtml($certificate->importer, $certificate->importer?->name ?: 'Importador'),
+            '{customer_details}' => $this->customerDetailsHtml($certificate->importer, $certificate->importer?->name ?: ControlledDocument::NOT_RECORDED),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'certificado, importação, rastreabilidade, controlo documental'),
         ];
     }
@@ -2556,16 +2145,16 @@ HTML;
         return [
             '{quote_number}' => $quote->quote_no,
             '{document_number}' => $quote->quote_no,
-            '{customer_name}' => $quote->customer?->name ?: 'Cliente',
-            '{service_location}' => $quote->warehouse?->name ?: 'Local do serviço',
+            '{customer_name}' => $quote->customer?->name ?: ControlledDocument::NOT_RECORDED,
+            '{service_location}' => $quote->warehouse?->name ?: ControlledDocument::NOT_RECORDED,
             '{issue_date}' => optional($quote->date ?: $quote->created_at)->format('d/m/Y') ?: now()->format('d/m/Y'),
             '{expiry_date}' => optional($quote->due_date)->format('d/m/Y') ?: now()->addDays(15)->format('d/m/Y'),
             '{items_table}' => $itemsTable,
             '{summary_table}' => $summaryTable,
-            '{observations}' => $quote->obs ?: 'Proforma preparada com base no âmbito e nas condições comerciais acordadas.',
+            '{observations}' => $quote->obs ?: '',
             '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>'.e($quote->user?->name ?: 'Direcção Comercial').'</strong><br />Validação e emissão da proforma</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
-            '{customer_details}' => $this->customerDetailsHtml($quote->customer, $quote->customer?->name ?: 'Cliente'),
+            '{customer_details}' => $this->customerDetailsHtml($quote->customer, $quote->customer?->name ?: ControlledDocument::NOT_RECORDED),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
             ...$this->recordVerificationPlaceholderValues((string) $quote->quote_no, $quote->unique_hash, $settings),
             ...$this->bankPlaceholderValues($settings),
@@ -2598,8 +2187,8 @@ HTML;
 
         return [
             '{document_number}' => $invoice->inv_no,
-            '{customer_name}' => $invoice->customer?->name ?: 'Cliente',
-            '{service_location}' => $invoice->warehouse?->name ?: 'Local do serviço',
+            '{customer_name}' => $invoice->customer?->name ?: ControlledDocument::NOT_RECORDED,
+            '{service_location}' => $invoice->warehouse?->name ?: ControlledDocument::NOT_RECORDED,
             '{issue_date}' => optional($invoice->date ?: $invoice->created_at)->format('d/m/Y') ?: now()->format('d/m/Y'),
             '{due_date}' => optional($invoice->due_date)->format('d/m/Y') ?: now()->addDays(30)->format('d/m/Y'),
             '{payment_status}' => match ($paymentStatus) {
@@ -2613,8 +2202,8 @@ HTML;
                 $paidDate,
                 $invoice->payment_method
             ),
-            '{paid_date}' => $paidDate ?: '—',
-            '{payment_method}' => $invoice->payment_method ?: '—',
+            '{paid_date}' => $paidDate ?: ControlledDocument::NOT_RECORDED,
+            '{payment_method}' => $invoice->payment_method ?: ControlledDocument::NOT_RECORDED,
             '{amount_due}' => number_format($amountDue, 2, ',', '.'),
             '{is_paid}' => $paymentStatus === 'paid',
             '{is_unpaid}' => $paymentStatus === 'unpaid',
@@ -2624,10 +2213,10 @@ HTML;
                 ['label' => 'IVA', 'value' => number_format((float) ($invoice->tax ?? 0), 2, ',', '.')],
                 ['label' => 'Total', 'value' => number_format((float) ($invoice->total ?? 0), 2, ',', '.'), 'emphasis' => true],
             ]),
-            '{observations}' => $invoice->obs ?: 'Factura emitida com base no documento comercial aprovado e no âmbito executado.',
+            '{observations}' => $invoice->obs ?: '',
             '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>'.e($invoice->user?->name ?: 'Direcção Financeira').'</strong><br />Emissão da factura</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
-            '{customer_details}' => $this->customerDetailsHtml($invoice->customer, $invoice->customer?->name ?: 'Cliente'),
+            '{customer_details}' => $this->customerDetailsHtml($invoice->customer, $invoice->customer?->name ?: ControlledDocument::NOT_RECORDED),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
             ...$this->recordVerificationPlaceholderValues((string) $invoice->inv_no, $invoice->unique_hash, $settings),
             ...$this->bankPlaceholderValues($settings),
@@ -2644,7 +2233,7 @@ HTML;
             ],
             collect($receipt->items ?? [])
                 ->map(fn ($item): array => [
-                    $item->invoice?->inv_no ?: 'Factura',
+                    $item->invoice?->inv_no ?: ControlledDocument::NOT_RECORDED,
                     number_format((float) ($item->paid_amount ?? 0), 2, ',', '.'),
                 ])
                 ->values()
@@ -2656,18 +2245,18 @@ HTML;
 
         return [
             '{document_number}' => $receipt->rec_no,
-            '{customer_name}' => $receipt->customer?->name ?: 'Cliente',
-            '{service_location}' => $receipt->warehouse?->name ?: 'Local',
+            '{customer_name}' => $receipt->customer?->name ?: ControlledDocument::NOT_RECORDED,
+            '{service_location}' => $receipt->warehouse?->name ?: ControlledDocument::NOT_RECORDED,
             '{issue_date}' => optional($receipt->date ?: $receipt->created_at)->format('d/m/Y') ?: now()->format('d/m/Y'),
-            '{payment_type}' => $receipt->type?->description ?: $receipt->type?->name ?: 'Forma de pagamento',
+            '{payment_type}' => $receipt->type?->description ?: $receipt->type?->name ?: ControlledDocument::NOT_RECORDED,
             '{items_table}' => $itemsTable,
             '{summary_table}' => $this->financialSummaryTableHtml([
                 ['label' => 'Total recebido', 'value' => number_format((float) $totalPaid, 2, ',', '.'), 'emphasis' => true],
             ]),
-            '{observations}' => $receipt->obs ?: 'Recibo emitido como comprovativo da liquidação financeira.',
+            '{observations}' => $receipt->obs ?: '',
             '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>'.e($receipt->user?->name ?: 'Tesouraria').'</strong><br />Confirmação da liquidação</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
-            '{customer_details}' => $this->customerDetailsHtml($receipt->customer, $receipt->customer?->name ?: 'Cliente'),
+            '{customer_details}' => $this->customerDetailsHtml($receipt->customer, $receipt->customer?->name ?: ControlledDocument::NOT_RECORDED),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
             ...$this->recordVerificationPlaceholderValues((string) $receipt->rec_no, $receipt->unique_hash, $settings),
             ...$this->bankPlaceholderValues($settings),
@@ -2694,18 +2283,18 @@ HTML;
 
         return [
             '{document_number}' => $creditNote->note_no,
-            '{customer_name}' => $creditNote->customer?->name ?: 'Cliente',
-            '{service_location}' => $creditNote->warehouse?->name ?: 'Local',
+            '{customer_name}' => $creditNote->customer?->name ?: ControlledDocument::NOT_RECORDED,
+            '{service_location}' => $creditNote->warehouse?->name ?: ControlledDocument::NOT_RECORDED,
             '{issue_date}' => optional($creditNote->date ?: $creditNote->created_at)->format('d/m/Y') ?: now()->format('d/m/Y'),
             '{reason_label}' => $creditNote->reason === CreditNote::REASON_CANCELATION ? 'Cancelamento' : 'Rectificação',
             '{items_table}' => $itemsTable,
             '{summary_table}' => $this->financialSummaryTableHtml([
                 ['label' => 'Total da nota', 'value' => number_format((float) ($creditNote->total ?? 0), 2, ',', '.'), 'emphasis' => true],
             ]),
-            '{observations}' => $creditNote->obs ?: 'Nota de crédito emitida para rectificação financeira/documental.',
+            '{observations}' => $creditNote->obs ?: '',
             '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>'.e($creditNote->user?->name ?: 'Direcção Financeira').'</strong><br />Emissão da nota de crédito</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
-            '{customer_details}' => $this->customerDetailsHtml($creditNote->customer, $creditNote->customer?->name ?: 'Cliente'),
+            '{customer_details}' => $this->customerDetailsHtml($creditNote->customer, $creditNote->customer?->name ?: ControlledDocument::NOT_RECORDED),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
             ...$this->recordVerificationPlaceholderValues((string) $creditNote->note_no, $creditNote->unique_hash, $settings),
             ...$this->bankPlaceholderValues($settings),
@@ -2717,12 +2306,9 @@ HTML;
         ReportStudioTemplate $studio,
         GeneralSettings $settings,
         string $documentTitle,
-        string $defaultFirstPageHeader,
-        string $defaultFooter,
-        string $defaultBodyHtml,
         array $placeholders
     ): array {
-        $layout = $studio->layout_schema ?? [];
+        $layout = $this->layoutWithDefaults($studio);
         $export = $studio->export_settings ?? [];
         $documentNumber = (string) ($placeholders['{document_number}'] ?? 'DOC-2026-001');
         $placeholders = array_merge(
@@ -2742,7 +2328,7 @@ HTML;
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholders, $settings);
 
         $bodyHtml = $this->renderTemplateHtml(
-            data_get($layout, 'body_html') ?: $defaultBodyHtml,
+            data_get($layout, 'body_html'),
             $placeholders
         );
 
@@ -2751,19 +2337,19 @@ HTML;
             'data' => [
                 'documentTitle' => $studio->name ?: $documentTitle,
                 'firstPageHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'first_page_header_html') ?: $defaultFirstPageHeader,
+                    data_get($layout, 'first_page_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{customer_name}}</div>',
+                    data_get($layout, 'default_header_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $defaultFooter,
+                    data_get($layout, 'footer_html'),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
                     $surfaceContext
@@ -2818,11 +2404,9 @@ HTML;
         $sampleDetails = $this->analysisSampleDetailsHtml($certificate);
         $collectionDetails = $this->analysisCollectionDetailsHtml($certificate);
         $analyticalScope = $this->analysisScopeDetailsHtml($certificate);
-        $resultsTable = $this->analysisResultsTableHtml($certificate, $resultId);
         $analysisChart = $this->analysisResultChartData($certificate, $resultId);
 
         return [
-            '{report_title}' => 'Relatório Analítico',
             '{certificate_code}' => (string) $certificate->code,
             '{document_code}' => (string) $certificate->code,
             '{customer_name}' => $customerName,
@@ -2845,19 +2429,16 @@ HTML;
             '{sample_details}' => $sampleDetails,
             '{collection_details}' => $collectionDetails,
             '{analytical_scope}' => $analyticalScope,
-            '{results_table}' => $resultsTable,
             '{analysis_chart_title}' => $analysisChart['title'],
             '{analysis_chart_labels}' => implode(', ', $analysisChart['labels']),
             '{analysis_chart_values}' => implode(', ', $analysisChart['values']),
             '{analysis_chart_caption}' => $analysisChart['caption'],
             '{analysis_chart_card}' => $this->analysisChartCardHtml($analysisChart),
-            '{uncertainty_statement}' => 'As incertezas de medição aplicáveis são apresentadas de acordo com o método validado e a política do laboratório.',
-            '{decision_rule}' => 'A decisão declarada segue a regra de decisão configurada para o ensaio e o âmbito aplicável.',
-            '{conclusion}' => 'Conclusão emitida com base no âmbito analítico validado e na rastreabilidade documental do processo.',
             '{signature_block}' => '<div style="margin-top:24px; border-top:1px solid #0f172a; padding-top:10px; font-size:11px;">'.e($validation).'</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($certificate->customer, $customerName),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'ISO 17025, relatório analítico, rastreabilidade, incerteza de medição'),
+            ...app(TestReportContent::class)->forCertificate($certificate, $settings),
         ];
     }
 
@@ -2897,25 +2478,9 @@ HTML;
             ['Regra de decisão', 'Decision rule', 'Aplicar critério definido no método validado e no plano de controlo interno.'],
             ['Observações', 'Observações', 'Pré-visualização técnica para validar estrutura, campos e paginação do modelo.'],
         ], 'Âmbito analítico');
-        $resultsTable = $this->reportTableHtml(
-            [
-                ['label' => 'Parâmetro', 'translation' => 'Parameter'],
-                ['label' => 'Método', 'translation' => 'Method'],
-                ['label' => 'Resultado', 'translation' => 'Result'],
-                ['label' => 'Unidade', 'translation' => 'Unit'],
-                ['label' => 'Incerteza', 'translation' => 'Uncertainty'],
-                ['label' => 'Estado', 'translation' => 'Status'],
-            ],
-            [
-                ['Humidade', 'ISO 712', '13,2', '%', '±0,4', 'Aprovado'],
-                ['Cinzas', 'ISO 2171', '0,62', '%', '±0,03', 'Verificado'],
-                ['Salmonella spp.', 'ISO 6579-1', 'Ausente', '25 g', 'Qualitativo', 'Aprovado'],
-            ]
-        );
         $analysisChart = $this->analysisPreviewChartData();
 
         return [
-            '{report_title}' => 'Relatório Analítico',
             '{certificate_code}' => 'BA-2026-001',
             '{document_code}' => 'BA-2026-001',
             '{customer_name}' => 'Cliente laboratorial de referência',
@@ -2938,19 +2503,16 @@ HTML;
             '{sample_details}' => $sampleDetails,
             '{collection_details}' => $collectionDetails,
             '{analytical_scope}' => $analyticalScope,
-            '{results_table}' => $resultsTable,
             '{analysis_chart_title}' => $analysisChart['title'],
             '{analysis_chart_labels}' => implode(', ', $analysisChart['labels']),
             '{analysis_chart_values}' => implode(', ', $analysisChart['values']),
             '{analysis_chart_caption}' => $analysisChart['caption'],
             '{analysis_chart_card}' => $this->analysisChartCardHtml($analysisChart),
-            '{uncertainty_statement}' => 'As incertezas de medição apresentadas são estimativas de pré-visualização para validar o modelo. Na emissão real, o valor vem do método, cálculo ou fonte de incerteza configurada.',
-            '{decision_rule}' => 'A decisão de conformidade segue a regra definida no método validado e no contrato/proposta aprovada.',
-            '{conclusion}' => 'Pré-visualização controlada para confirmar que amostra, cadeia de custódia, resultados, incerteza, decisão e assinatura permanecem legíveis no PDF final.',
             '{signature_block}' => '<div style="margin-top:24px; border-top:1px solid #0f172a; padding-top:10px; font-size:11px;"><strong>Direcção técnica</strong><br />Validação da pré-visualização do relatório</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente laboratorial de referência'),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'ISO 17025, relatório analítico, rastreabilidade, incerteza de medição'),
+            ...app(TestReportContent::class)->forPreview($settings),
         ];
     }
 
@@ -3096,75 +2658,6 @@ HTML;
         ], 'Âmbito analítico');
     }
 
-    private function analysisResultsTableHtml(QualityCertificate $certificate, mixed $resultId): string
-    {
-        $rows = collect($certificate->results ?? [])
-            ->sortBy(fn ($result) => $result->parameter?->name ?: $result->parameter_label ?: $result->id)
-            ->map(function ($result): array {
-                $parameter = $result->parameter_label ?: $result->parameter?->name ?: 'Parâmetro';
-                $method = $result->standard_label ?: $result->standard?->name ?: $result->protocol_label ?: $result->protocol?->name ?: 'Método registado';
-                $value = $this->formatAnalysisResultValue($result);
-                $unit = $result->unit_label ?: $result->unit?->name ?: '—';
-                $uncertainty = $result->uncertainty_value ?: data_get($result->calculation_metadata, 'uncertainty') ?: '—';
-                $status = $result->approved_date ? 'Aprovado' : ($result->verified_date ? 'Verificado' : ($result->inserted_date ? 'Inserido' : 'Pendente'));
-                $counterAnalysis = $result->requested_counter_analysis || $result->counter_analysis ? "\nContra-análise associada" : '';
-
-                return [
-                    $parameter,
-                    $method,
-                    (string) $value,
-                    (string) $unit,
-                    (string) $uncertainty,
-                    $status.$counterAnalysis,
-                ];
-            })
-            ->values()
-            ->all();
-
-        if ($rows === []) {
-            $rows = [[
-                'Resultado associado #'.(string) $resultId,
-                'Método registado',
-                'Conforme o método registado',
-                'N/D',
-                'Consultar método / cálculo',
-                'Pendente',
-            ]];
-        }
-
-        return $this->reportTableHtml(
-            [
-                ['label' => 'Parâmetro', 'translation' => 'Parameter'],
-                ['label' => 'Método', 'translation' => 'Method'],
-                ['label' => 'Resultado', 'translation' => 'Result'],
-                ['label' => 'Unidade', 'translation' => 'Unit'],
-                ['label' => 'Incerteza', 'translation' => 'Uncertainty'],
-                ['label' => 'Estado', 'translation' => 'Status'],
-            ],
-            $rows,
-            'Sem resultados registados.'
-        );
-    }
-
-    private function formatAnalysisResultValue(mixed $result): string
-    {
-        $value = $result->approved_value ?: $result->verified_value ?: $result->inserted_value;
-
-        if (blank($value)) {
-            return '—';
-        }
-
-        if (data_get($result->extra_data, 'display_format') !== 'scientific' || ! is_numeric((string) $value)) {
-            return (string) $value;
-        }
-
-        $decimalPlaces = (int) ($result->parameter?->decimal_places ?? $result->decimal_places ?? 2);
-        $precision = min(max($decimalPlaces, 0), 8);
-        [$mantissa, $exponent] = explode('E', sprintf('%.'.$precision.'E', (float) $value));
-
-        return $mantissa.' × 10^'.((int) $exponent);
-    }
-
     /**
      * @param  array<int, array{0:string, 1:string, 2:mixed}>  $rows
      */
@@ -3219,6 +2712,8 @@ HTML;
      */
     private function buildSurfaceHtml(string $baseHtml, array $canvasBlocks, string $surface, array $data): string
     {
+        $data = $this->withDocumentControl($data);
+
         if ($surface === 'content') {
             return $this->buildContentSurfaceHtml($baseHtml, $canvasBlocks, $data);
         }
@@ -4179,22 +3674,22 @@ CSS);
 /* studio-table-controls:start */
 .pdf-document table{width:100%;font-size:{$fontSize}px;}
 .pdf-document table:not(.document-summary-table){border-collapse:collapse;}
-.pdf-document table:not(.document-summary-table) th,
+.pdf-document table:not(.document-summary-table):not(.doc-plain) th,
 .pdf-document .data-table th,
 .pdf-document .worksheet-table th,
 .pdf-document .report-table th,
-.pdf-document .tg thead th{background:{$headerBackground} !important;color:{$headerTextColor} !important;border:1px solid {$borderColor} !important;padding:{$cellPadding}px !important;font-size:{$fontSize}px !important;letter-spacing:0.04em;text-transform:uppercase;}
-.pdf-document table:not(.document-summary-table) td,
+.pdf-document .tg thead th{background:{$headerBackground} !important;color:{$headerTextColor} !important;border:0 !important;border-bottom:1px solid {$headerTextColor} !important;padding:{$cellPadding}px !important;font-size:{$secondaryFontSize}px !important;font-weight:bold;}
+.pdf-document table:not(.document-summary-table):not(.doc-plain) td,
 .pdf-document .data-table td,
 .pdf-document .worksheet-table td,
 .pdf-document .report-table td,
-.pdf-document .tg td{border:1px solid {$borderColor} !important;padding:{$cellPadding}px !important;font-size:{$fontSize}px !important;vertical-align:top;}
-.pdf-document .document-summary-table{border-collapse:separate !important;border-spacing:0 8px !important;}
-.pdf-document .document-summary-table td{border:0 !important;padding:4px !important;}
-.pdf-document .document-summary-cell{background:{$summaryBackground} !important;border:1px solid {$borderColor} !important;border-radius:18px !important;padding:14px !important;vertical-align:top;}
-.pdf-document .document-summary-cell .label{display:block !important;color:{$summaryMutedColor} !important;font-size:9px;font-weight:800;letter-spacing:0.12em;line-height:1.25;text-transform:uppercase;}
-.pdf-document .document-summary-cell .value{display:block !important;color:{$summaryTextColor} !important;font-size:12px;font-weight:800;line-height:1.25;margin-top:4px;}
-.pdf-document .document-summary-cell .muted{display:block !important;color:{$summaryMutedColor} !important;font-size:10px;line-height:1.55;margin-top:6px;}
+.pdf-document .tg td{border:0 !important;border-bottom:1px solid {$borderColor} !important;padding:{$cellPadding}px !important;font-size:{$fontSize}px !important;vertical-align:top;}
+.pdf-document .document-summary-table{border-collapse:collapse !important;}
+.pdf-document .document-summary-table td{border:0 !important;padding:0 !important;}
+.pdf-document .document-summary-cell{background:{$summaryBackground} !important;border:1px solid {$borderColor} !important;padding:8px 10px !important;vertical-align:top;}
+.pdf-document .document-summary-cell .label{display:block !important;color:{$summaryMutedColor} !important;font-size:9px;font-weight:bold;letter-spacing:0.06em;line-height:1.25;text-transform:uppercase;}
+.pdf-document .document-summary-cell .value{display:block !important;color:{$summaryTextColor} !important;font-size:12px;font-weight:bold;line-height:1.25;margin-top:3px;}
+.pdf-document .document-summary-cell .muted{display:block !important;color:{$summaryMutedColor} !important;font-size:10px;line-height:1.45;margin-top:3px;}
 .pdf-document .document-financial-summary td{color:{$summaryTextColor};}
 .pdf-document .bilingual-label,
 .pdf-document .tg small{font-size:{$secondaryFontSize}px !important;}
@@ -4275,66 +3770,5 @@ CSS);
         $number = max($min, min($max, $number));
 
         return (float) (int) $number === $number ? (int) $number : round($number, 2);
-    }
-
-    private function defaultAnalysisFirstPageHeader(GeneralSettings $settings): string
-    {
-        return $this->defaultCertificateFirstPageHeader(
-            $settings,
-            'Relatório de Análise {{document_code}}',
-            '{{customer_name}} · Emitido em {{issue_date}} · {{warehouse_name}}',
-            'Relatório técnico controlado com rastreabilidade, incerteza e regra de decisão documentadas.'
-        );
-    }
-
-    private function defaultAnalysisFooter(GeneralSettings $settings): string
-    {
-        $contact = e($settings->app_contact ?: $settings->app_email ?: $settings->app_client_email ?: '');
-
-        return <<<HTML
-<table style="width:100%; border-top:1px solid #ded3bf; padding-top:6px; font-size:9px; color:#475a53;">
-    <tr>
-        <td>{$contact}</td>
-        <td style="text-align:right;">Documento controlado · Página {PAGENO}/{nbpg}</td>
-    </tr>
-</table>
-HTML;
-    }
-
-    private function defaultProposalFirstPageHeader(GeneralSettings $settings): string
-    {
-        $labName = e($settings->app_client_lab_name ?: $settings->app_name ?: 'Laboratório');
-
-        return <<<HTML
-<div style="border:1px solid #d8cbb8; border-radius:18px; background:#fffdf7;">
-    <div style="background:#143d37; color:#fffdf7; padding:16px 20px; border-radius:17px 17px 0 0;">
-        <table style="width:100%; border-collapse:collapse;">
-            <tr>
-                <td style="vertical-align:top;">
-                    <div style="font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">{$labName}</div>
-                    <h2 style="margin:7px 0 0; color:#ffffff; font-size:18px;">Proposta {{document_code}}</h2>
-                    <p style="margin:6px 0 0; font-size:10px; color:#e7efe8;">Enquadramento técnico, decisão de regra e condições documentadas.</p>
-                </td>
-                <td style="width:30%; vertical-align:top; text-align:right; font-size:9px; color:#dbe8df;">
-                    <div style="font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#d9b05f;">Emitida em</div>
-                    <div style="margin-top:6px;">{{issue_date}}</div>
-                </td>
-            </tr>
-        </table>
-    </div>
-</div>
-HTML;
-    }
-
-    private function defaultProposalFooter(): string
-    {
-        return <<<'HTML'
-<table style="width:100%; border-top:1px solid #ded3bf; padding-top:6px; font-size:9px; color:#475a53;">
-    <tr>
-        <td>Documento controlado de proposta comercial</td>
-        <td style="text-align:right;">Página {PAGENO}/{nbpg}</td>
-    </tr>
-</table>
-HTML;
     }
 }

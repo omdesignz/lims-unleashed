@@ -115,11 +115,22 @@ test('studio preview table controls preserve summary-card tables', () => {
 
   assert.match(css, /\.studio-preview-document table:not\(\.document-summary-table\)\{border-collapse:collapse !important;\}/)
   assert.match(css, /\.studio-preview-document\{background-color:var\(--studio-page-background-color\);font-family:var\(--studio-document-font\);\}/)
-  assert.match(css, /\.studio-preview-document \.document-summary-table\{border-collapse:separate !important;border-spacing:0 10px !important;\}/)
+  assert.match(css, /\.studio-preview-document \.document-summary-table\{border-collapse:collapse !important;\}/)
+  // Layout tables of the controlled document (letterhead, key-value grids) keep their own rules.
+  assert.match(css, /\.studio-preview-document table:not\(\.document-summary-table\):not\(\.doc-plain\) td\{border:0 !important;border-bottom:1px solid var\(--studio-table-border-color\) !important;/)
   assert.match(css, /\.studio-preview-document \.document-summary-cell\{background:var\(--studio-table-summary-bg\) !important;border:1px solid var\(--studio-table-border-color\) !important;/)
   assert.match(css, /\.studio-preview-document \.document-summary-cell \.value\{display:block;color:var\(--studio-table-summary-text-color\) !important;/)
   assert.match(css, /\.studio-preview-document \.document-financial-summary td\{color:var\(--studio-table-summary-text-color\);\}/)
   assert.match(css, /\.studio-preview-document \.custom-note\{color:#143d37;\}/)
+})
+
+test('the studio preview draws with the shared controlled-document styles, before the template styles', () => {
+  const css = buildReportStudioPreviewCss('.doc-section-title{color:#123456;}', '.doc-section-title{font-weight:bold;}\n.pdf-document h1{font-size:15pt;}')
+
+  assert.match(css, /\.studio-preview-document \.doc-section-title\{font-weight:bold;\}/)
+  assert.match(css, /\.studio-preview-document h1\{font-size:15pt;\}/)
+  assert.ok(css.indexOf('font-weight:bold') < css.indexOf('color:#123456'))
+  assert.doesNotMatch(buildReportStudioPreviewCss('.a{color:red;}'), /undefined/)
 })
 
 test('studio chart preview palette keeps dark chart backgrounds readable', () => {

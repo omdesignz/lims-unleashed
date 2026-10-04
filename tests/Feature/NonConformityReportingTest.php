@@ -153,7 +153,7 @@ class NonConformityReportingTest extends TestCase
         PDF::shouldReceive('loadView')->once()->withArgs(function (string $view, array $data) use ($action): bool {
             $this->assertSame([$action->id], $data['nonConformity']->actions->modelKeys());
             $html = view($view, $data)->render();
-            $this->assertStringContainsString('>0</div>', $html);
+            $this->assertStringContainsString('>0</td>', $html);
             foreach (['Global corrective evidence', 'Histórico preservado', 'Não avaliada', '&lt;script&gt;Evidence text&lt;/script&gt;'] as $text) {
                 $this->assertStringContainsString($text, $html);
             }
@@ -221,13 +221,15 @@ class NonConformityReportingTest extends TestCase
         }
         PDF::shouldReceive('loadView')->once()->withArgs(function (string $view, array $data): bool {
             $html = view($view, $data)->render();
-            foreach (['Ciclo actual', 'Histórico do fluxo', 'Revisão 1 - Resolução', 'Revisão 3 - Reabertura', '04/10/2026 12:00:00', '>0</div>', '&lt;script&gt;New finding&lt;/script&gt;', 'Não registada'] as $value) {
+            foreach (['Ciclo actual', 'Histórico do fluxo', 'Revisão 1 - Resolução', 'Revisão 3 - Reabertura', '04/10/2026 12:00:00', '>0</td>', '&lt;script&gt;New finding&lt;/script&gt;', 'Não registada'] as $value) {
                 $this->assertStringContainsString($value, $html);
             }
             $this->assertStringNotContainsString('PRIVATE-', $html);
             $this->assertStringNotContainsString('<script>', $html);
-            $this->assertStringContainsString('footer: html_dossier-pages;', $html);
-            $this->assertStringContainsString('class="action-card lifecycle-entry"', $html);
+            // Every page carries the document number and the page of the total.
+            $this->assertStringContainsString('footer: doc-footer;', $html);
+            $this->assertStringContainsString('Página {PAGENO} de {nbpg}', $html);
+            $this->assertStringContainsString('<tr class="lifecycle-entry">', $html);
             $this->assertLessThan(strpos($html, 'Revisão 3 - Reabertura'), strpos($html, 'Revisão 1 - Resolução'));
 
             return true;
