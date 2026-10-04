@@ -124,6 +124,13 @@ test('tooltips lead with the value and escape every label', () => {
   assert.match(markup, /<strong>2<\/strong><span>&lt;img/)
 })
 
+test('PlanoChart is the only way a chart is drawn: no global chart tag, no global defaults', () => {
+  const bootstrap = read('resources/js/app.js')
+  assert.doesNotMatch(bootstrap, /apexchart|applyChartDefaults/i)
+  assert.doesNotMatch(read('resources/js/Support/charts.js'), /window\.Apex/)
+  assert.match(read('resources/js/Components/plano/PlanoChart.vue'), /await import\('vue3-apexcharts'\)/)
+})
+
 test('every chart offers its data as a table or a value list', () => {
   const chart = read('resources/js/Components/plano/PlanoChart.vue')
   assert.match(chart, /<details v-if="showTable" :id="tableId" class="pl-chart-data">/)

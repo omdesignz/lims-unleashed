@@ -1,6 +1,6 @@
 import "./bootstrap";
 import "../css/app.css";
-import { createApp, defineAsyncComponent, h } from "vue";
+import { createApp, h } from "vue";
 import { createPinia } from 'pinia'
 import shortkey from 'vue-shortkey'
 import Toast from 'vue-toastification'
@@ -24,14 +24,9 @@ import "vue3-colorpicker/style.css";
 import { MotionPlugin } from "@vueuse/motion";
 import { i18nVue } from "laravel-vue-i18n";
 import { register } from "swiper/element/bundle";
-import { applyChartDefaults } from "./Support/charts";
-
-applyChartDefaults();
 
 const appName =
   window.document.getElementsByTagName("title")[0]?.innerText || "Espaço laboratorial";
-
-const ApexChart = defineAsyncComponent(async () => (await import("vue3-apexcharts")).default);
 
 register();
 
@@ -142,7 +137,6 @@ createInertiaApp({
       .component("RadioInput", RadioInput)
       .component("RangeInput", RangeInput)
       .component("DataTable", DataTable)
-      .component('apexchart', ApexChart)
       .mixin({
         methods: {
           route(name, params, absolute, config) {

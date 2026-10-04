@@ -51,14 +51,13 @@ export function createInventoryCatalogueLoader(createHttp, url, label = item => 
   return { load, dispose }
 }
 
-export function useInventoryCatalogueOptions({ inventoryType = null, reagentsOnly = false, label } = {}) {
+export function useInventoryCatalogueOptions({ inventoryType = null, label } = {}) {
   const createHttp = () => {
     const scope = effectScope(true)
     const http = scope.run(() => useHttp({ q: '', ...(inventoryType ? { inventory_type: inventoryType } : {}) }))
     return { http, dispose: () => scope.stop() }
   }
-  const loader = createInventoryCatalogueLoader(createHttp,
-    () => route(reagentsOnly ? 'iitems.getReagentInventoryItem' : 'vap-inventory.items.lookup'), label)
+  const loader = createInventoryCatalogueLoader(createHttp, () => route('vap-inventory.items.lookup'), label)
   onScopeDispose(loader.dispose)
 
   return loader.load

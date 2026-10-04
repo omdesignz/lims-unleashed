@@ -375,23 +375,3 @@ export function planoChartOptions({ kind, stacked = false, categories = [], seri
 
     return options
 }
-
-/**
- * Baseline for any ApexCharts instance not drawn through PlanoChart: the Plano
- * typeface, a solid hairline grid, no toolbar and square corners.
- */
-export function applyChartDefaults() {
-    if (typeof window === 'undefined') {
-        return
-    }
-
-    window.Apex = {
-        ...(window.Apex ?? {}),
-        chart: { fontFamily: chartFontFamily, toolbar: { show: false }, zoom: { enabled: false }, background: 'transparent', parentHeightOffset: 0 },
-        grid: { strokeDashArray: 0 },
-        stroke: { width: 2 },
-        dataLabels: { enabled: false },
-        plotOptions: { bar: { borderRadius: 0 } },
-        states: { active: { filter: { type: 'none' } } },
-    }
-}

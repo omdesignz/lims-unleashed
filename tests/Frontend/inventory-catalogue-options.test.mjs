@@ -41,7 +41,8 @@ test('standalone JSON loading uses Inertia v3 and disposes on scope exit', () =>
   const source = readFileSync(new URL('../../resources/js/Composables/useInventoryCatalogueOptions.js', import.meta.url), 'utf8')
   assert.match(source, /import \{ useHttp \} from '@inertiajs\/vue3'/)
   assert.match(source, /onScopeDispose\(loader.dispose\)/)
-  assert.match(source, /route\(reagentsOnly \? 'iitems.getReagentInventoryItem' : 'vap-inventory.items.lookup'\)/)
+  assert.match(source, /route\('vap-inventory\.items\.lookup'\)/)
+  assert.doesNotMatch(source, /reagentsOnly|getReagentInventoryItem/)
   assert.match(source, /inventory_type: inventoryType/)
 })
 
