@@ -5778,6 +5778,7 @@ return [
         'supplier_assessments' => 'Avaliação de Fornecedores',
         'responsibility_matrix' => 'Matriz de Responsabilidades',
         'uncertainty_sources' => 'Fontes de Incerteza',
+        'control_charts' => 'Cartas de Controlo',
         'lab_operations' => 'Operações Laboratoriais',
         'labs' => 'Laboratórios',
         'labels' => 'Etiquetas',

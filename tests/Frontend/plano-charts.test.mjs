@@ -110,12 +110,35 @@ test('limits are drawn as labelled rules and bars below zero keep their sign', (
     format: 'decimal',
     reference: [{ value: 3, label: '+3', tone: 'bad' }, { value: -3, label: '−3', tone: 'bad' }],
   })
-  assert.equal(zScores.yaxis.min, undefined)
+  // The axis spans both limits even though every bar sits inside them.
+  assert.ok(zScores.yaxis.min <= -3 && zScores.yaxis.max >= 3)
   assert.equal(zScores.annotations.yaxis.length, 2)
   assert.equal(zScores.annotations.yaxis[0].label.text, '+3')
 
   const target = planoChartOptions({ kind: 'bar', categories: ['A'], series: [{ name: 'No prazo', data: [80] }], reference: { value: 90, label: 'Meta' } })
   assert.equal(target.annotations.xaxis[0].x, 90)
+
+  const counts = planoChartOptions({ kind: 'column', categories: ['A'], series: [{ name: 'Amostras', data: [4] }], reference: { value: 10, label: 'Meta' } })
+  assert.equal(counts.yaxis.min, 0, 'bars of counts still grow from zero')
+  assert.ok(counts.yaxis.max >= 10)
+})
+
+test('a control chart shows every point and marks those that break a rule', () => {
+  const chart = planoChartOptions({
+    kind: 'line',
+    categories: ['1', '2', '3'],
+    series: [{ name: 'Valor', data: [10.1, 9.8, 13.4] }],
+    format: 'decimal',
+    reference: [{ value: 10, label: 'LC' }, { value: 12.4, label: 'LSA', tone: 'bad' }, { value: 7.6, label: 'LIA', tone: 'bad' }],
+    points: [{ index: 2, tone: 'bad' }, { index: 1, tone: 'nonsense' }],
+  })
+  assert.equal(chart.markers.size, 4)
+  assert.equal(chart.markers.discrete.length, 1)
+  assert.equal(chart.markers.discrete[0].dataPointIndex, 2)
+  assert.ok(chart.yaxis.min < 7.6 && chart.yaxis.max > 13.4)
+
+  const plain = planoChartOptions({ kind: 'line', categories: ['1'], series: [{ name: 'Valor', data: [1] }] })
+  assert.equal(plain.markers.size, 0, 'other line charts keep their clean stroke')
 })
 
 test('tooltips lead with the value and escape every label', () => {

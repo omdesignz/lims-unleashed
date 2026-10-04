@@ -201,7 +201,7 @@ export function tooltipMarkup({ title, rows }) {
  * @param {number} [config.width] rendered width, used to cap bar thickness at 24px
  * @param {boolean} [config.dark]
  */
-export function planoChartOptions({ kind, stacked = false, categories = [], series = [], format = 'count', unit = '', width = 640, dark = isDarkTheme(), colors: chosen = {}, tones = {}, reference = null }) {
+export function planoChartOptions({ kind, stacked = false, categories = [], series = [], format = 'count', unit = '', width = 640, dark = isDarkTheme(), colors: chosen = {}, tones = {}, reference = null, points = null }) {
     const tokens = chartTokens(dark)
     const horizontal = kind === 'bar'
     const isBar = kind === 'bar' || kind === 'column'
@@ -359,8 +359,9 @@ export function planoChartOptions({ kind, stacked = false, categories = [], seri
                 text: item.label ?? '',
                 borderWidth: 0,
                 orientation: 'horizontal',
-                position: horizontal ? 'top' : 'left',
-                textAnchor: horizontal ? 'middle' : 'start',
+                // On a line the first points sit at the left edge: the labels go to the right end.
+                position: horizontal ? 'top' : kind === 'line' ? 'right' : 'left',
+                textAnchor: horizontal ? 'middle' : kind === 'line' ? 'end' : 'start',
                 offsetY: horizontal ? -6 : -2,
                 style: { background: tokens.bg, color: tokens.fg, fontFamily: chartFontFamily, fontSize: '10px', padding: { left: 4, right: 4, top: 1, bottom: 1 } },
             },
@@ -368,6 +369,31 @@ export function planoChartOptions({ kind, stacked = false, categories = [], seri
         options.annotations = horizontal
             ? { xaxis: references.map((item) => ({ x: Number(item.value), ...rule(item) })) }
             : { yaxis: references.map((item) => ({ y: Number(item.value), ...rule(item) })) }
+
+        // A limit outside the data would fall off the plot: the value axis always spans every rule.
+        if (!horizontal) {
+            const plotted = [
+                ...series.flatMap((item) => (item.data ?? []).filter((entry) => entry !== null && entry !== undefined && Number.isFinite(Number(entry))).map(Number)),
+                ...references.map((item) => Number(item.value)),
+            ]
+            const low = Math.min(...plotted)
+            const high = Math.max(...plotted)
+            const pad = (high - low) * 0.08 || Math.abs(high) * 0.1 || 1
+            options.yaxis.min = options.yaxis.min === 0 && low >= 0 ? 0 : low - pad
+            options.yaxis.max = high + pad
+        }
+    }
+
+    // A line whose single values matter (a control chart) shows each point; points that mean a state take its tone.
+    if (points && kind === 'line') {
+        const toneColor = { ok: tokens.ok, warn: tokens.warn, bad: tokens.bad, neutral: tokens.faint, accent: tokens.accent }
+        options.markers = {
+            ...options.markers,
+            size: 4,
+            discrete: (Array.isArray(points) ? points : [])
+                .filter((item) => toneColor[item.tone] && Number.isInteger(item.index))
+                .map((item) => ({ seriesIndex: item.series ?? 0, dataPointIndex: item.index, fillColor: toneColor[item.tone], strokeColor: tokens.bg, size: 6 })),
+        }
     }
 
     // ApexCharts reads an explicit `undefined` as a value (e.g. labels.length): drop them.

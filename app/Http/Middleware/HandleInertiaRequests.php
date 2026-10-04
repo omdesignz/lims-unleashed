@@ -376,6 +376,7 @@ class HandleInertiaRequests extends Middleware
             'notification-preferences' => 'Preferências de notificação',
             'phytosanitary_products' => 'Produtos fitossanitários',
             'proficiency_tests' => 'Ensaios de proficiência',
+            'control-charts' => 'Cartas de controlo',
             'proposalcomplianceagreements' => 'Acordos de conformidade',
             'ratings' => 'Avaliações',
             'printBatchLabels' => 'Etiquetas de lote',

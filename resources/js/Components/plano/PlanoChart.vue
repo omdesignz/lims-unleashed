@@ -33,6 +33,8 @@ const props = defineProps({
   tones: { type: Object, default: () => ({}) },
   /** Targets or limits drawn across the plot: { value, label, tone? } or a list of them. */
   reference: { type: [Object, Array], default: null },
+  /** Line charts only: show every point (true), or show them and mark some with a tone: [{ index, tone, series? }]. */
+  points: { type: [Boolean, Array], default: null },
   /** Hide the "Ver dados" table (only when the same values are listed beside the chart). */
   hideTable: { type: Boolean, default: false },
 })
@@ -80,6 +82,7 @@ const options = computed(() => planoChartOptions({
   colors: props.colors,
   tones: props.tones,
   reference: props.reference,
+  points: props.points,
 }))
 
 const chartHeight = computed(() => (props.kind === 'bar'

@@ -138,6 +138,13 @@
                 :error="form.errors[field.key]"
               />
             </div>
+
+            <div class="border-t border-[color:var(--ds-border)] p-5">
+              <h3 class="ds-field-label">Logótipo dos documentos</h3>
+              <div class="mt-3">
+                <DocumentLogoField :logo-url="documentLogoUrl" :can-edit="canEdit" @saved="adoptRevision" />
+              </div>
+            </div>
           </section>
 
           <section class="ds-panel overflow-hidden">
@@ -434,12 +441,14 @@ import {
   ShieldCheck as ShieldCheckIcon,
   Palette as SwatchIcon,
 } from '@lucide/vue'
+import DocumentLogoField from '@/Components/settings/DocumentLogoField.vue'
 import SettingsField from '@/Components/settings/SettingsField.vue'
 import { generalSettingsFormData, generalSettingsPayload } from '@/Composables/useGeneralSettingsForm'
 
 const props = defineProps({
   canEdit: { type: Boolean, default: false },
   settingsRevision: { type: String, required: true },
+  documentLogoUrl: { type: String, default: null },
   settings: {
     type: Object,
     required: true,
@@ -622,6 +631,13 @@ const submit = () => {
     onNetworkError: () => { return recoverSave('A ligação foi interrompida. Reveja os valores e tente novamente.') },
     onCancel: () => { recoverSave('A gravação não foi confirmada. Reveja os valores antes de repetir.') },
   })
+}
+
+// The logo is saved on its own; the open form keeps its edits and moves to the new revision.
+function adoptRevision(revision) {
+  if (!revision) return
+  form.settings_revision = revision
+  form.defaults('settings_revision', revision)
 }
 
 function recoverSave(message) {

@@ -1384,6 +1384,25 @@ Basis: ISO/IEC 17025:2017 clause 7.8 (reporting of results) and the Portuguese a
   - **Still open:** the fields are empty on this install. Fill the settings and mark each profile's tests before reports state them.
 - **Left as they were:** the user manual (a brochure, not a record), labels, and the unused earlier views (`PDFs/invoice`, `quote`, `receipt`, `creditnote`, `proposal`, `export_certificate`, `import_certificate`, `analysisreport*`, `includes/analysisreport/*`, `proposals/pdf`).
 
+### Document logo and control charts — 2026-10-04
+
+- **Logo on generated documents.**
+  - **Upload:** Settings → "Informação institucional do laboratório" → "Logótipo dos documentos" uploads a PNG or JPEG (up to 1 MB, 32–4000 px). It goes to the public disk under `branding/`, and its path is kept in the `app_document_logo` setting.
+  - **Endpoints:** its own `generalsettings.document-logo.update` and `.destroy`, so the main settings form never overwrites it. It needs `edit_settings`, the path is locked like the other settings, and replacing or removing the logo deletes the previous file only after the setting is committed.
+  - **On the documents:** every controlled document embeds it as data, fitted to 38 × 18 mm with the size written on the element (mPDF ignores `max-width`). When it is missing, documents fall back to the brand logo URL, then to nothing.
+- **Control charts (ISO/IEC 17025 7.7.1; ISO 7870-2; Nordtest TR 569).** Quality → Controlo → Cartas de controlo.
+  - **Chart types:**
+    - Mean chart (X): CL ± 2s warning, ± 3s action limits.
+    - Range chart (R) of duplicates: UWL 2.512 R̄, UAL 3.267 R̄, no lower limits.
+  - **Limits:** entered with their basis, or computed from at least 10 included points (20 recommended). Every change is kept in the activity log and shown as the limit history.
+  - **Out-of-control rules:** a point outside the action limits; two of three outside the same warning limit; seven steadily rising or falling; ten of eleven on one side of the centre line. A point between the warning and action limits is a warning.
+  - **Corrections:** a recorded value is never edited. A wrong one is excluded with a reason, and stays on record outside the rules and the computed limits.
+  - **Corrective action:** recorded with who and when on each point out of control. Points still without an action are counted on the list and on the chart.
+  - **PDF:** a controlled record with the drawing (SVG both renderers draw), limits, statistics, points, actions and the rules.
+  - **Code and tests:** `App\Support\ControlChartEvaluation` (pure, tested in `tests/Unit/ControlChartEvaluationTest`), `ControlChartDocument`, `ControlChartController`, and the `ControlCharts/Index` and `ControlCharts/Show` pages. Workflow, permission and laboratory-scope tests are in `ControlChartManagementTest`. Permissions are `view|add|edit|delete|restore_control_charts`; a migration creates them and gives them to `admin`.
+  - **PlanoChart:** reference lines now always fit inside the value axis. A line chart can show its points and colour some of them by state (`points`); its limit labels sit at the right end.
+- **Not done:** points are entered by hand, not taken from results of QC samples, because the application does not mark which samples are control samples.
+
 ### Open items
 
 - User visual approval of the representative screens in light and dark, desktop and mobile (exit gate).

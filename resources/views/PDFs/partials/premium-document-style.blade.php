@@ -111,8 +111,8 @@ body.pdf-document {
 }
 
 .doc-letterhead .doc-letterhead-logo img {
-    max-width: 22mm;
-    max-height: 20mm;
+    max-width: 38mm;
+    max-height: 18mm;
     margin-right: 4mm;
 }
 

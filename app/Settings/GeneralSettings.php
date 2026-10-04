@@ -32,6 +32,9 @@ class GeneralSettings extends Settings
 
     public ?string $app_logo_url;
 
+    /** Path on the public disk of the logo printed on generated documents. */
+    public ?string $app_document_logo;
+
     public ?string $app_login_headline;
 
     public ?string $app_login_subheadline;

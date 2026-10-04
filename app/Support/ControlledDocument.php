@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Actions\SaveDocumentLogo;
 use App\Settings\GeneralSettings;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -9,6 +10,7 @@ use Endroid\QrCode\QrCode;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\Writer\SvgWriter;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
@@ -24,6 +26,11 @@ class ControlledDocument
 {
     /** Shown where a value was not recorded; never a guess. */
     public const NOT_RECORDED = '—';
+
+    /** The box the laboratory's logo is fitted into on the letterhead. */
+    public const LOGO_MAX_WIDTH_MM = 38;
+
+    public const LOGO_MAX_HEIGHT_MM = 18;
 
     /**
      * The first-page letterhead: laboratory identity, the document control box
@@ -364,6 +371,16 @@ HTML;
      */
     public static function laboratoryLogoHtml(GeneralSettings $settings): string
     {
+        $uploaded = trim((string) ($settings->app_document_logo ?? ''));
+
+        if ($uploaded !== '' && ! str_contains($uploaded, '..') && Storage::disk(SaveDocumentLogo::DISK)->exists($uploaded)) {
+            $html = self::localLogoHtml(Storage::disk(SaveDocumentLogo::DISK)->path($uploaded));
+
+            if ($html !== '') {
+                return $html;
+            }
+        }
+
         $source = trim((string) ($settings->app_logo_url ?: ''));
 
         if ($source === '') {
@@ -371,13 +388,37 @@ HTML;
         }
 
         if (preg_match('#^https?://#i', $source) === 1) {
-            return '<img src="'.e($source).'" alt="">';
+            return '<img src="'.e($source).'" alt="" style="max-width:'.self::LOGO_MAX_WIDTH_MM.'mm; max-height:'.self::LOGO_MAX_HEIGHT_MM.'mm;">';
         }
 
         $path = is_file($source) ? $source : public_path(ltrim($source, '/'));
-        $uri = is_file($path) ? self::imageDataUri($path) : null;
 
-        return $uri === null ? '' : '<img src="'.$uri.'" alt="">';
+        return is_file($path) ? self::localLogoHtml($path) : '';
+    }
+
+    /**
+     * A local logo embedded as data, its size fitted inside the letterhead
+     * box and written on the element: mPDF ignores max-width on images.
+     */
+    private static function localLogoHtml(string $path): string
+    {
+        $uri = self::imageDataUri($path);
+
+        if ($uri === null) {
+            return '';
+        }
+
+        $dimensions = @getimagesize($path);
+
+        if (! is_array($dimensions) || $dimensions[0] < 1 || $dimensions[1] < 1) {
+            return '<img src="'.$uri.'" alt="" style="max-width:'.self::LOGO_MAX_WIDTH_MM.'mm; max-height:'.self::LOGO_MAX_HEIGHT_MM.'mm;">';
+        }
+
+        $scale = min(self::LOGO_MAX_WIDTH_MM / $dimensions[0], self::LOGO_MAX_HEIGHT_MM / $dimensions[1]);
+        $width = round($dimensions[0] * $scale, 1);
+        $height = round($dimensions[1] * $scale, 1);
+
+        return '<img src="'.$uri.'" alt="" style="width:'.$width.'mm; height:'.$height.'mm;">';
     }
 
     /**

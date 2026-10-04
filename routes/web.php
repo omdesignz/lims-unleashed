@@ -21,6 +21,7 @@ use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\ContactCategoryController;
 use App\Http\Controllers\ContractGuideController;
 use App\Http\Controllers\ContractGuideItemController;
+use App\Http\Controllers\ControlChartController;
 use App\Http\Controllers\CounterAnalysisController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CreditNoteController;
@@ -893,6 +894,18 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('formulas/getFormula', 'getFormula')->name('formulas.getFormula');
     });
 
+    Route::controller(ControlChartController::class)->group(function () {
+        Route::get('control-charts', 'index')->name('control-charts.index');
+        Route::post('control-charts', 'store')->name('control-charts.store');
+        Route::get('control-charts/{chart}', 'show')->whereNumber('chart')->name('control-charts.show');
+        Route::put('control-charts/{chart}', 'update')->whereNumber('chart')->name('control-charts.update');
+        Route::delete('control-charts/{chart}', 'destroy')->whereNumber('chart')->name('control-charts.destroy');
+        Route::post('control-charts/{chart}/limits', 'computeLimits')->whereNumber('chart')->name('control-charts.limits');
+        Route::post('control-charts/{chart}/points', 'storePoint')->whereNumber('chart')->name('control-charts.points.store');
+        Route::put('control-charts/{chart}/points/{point}', 'updatePoint')->whereNumber(['chart', 'point'])->name('control-charts.points.update');
+        Route::get('control-charts/{chart}/pdf', 'exportPdf')->whereNumber('chart')->name('control-charts.pdf');
+    });
+
     Route::controller(ProficiencyTestController::class)->group(function () {
         Route::get('proficiency-tests', 'index')->name('proficiency_tests.index');
         Route::get('proficiency-tests/create', 'create')->name('proficiency_tests.create');
@@ -1483,6 +1496,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::controller(SystemGeneralSettingsController::class)->group(function () {
         Route::get('general-settings', 'index')->name('generalsettings.index');
         Route::post('general-settings', 'update')->name('generalsettings.update');
+        Route::post('general-settings/document-logo', 'updateDocumentLogo')->name('generalsettings.document-logo.update');
+        Route::delete('general-settings/document-logo', 'destroyDocumentLogo')->name('generalsettings.document-logo.destroy');
     });
 
     // Board / Tasks

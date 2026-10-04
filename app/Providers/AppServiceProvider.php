@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Analysis;
 use App\Models\CollectionProduct;
 use App\Models\Complaint;
+use App\Models\ControlChart;
 use App\Models\CounterAnalysis;
 use App\Models\CreditNote;
 use App\Models\CreditNoteItem;
@@ -145,6 +146,7 @@ class AppServiceProvider extends ServiceProvider
             'integration_transmission' => IntegrationTransmission::class,
             'vap_file' => VAPFile::class,
             'vap_non_conformity' => VAPNonConformity::class,
+            'control_chart' => ControlChart::class,
             'reagent_consumption' => ReagentConsumption::class,
             'quality_certificate_revision' => QualityCertificateRevision::class,
             'paid_service' => PaidService::class,

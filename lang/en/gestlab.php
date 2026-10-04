@@ -199,6 +199,7 @@ return [
         'supplier_assessments' => 'Supplier Assessments',
         'responsibility_matrix' => 'Responsibility Matrix',
         'uncertainty_sources' => 'Uncertainty Sources',
+        'control_charts' => 'Control Charts',
         'lab_operations' => 'Laboratory Operations',
         'labs' => 'Laboratories',
         'labels' => 'Labels',
