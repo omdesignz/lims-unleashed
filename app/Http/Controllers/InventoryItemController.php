@@ -116,13 +116,6 @@ class InventoryItemController extends Controller
         return response()->json(InventoryCatalogueOptionResource::collection($items)->resolve($request));
     }
 
-    public function getReagentInventoryItem(InventoryCatalogueLookupRequest $request, InventoryCatalogueLookup $lookup): JsonResponse
-    {
-        $items = $lookup->search($this->laboratoryAccess->activeLabId(), $request->user(), $request->validated('q') ?? '', InventoryCategoryType::MATERIAL, true);
-
-        return response()->json(InventoryCatalogueOptionResource::collection($items)->resolve($request));
-    }
-
     public function downloadallattachments(): MediaStream
     {
         // Get all Docs

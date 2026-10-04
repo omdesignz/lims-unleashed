@@ -55,20 +55,18 @@ class InventoryCatalogueLookupTest extends TestCase
         }
     }
 
-    public function test_reagent_lookup_matches_current_consumption_classification_not_category_number(): void
+    public function test_legacy_reagent_lookup_is_retired_and_the_canonical_lookup_still_finds_reagents(): void
     {
-        [$lab, $user, $items] = $this->fixture('both');
+        [$lab] = $this->fixture('both');
         $category = ItemCategory::query()->create(['name' => 'Reagentes '.fake()->uuid(), 'inventory_type' => 'material']);
         $reagent = InventoryItem::query()->create(['lab_id' => $lab->id, 'name' => 'Lookup genuine reagent', 'category_id' => $category->id, 'is_reagent' => true]);
-        $items['equipment']->update(['is_reagent' => true]);
-        $this->assertNotSame(2, $category->id);
-        $this->getJson(route('iitems.getReagentInventoryItem', ['q' => 'lookup']))->assertOk()->assertJsonCount(1)
+
+        $this->assertFalse(Route::has('iitems.getReagentInventoryItem'));
+        $this->getJson('/iitems/getReagentInventoryItem?q=lookup')->assertNotFound();
+        $this->getJson(route('vap-inventory.items.lookup', ['q' => 'genuine']))->assertOk()->assertJsonCount(1)
             ->assertJsonPath('0.id', $reagent->id)->assertJsonPath('0.is_reagent', true);
         $category->delete();
-        $this->getJson(route('iitems.getReagentInventoryItem', ['q' => 'genuine']))->assertOk()->assertExactJson([]);
         $this->getJson(route('vap-inventory.items.lookup', ['q' => 'genuine']))->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $reagent->id);
-        $user->revokePermissionTo('view_iitems');
-        $this->getJson(route('iitems.getReagentInventoryItem', ['q' => 'lookup']))->assertForbidden();
     }
 
     public function test_canonical_type_filter_can_narrow_but_not_grant_the_other_type(): void

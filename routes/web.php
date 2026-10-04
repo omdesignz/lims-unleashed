@@ -1988,7 +1988,6 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::delete('iitems/destroy', 'destroy')->name('iitems.destroy');
         Route::patch('iitems/restore', 'restore')->name('iitems.restore');
         Route::get('iitems/getInventoryItem', 'getInventoryItem')->name('iitems.getInventoryItem');
-        Route::get('iitems/getReagentInventoryItem', 'getReagentInventoryItem')->name('iitems.getReagentInventoryItem');
         Route::get('iitems/{iitem}/maintenance-tasks', 'getMaintenanceTasks')->name('iitems.getMaintenanceTasks');
 
         Route::get('iitems/download-all-attachments', 'downloadAllAttachments')->name('iitems.download-all-attachments');
