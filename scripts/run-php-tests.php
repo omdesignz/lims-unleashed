@@ -75,7 +75,9 @@ try {
         if (! preg_match('/^Scan for additional \.ini files in:\h*(.*)$/m', $configuration->getOutput(), $matches)) {
             throw new RuntimeException('Cannot determine the existing PHP scan path; refusing to replace PHP configuration.');
         }
-        $scanPath = rtrim($matches[1], "\r");
+        // PHP 8.5 prints the paths of `--ini` inside double quotes; left in place they
+        // would read as a relative directory and the default scan path would be lost.
+        $scanPath = trim(rtrim($matches[1], "\r"), '"');
         if ($scanPath === '(none)') {
             $scanPath = null;
         }

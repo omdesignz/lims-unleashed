@@ -65,6 +65,8 @@ class PhpTestLauncherTest extends TestCase
         $this->assertSame('retained', $data['marker']);
         $this->assertSame(getenv('DB_DATABASE'), $data['database']);
         $this->assertSame("fixture stderr\n", $process->getErrorOutput());
+        $default = $this->defaultScanPath();
+        $this->assertStringStartsWith(($default === '(none)' ? '' : $default.PATH_SEPARATOR).$this->directory.'/runtime/lims-php-tests-', $data['scan_path']);
         $this->assertPreservedRuntime($baseline, $data);
     }
 
@@ -145,11 +147,15 @@ class PhpTestLauncherTest extends TestCase
         $this->assertFileExists($reportPath);
         $report = simplexml_load_file($reportPath);
         $cases = $report->xpath('//testcase');
-        $this->assertCount(count(PhpCompilationCompatibilityTest::applicationSources()), $cases);
+        $this->assertNotEmpty($cases);
         foreach ($cases as $case) {
             $this->assertSame(PhpCompilationCompatibilityTest::class, (string) $case['class']);
-            $this->assertSame(3, (int) $case['assertions']);
             $this->assertFalse(isset($case->failure) || isset($case->error) || isset($case->skipped));
+        }
+        $compiled = $report->xpath('//testcase[starts-with(@name, "test_application_sources_compile_without_diagnostics")]');
+        $this->assertCount(count(PhpCompilationCompatibilityTest::applicationSources()), $compiled);
+        foreach ($compiled as $case) {
+            $this->assertSame(3, (int) $case['assertions']);
         }
         $this->assertSame([], glob($this->directory.'/runtime/*'));
     }
@@ -328,7 +334,8 @@ class PhpTestLauncherTest extends TestCase
         $process->mustRun();
         $this->assertSame(1, preg_match('/^Scan for additional \.ini files in:\h*(.*)$/m', $process->getOutput(), $matches));
 
-        return rtrim($matches[1], "\r");
+        // PHP 8.5 prints the paths of `--ini` inside double quotes.
+        return trim(rtrim($matches[1], "\r"), '"');
     }
 
     /** @param array<string, mixed> $baseline
