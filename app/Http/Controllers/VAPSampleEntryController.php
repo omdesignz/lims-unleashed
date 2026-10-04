@@ -1643,6 +1643,7 @@ class VAPSampleEntryController extends Controller
         $profiles = Profile::query()->pluck('name', 'id');
 
         return CustomerRequest::query()
+            ->forLaboratory($this->laboratoryAccess->activeLabId())
             ->with(['customer:id,name', 'warehouse:id,address'])
             ->where('request_type', 'analysis_request')
             ->where(function ($query) {
@@ -2054,6 +2055,7 @@ class VAPSampleEntryController extends Controller
 
         $field = array_key_exists('portal_request_id', $validated) ? 'portal_request_id' : 'customer_request_id';
         $portalRequest = CustomerRequest::query()
+            ->forLaboratory($this->laboratoryAccess->activeLabId())
             ->where('customer_id', $validated['customer_id'] ?? 0)
             ->where('warehouse_id', $validated['warehouse_id'] ?? 0)
             ->lockForUpdate()

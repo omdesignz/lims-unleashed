@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use LogicException;
 
 class CustomerRequest extends Model
 {
@@ -20,6 +22,7 @@ class CustomerRequest extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'lab_id',
         'reference',
         'title',
         'request_type',
@@ -39,8 +42,27 @@ class CustomerRequest extends Model
     ];
 
     protected $table = 'customer_requests';
-    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
+    protected static function booted(): void
+    {
+        static::updating(function (self $record): void {
+            if ($record->isDirty(['lab_id', 'customer_id', 'warehouse_id'])) {
+                throw new LogicException('Service request laboratory and recipient identity cannot be changed.');
+            }
+        });
+    }
+
+    public function scopeForLaboratory(Builder $query, int $labId): Builder
+    {
+        return $query->where('lab_id', $labId)->whereHas('lab');
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(VAPLab::class, 'lab_id');
+    }
+
+    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
      * The attributes that should be cast.
@@ -48,12 +70,11 @@ class CustomerRequest extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'extra_data' => 'array',
         'answered' => 'boolean',
         'submitted_at' => 'datetime',
         'resolved_at' => 'datetime',
         'preferred_date' => 'date',
-        'extra_data' => AsCollection::class
+        'extra_data' => AsCollection::class,
     ];
 
     /**

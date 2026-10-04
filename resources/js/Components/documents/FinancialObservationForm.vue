@@ -21,10 +21,16 @@ function submit() {
   if (form.processing) return;
   try {
     form.put(route(`${config.value.route}.update`, source.id), {
-    preserveScroll: true,
-    onSuccess: () => form.defaults(),
-    onNetworkError: () => form.setError('obs', 'Ligação interrompida. As suas observações foram preservadas; tente novamente.'),
-    onHttpException: () => form.setError('obs', 'Não foi possível guardar as observações. Tente novamente.'),
+      preserveScroll: true,
+      onSuccess: () => form.defaults(),
+      onNetworkError: () => {
+        form.setError('obs', 'Ligação interrompida. As suas observações foram preservadas; tente novamente.');
+        return false;
+      },
+      onHttpException: () => {
+        form.setError('obs', 'Não foi possível guardar as observações. Tente novamente.');
+        return false;
+      },
     });
   } catch {
     form.setError('obs', 'Não foi possível iniciar a correcção. As suas observações foram preservadas; tente novamente.');

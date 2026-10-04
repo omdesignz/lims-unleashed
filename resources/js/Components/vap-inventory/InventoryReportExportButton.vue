@@ -1,19 +1,18 @@
 <template>
-  <form :action="route('vap-inventory.reports.export')" method="post">
-    <input type="hidden" name="_token" :value="csrfToken" />
-    <input type="hidden" name="report_type" :value="reportType" />
-    <input type="hidden" name="format" value="pdf" />
-    <input v-for="field in filterFields" :key="field.name" type="hidden" :name="field.name" :value="field.value" />
-    <button type="submit" class="ds-button ds-button-secondary" :disabled="!csrfToken">
-      <ArrowDownTrayIcon class="h-4 w-4" />
-      Exportar PDF
+  <div class="min-w-0">
+    <button type="button" class="ds-button ds-button-secondary" :disabled="processing || !csrfToken" :aria-busy="processing" @click="exportReport">
+      <ArrowDownTrayIcon class="h-4 w-4" aria-hidden="true" />
+      {{ processing ? 'A preparar…' : 'Exportar PDF' }}
     </button>
-  </form>
+    <p v-if="error" class="ds-field-error mt-2 max-w-sm" role="alert">{{ error }}</p>
+    <p v-if="processing" class="ds-copy mt-2 text-sm" role="status">A preparar o ficheiro. Os filtros serão mantidos.</p>
+  </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { Download as ArrowDownTrayIcon } from '@lucide/vue'
+import { useFileDownload } from '@/Composables/useFileDownload'
 
 const props = defineProps({
   reportType: { type: String, required: true },
@@ -21,9 +20,19 @@ const props = defineProps({
 })
 
 const csrfToken = ref('')
-const filterFields = computed(() => Object.entries(props.filters)
-  .filter(([, value]) => value !== null && value !== undefined && value !== '')
-  .map(([key, value]) => ({ name: `filters[${key}]`, value: String(value) })))
+const { download, processing, error } = useFileDownload()
+
+function exportReport() {
+  if (processing.value || !csrfToken.value) return
+  const filters = Object.fromEntries(Object.entries(props.filters)
+    .filter(([, value]) => value !== null && value !== undefined && value !== ''))
+
+  return download(route('vap-inventory.reports.export'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken.value },
+    body: JSON.stringify({ report_type: props.reportType, format: 'pdf', filters }),
+  })
+}
 
 onMounted(() => {
   csrfToken.value = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''

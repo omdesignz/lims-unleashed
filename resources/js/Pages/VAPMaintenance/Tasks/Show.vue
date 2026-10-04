@@ -19,9 +19,9 @@
             <ArrowLeftIcon class="h-4 w-4" />
             Voltar
           </Link>
-          <Link :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary">
-            <DocumentDuplicateIcon class="h-4 w-4" />
-            Duplicar
+          <Link v-if="can.edit" :href="route('vap-maintenance.tasks.edit', task.id)" class="ds-button ds-button-primary">
+            <PencilIcon class="h-4 w-4" />
+            Editar
           </Link>
         </div>
       </div>
@@ -231,35 +231,41 @@
 
         <section class="ds-command-surface p-5">
           <h3 class="text-base font-bold text-[var(--ds-text)]">Acções</h3>
+          <div v-if="completionForm.hasErrors || notificationError || archiveFailed" class="ds-field-error mt-3" role="alert">
+            <p v-for="(error, field) in completionForm.errors" :key="field">{{ error }}</p>
+            <p v-if="notificationError">{{ notificationError }}</p>
+            <p v-if="archiveFailed">{{ archiveMessage }}</p>
+          </div>
+          <p v-if="notificationMessage" class="ds-copy mt-3 text-sm" role="status">{{ notificationMessage }}</p>
           <div class="mt-4 space-y-3">
-            <button v-if="!task.is_executed" type="button" class="ds-button ds-button-primary w-full" @click="markAsExecuted">
+            <button v-if="can.edit && !task.is_executed" type="button" class="ds-button ds-button-primary w-full" :disabled="completionForm.processing" :aria-busy="completionForm.processing" @click="markAsExecuted">
               <CheckCircleIcon class="h-4 w-4" />
               Marcar como executada
             </button>
 
-            <button v-if="task.is_executed" type="button" class="ds-button ds-button-primary w-full" @click="recordResult">
+            <button v-if="can.edit" type="button" class="ds-button ds-button-secondary w-full" @click="recordResult">
               <PencilIcon class="h-4 w-4" />
               Registar resultado
             </button>
 
-            <Link :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-secondary w-full">
+            <Link v-if="can.create" :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-secondary w-full">
               <DocumentDuplicateIcon class="h-4 w-4" />
-              Duplicar tarefa
+              Nova tarefa
             </Link>
 
-            <button type="button" class="ds-button ds-button-secondary w-full" @click="printTask">
+            <button v-if="can.export" type="button" class="ds-button ds-button-secondary w-full" @click="printTask">
               <PrinterIcon class="h-4 w-4" />
               Imprimir
             </button>
 
-            <button v-if="task.is_executed" type="button" class="ds-button ds-button-secondary w-full" @click="notifyCompletion">
+            <button v-if="can.edit && task.is_executed" type="button" class="ds-button ds-button-secondary w-full" :disabled="notificationRequest.processing" @click="notifyCompletion">
               <BellAlertIcon class="h-4 w-4" />
               Notificar conclusão
             </button>
 
-            <button type="button" class="ds-button ds-button-danger w-full" @click="deleteTask">
+            <button v-if="can.delete" type="button" class="ds-button ds-button-danger w-full" :disabled="archiving" :aria-busy="archiving" @click="deleteTask">
               <TrashIcon class="h-4 w-4" />
-              Eliminar tarefa
+              {{ archiving ? 'A arquivar…' : 'Arquivar tarefa' }}
             </button>
           </div>
         </section>
@@ -367,10 +373,13 @@
         <div>
           <p class="ds-kicker">Execução</p>
           <h2 class="ds-heading mt-2 text-lg">Registar resultado da manutenção</h2>
-          <p class="ds-copy mt-1 text-sm">Guarde o resultado técnico e a próxima data associada a esta tarefa.</p>
+          <p class="ds-copy mt-1 text-sm">Guarde o resultado técnico antes de concluir a tarefa. A agenda é calculada a partir da periodicidade.</p>
         </div>
 
         <form class="mt-6 space-y-6" @submit.prevent="submitResult">
+          <div v-if="resultForm.hasErrors" class="ds-field-error" role="alert">
+            <p v-for="(error, field) in resultForm.errors" :key="field">{{ error }}</p>
+          </div>
           <label class="ds-field-group">
             <span class="ds-field-label">Resultado da manutenção <span class="ds-field-required">*</span></span>
             <textarea
@@ -393,11 +402,6 @@
             </BaseSelect>
           </label>
 
-          <label class="ds-field-group">
-            <span class="ds-field-label">Próxima manutenção</span>
-            <DateTimePicker v-model="resultForm.next_date" type="date" class="ds-field" />
-            <span class="ds-field-hint">Deixe em branco para calcular automaticamente com base na periodicidade.</span>
-          </label>
 
           <div class="flex items-center justify-end gap-2 border-t border-[var(--ds-border)] pt-5">
             <button type="button" class="ds-button ds-button-secondary" @click="showRecordResultModal = false">
@@ -415,9 +419,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
-import { Link, router, useForm } from '@inertiajs/vue3'
+import { Link, useForm, useHttp } from '@inertiajs/vue3'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
 import {
   Wrench as WrenchScrewdriverIcon,
   ArrowLeft as ArrowLeftIcon,
@@ -441,19 +446,26 @@ import {
 import Modal from '@/Components/Modal.vue'
 
 const props = defineProps({
+  can: { type: Object, default: () => ({}) },
   task: Object,
   equipmentHistory: Object,
 })
 
 // State
 const showRecordResultModal = ref(false)
-const equipmentHistory = ref(props.equipmentHistory ?? null)
+const equipmentHistory = computed(() => props.equipmentHistory ?? null)
 
 // Forms
+const completionForm = useForm({ is_executed: true })
+const { processing: archiving, message: archiveMessage, failed: archiveFailed, submit: submitArchive } = useRecordArchive({
+  destroyUrl: () => route('vap-maintenance.tasks.destroy', props.task.id),
+})
+const notificationRequest = useHttp({})
+const notificationError = ref('')
+const notificationMessage = ref('')
 const resultForm = useForm({
   result: props.task.result || '',
   calibration_status: props.task.calibration_status || '',
-  next_date: props.task.next_date ? new Date(props.task.next_date).toISOString().split('T')[0] : '',
 })
 
 // Computed
@@ -586,20 +598,24 @@ const getCalibrationStatusClasses = (status) => {
 }
 
 const markAsExecuted = () => {
-  if (confirm('Marcar esta tarefa como executada?')) {
-    router.put(route('vap-maintenance.tasks.update', props.task.id), {
-      is_executed: true
-    })
+  if (!props.can.edit || completionForm.processing) return
+  if (confirm('Concluir esta tarefa com o resultado registado?')) {
+    completionForm.put(route('vap-maintenance.tasks.update', props.task.id))
   }
 }
 
 const recordResult = () => {
+  resultForm.result = props.task.result ?? ''
+  resultForm.calibration_status = props.task.calibration_status ?? ''
+  resultForm.clearErrors()
   showRecordResultModal.value = true
 }
 
 const submitResult = () => {
+  if (!props.can.edit || resultForm.processing) return
   resultForm.put(route('vap-maintenance.tasks.update', props.task.id), {
     onSuccess: () => {
+      completionForm.clearErrors()
       showRecordResultModal.value = false
     }
   })
@@ -608,39 +624,30 @@ const submitResult = () => {
 const printTask = () => {
   window.open(route('vap-maintenance.export', {
     format: 'pdf',
-    type: 'task',
+    type: 'tasks',
     task_id: props.task.id
   }), '_blank')
 }
 
 const notifyCompletion = async () => {
+  if (!props.can.edit || notificationRequest.processing) return
+  notificationError.value = ''
+  notificationMessage.value = ''
   try {
-    await axios.post(route('vap-maintenance.tasks.notify-completion', props.task.id))
-    alert('Notificação de conclusão enviada com sucesso!')
-  } catch (error) {
-    console.error('Error sending completion notification:', error)
-    alert('Erro ao enviar notificação')
+    await notificationRequest.post(route('vap-maintenance.tasks.notify-completion', props.task.id), {
+      onSuccess: () => { notificationMessage.value = 'Notificação de conclusão enviada.' },
+      onError: () => { notificationError.value = 'Não foi possível enviar a notificação.' },
+    })
+  } catch {
+    notificationError.value = 'Não foi possível enviar a notificação. Tente novamente.'
   }
 }
 
 const deleteTask = () => {
-  if (confirm('Tem a certeza que deseja eliminar esta tarefa? Esta acção não pode ser revertida.')) {
-    router.delete(route('vap-maintenance.tasks.destroy', props.task.id))
+  if (!props.can.delete || archiving.value) return
+  if (confirm('Arquivar esta tarefa? O registo será preservado.')) {
+    submitArchive('delete', [props.task.id])
   }
 }
 
-const loadEquipmentHistory = async () => {
-  try {
-    const response = await axios.get(route('vap-maintenance.equipment.history', props.task.equipment_id))
-    equipmentHistory.value = response.data
-  } catch (error) {
-    console.error('Error loading equipment history:', error)
-  }
-}
-
-onMounted(() => {
-  if (props.task.equipment_id && !equipmentHistory.value) {
-    loadEquipmentHistory()
-  }
-})
 </script>

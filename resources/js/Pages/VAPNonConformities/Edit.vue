@@ -1,5 +1,6 @@
 <template>
   <div class="min-w-0 space-y-6 overflow-x-clip">
+    <Head title="Editar não conformidade" />
     <section class="ds-panel overflow-hidden">
       <div class="flex flex-col gap-5 border-b border-[var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
         <div class="max-w-3xl">
@@ -38,7 +39,8 @@
 
     </section>
 
-    <NonConformityForm
+    <NonConformityObservations v-if="nonConformity.status === 'closed'" :record="nonConformity" />
+    <NonConformityForm v-else
       :non-conformity="nonConformity"
       :labs="labs"
       :departments="departments"
@@ -49,7 +51,8 @@
 
 <script setup>
 import NonConformityForm from '@/Pages/VAPNonConformities/NonConformityForm.vue'
-import { Link } from '@inertiajs/vue3'
+import NonConformityObservations from '@/Pages/VAPNonConformities/NonConformityObservations.vue'
+import { Head, Link } from '@inertiajs/vue3'
 import { ArrowLeft as ArrowLeftIcon, TriangleAlert as ExclamationTriangleIcon, Eye as EyeIcon } from '@lucide/vue'
 import { computed } from 'vue'
 

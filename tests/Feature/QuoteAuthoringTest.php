@@ -81,6 +81,18 @@ class QuoteAuthoringTest extends TestCase
         $this->assertSame(1, Quote::query()->where('lab_id', $lab->id)->count());
     }
 
+    public function test_saved_site_keeps_a_readable_name_when_its_address_is_absent(): void
+    {
+        $lab = VAPLab::factory()->create();
+        $user = $this->operator($lab);
+        $payload = $this->payload();
+        $quote = app(SaveQuote::class)->execute($user->id, $lab->id, $payload);
+        $this->actingAs($user)->withSession(['active_lab_id' => $lab->id]);
+        $this->get(route('quotes.edit', $quote))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Quotes/Edit')->where('record.warehouse_id.value', $payload['warehouse_id'])
+            ->where('record.warehouse_id.label', 'Quote site'));
+    }
+
     public function test_line_corrections_reject_archived_units_and_roll_back_audit_stage_retirement(): void
     {
         $lab = VAPLab::factory()->create();

@@ -5,7 +5,7 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { ref, computed } from "vue";
-import { router, Link } from "@inertiajs/vue3";
+import { Head, router, Link } from "@inertiajs/vue3";
 import { usePermission } from '@/Composables/usePermissions';
 import { trans } from 'laravel-vue-i18n';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
@@ -90,6 +90,7 @@ function confirmAction() {
 </script>
 <template>
 <div class="space-y-6" :class="commercialDocumentThemeClasses">
+<Head title="Proformas" />
 <ModuleHero
   :eyebrow="$t('gestlab.general.labels.commercial_documents.commercial_area')"
   :title="$t('gestlab.general.labels.quotes.page_title')"

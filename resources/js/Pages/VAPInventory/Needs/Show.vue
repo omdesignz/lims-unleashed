@@ -46,6 +46,13 @@
       </dl>
     </section>
 
+    <div v-if="actionForm.hasErrors || conversionForm.hasErrors" class="ds-panel ds-field-error p-4" role="alert">
+      <p class="font-semibold">Não foi possível concluir a acção.</p>
+      <ul class="mt-2 list-inside list-disc">
+        <li v-for="(error, index) in [...Object.values(actionForm.errors), ...Object.values(conversionForm.errors)]" :key="index">{{ error }}</li>
+      </ul>
+    </div>
+
     <section class="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
       <article class="ds-panel overflow-hidden">
         <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
@@ -157,7 +164,7 @@
                   <tr v-for="item in actionForm.items" :key="item.id" class="ds-table-row">
                     <td class="ds-table-cell text-sm font-semibold text-[color:var(--ds-text)]">{{ item.name }}</td>
                     <td class="ds-table-cell">
-                      <BaseInput v-model="item.quantity_approved" type="number" min="0.0001" step="0.0001" :max="item.quantity_requested" />
+                      <BaseInput v-model="item.quantity_approved" type="number" min="0.0001" step="0.0001" :max="item.quantity_requested" :aria-label="`Quantidade aprovada: ${item.name}`" />
                     </td>
                   </tr>
                 </tbody>
@@ -167,6 +174,7 @@
             <div v-if="canConvertToOrder" class="space-y-4">
               <comboboxEnhanced
                 v-model="selectedSupplierOption"
+                title-label="Fornecedor"
                 :has-error="Boolean(conversionForm.errors.supplier_id)"
                 :options="supplierOptions"
                 placeholder="Pesquisar fornecedor aprovado"
@@ -582,14 +590,20 @@ const supplierAssessmentPanelClass = computed(() => {
 })
 
 const approve = () => {
+  if (actionForm.processing || conversionForm.processing) return
+  conversionForm.clearErrors()
   actionForm.post(route('vap-inventory.needs.approve', props.need.id))
 }
 
 const reject = () => {
+  if (actionForm.processing || conversionForm.processing) return
+  conversionForm.clearErrors()
   actionForm.post(route('vap-inventory.needs.reject', props.need.id))
 }
 
 const convertToOrder = () => {
+  if (actionForm.processing || conversionForm.processing) return
+  actionForm.clearErrors()
   conversionForm.post(route('vap-inventory.needs.convert-to-order', props.need.id))
 }
 

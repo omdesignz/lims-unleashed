@@ -17,6 +17,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class NotificationTemplateTest extends TestCase
@@ -171,6 +172,106 @@ class NotificationTemplateTest extends TestCase
         $this->delete(route('admin.notification-templates.destroy', ['key' => 'unknown.preset']))->assertNotFound();
         $this->put($this->url('123'), $this->copy())->assertNotFound();
         $this->assertDatabaseCount('notification_templates', 0);
+    }
+
+    #[DataProvider('vetoedTemplateWrites')]
+    public function test_vetoed_template_writes_never_report_success(bool $existing, string $event): void
+    {
+        $local = $existing ? NotificationTemplate::factory()->create(['lab_id' => $this->lab->id]) : null;
+        $peer = NotificationTemplate::factory()->create(['lab_id' => $this->peer->id]);
+        $before = $local?->fresh()->getRawOriginal();
+        $peerBefore = $peer->fresh()->getRawOriginal();
+        $dispatcher = NotificationTemplate::getEventDispatcher();
+        NotificationTemplate::setEventDispatcher(clone $dispatcher);
+
+        try {
+            NotificationTemplate::{$event}(fn (NotificationTemplate $template): ?bool => $template->lab_id === $this->lab->id ? false : null);
+            $this->put($this->url(), $this->copy(['title_template' => 'Rejected write']))->assertConflict();
+        } finally {
+            NotificationTemplate::setEventDispatcher($dispatcher);
+        }
+
+        $this->assertSame($before, $local?->fresh()->getRawOriginal());
+        $this->assertSame($peerBefore, $peer->fresh()->getRawOriginal());
+        $this->assertDatabaseCount('notification_templates', $existing ? 2 : 1);
+    }
+
+    /** @return array<string, array{bool, string}> */
+    public static function vetoedTemplateWrites(): array
+    {
+        return [
+            'new saving' => [false, 'saving'],
+            'new creating' => [false, 'creating'],
+            'existing saving' => [true, 'saving'],
+            'existing updating' => [true, 'updating'],
+        ];
+    }
+
+    #[DataProvider('templateWriteStates')]
+    public function test_template_save_rolls_back_when_membership_is_revoked_during_persistence(bool $existing): void
+    {
+        $local = $existing ? NotificationTemplate::factory()->create(['lab_id' => $this->lab->id]) : null;
+        $before = $local?->fresh()->getRawOriginal();
+        $dispatcher = NotificationTemplate::getEventDispatcher();
+        NotificationTemplate::setEventDispatcher(clone $dispatcher);
+
+        try {
+            NotificationTemplate::saved(function (NotificationTemplate $template): void {
+                if ($template->lab_id === $this->lab->id) {
+                    DB::table('lab_user')->where('lab_id', $this->lab->id)->where('user_id', $this->admin->id)->delete();
+                }
+            });
+            $this->put($this->url(), $this->copy(['title_template' => 'Revoked write']))->assertForbidden();
+        } finally {
+            NotificationTemplate::setEventDispatcher($dispatcher);
+        }
+
+        $this->assertSame($before, $local?->fresh()->getRawOriginal());
+        $this->assertDatabaseCount('notification_templates', $existing ? 1 : 0);
+        $this->assertDatabaseHas('lab_user', ['lab_id' => $this->lab->id, 'user_id' => $this->admin->id]);
+    }
+
+    #[DataProvider('templateWriteStates')]
+    public function test_template_save_rejects_a_persisted_value_that_differs_from_the_validated_draft(bool $existing): void
+    {
+        $local = $existing ? NotificationTemplate::factory()->create(['lab_id' => $this->lab->id]) : null;
+        $before = $local?->fresh()->getRawOriginal();
+        $dispatcher = NotificationTemplate::getEventDispatcher();
+        NotificationTemplate::setEventDispatcher(clone $dispatcher);
+
+        try {
+            NotificationTemplate::saved(function (NotificationTemplate $template): void {
+                DB::table('notification_templates')->where('id', $template->id)->update(['title_template' => 'Unexpected replacement']);
+            });
+            $this->put($this->url(), $this->copy(['title_template' => 'Intended copy']))->assertConflict();
+        } finally {
+            NotificationTemplate::setEventDispatcher($dispatcher);
+        }
+
+        $this->assertSame($before, $local?->fresh()->getRawOriginal());
+        $this->assertDatabaseCount('notification_templates', $existing ? 1 : 0);
+    }
+
+    /** @return array<string, array{bool}> */
+    public static function templateWriteStates(): array
+    {
+        return ['new override' => [false], 'existing override' => [true]];
+    }
+
+    public function test_saving_an_unchanged_override_does_not_repeat_model_writes(): void
+    {
+        $action = app(SaveNotificationTemplate::class);
+        $template = $action->handle($this->admin->id, $this->lab->id, $this->key, $this->copy());
+        $dispatcher = NotificationTemplate::getEventDispatcher();
+        NotificationTemplate::setEventDispatcher(clone $dispatcher);
+
+        try {
+            NotificationTemplate::saving(fn (): bool => false);
+            $saved = $action->handle($this->admin->id, $this->lab->id, $this->key, $this->copy());
+            $this->assertSame($template->getRawOriginal(), $saved->getRawOriginal());
+        } finally {
+            NotificationTemplate::setEventDispatcher($dispatcher);
+        }
     }
 
     public function test_empty_forged_identity_fields_never_replace_server_derived_owner_or_key(): void

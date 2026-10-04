@@ -26,13 +26,17 @@ for (const [kind, routes] of [['invoice', 'invoices'], ['credit_note', 'creditno
     assert.equal(calls[0].options.preserveScroll, true)
     state.submit()
     assert.equal(calls.length, 1)
-    calls[0].options.onNetworkError()
+    assert.equal(calls[0].options.onNetworkError(), false, 'The retained draft must suppress native error handling')
     assert.equal(state.form.obs, 'Draft')
     assert.match(state.form.errors.obs, /Ligação interrompida/)
-    calls[0].options.onHttpException()
+    assert.equal(calls[0].options.onHttpException(), false, 'HTTP errors must not replace the observation editor')
     assert.match(state.form.errors.obs, /Não foi possível guardar/)
     calls[0].options.onSuccess()
     assert.equal(defaults, 1)
+    state.form.processing = false
+    state.submit()
+    assert.equal(calls.length, 2, 'A failed save must be retryable with the same observations')
+    assert.equal(state.form.obs, 'Draft')
     state.form.processing = false
     state.form.put = () => { throw new Error('Dispatch failure') }
     state.submit()

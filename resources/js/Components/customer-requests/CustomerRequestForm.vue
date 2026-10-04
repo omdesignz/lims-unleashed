@@ -66,6 +66,7 @@ function updateCustomer(customer) {
         <div class="ds-field-group">
           <Combobox
             :model-value="form.customer_id"
+            :disable-input="Boolean(form.id)"
             :has-error="Boolean(form.errors.customer_id)"
             :load-options="loadCustomers"
             :title-label="$t('gestlab.general.labels.customer_requests.customer_id')"
@@ -80,7 +81,7 @@ function updateCustomer(customer) {
             v-model="form.warehouse_id"
             :has-error="Boolean(form.errors.warehouse_id)"
             :load-options="loadWarehouses"
-            :disable-input="!form.customer_id"
+            :disable-input="Boolean(form.id) || !form.customer_id"
             :title-label="$t('gestlab.general.labels.customer_requests.warehouse_id')"
             :placeholder="form.customer_id ? 'Pesquisar local do cliente' : 'Seleccione primeiro o cliente'"
           />

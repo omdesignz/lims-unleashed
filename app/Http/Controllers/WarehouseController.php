@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\WarehouseLookupRequest;
 use App\Http\Requests\WarehousePasswordRequest;
 use App\Http\Requests\WarehouseRequest;
+use App\Http\Resources\WarehouseLookupResource;
 use App\Http\Resources\WarehouseResource;
 use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
 use App\Services\SampleLaboratoryAccess;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -331,36 +335,19 @@ class WarehouseController extends Controller
         ]);
     }
 
-    public function getWarehouse()
+    public function getWarehouse(WarehouseLookupRequest $request): JsonResponse
     {
-        $data = [];
-
-        if (! is_null(request()->q)) {
-            $search = request()->q;
-            $customer_id = request()->customer_id;
-
-            $data = DB::table('warehouses')
-                ->select('warehouses.*')
-                ->where('customer_id', '=', $customer_id)
-                ->where(function ($query) use ($search) {
-                    $query->where('address', 'LIKE', "%{$search}%")
-                        ->orWhere('name', 'LIKE', "%{$search}%")
-                        ->orWhere('code', 'LIKE', "%{$search}%");
-                })
-                ->limit(5)
-                ->get();
-        } else {
-
-            $data = DB::table('warehouses')
-                ->select('warehouses.*')
-                ->where('customer_id', '=', request()->customer_id)
-                // ->where('address','LIKE',"%$search%")
-                // ->where('name','LIKE',"%$search%")
-                ->limit(5)
-                ->get();
-
+        $customerId = $request->validated('customer_id');
+        if ($customerId === null) {
+            return response()->json([]);
         }
+        $search = $request->validated('q');
+        $sites = Warehouse::query()->where('customer_id', $customerId)->whereHas('customer')
+            ->when($search !== null && $search !== '', fn (Builder $query): Builder => $query->where(function (Builder $query) use ($search): void {
+                $query->where('address', 'ilike', '%'.$search.'%')
+                    ->orWhere('name', 'ilike', '%'.$search.'%')->orWhere('code', 'ilike', '%'.$search.'%');
+            }))->orderBy('name')->orderBy('id')->limit(5)->get(['id', 'customer_id', 'name', 'address', 'code']);
 
-        return response()->json($data);
+        return response()->json(WarehouseLookupResource::collection($sites)->resolve($request));
     }
 }

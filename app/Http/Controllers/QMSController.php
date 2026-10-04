@@ -71,30 +71,33 @@ class QMSController extends Controller
             ->take(12)
             ->values();
 
-        $dueDocumentReviews = VAPFile::query()
+        $dueDocumentReviewQuery = VAPFile::query()
             ->where('lab_id', $labId)
             ->with(['owner:id,name'])
             ->whereNotNull('review_due_at')
             ->whereDate('review_due_at', '<=', now()->addDays(45))
-            ->orderBy('review_due_at')
+            ->orderBy('review_due_at');
+        $dueDocumentReviews = (clone $dueDocumentReviewQuery)
             ->limit(12)
             ->get(['id', 'name', 'owner_id', 'review_due_at', 'status']);
 
-        $dueSupplierAssessments = InventorySupplierAssessment::query()
+        $dueSupplierAssessmentQuery = InventorySupplierAssessment::query()
             ->where('lab_id', $labId)
             ->with(['supplier:id,name', 'department:id,name'])
             ->whereNotNull('next_review_at')
             ->whereDate('next_review_at', '<=', now()->addDays(45))
-            ->orderBy('next_review_at')
+            ->orderBy('next_review_at');
+        $dueSupplierAssessments = (clone $dueSupplierAssessmentQuery)
             ->limit(12)
             ->get();
 
-        $receivingNonConformities = VAPNonConformity::query()
+        $receivingNonConformityQuery = VAPNonConformity::query()
             ->where('lab_id', $labId)
             ->with(['department:id,name', 'reportedByUser:id,name'])
             ->where('occurrence_area', 'procurement_receipt')
             ->whereNotIn('status', ['closed', 'resolved'])
-            ->latest('reported_at')
+            ->latest('reported_at');
+        $receivingNonConformities = (clone $receivingNonConformityQuery)
             ->limit(12)
             ->get(['id', 'department_id', 'reported_by_id', 'nc_number', 'title', 'status', 'severity', 'reported_at', 'batch_number']);
 
@@ -103,17 +106,17 @@ class QMSController extends Controller
                 'open_complaints' => Complaint::query()->where('lab_id', $labId)->whereNotIn('status', ['resolved', 'closed'])->count(),
                 'open_non_conformities' => VAPNonConformity::query()->where('lab_id', $labId)->whereNotIn('status', ['closed', 'resolved'])->count(),
                 'scheduled_management_reviews' => ManagementReview::query()->where('lab_id', $labId)->whereDate('review_date', '>=', now()->toDateString())->count(),
-                'expiring_qualifications' => $expiringQualifications->count(),
+                'expiring_qualifications' => $qualificationMonitoring->whereIn('monitoring_status', ['expired', 'expiring_critical', 'expiring_soon'])->count(),
                 'expired_qualifications' => $qualificationMonitoring->where('monitoring_status', 'expired')->count(),
                 'renewal_ready_qualifications' => $qualificationMonitoring->where('renewal_readiness', 'ready_for_review')->count(),
                 'qualifications_missing_evidence' => $qualificationMonitoring->where('renewal_readiness', 'missing_evidence')->count(),
                 'qualification_followups_due' => $qualificationMonitoring->whereIn('follow_up_state', ['overdue', 'due_soon'])->count(),
                 'responsibility_assignments' => ResponsibilityMatrixEntry::query()->where('lab_id', $labId)->where('is_active', true)->count(),
                 'uncertainty_sources' => UncertaintySource::query()->where('lab_id', $labId)->where('is_active', true)->count(),
-                'supplier_assessments_due' => $dueSupplierAssessments->count(),
+                'supplier_assessments_due' => $dueSupplierAssessmentQuery->count(),
                 'suppliers_high_risk' => InventorySupplierAssessment::query()->where('lab_id', $labId)->whereIn('risk_level', ['high', 'critical'])->count(),
-                'receiving_non_conformities_open' => $receivingNonConformities->count(),
-                'documents_due_review' => $dueDocumentReviews->count(),
+                'receiving_non_conformities_open' => $receivingNonConformityQuery->count(),
+                'documents_due_review' => $dueDocumentReviewQuery->count(),
                 'environmental_entries_today' => EnvironmentalCondition::query()->where('lab_id', $labId)->whereDate('recorded_at', today())->count(),
             ],
             'expiringQualifications' => $expiringQualifications,

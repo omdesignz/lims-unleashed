@@ -648,9 +648,10 @@ const areaDefinitions = [
 ]
 
 const pathMatches = (path, prefix) => path === prefix || path.startsWith(`${prefix}/`)
+const canonicalNavigationPath = (path) => path.startsWith('/maintenance-tasks/') ? path.replace('/maintenance-tasks/', '/maintenance/tasks/') : path
 const areaKeyForPath = (path) => areaDefinitions
   .flatMap((area) => area.match.map((prefix) => ({ key: area.key, prefix })))
-  .filter(({ prefix }) => pathMatches(path, prefix))
+  .filter(({ prefix }) => pathMatches(canonicalNavigationPath(path), prefix))
   .sort((first, second) => second.prefix.length - first.prefix.length)[0]?.key ?? null
 
 const navAreas = computed(() => {

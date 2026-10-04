@@ -8,12 +8,14 @@ use App\Models\InventoryItemWarehouse;
 use App\Models\InventoryOrder;
 use App\Models\InventoryOrderDetail;
 use App\Models\InventorySupplierAssessment;
+use App\Models\InventoryUnit;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VAPLab;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use RuntimeException;
 use Tests\TestCase;
@@ -38,6 +40,7 @@ class InventoryOrderShowTest extends TestCase
         $user = $this->verifiedAdmin();
         $inventoryItem = InventoryItem::query()->create([
             'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
+            'unit_id' => InventoryUnit::query()->create(['description' => 'Order chart unit', 'code' => fake()->unique()->bothify('OC-######')])->id,
             'name' => 'Inventory order chart fixture',
             'code' => fake()->unique()->bothify('OC-######'),
         ]);
@@ -123,6 +126,7 @@ class InventoryOrderShowTest extends TestCase
         $this->actingAs($user)
             ->post(route('vap-inventory.orders.receive', $order), [
                 'items' => [['id' => $orderItem->id, 'received_qty' => 1]],
+                'request_id' => (string) Str::uuid(),
                 'receive_date' => now()->toDateString(),
                 'register_non_conformity' => true,
                 'non_conformity_title' => 'Receiving deviation',

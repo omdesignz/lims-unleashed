@@ -197,17 +197,67 @@ test('consumption pages use the existing permission composable export', () => {
   }
 })
 
-test('stock movement presents reversal as an inbound movement and consumption as outbound', () => {
+test('stock movement presents server-classified receipts and reversals as inbound and consumption as outbound', () => {
   const page = read('Pages/VAPInventory/Reports/StockMovement.vue')
+  assert.match(page, /<Head title="Movimento de existências"/)
   const { descriptor, errors } = parse(page)
   assert.deepEqual(errors, [])
   const script = compileScript(descriptor, { id: 'stock-movement' })
   assert.deepEqual(compileTemplate({ id: 'stock-movement', source: descriptor.template.content, compilerOptions: { bindingMetadata: script.bindings } }).errors, [])
-  const inbound = page.match(/const inboundCodes = (\[[^\n]+\])/)[1]
-  const outbound = page.match(/const outboundCodes = (\[[^\n]+\])/)[1]
+  assert.doesNotMatch(page, /const (inbound|outbound)Codes/)
   const label = page.match(/function quantityLabel\(transaction\) \{[\s\S]*?\n\}/)[0]
   const format = page.match(/function formatQuantity\(value\) \{[\s\S]*?\n\}/)[0]
-  const render = new Function(`const inboundCodes = ${inbound}; const outboundCodes = ${outbound}; ${format}; ${label}; return quantityLabel`)()
-  assert.equal(render({ type: { code: 'consumption_reversal' }, qty: '0.0001' }), '+0,0001')
-  assert.equal(render({ type: { code: 'consumption' }, qty: '-0.0001' }), '-0,0001')
+  const render = new Function(`${format}; ${label}; return quantityLabel`)()
+  assert.equal(render({ is_addition: true, is_deduction: false, type: { code: 'consumption_reversal' }, qty: '0.0001' }), '+0,0001')
+  assert.equal(render({ is_addition: true, is_deduction: false, type: { code: 'RECEIPT' }, qty: '1.2500' }), '+1,25')
+  assert.equal(render({ is_addition: false, is_deduction: true, type: { code: 'consumption' }, qty: '-0.0001' }), '-0,0001')
+  assert.equal(render({ is_addition: false, is_deduction: false, type: { code: 'transfer' }, qty: '1.2500' }), '1,25')
+  assert.equal(render({ is_addition: false, is_deduction: false, type: null, qty: '1.2500' }), '1,25')
+  for (const name of ['transactionTypeTone', 'quantityTone']) {
+    const source = page.match(new RegExp(`function ${name}\\(transaction\\) \\{[\\s\\S]*?\\n\\}`))[0]
+    const tone = new Function(`${source}; return ${name}`)()
+    assert.match(tone({ is_addition: true }), /emerald/)
+    assert.match(tone({ is_deduction: true }), /rose/)
+    assert.doesNotMatch(tone({ type: null }), /emerald|rose/)
+  }
+})
+
+test('ledger page counts incoming and outgoing rows using the same server classification', () => {
+  const page = read('Pages/InventoryTransactions/Index.vue')
+  assert.match(page, /<Head title="Livro de movimentos"/)
+  const { descriptor, errors } = parse(page)
+  assert.deepEqual(errors, [])
+  const script = compileScript(descriptor, { id: 'ledger-direction' })
+  assert.deepEqual(compileTemplate({ id: 'ledger-direction', source: descriptor.template.content, compilerOptions: { bindingMetadata: script.bindings } }).errors, [])
+  assert.doesNotMatch(page, /const (incoming|outgoing)Codes/)
+  const incoming = page.match(/const incomingCount = computed\(\(\) => (.*)\);/)[1]
+  const outgoing = page.match(/const outgoingCount = computed\(\(\) => (.*)\);/)[1]
+  const counts = new Function('rows', `return [${incoming}, ${outgoing}]`)
+  assert.deepEqual(counts({ value: [
+    { type_code: 'RECEIPT', is_addition: true, is_deduction: false },
+    { type_code: 'consumption_reversal', is_addition: true, is_deduction: false },
+    { type_code: 'consumption', is_addition: false, is_deduction: true },
+    { type_code: 'transfer', is_addition: false, is_deduction: false },
+  ] }), [2, 1])
+})
+
+test('read-only tables never offer record creation through their empty state', () => {
+  const table = read('Components/records-table.vue')
+  const empty = read('Components/empty-state.vue')
+  const expression = table.match(/const canCreate = computed\(\(\) => (.*)\);/)[1]
+  const canCreate = new Function('props', 'hasPermission', `return ${expression}`)
+  assert.equal(canCreate({ createAction: false, model: 'immutable_itransactions' }, () => true), false)
+  assert.equal(canCreate({ createAction: true, model: 'iitems' }, () => false), false)
+  assert.equal(canCreate({ createAction: true, model: 'iitems' }, (permission) => permission === 'add_iitems'), true)
+  assert.match(table, /:show-create="canCreate"/)
+  assert.match(table, /:description="canCreate \?/)
+  assert.match(empty, /v-if="showCreate"/)
+  assert.match(empty, /showCreate: \{ type: Boolean, default: true \}/)
+  for (const [index, source] of [table, empty].entries()) {
+    const { descriptor, errors } = parse(source)
+    assert.deepEqual(errors, [])
+    const id = `read-only-empty-${index}`
+    const script = compileScript(descriptor, { id })
+    assert.deepEqual(compileTemplate({ id, source: descriptor.template.content, compilerOptions: { bindingMetadata: script.bindings } }).errors, [])
+  }
 })

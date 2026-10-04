@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(WorksheetPermissionSeeder::class);
         $this->call(ReagentConsumptionPermissionSeeder::class);
+        $this->call(NonConformityPermissionSeeder::class);
         // \App\Models\User::factory(1)->create();
         // \App\Models\Department::factory(1)->create();
 

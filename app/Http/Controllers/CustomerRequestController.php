@@ -5,11 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CustomerRequestRequest;
 use App\Http\Resources\CustomerRequestResource;
 use App\Models\CustomerRequest;
+use App\Services\LaboratoryWorkflowMutationAccess;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class CustomerRequestController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $access, private readonly LaboratoryWorkflowMutationAccess $mutationAccess) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -19,7 +23,7 @@ class CustomerRequestController extends Controller
 
         return Inertia::render('CustomerRequests/Index', [
             'record' => CustomerRequestResource::collection(
-                CustomerRequest::query()
+                CustomerRequest::query()->forLaboratory($this->access->activeLabId())
                     ->with('category', 'customer', 'warehouse')
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('description', 'like', "%{$search}%");
@@ -81,8 +85,12 @@ class CustomerRequestController extends Controller
     {
         abort_if(! auth()->user()->can('add_customer_requests'), 403, '');
 
-        // Persiste data to DB
-        CustomerRequest::create($request->validated());
+        DB::transaction(function () use ($request): void {
+            $labId = $this->access->activeLabId();
+            $this->mutationAccess->operator($request->user()->id, $labId, 'add_customer_requests');
+            $record = new CustomerRequest([...$request->validated(), 'lab_id' => $labId]);
+            abort_unless($record->save(), 409);
+        }, 3);
 
         return redirect()->back()->with([
             'toast' => [
@@ -109,7 +117,7 @@ class CustomerRequestController extends Controller
         abort_if(! auth()->user()->can('edit_customer_requests'), 403, '');
 
         // Find the record
-        $record = CustomerRequest::findOrFail($id);
+        $record = CustomerRequest::query()->forLaboratory($this->access->activeLabId())->findOrFail($id);
 
         // Return Inertia View with record data
         return Inertia::render('CustomerRequests/Edit', [
@@ -124,10 +132,12 @@ class CustomerRequestController extends Controller
     {
         abort_if(! auth()->user()->can('edit_customer_requests'), 403, '');
 
-        // Find the record
-        $record = CustomerRequest::findOrFail($id);
-
-        $record->update($request->validated());
+        DB::transaction(function () use ($request, $id): void {
+            $labId = $this->access->activeLabId();
+            $this->mutationAccess->operator($request->user()->id, $labId, 'edit_customer_requests');
+            $record = CustomerRequest::query()->forLaboratory($labId)->lockForUpdate()->findOrFail($id);
+            abort_unless($record->update($request->validated()), 409);
+        }, 3);
 
         return redirect()->back()->with([
             'toast' => [
@@ -145,12 +155,19 @@ class CustomerRequestController extends Controller
         abort_if(! auth()->user()->can('delete_customer_requests'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array'],
+            'recordIds' => ['required', 'array', 'min:1', 'max:100'],
+            'recordIds.*' => ['required', 'integer', 'distinct'],
         ]);
         // Find and delete the record
-        foreach (CustomerRequest::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
+        abort_if(request()->session()->has('impersonate'), 403);
+        DB::transaction(function (): void {
+            $labId = $this->access->activeLabId();
+            $this->mutationAccess->operator(auth()->id(), $labId, 'delete_customer_requests');
+            $records = CustomerRequest::query()->forLaboratory($labId)->withTrashed()->lockForUpdate()->findOrFail(request('recordIds'));
+            foreach ($records as $record) {
+                abort_unless($record->delete(), 409);
+            }
+        }, 3);
 
         return redirect()->back()->with([
             'toast' => [
@@ -168,12 +185,19 @@ class CustomerRequestController extends Controller
         abort_if(! auth()->user()->can('restore_customer_requests'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array'],
+            'recordIds' => ['required', 'array', 'min:1', 'max:100'],
+            'recordIds.*' => ['required', 'integer', 'distinct'],
         ]);
         // Find and restore the record
-        foreach (CustomerRequest::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
+        abort_if(request()->session()->has('impersonate'), 403);
+        DB::transaction(function (): void {
+            $labId = $this->access->activeLabId();
+            $this->mutationAccess->operator(auth()->id(), $labId, 'restore_customer_requests');
+            $records = CustomerRequest::query()->forLaboratory($labId)->withTrashed()->lockForUpdate()->findOrFail(request('recordIds'));
+            foreach ($records as $record) {
+                abort_unless($record->restore(), 409);
+            }
+        }, 3);
 
         return redirect()->back()->with([
             'toast' => [
@@ -185,14 +209,15 @@ class CustomerRequestController extends Controller
 
     public function getCustomerRequest()
     {
+        abort_unless(auth()->user()->can('view_customer_requests'), 403);
         $data = [];
 
         if (request()->has('q')) {
             $search = request()->q;
 
-            $data = DB::table('customer_requests')
-                ->select('customer_requests.*')
-                ->orWhere('description', 'LIKE', "%$search%")
+            $data = CustomerRequest::query()->forLaboratory($this->access->activeLabId())
+                ->select(['id', 'description'])
+                ->where('description', 'LIKE', "%$search%")
                 ->get();
         }
 

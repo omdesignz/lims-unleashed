@@ -72,7 +72,7 @@ function switchLab(lab) {
 </script>
 
 <template>
-  <div class="contents">
+  <div class="app-sidebar">
     <nav class="app-rail" aria-label="Áreas">
       <Link :href="route('dashboard')" class="app-rail-brand" :class="settings.logo_url ? 'app-rail-brand-custom' : ''" :aria-label="`${appName} — Visão geral`" @click="emit('navigate')">
         <img v-if="settings.logo_url" :src="settings.logo_url" :alt="appName" />

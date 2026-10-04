@@ -1,5 +1,7 @@
 <template>
   <div class="min-w-0 space-y-6 overflow-x-clip">
+    <Head title="Configurações gerais" />
+    <fieldset :disabled="form.processing" :aria-busy="form.processing" class="min-w-0 space-y-6 border-0 p-0">
     <section class="ds-panel overflow-hidden">
       <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
         <div class="max-w-3xl">
@@ -17,11 +19,11 @@
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row">
-          <button type="button" class="ds-button ds-button-secondary" @click="toggleEdit">
+          <button v-if="canEdit" type="button" class="ds-button ds-button-secondary" @click="toggleEdit">
             <PencilSquareIcon class="h-4 w-4" />
             {{ editSettings ? 'Cancelar edição' : 'Editar definições' }}
           </button>
-          <button v-if="editSettings" type="button" class="ds-button ds-button-primary" :disabled="form.processing" @click="submit">
+          <button v-if="editSettings" type="button" class="ds-button ds-button-primary" :disabled="form.processing || Boolean(form.errors.settings_revision)" @click="submit">
             <ArrowUpOnSquareIcon class="h-4 w-4" />
             {{ form.processing ? 'A guardar...' : 'Guardar alterações' }}
           </button>
@@ -52,8 +54,8 @@
       </dl>
     </section>
 
-    <div class="grid gap-4 xl:grid-cols-[17rem_minmax(0,1fr)]">
-      <aside class="xl:sticky xl:top-24 xl:self-start">
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[17rem_minmax(0,1fr)]">
+      <aside class="min-w-0 xl:sticky xl:top-24 xl:self-start">
         <section class="ds-panel overflow-hidden">
           <div class="border-b border-[color:var(--ds-border)] px-4 py-4">
             <p class="ds-kicker">Áreas de configuração</p>
@@ -397,19 +399,25 @@
               <SettingsField v-model="form.app_agt_valid_name" label="Entidade validante" :editing="editSettings" :display-value="settings.app_agt_valid_name" :error="form.errors.app_agt_valid_name" />
               <SettingsField v-model="form.app_agt_validation_number" label="Número de validação" :editing="editSettings" :display-value="settings.app_agt_validation_number" :error="form.errors.app_agt_validation_number" />
               <SettingsField v-model="form.app_public_key" label="Chave pública" :editing="editSettings" :display-value="maskedKey(settings.app_public_key)" :error="form.errors.app_public_key" multiline monospace wide :rows="5" placeholder="Cole aqui a chave pública usada para validação." />
-              <SettingsField v-model="form.app_private_key" label="Chave privada" :editing="editSettings" :display-value="maskedKey(settings.app_private_key)" :error="form.errors.app_private_key" multiline monospace wide :rows="7" placeholder="Cole aqui a chave privada usada para assinar documentos." />
+              <div class="md:col-span-2">
+                <SettingsField v-model="form.app_private_key" label="Substituir chave privada" :editing="editSettings" :display-value="securitySummary.private_key_configured ? 'Configurada — conteúdo protegido' : 'Não configurada'" :error="form.errors.app_private_key" multiline monospace :rows="7" placeholder="Cole uma nova chave apenas para substituir a chave existente." />
+                <p class="ds-copy mt-2 text-xs">A chave guardada nunca é apresentada. Deixe vazio para a manter. Após uma falha, volte a introduzir a nova chave antes de tentar novamente.</p>
+              </div>
             </div>
           </section>
         </template>
 
         <div v-if="editSettings" class="ds-command-surface sticky bottom-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+          <div class="min-w-0">
+            <ul v-if="Object.keys(form.errors).length" role="alert" class="space-y-1">
+              <li v-for="(error, field) in form.errors" :key="field" class="ds-field-error">{{ error }}</li>
+            </ul>
             <p class="text-sm font-bold text-[color:var(--ds-text)]">Alterações por publicar</p>
             <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Reveja a área activa e guarde quando terminar.</p>
           </div>
-          <div class="flex gap-2">
-            <button type="button" class="ds-button ds-button-secondary" @click="toggleEdit">Cancelar</button>
-            <button type="button" class="ds-button ds-button-primary" :disabled="form.processing" @click="submit">
+          <div class="flex min-w-0 flex-wrap gap-2">
+            <button type="button" class="ds-button ds-button-secondary" @click="toggleEdit">{{ form.errors.settings_revision ? 'Descartar rascunho' : 'Cancelar' }}</button>
+            <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || Boolean(form.errors.settings_revision)" @click="submit">
               <ArrowUpOnSquareIcon class="h-4 w-4" />
               {{ form.processing ? 'A guardar...' : 'Guardar alterações' }}
             </button>
@@ -417,12 +425,13 @@
         </div>
       </div>
     </div>
+    </fieldset>
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useForm, usePage } from '@inertiajs/vue3'
+import { Head, useForm, usePage } from '@inertiajs/vue3'
 import { ColorPicker } from 'vue3-colorpicker'
 import {
   Share as ArrowUpOnSquareIcon,
@@ -439,8 +448,11 @@ import {
   Palette as SwatchIcon,
 } from '@lucide/vue'
 import SettingsField from '@/Components/settings/SettingsField.vue'
+import { generalSettingsFormData, generalSettingsPayload } from '@/Composables/useGeneralSettingsForm'
 
 const props = defineProps({
+  canEdit: { type: Boolean, default: false },
+  settingsRevision: { type: String, required: true },
   settings: {
     type: Object,
     required: true,
@@ -525,7 +537,7 @@ const bankingFields = [
   },
 ]
 
-const form = useForm({ ...props.settings })
+const form = useForm(generalSettingsFormData(props.settings, props.settingsRevision))
 
 const themePresets = [
   { value: 'corporate', label: 'Corporate' },
@@ -594,22 +606,37 @@ const maskedKey = (value) => {
 }
 
 const toggleEdit = () => {
+  if (!props.canEdit || form.processing) return
   editSettings.value = !editSettings.value
 
   if (!editSettings.value) {
-    form.defaults({ ...props.settings })
+    form.defaults(generalSettingsFormData(props.settings, props.settingsRevision))
     form.reset()
     form.clearErrors()
   }
 }
 
 const submit = () => {
+  if (!props.canEdit || form.processing || form.errors.settings_revision) return
+  form.clearErrors()
+  form.transform(generalSettingsPayload)
   form.post(route('generalsettings.update'), {
     preserveScroll: true,
-    onSuccess: () => {
-      form.defaults(form.data())
+    onSuccess: (response) => {
+      form.defaults(generalSettingsFormData(response.props.settings, response.props.settingsRevision))
+      form.reset()
       editSettings.value = false
     },
+    onError: () => { form.app_private_key = '' },
+    onHttpException: () => { return recoverSave('O servidor não confirmou a gravação. Reveja os valores e tente novamente.') },
+    onNetworkError: () => { return recoverSave('A ligação foi interrompida. Reveja os valores e tente novamente.') },
+    onCancel: () => { recoverSave('A gravação não foi confirmada. Reveja os valores antes de repetir.') },
   })
+}
+
+function recoverSave(message) {
+  form.app_private_key = ''
+  form.setError('request', message)
+  return false
 }
 </script>

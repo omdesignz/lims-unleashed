@@ -1,12 +1,13 @@
 <script setup>
 import '../CommercialDocumentSurface.css';
 import { optionRows } from '@/Composables/useCommercialDocumentOptions';
+import { useCustomerSiteOptions } from '@/Composables/useCustomerSiteOptions';
 import { prepareQuoteLine, selectQuoteCatalog, quoteLinePreview, saveQuoteForm } from '@/Composables/useQuoteAuthoring';
 import FinancialObservationForm from '@/Components/documents/FinancialObservationForm.vue';
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { ref, computed, onMounted, reactive, watch } from "vue";
-import { router, useForm } from "@inertiajs/vue3";
+import { ref, computed, onMounted } from "vue";
+import { Head, router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
 import {throttle} from "lodash";
 import datePicker from '@/Components/date-picker.vue'
@@ -20,13 +21,8 @@ defineOptions({
 
 const props = defineProps({
     record: Object,
-    discount_categories: {
-      type: Array,
-      default: () => []
-    }
 });
 
-let customerWarehouses = reactive([]);
 
 const updateDate = (e) => {
   form.due_date = e;
@@ -57,23 +53,7 @@ const form = useForm({
     total: props.record.total
 });
 
-let warehouseLookupVersion = 0;
-watch(() => form.customer_id?.value, async (customerId) => {
-    const version = ++warehouseLookupVersion;
-    form.warehouse_id = null;
-    customerWarehouses = [];
-    if (!customerId) return;
-    try {
-        const response = await fetch('/warehouses/getWarehouse?customer_id=' + encodeURIComponent(customerId));
-        if (!response.ok) throw new Error('Warehouse lookup failed');
-        const results = await response.json();
-        if (version !== warehouseLookupVersion) return;
-        customerWarehouses = optionRows(results).map((result) => ({ value: result.id, label: result.address }));
-        form.warehouse_id = customerWarehouses[0] ?? null;
-    } catch {
-        if (version === warehouseLookupVersion) form.setError('warehouse_id', 'Não foi possível carregar os locais. Tente seleccionar novamente.');
-    }
-});
+const { loadWarehouses, loadingWarehouses } = useCustomerSiteOptions(form);
 
 const addItem = () => {
     form.items.push(prepareQuoteLine({
@@ -131,21 +111,6 @@ function loadCustomers(query, setOptions) {
             };
         })
         );
-    });
-}
-
-let loadWarehouses = (query, setOptions) => {
-    fetch('/warehouses/getWarehouse?q=' + query + '&customer_id=' + form.customer_id?.value)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        optionRows(results).map(result => {
-            return {
-            value: result.id,
-            label: result.address,
-            };
-        })
-        )
     });
 }
 
@@ -334,6 +299,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
 
 <template>
 <div>
+<Head :title="`Editar proforma${record.quote_no ? ' · ' + record.quote_no : ''}`" />
 <FinancialObservationForm v-if="record.invoice_id || record.converted_to_invoice" kind="quote" :record="record" />
 <template v-else>
 <div class="commercial-document-page border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
@@ -359,7 +325,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
           <div class="sm:col-span-2">
             <label for="customer_id" class="block text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.quotes.customer_id') }}</label>
             <div class="mt-2">
-              <comboboxEnhanced :hasError="form.errors.customer_id" v-model="form.customer_id" :load-options="loadCustomers" @update:model-value=""/>
+              <comboboxEnhanced :input-label="$t('gestlab.general.labels.quotes.customer_id')" :hasError="form.errors.customer_id" v-model="form.customer_id" :load-options="loadCustomers"/>
             </div>
             <p v-if="form.errors.customer_id" class="mt-2 text-xs text-red-600" id="customer_id-error">{{ form.errors.customer_id }}</p>
           </div>
@@ -367,7 +333,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
           <div class="sm:col-span-2">
             <label for="warehouse_id" class="block text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.quotes.warehouse_id') }}</label>
             <div class="mt-2">
-              <comboboxEnhanced :disableInput="!form.customer_id" :hasError="form.errors.warehouse_id" v-model="form.warehouse_id" :load-options="loadWarehouses"/>
+              <comboboxEnhanced :input-label="$t('gestlab.general.labels.quotes.warehouse_id')" :disableInput="!form.customer_id || loadingWarehouses" :loading="loadingWarehouses" :hasError="form.errors.warehouse_id" v-model="form.warehouse_id" :load-options="loadWarehouses"/>
             </div>
             <p v-if="form.errors.warehouse_id" class="mt-2 text-xs text-red-600" id="warehouse_id-error">{{ form.errors.warehouse_id }}</p>
           </div>
@@ -375,7 +341,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
           <div class="sm:col-span-2">
             <label for="internal_ref" class="ds-field-label">{{ $t('gestlab.general.labels.quotes.internal_ref') }}</label>
             <div class="mt-2">
-              <BaseInput v-model="form.internal_ref" type="text" name="`internal_ref" id="`internal_ref" class="ds-field" placeholder="" />
+              <BaseInput v-model="form.internal_ref" type="text" name="internal_ref" id="internal_ref" class="ds-field" placeholder="" />
             </div>
             <p v-if="form.errors.internal_ref" class="mt-2 text-xs text-red-600" id="internal_ref-error">{{ form.errors.internal_ref }}</p>
           </div>

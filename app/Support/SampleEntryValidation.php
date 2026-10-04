@@ -38,7 +38,7 @@ class SampleEntryValidation
         $customerId = $this->identifier($input['customer_id'] ?? null);
         $warehouseId = $this->identifier($input['warehouse_id'] ?? null);
         $portalRequest = Rule::exists('customer_requests', 'id')->where('customer_id', $customerId)
-            ->where('warehouse_id', $warehouseId)->whereNull('deleted_at');
+            ->where('warehouse_id', $warehouseId)->where('lab_id', $labId)->whereNull('deleted_at');
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
@@ -296,7 +296,7 @@ class SampleEntryValidation
             return;
         }
 
-        $request = CustomerRequest::query()->find($portalId ?? $customerRequestId);
+        $request = CustomerRequest::query()->forLaboratory((int) ($input['lab_id'] ?? 0))->find($portalId ?? $customerRequestId);
         $hasRow = collect(data_get($request?->extra_data, 'samples', []))
             ->contains(fn (mixed $row, int $position): bool => is_array($row) && (int) ($row['batch_index'] ?? $position) === (int) $index);
 

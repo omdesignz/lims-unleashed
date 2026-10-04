@@ -8,7 +8,7 @@ import {
   notificationTypeLabel,
 } from '@/Composables/useNotificationPresentation'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { Link, useForm, usePage } from '@inertiajs/vue3'
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import {
   ArrowLeft as ArrowLeftIcon,
   Check as CheckIcon,
@@ -48,9 +48,9 @@ const form = useForm({
 })
 
 const recipientOptions = [
-  { value: 'all', label: 'Todos', description: 'Utilizadores deste laboratório', icon: UsersIcon },
+  { value: 'all', label: 'Todos', description: 'Membros activos e verificados deste laboratório', icon: UsersIcon },
   { value: 'group', label: 'Grupo', description: 'Segmento operacional predefinido', icon: UserGroupIcon },
-  { value: 'specific', label: 'Especificos', description: 'Selecção individual de utilizadores', icon: UserIcon },
+  { value: 'specific', label: 'Específicos', description: 'Selecção individual de utilizadores', icon: UserIcon },
 ]
 
 const selectedGroup = computed(() => props.userGroups.find((group) => group.id === form.group))
@@ -69,8 +69,12 @@ const senderAlias = computed(() => settings.value.notification_sender_alias || p
 const isFormValid = computed(() => Boolean(
   form.title.trim()
   && form.message.trim()
-  && (form.recipient_type !== 'specific' || form.recipients.length > 0)
+  && estimatedRecipients.value > 0
 ))
+const audienceErrors = computed(() => Object.entries(form.errors)
+  .filter(([key]) => key === 'group' || key === 'recipient_type' || key === 'recipients' || key.startsWith('recipients.'))
+  .map(([, message]) => message)
+  .filter((message, index, messages) => messages.indexOf(message) === index))
 
 const applyTemplate = (template) => {
   form.title = template.title
@@ -83,17 +87,31 @@ const toggleSelectAll = () => {
 }
 
 const submit = () => {
+  if (form.processing) return
   showValidation.value = true
   if (!isFormValid.value) return
-  form.post(route('admin.notifications.store'))
+  form.clearErrors()
+  form.post(route('admin.notifications.store'), {
+    preserveScroll: true,
+    onNetworkError: () => {
+      form.setError('request', 'Ligação interrompida. O envio não foi confirmado; o rascunho foi preservado. Consulte o histórico antes de tentar novamente.')
+      return false
+    },
+    onHttpException: () => {
+      form.setError('request', 'Não foi possível confirmar o envio. O rascunho foi preservado; consulte o histórico antes de tentar novamente.')
+      return false
+    },
+    onCancel: () => form.setError('request', 'Envio interrompido. O rascunho foi preservado; consulte o histórico antes de tentar novamente.'),
+  })
 }
 </script>
 
 <template>
   <div class="space-y-5">
+    <Head title="Compor notificação" />
     <NotificationAdminHeader
-      title="Compor notificacao"
-      description="Prepare uma mensagem operacional, defina a audiencia e confirme o alcance antes da emissão."
+      title="Compor notificação"
+      description="Prepare uma mensagem operacional para membros activos e verificados deste laboratório. A entrega é processada em segundo plano."
     >
       <template #actions>
         <Link :href="route('admin.notifications.index')" class="ds-button ds-button-secondary">
@@ -103,7 +121,8 @@ const submit = () => {
     </NotificationAdminHeader>
 
     <form class="grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.65fr)]" @submit.prevent="submit">
-      <div class="space-y-5">
+      <fieldset class="min-w-0 space-y-5" :disabled="form.processing">
+        <legend class="sr-only">Conteúdo e destinatários</legend>
         <section class="ds-panel overflow-hidden">
           <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
             <p class="ds-kicker">Ponto de partida</p>
@@ -162,7 +181,7 @@ const submit = () => {
 
         <section class="ds-panel overflow-hidden">
           <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-            <p class="ds-kicker">Audiencia</p>
+            <p class="ds-kicker">Audiência</p>
             <h2 class="ds-heading mt-1 flex items-center gap-2 text-base"><UsersIcon class="h-4 w-4" /> Destinatários</h2>
           </header>
           <div class="space-y-5 p-5 sm:p-6">
@@ -187,7 +206,7 @@ const submit = () => {
               <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="relative min-w-0 flex-1">
                   <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-                  <BaseInput v-model="userSearch" type="search" class="ds-field pl-9" placeholder="Pesquisar utilizador" />
+                  <BaseInput v-model="userSearch" type="search" class="ds-field pl-9" aria-label="Pesquisar utilizador" placeholder="Pesquisar utilizador" />
                 </div>
                 <button type="button" class="ds-button ds-button-ghost" @click="toggleSelectAll">{{ isAllSelected ? 'Desmarcar todos' : 'Seleccionar todos' }}</button>
               </div>
@@ -199,11 +218,14 @@ const submit = () => {
                 </label>
                 <p v-if="!filteredUsers.length" class="px-4 py-8 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Nenhum utilizador corresponde a pesquisa.</p>
               </div>
-              <p v-if="form.errors.recipients || (showValidation && form.recipients.length === 0)" class="ds-field-error border-t border-[var(--ds-border)] px-4 py-3">{{ form.errors.recipients || 'Seleccione pelo menos um destinatário.' }}</p>
             </div>
+            <div v-if="audienceErrors.length" role="alert" class="ds-field-error">
+              <p v-for="message in audienceErrors" :key="message">{{ message }}</p>
+            </div>
+            <p v-else-if="showValidation && estimatedRecipients === 0" role="alert" class="ds-field-error">Seleccione pelo menos um destinatário elegível.</p>
           </div>
         </section>
-      </div>
+      </fieldset>
 
       <aside class="ds-panel overflow-hidden xl:sticky xl:top-5">
         <header class="border-b border-[var(--ds-border)] px-5 py-4">
@@ -215,21 +237,21 @@ const submit = () => {
             <span class="ds-badge ring-1 ring-inset" :class="notificationTypeClasses(form.type)">{{ notificationTypeLabel(form.type) }}</span>
             <span class="ds-badge ring-1 ring-inset" :class="notificationPriorityClasses(form.priority)">{{ notificationPriorityLabel(form.priority) }}</span>
           </div>
-          <h3 class="mt-4 break-words text-lg font-black text-[var(--ds-text)]">{{ form.title || 'Título da notificacao' }}</h3>
+          <h3 class="mt-4 break-words text-lg font-black text-[var(--ds-text)]">{{ form.title || 'Título da notificação' }}</h3>
           <p class="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-[var(--ds-text-muted)]">{{ form.message || 'A mensagem será apresentada aqui enquanto escreve.' }}</p>
           <dl class="mt-6 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
             <div class="flex items-center justify-between gap-4 py-3"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Emissor</dt><dd class="truncate text-sm font-bold text-[var(--ds-text)]">{{ senderAlias }}</dd></div>
-            <div class="flex items-center justify-between gap-4 py-3"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Alcance</dt><dd class="text-sm font-black tabular-nums text-[var(--ds-text)]">{{ estimatedRecipients }} utilizadores</dd></div>
-            <div class="flex items-center justify-between gap-4 py-3"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Entrega</dt><dd class="flex items-center gap-1.5 text-sm font-bold text-[var(--ds-text)]"><ClockIcon class="h-4 w-4" /> Imediata</dd></div>
+            <div class="flex items-center justify-between gap-4 py-3"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Alcance estimado</dt><dd class="text-sm font-black tabular-nums text-[var(--ds-text)]">{{ estimatedRecipients }} utilizadores</dd></div>
+            <div class="flex items-center justify-between gap-4 py-3"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Processamento</dt><dd class="flex items-center gap-1.5 text-sm font-bold text-[var(--ds-text)]"><ClockIcon class="h-4 w-4" /> Em segundo plano</dd></div>
           </dl>
 
           <div v-if="showValidation && !isFormValid" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"> Complete os campos obrigatorios e confirme os destinatários antes de enviar. </div>
-          <div v-if="form.hasErrors" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"> Não foi possível emitir a mensagem. Reveja os campos assinalados. </div>
+          <div v-if="form.hasErrors" role="alert" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">{{ form.errors.request || 'Não foi possível emitir a mensagem. Reveja os campos assinalados.' }}</div>
         </div>
         <footer class="border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
-          <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing">
+          <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing" :aria-busy="form.processing">
             <PaperAirplaneIcon v-if="!form.processing" class="h-4 w-4" />
-            <span v-else class="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+            <span v-else class="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none" />
             {{ form.processing ? 'A emitir...' : `Emitir para ${estimatedRecipients}` }}
           </button>
           <p class="mt-3 flex items-center justify-center gap-1.5 text-center text-xs font-semibold text-[var(--ds-text-soft)]"><CheckIcon class="h-3.5 w-3.5" /> A mensagem será registada no histórico.</p>

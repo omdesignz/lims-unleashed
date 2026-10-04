@@ -1,5 +1,6 @@
 <template>
   <div class="min-w-0 space-y-6 overflow-x-clip">
+    <Head title="Movimento de existências" />
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div class="min-w-0">
@@ -193,13 +194,13 @@
                 <h3 class="mt-1 text-base font-black text-[var(--ds-text)]">{{ transaction.item?.name || 'Item não identificado' }}</h3>
                 <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ formatDateTime(transaction.created_at) }}</p>
               </div>
-              <span :class="['ds-chip shrink-0', transactionTypeTone(transaction.type?.code)]">{{ transaction.type?.name || 'Movimento' }}</span>
+              <span :class="['ds-chip shrink-0', transactionTypeTone(transaction)]">{{ transaction.type?.name || 'Movimento' }}</span>
             </div>
 
             <dl class="grid grid-cols-2 gap-3">
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
                 <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Quantidade</dt>
-                <dd :class="['mt-2 font-mono text-sm font-black tabular-nums', quantityTone(transaction.type?.code)]">{{ quantityLabel(transaction) }}</dd>
+                <dd :class="['mt-2 font-mono text-sm font-black tabular-nums', quantityTone(transaction)]">{{ quantityLabel(transaction) }}</dd>
               </div>
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
                 <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</dt>
@@ -250,9 +251,9 @@
                   <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ transaction.warehouse?.location?.name || 'Sem localização' }}</p>
                 </td>
                 <td class="whitespace-nowrap px-5 py-4 align-top">
-                  <span :class="['ds-chip', transactionTypeTone(transaction.type?.code)]">{{ transaction.type?.name || 'Movimento' }}</span>
+                  <span :class="['ds-chip', transactionTypeTone(transaction)]">{{ transaction.type?.name || 'Movimento' }}</span>
                 </td>
-                <td :class="['whitespace-nowrap px-5 py-4 text-right align-top font-mono font-black tabular-nums', quantityTone(transaction.type?.code)]">{{ quantityLabel(transaction) }}</td>
+                <td :class="['whitespace-nowrap px-5 py-4 text-right align-top font-mono font-black tabular-nums', quantityTone(transaction)]">{{ quantityLabel(transaction) }}</td>
                 <td class="px-5 py-4 align-top font-bold text-[var(--ds-text)]">{{ transaction.user?.name || 'N/D' }}</td>
                 <td class="max-w-xs px-5 py-4 align-top text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ transaction.notes || 'Sem observações.' }}</td>
               </tr>
@@ -403,7 +404,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
@@ -435,8 +436,6 @@ const props = defineProps({
   stats: { type: Object, default: () => ({}) },
 })
 
-const inboundCodes = ['stock_in', 'stock_adjustment_add', 'consumption_reversal']
-const outboundCodes = ['stock_out', 'stock_adjustment_remove', 'consumption']
 const loading = ref(false)
 const isDarkMode = ref(false)
 let themeObserver
@@ -627,22 +626,21 @@ function modeButtonClass(view) {
   ]
 }
 
-function transactionTypeTone(code) {
-  if (inboundCodes.includes(code)) return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'
-  if (outboundCodes.includes(code)) return 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300'
-  if (code === 'transfer') return 'border-cyan-200 bg-cyan-50 text-cyan-800 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-200'
+function transactionTypeTone(transaction) {
+  if (transaction.is_addition) return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'
+  if (transaction.is_deduction) return 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300'
+  if (transaction.type?.code === 'transfer') return 'border-cyan-200 bg-cyan-50 text-cyan-800 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-200'
   return 'text-[var(--ds-text-muted)]'
 }
 
-function quantityTone(code) {
-  if (inboundCodes.includes(code)) return 'text-emerald-700 dark:text-emerald-300'
-  if (outboundCodes.includes(code)) return 'text-rose-700 dark:text-rose-300'
+function quantityTone(transaction) {
+  if (transaction.is_addition) return 'text-emerald-700 dark:text-emerald-300'
+  if (transaction.is_deduction) return 'text-rose-700 dark:text-rose-300'
   return 'text-[var(--ds-text)]'
 }
 
 function quantityLabel(transaction) {
-  const code = transaction.type?.code
-  const sign = inboundCodes.includes(code) ? '+' : outboundCodes.includes(code) ? '-' : ''
+  const sign = transaction.is_addition ? '+' : transaction.is_deduction ? '-' : ''
   return `${sign}${formatQuantity(Math.abs(Number(transaction.qty || 0)))}`
 }
 

@@ -1,7 +1,7 @@
 const profileFields = ['name', 'email', 'username', 'gender', 'dob', 'id_number', 'primary_phone', 'secondary_phone'];
 const qualificationFields = ['capability', 'department_id', 'authorized_from', 'authorized_until', 'training_completed_at', 'training_reference', 'notes', 'is_active'];
 
-export function staffAccountPayload(data, capabilities) {
+export function staffAccountPayload(data, capabilities, original = null) {
     const payload = {};
     if (capabilities.profile) {
         for (const field of profileFields) payload[field] = data[field] ?? null;
@@ -12,6 +12,12 @@ export function staffAccountPayload(data, capabilities) {
     if (capabilities.qualifications) {
         payload.personnel_qualifications = data.personnel_qualifications.map((qualification) =>
             Object.fromEntries(qualificationFields.map((field) => [field, qualification[field] ?? null])));
+    }
+    if (original) {
+        const previous = staffAccountPayload(original, capabilities);
+        for (const field of Object.keys(payload)) {
+            if (JSON.stringify(payload[field]) === JSON.stringify(previous[field])) delete payload[field];
+        }
     }
     return payload;
 }
@@ -27,8 +33,15 @@ export function submitStaffAccountMutation(form, action, recordIds, route, onSuc
     form[action === 'removeMembership' ? 'delete' : 'post'](url, {
         preserveScroll: true,
         onSuccess,
-        onNetworkError: () => form.setError('request', 'Ligação interrompida. A operação não foi confirmada.'),
-        onHttpException: () => form.setError('request', 'Não foi possível alterar a conta. Actualize as permissões e tente novamente.'),
+        onNetworkError: () => {
+            form.setError('request', 'Ligação interrompida. A operação não foi confirmada.');
+            return false;
+        },
+        onHttpException: () => {
+            form.setError('request', 'Não foi possível alterar a conta. Actualize as permissões e tente novamente.');
+            return false;
+        },
+        onCancel: () => form.setError('request', 'Operação interrompida. A alteração não foi confirmada.'),
     });
     return true;
 }

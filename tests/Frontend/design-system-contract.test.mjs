@@ -498,6 +498,7 @@ test('shared form controls expose explicit selection and picker states', () => {
     '/Components/vap-inventory/InventoryItemFormSurface.vue',
     '/Pages/Occurrences/occurrences-import-form.vue',
     '/Pages/VAPInventory/Items/Index.vue',
+    '/Pages/VAPMaintenance/Tasks/Import.vue',
   ]
 
   for (const file of vueFiles) {
@@ -706,7 +707,9 @@ test('VAP inventory item dossier uses stock and compliance surfaces', () => {
   assert.match(vapInventoryItemsShowSource, /class="ds-table-shell"/)
   assert.match(vapInventoryItemsShowSource, /class="ds-table-summary px-5 py-4"/)
   assert.match(vapInventoryItemsShowSource, /class="ds-button ds-button-primary/)
-  assert.match(vapInventoryItemsShowSource, /class="ds-table-action ds-table-action-danger"/)
+  assert.match(vapInventoryItemsShowSource, /title="Arquivar documento"/)
+  assert.match(vapInventoryItemsShowSource, /useRecordArchive/)
+  assert.match(vapInventoryItemsShowSource, /v-if="canEdit && document.archived"/)
   assert.match(vapInventoryItemsShowSource, /const overviewFields = computed/)
   assert.match(vapInventoryItemsShowSource, /const identificationFields = computed/)
   assert.match(vapInventoryItemsShowSource, /const technicalSpecFields = computed/)
@@ -960,7 +963,7 @@ test('VAP low-stock report uses replenishment assurance surfaces', () => {
   assert.match(vapInventoryLowStockReportSource, /function stockPercentage/)
   assert.match(vapInventoryLowStockReportSource, /router\.get\(route\('vap-inventory\.reports\.low-stock'/)
   assert.match(vapInventoryLowStockReportSource, /router\.visit\(route\('vap-inventory\.orders\.create'/)
-  assert.match(vapInventoryLowStockReportSource, /router\.post\(route\('vap-inventory\.reports\.export'/)
+  assert.match(vapInventoryLowStockReportSource, /<InventoryReportExportButton report-type="low_stock" :filters="filters"/)
   assert.doesNotMatch(vapInventoryLowStockReportSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open/)
 })
 
@@ -978,7 +981,7 @@ test('VAP inventory-value report uses reconciliation and financial-control surfa
   assert.match(vapInventoryValueReportSource, /function unitCost\(position\)/)
   assert.match(vapInventoryValueReportSource, /sort_by: 'qty_available'/)
   assert.match(vapInventoryValueReportSource, /router\.get\(route\('vap-inventory\.reports\.inventory-value'/)
-  assert.match(vapInventoryValueReportSource, /router\.post\(route\('vap-inventory\.reports\.export'/)
+  assert.match(vapInventoryValueReportSource, /<InventoryReportExportButton report-type="inventory_value" :filters="filters"/)
   assert.doesNotMatch(vapInventoryValueReportSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
 })
 
@@ -997,7 +1000,7 @@ test('VAP consumption report uses reagent-stewardship and traceability surfaces'
   assert.match(vapInventoryConsumptionReportSource, /const activeFilterPills = computed/)
   assert.match(vapInventoryConsumptionReportSource, /function selectItem/)
   assert.match(vapInventoryConsumptionReportSource, /router\.get\(route\('vap-inventory\.reports\.consumption'/)
-  assert.match(vapInventoryConsumptionReportSource, /router\.post\(route\('vap-inventory\.reports\.export'/)
+  assert.match(vapInventoryConsumptionReportSource, /<InventoryReportExportButton report-type="consumption" :filters="filters"/)
   assert.doesNotMatch(vapInventoryConsumptionReportSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
 })
 
@@ -1017,7 +1020,7 @@ test('VAP stock-movement report uses audit-trail and reconciliation surfaces', (
   assert.match(vapInventoryStockMovementReportSource, /function setView/)
   assert.match(vapInventoryStockMovementReportSource, /function quantityLabel/)
   assert.match(vapInventoryStockMovementReportSource, /router\.get\(route\('vap-inventory\.reports\.stock-movement'/)
-  assert.match(vapInventoryStockMovementReportSource, /router\.post\(route\('vap-inventory\.reports\.export'/)
+  assert.match(vapInventoryStockMovementReportSource, /<InventoryReportExportButton report-type="stock_movement" :filters="filters"/)
   assert.doesNotMatch(vapInventoryStockMovementReportSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
 })
 
@@ -1067,8 +1070,9 @@ test('VAP inventory reagent consumption uses audit-ready operating surfaces', ()
   assert.match(vapInventoryReagentConsumptionSource, /const summaryCards = computed/)
   assert.match(vapInventoryReagentConsumptionSource, /const activeFilterCount = computed/)
   assert.match(vapInventoryReagentConsumptionSource, /filters\.get\(route\('vap-inventory\.reagents\.consumption\.index'\)/)
-  assert.match(vapInventoryReagentConsumptionSource, /router\.post\(route\('vap-inventory\.reports\.export'\)/)
-  assert.match(vapInventoryReagentConsumptionSource, /router\.delete\(route\('vap-inventory\.reagents\.consumption\.destroy'/)
+  assert.match(vapInventoryReagentConsumptionSource, /<InventoryReportExportButton report-type="consumption" :filters="filters.data\(\)"/)
+  assert.match(vapInventoryReagentConsumptionSource, /useConsumptionReversal/)
+  assert.doesNotMatch(vapInventoryReagentConsumptionSource, /consumption\.destroy|router\.delete/)
   assert.match(vapInventoryReagentConsumptionSource, /<confirm-dialog/)
   assert.doesNotMatch(vapInventoryReagentConsumptionSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|confirm\(|alert\(|axios|console\.error|console\.log/)
 })
@@ -1090,14 +1094,15 @@ test('VAP inventory reagent consumption form and detail share the audit workflow
   assert.match(vapInventoryReagentConsumptionCreateSource, /const stockReview = computed/)
   assert.match(vapInventoryReagentConsumptionCreateSource, /const reagentFields = computed/)
   assert.match(vapInventoryReagentConsumptionCreateSource, /form\.post\(route\('vap-inventory\.reagents\.consumption\.store'\)/)
-  assert.match(vapInventoryReagentConsumptionCreateSource, /router\.visit\(route\('vap-inventory\.reagents\.consumption\.index'\)/)
+  assert.match(vapInventoryReagentConsumptionCreateSource, /router\.visit\(props\.backUrl \|\| route\('dashboard'\)/)
 
   assert.match(vapInventoryReagentConsumptionShowSource, /const summaryCards = computed/)
   assert.match(vapInventoryReagentConsumptionShowSource, /const primaryFields = computed/)
   assert.match(vapInventoryReagentConsumptionShowSource, /const timelineItems = computed/)
   assert.match(vapInventoryReagentConsumptionShowSource, /const stockImpactCards = computed/)
-  assert.match(vapInventoryReagentConsumptionShowSource, /class="ds-button ds-button-danger"/)
-  assert.match(vapInventoryReagentConsumptionShowSource, /router\.delete\(route\('vap-inventory\.reagents\.consumption\.destroy'/)
+  assert.match(vapInventoryReagentConsumptionShowSource, /class="ds-button ds-button-danger/)
+  assert.match(vapInventoryReagentConsumptionShowSource, /useConsumptionReversal/)
+  assert.doesNotMatch(vapInventoryReagentConsumptionShowSource, /consumption\.destroy|router\.delete/)
 })
 
 test('VAP nonconformity CAPA workflow uses quality dossier surfaces', () => {
@@ -1127,8 +1132,9 @@ test('VAP nonconformity CAPA workflow uses quality dossier surfaces', () => {
   assert.match(vapNonConformitiesIndexSource, /const workspaceView = ref\('register'\)/)
   assert.match(vapNonConformitiesIndexSource, /v-show="workspaceView === 'analytics'"/)
   assert.match(vapNonConformitiesIndexSource, /router\.get\(route\('vap_non_conformities\.index'/)
-  assert.match(vapNonConformitiesIndexSource, /router\.delete\(route\('vap_non_conformities\.destroy'/)
-  assert.match(vapNonConformitiesIndexSource, /window\.location\.assign/)
+  assert.match(vapNonConformitiesIndexSource, /useRecordArchive/)
+  assert.match(vapNonConformitiesIndexSource, /archive\.submit\('delete'/)
+  assert.match(vapNonConformitiesIndexSource, /downloads\.download/)
 
   assert.match(vapNonConformitiesCreateSource, /<NonConformityForm/)
   assert.match(vapNonConformitiesCreateSource, /:is-editing="false"/)
@@ -1156,7 +1162,9 @@ test('VAP nonconformity CAPA workflow uses quality dossier surfaces', () => {
   assert.match(vapNonConformitiesShowSource, /const dossierSections = \[/)
   assert.match(vapNonConformitiesShowSource, /aria-label="Secções do dossier CAPA"/)
   assert.match(vapNonConformitiesShowSource, /route\('vap_non_conformities\.export\.details\.pdf'/)
-  assert.match(vapNonConformitiesShowSource, /router\.delete\(route\('vap_non_conformities\.destroy'/)
+  assert.match(vapNonConformitiesShowSource, /useRecordArchive/)
+  assert.match(vapNonConformitiesShowSource, /archive\.submit\('delete'/)
+  assert.match(vapNonConformitiesShowSource, /archive\.submit\('restore'/)
 })
 
 test('operational settings and backup monitoring use semantic product surfaces', () => {
@@ -1624,7 +1632,7 @@ test('laboratory workbench shows only the active laboratory operation', () => {
 
 test('shared customer dossier labels laboratory data without implying unavailable finance is zero', () => {
   assert.match(customersShowSource, /Identidade e locais partilhados; execução visível apenas para o laboratório activo/)
-  assert.match(customersShowSource, /Facturas, pedidos do portal e outros documentos sem titularidade laboratorial definida não são apresentados aqui/)
+  assert.match(customersShowSource, /Consulte facturas, pedidos do portal e outros documentos nas respectivas áreas, de acordo com as suas permissões/)
   assert.doesNotMatch(customersShowSource, /Saldo em aberto|Sem facturas em aberto|Sem pedidos recentes/)
 })
 
@@ -1731,7 +1739,9 @@ test('maintenance dashboard uses Tailkit-style operational surfaces', () => {
   assert.match(vapMaintenanceDashboardSource, /class="ds-button ds-button-primary"/)
   assert.match(vapMaintenanceDashboardSource, /const filterState = reactive/)
   assert.match(vapMaintenanceDashboardSource, /fetch\(url\.toString\(\)/)
-  assert.match(vapMaintenanceDashboardSource, /JSON\.stringify\(\{ \.\.\.filterState \}\)/)
+  assert.match(vapMaintenanceDashboardSource, /useFileDownload/)
+  assert.match(vapMaintenanceDashboardSource, /download\(route\('vap-maintenance\.report\.generate', \{\s*\.\.\.filterState,/)
+  assert.doesNotMatch(vapMaintenanceDashboardSource, /filters: JSON.stringify/)
   assert.doesNotMatch(vapMaintenanceDashboardSource, /axios/)
   assert.doesNotMatch(vapMaintenanceDashboardSource, /bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-900|from-red-600|from-orange-600|from-green-600/)
 })
@@ -1754,7 +1764,8 @@ test('maintenance task index uses dense LIMS operational surfaces', () => {
 test('maintenance category library uses compact LIMS management surfaces', () => {
   assert.match(vapMaintenanceCategoriesSource, /class="ds-panel overflow-hidden/)
   assert.match(vapMaintenanceCategoriesSource, /class="ds-command-surface p-5/)
-  assert.match(vapMaintenanceCategoriesSource, /class="ds-card group flex min-h-full/)
+  assert.match(vapMaintenanceCategoriesSource, /class="ds-card flex min-h-full/)
+  assert.match(vapMaintenanceCategoriesSource, /can.archive && !category.is_preset && !category.deleted/)
   assert.match(vapMaintenanceCategoriesSource, /class="ds-empty-state/)
   assert.match(vapMaintenanceCategoriesSource, /class="ds-table-summary flex/)
   assert.match(vapMaintenanceCategoriesSource, /class="ds-field/)
@@ -1788,16 +1799,15 @@ test('maintenance task create and show screens use operational form/detail surfa
 })
 
 test('sample detail page uses traceability-focused LIMS surfaces', () => {
-  assert.match(vapSamplesShowSource, /class="ds-panel overflow-hidden/)
-  assert.match(vapSamplesShowSource, /class="ds-card p-5"/)
-  assert.match(vapSamplesShowSource, /class="ds-command-surface mt-5 p-4"/)
-  assert.match(vapSamplesShowSource, /class="ds-table-shell"/)
-  assert.match(vapSamplesShowSource, /class="ds-table-summary px-5 py-4"/)
-  assert.match(vapSamplesShowSource, /class="ds-field/)
-  assert.match(vapSamplesShowSource, /const summaryCards = computed/)
+  assert.match(vapSamplesShowSource, /class="workbench-page lab-sample-detail"/)
+  for (const token of ['lab-page-head', 'lab-metrics', 'lab-record-grid', 'lab-record-rail', 'lab-panel', 'lab-field', 'TabGroup', 'TabList', 'TabPanel']) {
+    assert.ok(vapSamplesShowSource.includes(token), token)
+  }
+  assert.match(vapSamplesShowSource, /approvedResultCounts\(props.analyses\)/)
   assert.match(vapSamplesShowSource, /const receptionFields = computed/)
-  assert.match(vapSamplesShowSource, /const releaseGateMetrics = computed/)
-  assert.match(vapSamplesShowSource, /const qcFields = computed/)
+  assert.match(vapSamplesShowSource, /const releaseGate = computed/)
+  assert.match(vapSamplesShowSource, /qcDecisionForm.processing \|\| !qcDecisionForm.decision \|\| releaseDecisionBlocked/)
+  assert.doesNotMatch(vapSamplesShowSource, /ds-card|ds-panel|font-black|transition-all/)
   assert.doesNotMatch(vapSamplesShowSource, /ModuleHero|ModuleCard|bg-gradient-to|rounded-3xl|rounded-2xl|from-blue-|from-gray-50|to-gray-100|border-gray-300|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf/)
 })
 
@@ -1954,7 +1964,8 @@ test('customer request intake uses a shared triage form and operational list sur
   assert.doesNotMatch(customerRequestsIndexSource, /showDeleteConfirmationSlideover|TransitionRoot/)
 
   assert.match(customerRequestFormSource, /loadSelectOptions/)
-  assert.match(customerRequestFormSource, /:disable-input="!form\.customer_id"/)
+  assert.match(customerRequestFormSource, /:disable-input="Boolean\(form.id\) \|\| !form\.customer_id"/)
+  assert.match(customerRequestFormSource, /:disable-input="Boolean\(form.id\)"/)
   assert.match(customerRequestFormSource, /class="ds-field min-h-36 resize-y"/)
   assert.match(customerRequestsCreateSource, /<CustomerRequestForm :form="form"/)
   assert.match(customerRequestsEditSource, /const request = props\.record\?\.data \?\? props\.record/)
@@ -1981,7 +1992,7 @@ test('staff dossier uses controlled identity, access, and competence sections', 
   assert.match(usersEditSource, /<ToggleField/)
   assert.match(usersEditSource, /<ConfirmDialog/)
   assert.match(usersEditSource, /confirmationAction\.value = 'discard'/)
-  assert.match(usersEditSource, /form\.transform\(\(data\) => staffAccountPayload\(data, props\.accountCapabilities\)\)\.put\(route\('users\.update', \{ user: form\.id \}\)/)
+  assert.match(usersEditSource, /form\.transform\(\(data\) => staffAccountPayload\(data, props\.accountCapabilities, dossierFormData\(props\.record\)\)\)\.put\(route\('users\.update', \{ user: form\.id \}\)/)
   assert.match(usersEditSource, /passwordForm\.put\(route\('users\.setpass', \{ user: form\.id \}\)/)
   assert.match(usersEditSource, /route\('users\.setsignature'\)/)
   assert.match(usersEditSource, /route\('users\.unsetsignature'\)/)
@@ -2172,8 +2183,10 @@ test('customer portfolio uses a traceability-first directory, dossier, and share
   assert.match(customerSiteEditorSource, /route\("customers\.changePrimaryWarehouse"/)
   assert.match(customerSiteEditorSource, /Correio electrónico de facturação/)
   assert.match(customersShowSource, /Execução laboratorial recente/)
-  assert.match(customersShowSource, /Pedidos do portal/)
-  assert.match(customersShowSource, /Evidência documental/)
+  assert.match(customersShowSource, /Âmbito deste dossier/)
+  assert.match(customersShowSource, /Os dados do cliente e os locais são partilhados/)
+  assert.match(customersShowSource, /Propostas e amostras pertencem apenas ao laboratório activo/)
+  assert.doesNotMatch(customersShowSource, /portal_requests|customer\.invoices|customer\.receipts/)
   assert.match(customersShowSource, /hasPermission\('edit_customers'\)/)
   assert.doesNotMatch(customersShowSource, /<apexchart|created_by|updated_by|last_synced/)
   assert.match(customerTaxIdentificationSource, /await fetch\(`/)
@@ -2282,6 +2295,15 @@ test('parameter registry uses sectioned analytical configuration and calculation
   assert.match(toggleFieldSource, /peer-checked:before:translate-x-4/)
   assert.match(parametersCreateSource, /<ParameterForm :form="form" :formulas="formulas"/)
   assert.match(parametersEditSource, /<ParameterForm :form="form" :formulas="props\.formulas"/)
+})
+
+test('toggle fields contain hidden keyboard controls within their scroll container', () => {
+  assert.match(toggleFieldSource, /<label class="[^"]*\brelative\b/)
+  assert.match(toggleFieldSource, /class="peer sr-only"/)
+  assert.match(toggleFieldSource, /:disabled="disabled"/)
+  assert.match(toggleFieldSource, /:checked="modelValue"/)
+  assert.match(toggleFieldSource, /peer-focus-visible:ring-4/)
+  assert.match(toggleFieldSource, /\$emit\('update:modelValue', \$event\.target\.checked\)/)
 })
 
 test('profile catalog uses a controlled analytical composition workflow and dossier', () => {
@@ -2467,11 +2489,12 @@ test('inventory delivery create and edit routes share one traceable dispatch for
   assert.match(inventoryDeliveriesCreateSource, /form\.post\(route\("ideliveries\.store"\)/)
   assert.match(inventoryDeliveriesEditSource, /form\.put\(route\("ideliveries\.update"/)
   assert.match(inventoryDeliveryFormSource, /class="ds-table-shell overflow-hidden"/)
-  assert.match(inventoryDeliveryFormSource, /const totalQuantity = computed/)
+  assert.match(inventoryDeliveryFormSource, /const validQuantityCount = computed/)
+  assert.doesNotMatch(inventoryDeliveryFormSource, /const totalQuantity = computed/)
   assert.match(inventoryDeliveryFormSource, /:load-options="loadCustomers"/)
   assert.match(inventoryDeliveryFormSource, /:load-options="loadItems"/)
   assert.match(inventoryDeliveryFormSource, /:load-options="loadWarehouses"/)
-  assert.match(inventoryDeliveryFormSource, /type="number" min="1" step="1"/)
+  assert.match(inventoryDeliveryFormSource, /type="number" min="0\.0001" step="0\.0001"/)
   assert.match(inventoryDeliveryFormSource, /form\.processing \|\| !form\.isDirty/)
   assert.doesNotMatch(inventoryDeliveryFormSource, /commercialDocumentThemeClasses|v-motion|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|bg-blue-900|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-(xl|2xl)|console\.log|alert\(|confirm\(/)
 })
@@ -2786,7 +2809,7 @@ test('notification administration uses one traceable operational workflow', () =
   assert.match(notificationIndexSource, /<Pagination v-bind="notifications"/)
   assert.match(notificationCreateSource, /form\.post\(route\('admin\.notifications\.store'/)
   assert.match(notificationCreateSource, /Pré-visualização/)
-  assert.match(notificationCreateSource, /Utilizadores deste laboratório/)
+  assert.match(notificationCreateSource, /Membros activos e verificados deste laboratório/)
   assert.doesNotMatch(notificationCreateSource, /notification-expiry|expires_at|scheduled_at/)
   assert.doesNotMatch(notificationCreateSource, /schedule_send = !form\.schedule_send/)
   assert.match(notificationShowSource, /<ConfirmDialog/)

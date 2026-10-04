@@ -1,5 +1,6 @@
 <template>
-  <form class="min-w-0 space-y-6 overflow-x-clip" @submit.prevent="submit">
+  <form class="min-w-0 space-y-6 overflow-x-clip" :aria-busy="form.processing" @submit.prevent="submit">
+    <p v-if="form.hasErrors" role="alert" class="ds-alert ds-alert-danger">{{ Object.values(form.errors).join(' ') }}</p>
     <nav class="ds-panel flex overflow-x-auto px-3 sm:px-5" aria-label="Etapas do dossier CAPA">
       <button
         v-for="section in workflowSections"
@@ -173,6 +174,7 @@
                 <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.vap_non_conformities.corrective_actions') }}</h2>
                 <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
                   Defina correcções imediatas, acções correctivas e prazos de conclusão.
+                  Acções retiradas do plano ficam arquivadas no histórico após guardar.
                 </p>
               </div>
             </div>
@@ -260,7 +262,7 @@
             <div class="space-y-4">
               <label class="ds-field-group">
                 <span class="ds-field-label">Anexar evidências</span>
-                <FileInput type="file" multiple class="ds-field" @change="selectAttachmentFiles" />
+                <FileInput type="file" multiple :disabled="form.processing" class="ds-field" @change="selectAttachmentFiles" />
                 <span class="ds-field-hint">PDF, imagens ou documentos até 10MB.</span>
                 <span v-if="form.errors.attachment_files" class="ds-field-error">{{ form.errors.attachment_files }}</span>
               </label>
@@ -475,8 +477,8 @@ const form = useForm({
   corrective_actions: props.nonConformity?.corrective_actions || '',
   preventive_actions: props.nonConformity?.preventive_actions || '',
   comments: props.nonConformity?.comments || '',
-  attachments: props.nonConformity?.attachments || [],
   attachment_files: [],
+  actions_present: true,
   actions: props.nonConformity?.actions || [],
 })
 
@@ -506,11 +508,9 @@ const categoryOptions = [
   { value: 'other', label: 'Outro' },
 ]
 
-const statusOptions = [
+const statusOptions = props.nonConformity?.status === 'resolved' ? [{ value: 'resolved', label: 'Resolvida — alterações exigem nova verificação' }] : [
   { value: 'opened', label: 'Aberta' },
   { value: 'in_progress', label: 'Em progresso' },
-  { value: 'resolved', label: 'Resolvida' },
-  { value: 'closed', label: 'Fechada' },
 ]
 
 const severityValueClasses = {
@@ -559,7 +559,12 @@ const isPastDue = computed(() => {
 })
 
 function cloneInitialActions() {
-  return (props.nonConformity?.actions || []).map(action => ({ ...action }))
+  return (props.nonConformity?.actions || []).filter(action => !action.deleted_at).map(action => ({
+    id: action.id,
+    correction: action.correction || '',
+    corrective_action: action.corrective_action || '',
+    due_at: formatDateForInput(action.due_at),
+  }))
 }
 
 function labelFor(options, value) {
@@ -567,6 +572,7 @@ function labelFor(options, value) {
 }
 
 function addAction() {
+  if (form.processing) return
   actions.value.push({
     correction: '',
     corrective_action: '',
@@ -575,22 +581,42 @@ function addAction() {
 }
 
 function removeAction(index) {
+  if (form.processing) return
   actions.value.splice(index, 1)
 }
 
 function selectAttachmentFiles(event) {
+  if (form.processing) return
   selectedAttachmentFiles.value = Array.from(event.target.files || [])
   form.attachment_files = selectedAttachmentFiles.value
 }
 
 function removeAttachmentFile(index) {
+  if (form.processing) return
   selectedAttachmentFiles.value.splice(index, 1)
   form.attachment_files = selectedAttachmentFiles.value
 }
 
 function submit() {
+  if (form.processing) return
+  form.clearErrors()
   form.actions = actions.value
   form.attachment_files = selectedAttachmentFiles.value
+  const options = {
+    forceFormData: true,
+    onError: focusFirstErrorSection,
+    onHttpException: response => {
+      form.setError('request', response.status === 409
+        ? 'Não foi possível guardar. Os dados e ficheiros seleccionados foram mantidos; tente novamente.'
+        : 'O registo ou a autorização já não está disponível. Actualize a página antes de tentar novamente.')
+      return false
+    },
+    onNetworkError: () => {
+      form.setError('request', 'Falha de ligação. Confirme o estado do dossier antes de repetir; os dados foram mantidos.')
+      return false
+    },
+    onCancel: () => form.setError('request', 'Operação interrompida. Confirme o estado do dossier antes de repetir.'),
+  }
 
   if (props.isEditing) {
     form
@@ -599,18 +625,14 @@ function submit() {
         _method: 'put',
       }))
       .post(route('vap_non_conformities.update', props.nonConformity.id), {
-        forceFormData: true,
-        onError: focusFirstErrorSection,
+        ...options,
         onFinish: () => form.transform(data => data),
       })
 
     return
   }
 
-  form.post(route('vap_non_conformities.store'), {
-    forceFormData: true,
-    onError: focusFirstErrorSection,
-  })
+  form.post(route('vap_non_conformities.store'), options)
 }
 
 function focusFirstErrorSection(errors) {
@@ -635,6 +657,7 @@ function focusFirstErrorSection(errors) {
 }
 
 function reset() {
+  if (form.processing) return
   form.reset()
   actions.value = cloneInitialActions()
   selectedAttachmentFiles.value = []
@@ -642,6 +665,7 @@ function reset() {
 }
 
 function cancel() {
+  if (form.processing) return
   if (props.isEditing && props.nonConformity?.id) {
     router.visit(route('vap_non_conformities.show', props.nonConformity.id))
 

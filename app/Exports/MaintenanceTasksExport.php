@@ -2,15 +2,18 @@
 
 namespace App\Exports;
 
-use App\Models\MaintenanceTask;
+use App\Support\MaintenanceTaskQuery;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class MaintenanceTasksExport implements FromCollection, WithHeadings, WithMapping, WithStyles
+class MaintenanceTasksExport extends StringValueBinder implements FromCollection, WithCustomValueBinder, WithHeadings, WithMapping, WithStyles
 {
     protected $filters;
 
@@ -19,32 +22,9 @@ class MaintenanceTasksExport implements FromCollection, WithHeadings, WithMappin
         $this->filters = $filters;
     }
 
-    public function collection()
+    public function collection(): Collection
     {
-        $query = MaintenanceTask::forLaboratory($this->labId)->with(['category', 'equipment', 'supplier']);
-
-        if (isset($this->filters['category_id'])) {
-            $query->where('category_id', $this->filters['category_id']);
-        }
-
-        if (isset($this->filters['status'])) {
-            if ($this->filters['status'] === 'overdue') {
-                $query->where('due_date', '<', now())
-                    ->where('is_executed', false);
-            } elseif ($this->filters['status'] === 'executed') {
-                $query->where('is_executed', true);
-            }
-        }
-
-        if (isset($this->filters['date_from'])) {
-            $query->where('due_date', '>=', $this->filters['date_from']);
-        }
-
-        if (isset($this->filters['date_to'])) {
-            $query->where('due_date', '<=', $this->filters['date_to']);
-        }
-
-        return $query->orderBy('due_date')->get();
+        return app(MaintenanceTaskQuery::class)->exportRows($this->labId, $this->filters);
     }
 
     public function headings(): array
@@ -67,20 +47,22 @@ class MaintenanceTasksExport implements FromCollection, WithHeadings, WithMappin
 
     public function map($task): array
     {
-        return [
+        $values = [
             $task->maintenance_task_no,
             $task->name,
-            $task->category->name,
-            $task->equipment->name,
-            $task->equipment->serial_number,
+            $task->category?->name ?? 'Categoria arquivada',
+            $task->equipment?->name ?? 'Equipamento indisponível',
+            $task->equipment?->serial_number,
             $task?->due_date?->format('d/m/Y') ?? 'N/D',
-            $task->is_executed ? 'Executada' : ($task->due_date < now() ? 'Em atraso' : 'Pendente'),
+            $task->is_executed ? 'Executada' : ($task->due_date?->lt(today()) ? 'Em atraso' : 'Pendente'),
             number_format($task->cost, 2, ',', '.'),
             $task->supplier ? $task->supplier->name : 'Interno',
             $task->calibration_certificate_no,
             $task->created_at->format('d/m/Y H:i'),
-            strip_tags($task->description),
+            strip_tags($task->description ?? ''),
         ];
+
+        return array_map(fn ($value) => is_string($value) && preg_match('/^[\s]*[=+\-@]/', $value) ? "'".$value : $value, $values);
     }
 
     public function styles(Worksheet $sheet)

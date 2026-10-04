@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Exports\NonConformitiesExport;
+use App\Models\InventoryItemSupplier;
+use App\Models\InventorySupplierAssessment;
+use App\Models\PersonnelQualification;
 use App\Models\ResponsibilityMatrixEntry;
 use App\Models\Role;
 use App\Models\User;
@@ -28,6 +31,40 @@ class NonConformityLaboratoryBoundaryTest extends TestCase
         parent::setUp();
 
         Notification::fake();
+    }
+
+    public function test_quality_totals_count_all_local_records_while_previews_remain_bounded(): void
+    {
+        $lab = VAPLab::factory()->create();
+        $peer = VAPLab::factory()->create();
+        $user = $this->member($lab);
+        $supplier = InventoryItemSupplier::create(['name' => 'Review supplier']);
+        foreach ([[$lab, 13], [$peer, 1]] as [$owner, $count]) {
+            for ($index = 0; $index < $count; $index++) {
+                $this->record($owner, $user, 'NC-COUNT-'.$owner->id.'-'.$index)->update(['occurrence_area' => 'procurement_receipt']);
+                $this->dueDocument($owner, $user);
+                PersonnelQualification::create([
+                    'lab_id' => $owner->id, 'user_id' => $user->id, 'qualified_by_id' => $user->id,
+                    'capability' => 'count-'.$index, 'authorized_from' => today()->subDay(),
+                    'authorized_until' => today()->addDays(10), 'is_active' => true,
+                ]);
+                InventorySupplierAssessment::create([
+                    'lab_id' => $owner->id, 'inventory_item_supplier_id' => $supplier->id,
+                    'assessed_by_user_id' => $user->id, 'assessment_date' => today()->subDays($index),
+                    'next_review_at' => today()->addDay(), 'status' => 'approved', 'risk_level' => 'low',
+                    'total_score' => 80, 'delivery_score' => 4, 'quality_score' => 4,
+                    'compliance_score' => 4, 'responsiveness_score' => 4, 'approved_supplier' => true, 'is_active' => true,
+                ]);
+            }
+        }
+        $response = $this->actingAs($user)->withSession(['active_lab_id' => $lab->id])->get(route('qms.index'))->assertOk();
+        $props = data_get($response->viewData('page'), 'props');
+        foreach (['expiring_qualifications', 'supplier_assessments_due', 'receiving_non_conformities_open', 'documents_due_review'] as $key) {
+            $this->assertSame(13, data_get($props, 'summary.'.$key), $key);
+        }
+        foreach (['expiringQualifications', 'dueSupplierAssessments', 'receivingNonConformities', 'dueDocumentReviews'] as $key) {
+            $this->assertCount(12, $props[$key], $key);
+        }
     }
 
     public function test_register_dashboard_exports_and_record_routes_are_lab_private(): void

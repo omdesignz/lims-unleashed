@@ -1,5 +1,5 @@
 <script setup>
-import { Link } from '@inertiajs/vue3'
+import { Link, usePage } from '@inertiajs/vue3'
 import {
   BellRing as BellAlertIcon,
   ChartColumnBig as ChartBarSquareIcon,
@@ -20,8 +20,9 @@ defineProps({
   },
 })
 
+const page = usePage()
 const navigation = [
-  { label: 'Visao geral', route: 'admin.notifications.dashboard', icon: Squares2X2Icon },
+  { label: 'Visão geral', route: 'admin.notifications.dashboard', icon: Squares2X2Icon },
   { label: 'Registo', route: 'admin.notifications.index', icon: ListBulletIcon },
   { label: 'Nova mensagem', route: 'admin.notifications.create', icon: PaperAirplaneIcon },
   { label: 'Modelos', route: 'admin.notification-templates.index', icon: Cog6ToothIcon },
@@ -54,8 +55,9 @@ const navigation = [
           v-for="item in navigation"
           :key="item.route"
           :href="route(item.route)"
-          class="ds-settings-tab"
-          :class="route().current(item.route) ? 'ds-settings-tab-active' : ''"
+          class="ds-settings-tab w-auto! min-w-0! items-center!"
+          :class="page.url.split('?')[0] === route(item.route, {}, false) ? 'ds-settings-tab-active' : ''"
+          :aria-current="page.url.split('?')[0] === route(item.route, {}, false) ? 'page' : undefined"
         >
           <component :is="item.icon" class="h-4 w-4" />
           {{ item.label }}

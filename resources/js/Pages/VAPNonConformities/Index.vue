@@ -1,5 +1,10 @@
 <template>
   <div class="min-w-0 space-y-6 overflow-x-clip">
+    <Head title="Não conformidades" />
+    <p v-if="downloads.error.value || filterError" role="alert" class="ds-alert ds-alert-danger">{{ downloads.error.value || filterError }}</p>
+    <p v-if="downloads.processing.value" role="status">A preparar exportação…</p>
+    <p v-if="archive.failed.value" role="alert" class="ds-alert ds-alert-danger">{{ archive.message.value }}</p>
+    <p v-if="archive.processing.value" role="status">A guardar…</p>
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div class="min-w-0">
@@ -26,21 +31,23 @@
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
-          <button type="button" class="ds-button ds-button-secondary" @click="exportReport('pdf')">
+          <Link :href="route('vap_non_conformities.index', { archived: filters.archived ? undefined : 1 })" class="ds-button ds-button-secondary">{{ filters.archived ? 'Registos activos' : 'Arquivo' }}</Link>
+          <button type="button" class="ds-button ds-button-secondary" :disabled="downloads.processing.value || filtering" @click="exportReport('pdf')">
             <ArrowDownTrayIcon class="h-4 w-4" />
             PDF
           </button>
-          <button type="button" class="ds-button ds-button-secondary" @click="exportReport('excel')">
+          <button type="button" class="ds-button ds-button-secondary" :disabled="downloads.processing.value || filtering" @click="exportReport('excel')">
             <DocumentArrowDownIcon class="h-4 w-4" />
             Excel
           </button>
-          <Link :href="route('vap_non_conformities.create')" class="ds-button ds-button-primary">
+          <Link v-if="can.create && !filters.archived" :href="route('vap_non_conformities.create')" class="ds-button ds-button-primary">
             <PlusCircleIcon class="h-4 w-4" />
             {{ $t('gestlab.general.labels.vap_non_conformities.buttons.new_non_conformity') }}
           </Link>
         </div>
       </div>
 
+      <p class="mt-4 text-sm text-[var(--ds-text-muted)]">Indicadores e exportações: {{ filters.archived ? 'arquivo' : 'registos activos' }} do laboratório, com os filtros aplicados.</p>
       <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <article v-for="card in summaryCards" :key="card.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
           <div class="flex items-start justify-between gap-3">
@@ -107,6 +114,11 @@
         </BaseSelect>
       </div>
 
+      <div class="mt-4 flex flex-wrap gap-4">
+        <BaseInput v-model="startDate" type="date" label="Relatadas desde" />
+        <BaseInput v-model="endDate" type="date" label="Relatadas até" />
+      </div>
+
       <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div class="min-w-0">
           <p class="text-sm font-bold text-[var(--ds-text)]">
@@ -116,7 +128,7 @@
             <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
           </div>
           <p v-else class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
-            Fila completa para revisão da qualidade.
+            Registos do laboratório na vista seleccionada.
           </p>
         </div>
 
@@ -147,7 +159,7 @@
           <div class="flex items-start justify-between gap-4">
             <div>
               <h3 class="text-sm font-black text-[var(--ds-text)]">Tendência de não conformidades</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Registos e resoluções dos últimos meses.</p>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Datas de relato dos registos filtrados, nos últimos seis meses.</p>
             </div>
             <ChartBarSquareIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
           </div>
@@ -224,7 +236,7 @@
               <EyeIcon class="h-4 w-4" />
               Abrir
             </Link>
-            <Link :href="route('vap_non_conformities.edit', nc.id)" class="ds-table-action">
+            <Link v-if="can.edit && !nc.deleted_at" :href="route('vap_non_conformities.edit', nc.id)" class="ds-table-action">
               <PencilSquareIcon class="h-4 w-4" />
               Editar
             </Link>
@@ -281,13 +293,13 @@
                     <EyeIcon class="h-4 w-4" />
                     <span class="sr-only">{{ $t('gestlab.general.labels.vap_non_conformities.buttons.view') }} {{ nc.nc_number }}</span>
                   </Link>
-                  <Link :href="route('vap_non_conformities.edit', nc.id)" class="ds-table-action" :title="$t('gestlab.general.labels.vap_non_conformities.buttons.edit')">
+                  <Link v-if="can.edit && !nc.deleted_at" :href="route('vap_non_conformities.edit', nc.id)" class="ds-table-action" :title="$t('gestlab.general.labels.vap_non_conformities.buttons.edit')">
                     <PencilSquareIcon class="h-4 w-4" />
                     <span class="sr-only">{{ $t('gestlab.general.labels.vap_non_conformities.buttons.edit') }} {{ nc.nc_number }}</span>
                   </Link>
-                  <button type="button" class="ds-table-action ds-table-action-danger" :title="$t('gestlab.general.labels.vap_non_conformities.buttons.delete')" @click="openDeleteModal(nc)">
+                  <button v-if="can.archive && !nc.deleted_at" type="button" :disabled="archive.processing.value" class="ds-table-action ds-table-action-danger" title="Arquivar" @click="openDeleteModal(nc)">
                     <TrashIcon class="h-4 w-4" />
-                    <span class="sr-only">{{ $t('gestlab.general.labels.vap_non_conformities.buttons.delete') }} {{ nc.nc_number }}</span>
+                    <span class="sr-only">Arquivar {{ nc.nc_number }}</span>
                   </button>
                 </div>
               </td>
@@ -304,27 +316,30 @@
         <p class="mx-auto mt-2 max-w-md text-sm font-medium text-[var(--ds-text-muted)]">
           {{ $t('gestlab.general.labels.vap_non_conformities.empty_list_description') }}
         </p>
-        <Link :href="route('vap_non_conformities.create')" class="ds-button ds-button-primary mt-5">
+        <Link v-if="can.create && !filters.archived" :href="route('vap_non_conformities.create')" class="ds-button ds-button-primary mt-5">
           <PlusCircleIcon class="h-4 w-4" />
           {{ $t('gestlab.general.labels.vap_non_conformities.buttons.create_first_nc') }}
         </Link>
       </div>
 
       <div v-if="nonConformityRows.length" class="border-t border-[var(--ds-border)] px-5 py-4">
-        <Pagination :links="nonConformities.links" />
+        <Pagination :links="nonConformities.links" :from="nonConformities.from" :to="nonConformities.to" :total="nonConformities.total" :current_page="nonConformities.current_page" :last_page="nonConformities.last_page" />
       </div>
     </section>
 
     <confirm-dialog
       v-if="showDeleteModal"
-      :title="$t('gestlab.general.labels.vap_non_conformities.delete_title')"
-      :description="$t('gestlab.general.labels.vap_non_conformities.delete_message')"
+      title="Arquivar não conformidade?"
+      description="O dossier, as acções e os anexos serão preservados. Pode restaurar o registo com autorização."
       :cancel="$t('gestlab.general.labels.vap_non_conformities.buttons.cancel')"
-      :confirm="$t('gestlab.general.labels.vap_non_conformities.buttons.delete')"
+      :disabled="archive.processing.value"
+      :keep-open-on-confirm="true"
+      confirm="Arquivar"
       variant="danger"
       @confirmed="deleteNc"
       @canceled="closeDeleteModal"
     >
+      <p v-if="archive.failed.value" role="alert" class="ds-alert ds-alert-danger">{{ archive.message.value }}</p>
       <div class="mt-4 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 text-left">
         <p class="font-mono text-xs font-black text-[var(--ds-text-soft)]">{{ ncToDelete?.nc_number }}</p>
         <p class="mt-1 text-sm font-bold text-[var(--ds-text)]">{{ ncToDelete?.title }}</p>
@@ -336,9 +351,11 @@
 <script setup>
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
+import { useFileDownload } from '@/Composables/useFileDownload'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import Pagination from '@/Components/Pagination.vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import {
   Download as ArrowDownTrayIcon,
   ChartColumnBig as ChartBarSquareIcon,
@@ -356,9 +373,10 @@ import {
   Trash2 as TrashIcon,
   X as XMarkIcon,
 } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps({
+  can: { type: Object, default: () => ({}) },
   nonConformities: {
     type: Object,
     required: true,
@@ -385,6 +403,11 @@ const props = defineProps({
   },
 })
 
+const downloads = useFileDownload()
+const filtering = ref(false)
+const filterError = ref('')
+const startDate = ref(props.filters.start_date || '')
+const endDate = ref(props.filters.end_date || '')
 const workspaceView = ref('register')
 const workspaceViews = [
   { value: 'register', label: 'Fila CAPA', icon: ClipboardDocumentCheckIcon },
@@ -395,6 +418,11 @@ const search = ref(props.filters.search || '')
 const statusFilter = ref(props.filters.status || '')
 const severityFilter = ref(props.filters.severity || '')
 const categoryFilter = ref(props.filters.category || '')
+const archive = useRecordArchive({
+  destroyUrl: ids => route('vap_non_conformities.destroy', ids[0]),
+  restoreUrl: ids => route('vap_non_conformities.restore', ids[0]),
+  onSuccess: () => { showDeleteModal.value = false },
+})
 const showDeleteModal = ref(false)
 const ncToDelete = ref(null)
 
@@ -435,13 +463,13 @@ const chartTextColor = '#6b7482'
 const chartGridColor = '#dbe3ea'
 
 const nonConformityRows = computed(() => props.nonConformities?.data || [])
-const riskLoad = computed(() => Number(props.stats?.open || 0) + Number(props.stats?.critical || 0) + Number(props.stats?.overdue || 0))
+const riskLoad = computed(() => Number(props.stats?.attention || 0))
 
 const summaryCards = computed(() => [
   {
     label: 'Total',
     value: props.stats.total || 0,
-    detail: 'Registos no sistema de qualidade',
+    detail: 'Registos que correspondem aos filtros',
     icon: DocumentTextIcon,
     tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]',
   },
@@ -514,33 +542,36 @@ const activeFilterPills = computed(() => {
     pills.push(`Categoria: ${categoryLabel(categoryFilter.value)}`)
   }
 
+  if (startDate.value) pills.push(`Desde: ${startDate.value}`)
+  if (endDate.value) pills.push(`Até: ${endDate.value}`)
   return pills
 })
 
-const hasFilters = computed(() => Boolean(search.value || statusFilter.value || severityFilter.value || categoryFilter.value))
+const hasFilters = computed(() => Boolean(search.value || statusFilter.value || severityFilter.value || categoryFilter.value || startDate.value || endDate.value))
+
+function currentFilters() {
+  return {
+    archived: props.filters.archived || undefined,
+    search: search.value || undefined,
+    status: statusFilter.value || undefined,
+    severity: severityFilter.value || undefined,
+    category: categoryFilter.value || undefined,
+    start_date: startDate.value || undefined,
+    end_date: endDate.value || undefined,
+  }
+}
 
 function applyFilters() {
-  const filters = {}
-
-  if (search.value) {
-    filters.search = search.value
-  }
-
-  if (statusFilter.value) {
-    filters.status = statusFilter.value
-  }
-
-  if (severityFilter.value) {
-    filters.severity = severityFilter.value
-  }
-
-  if (categoryFilter.value) {
-    filters.category = categoryFilter.value
-  }
-
-  router.get(route('vap_non_conformities.index'), filters, {
+  window.clearTimeout(filterTimeout)
+  filterError.value = ''
+  router.get(route('vap_non_conformities.index'), currentFilters(), {
     preserveState: true,
     preserveScroll: true,
+    onStart: () => { filtering.value = true },
+    onFinish: () => { filtering.value = false },
+    onError: errors => { filterError.value = Object.values(errors).flat().join(' ') },
+    onHttpException: () => { filterError.value = 'Não foi possível filtrar. Actualize a página e verifique a autorização.'; return false },
+    onNetworkError: () => { filterError.value = 'Falha de ligação. Os filtros foram mantidos; tente novamente.'; return false },
   })
 }
 
@@ -549,10 +580,9 @@ function clearFilters() {
   statusFilter.value = ''
   severityFilter.value = ''
   categoryFilter.value = ''
-  router.get(route('vap_non_conformities.index'), {}, {
-    preserveState: true,
-    preserveScroll: true,
-  })
+  startDate.value = ''
+  endDate.value = ''
+  applyFilters()
 }
 
 function truncateText(text, length) {
@@ -572,7 +602,7 @@ function formatDate(dateString) {
 }
 
 function isOverdue(nc) {
-  if (!nc.due_date || nc.status === 'closed') {
+  if (!nc.due_date || !['opened', 'in_progress'].includes(nc.status)) {
     return false
   }
 
@@ -585,6 +615,7 @@ function openDeleteModal(nc) {
 }
 
 function closeDeleteModal() {
+  if (archive.processing.value) return
   showDeleteModal.value = false
   ncToDelete.value = null
 }
@@ -594,36 +625,19 @@ function deleteNc() {
     return
   }
 
-  router.delete(route('vap_non_conformities.destroy', ncToDelete.value.id), {
-    preserveScroll: true,
-    onSuccess: closeDeleteModal,
-  })
+  archive.submit('delete', [ncToDelete.value.id])
 }
 
 function exportReport(type) {
+  if (filtering.value) return
   const params = new URLSearchParams()
-
-  if (search.value) {
-    params.append('search', search.value)
+  for (const [key, value] of Object.entries(props.filters)) {
+    if (value !== null && value !== undefined && value !== '') params.set(key, String(value))
   }
-
-  if (statusFilter.value) {
-    params.append('status', statusFilter.value)
-  }
-
-  if (severityFilter.value) {
-    params.append('severity', severityFilter.value)
-  }
-
-  if (categoryFilter.value) {
-    params.append('category', categoryFilter.value)
-  }
-
   const baseRoute = type === 'excel'
     ? route('vap_non_conformities.export.excel')
     : route('vap_non_conformities.export.pdf')
-
-  window.location.assign(params.toString() ? `${baseRoute}?${params.toString()}` : baseRoute)
+  return downloads.download(params.toString() ? `${baseRoute}?${params.toString()}` : baseRoute)
 }
 
 function categoryLabel(category) {
@@ -631,10 +645,11 @@ function categoryLabel(category) {
 }
 
 let filterTimeout
-watch([search, statusFilter, severityFilter, categoryFilter], () => {
+watch([search, statusFilter, severityFilter, categoryFilter, startDate, endDate], () => {
   window.clearTimeout(filterTimeout)
   filterTimeout = window.setTimeout(() => {
     applyFilters()
   }, 350)
 })
+onBeforeUnmount(() => window.clearTimeout(filterTimeout))
 </script>

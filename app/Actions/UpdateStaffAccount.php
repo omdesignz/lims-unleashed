@@ -8,6 +8,7 @@ use App\Models\VAPLab;
 use App\Services\LaboratoryWorkflowMutationAccess;
 use App\Services\StaffAccountAccess;
 use App\Services\StaffAccountHistory;
+use App\Support\PersonnelQualificationValidation;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -17,7 +18,7 @@ use LogicException;
 
 class UpdateStaffAccount
 {
-    public function __construct(private readonly LaboratoryWorkflowMutationAccess $laboratoryAccess, private readonly StaffAccountAccess $accounts, private readonly StaffAccountHistory $history) {}
+    public function __construct(private readonly LaboratoryWorkflowMutationAccess $laboratoryAccess, private readonly StaffAccountAccess $accounts, private readonly StaffAccountHistory $history, private readonly PersonnelQualificationValidation $qualifications) {}
 
     /** @param array<string,mixed> $data */
     public function execute(int $actorId, int $labId, int $targetId, array $data): void
@@ -35,6 +36,7 @@ class UpdateStaffAccount
             $membership = DB::table('lab_user')->where('lab_id', $labId)->where('user_id', $targetId)->lockForUpdate()->first();
             abort_unless($membership, 404);
             $target = User::query()->lockForUpdate()->findOrFail($targetId);
+            $data = [...$data, ...$this->qualifications->validate($data)];
             $intendedMemberships = DB::table('lab_user')->where('user_id', $targetId)->orderBy('id')->get()->toArray();
             $beforeHistory = $this->history->snapshot($targetId);
             $intendedQualifications = $target->personnelQualifications()->orderBy('id')->lockForUpdate()->get()->keyBy('id');
@@ -73,14 +75,25 @@ class UpdateStaffAccount
                 $intendedAccess[$field] = collect($ids)->map(fn ($id): int => (int) $id)->sort()->values()->all();
             }
             if (array_key_exists('personnel_qualifications', $data)) {
-                foreach ($target->personnelQualifications()->where('lab_id', $labId)->lockForUpdate()->get() as $qualification) {
+                $remaining = $intendedQualifications->where('lab_id', $labId);
+                $newQualifications = [];
+                $editableFields = PersonnelQualificationValidation::EDITABLE_FIELDS;
+                foreach ($data['personnel_qualifications'] as $attributes) {
+                    $qualification = new PersonnelQualification([...$attributes, 'lab_id' => $labId, 'user_id' => $target->id, 'qualified_by_id' => $actorId]);
+                    $unchanged = $remaining->first(fn (PersonnelQualification $existing): bool => $this->sameEvidence($qualification, $existing, $editableFields));
+                    if ($unchanged) {
+                        $remaining->forget($unchanged->id);
+                    } else {
+                        $newQualifications[] = $qualification;
+                    }
+                }
+                foreach ($remaining as $qualification) {
                     if (! $qualification->delete()) {
                         throw new LogicException('Staff qualification removal was not persisted.');
                     }
                     $intendedQualifications->forget($qualification->id);
                 }
-                foreach ($data['personnel_qualifications'] as $attributes) {
-                    $qualification = new PersonnelQualification([...$attributes, 'lab_id' => $labId, 'user_id' => $target->id, 'qualified_by_id' => $actorId]);
+                foreach ($newQualifications as $qualification) {
                     $intendedQualification = clone $qualification;
                     if (! $qualification->save()) {
                         throw new LogicException('Staff qualification changes were not persisted.');

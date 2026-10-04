@@ -2,50 +2,29 @@
 
 namespace App\Exports;
 
-use App\Models\VAPNonConformity;
+use App\Support\NonConformityQuery;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class NonConformitiesExport implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithHeadings, WithMapping, WithStyles
+class NonConformitiesExport extends StringValueBinder implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithCustomValueBinder, WithHeadings, WithMapping, WithStyles
 {
     public function __construct(private readonly int $labId, private readonly array $filters = []) {}
 
-    public function collection()
+    public function collection(): Collection
     {
-        $query = VAPNonConformity::with(['lab', 'department'])
-            ->where('lab_id', $this->labId)
-            ->orderBy('created_at', 'desc');
-
-        if (! empty($this->filters['status'])) {
-            $query->where('status', $this->filters['status']);
-        }
-
-        if (! empty($this->filters['severity'])) {
-            $query->where('severity', $this->filters['severity']);
-        }
-
-        if (! empty($this->filters['category'])) {
-            $query->where('category', $this->filters['category']);
-        }
-
-        if (! empty($this->filters['start_date'])) {
-            $query->whereDate('reported_at', '>=', $this->filters['start_date']);
-        }
-
-        if (! empty($this->filters['end_date'])) {
-            $query->whereDate('reported_at', '<=', $this->filters['end_date']);
-        }
-
-        return $query->get();
+        return app(NonConformityQuery::class)->exportRows($this->labId, $this->filters);
     }
 
     public function headings(): array
@@ -71,7 +50,7 @@ class NonConformitiesExport implements FromCollection, ShouldAutoSize, WithColum
             'Acções Corretivas',
             'Acções Preventivas',
             'Comentários',
-            'Dias Abertos',
+            'Arquivada em',
         ];
     }
 
@@ -88,7 +67,7 @@ class NonConformitiesExport implements FromCollection, ShouldAutoSize, WithColum
             $nonConformity->department?->name,
             $nonConformity->reported_by,
             $nonConformity->reported_at?->format('d/m/Y H:i'),
-            $nonConformity->due_date?->format('d/m/Y'),
+            $nonConformity->due_date?->format('d/m/Y H:i'),
             $nonConformity->assigned_to,
             $nonConformity->sample_id,
             $nonConformity->test_method,
@@ -98,7 +77,7 @@ class NonConformitiesExport implements FromCollection, ShouldAutoSize, WithColum
             $nonConformity->corrective_actions,
             $nonConformity->preventive_actions,
             $nonConformity->comments,
-            $nonConformity->daysOpen(),
+            $nonConformity->deleted_at?->format('d/m/Y H:i'),
         ];
     }
 

@@ -23,6 +23,10 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  inputLabel: {
+    type: String,
+    default: ''
+  },
   options: {
     type: Array,
     default: () => [],
@@ -145,11 +149,13 @@ function clear() {
   <div>
     <Combobox
       by="value"
+      :disabled="props.disableInput"
       :model-value="props.modelValue"
       @update:model-value="handleUpdateModelValue"
       as="div"
     >
       <ComboboxLabel v-if="props.titleLabel" class="ds-field-label mb-2 block">{{ props.titleLabel }}</ComboboxLabel>
+      <ComboboxLabel v-else-if="props.inputLabel" class="sr-only">{{ props.inputLabel }}</ComboboxLabel>
       <div class="relative" :class="props.titleLabel ? 'mt-1.5' : ''">
         <div
           class="ds-combobox-control cursor-default text-left"
@@ -157,6 +163,7 @@ function clear() {
           :data-disabled="props.disableInput"
         >
           <ComboboxInput
+            :aria-label="props.inputLabel || undefined"
             class="w-full border-0 bg-transparent py-3 pl-3.5 pr-20 text-sm font-semibold text-[var(--ds-text)] placeholder:text-[var(--ds-text-soft)] focus:ring-0"
             :displayValue="option => option?.label"
             @change="query = $event.target.value"
@@ -164,6 +171,7 @@ function clear() {
             :disabled="props.disableInput"
           />
           <ComboboxButton
+            :aria-label="props.inputLabel ? `Opções: ${props.inputLabel}` : 'Mostrar opções'"
             class="absolute inset-y-0 right-0 flex items-center gap-1 px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus)]"
           >
             <XMarkIcon

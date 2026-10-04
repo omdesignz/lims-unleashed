@@ -41,7 +41,6 @@ use App\Models\Invoice;
 use App\Models\InvoiceCategory;
 use App\Models\ItemCategory;
 use App\Models\ItemStatus;
-use App\Models\MaintenanceCategory;
 use App\Models\MaintenanceTask;
 use App\Models\Matrix;
 use App\Models\NormativeWorkProcedure;
@@ -236,7 +235,7 @@ class LimsSmokeTest extends TestCase
             'isuppliers.index',
             'isuppliers.create',
             'maintenancecategories.index',
-            'maintenancecategories.create',
+            'vap-maintenance.categories',
             'matrixes.index',
             'matrixes.create',
             'nwps.index',
@@ -420,7 +419,6 @@ class LimsSmokeTest extends TestCase
             ['model' => InvoiceCategory::class, 'routes' => ['invoicecategories.edit']],
             ['model' => ItemCategory::class, 'routes' => ['itemcategories.edit']],
             ['model' => ItemStatus::class, 'routes' => ['itemstatuses.edit']],
-            ['model' => MaintenanceCategory::class, 'routes' => ['maintenancecategories.edit']],
             ['model' => MaintenanceTask::class, 'routes' => ['maintenancetasks.edit', 'maintenancetasks.show']],
             ['model' => Matrix::class, 'routes' => ['matrixes.edit', 'matrixes.show']],
             ['model' => NormativeWorkProcedure::class, 'routes' => ['nwps.edit']],

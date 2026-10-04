@@ -7,7 +7,7 @@ import LaboratoryMembershipForm from "@/Components/LaboratoryMembershipForm.vue"
 import { usePermission } from "@/Composables/usePermissions";
 import { submitStaffAccountMutation } from "@/Composables/useStaffAccountPayload";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { router, useForm } from "@inertiajs/vue3";
+import { Head, router, useForm } from "@inertiajs/vue3";
 import {
   RefreshCw as ArrowPathIcon,
   ArrowLeftRight as ArrowsRightLeftIcon,
@@ -198,6 +198,7 @@ function archiveRecord(action, ids) {
 
 <template>
   <div class="space-y-6">
+    <Head :title="$t('gestlab.general.labels.users.page_title')" />
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0">

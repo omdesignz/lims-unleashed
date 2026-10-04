@@ -75,6 +75,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["execute-action", "slideover-on", "create-record"]);
+const canCreate = computed(() => props.createAction && hasPermission('add_' + props.model));
 
 const query = reactive({
   search: props.query?.search ?? "",
@@ -260,7 +261,7 @@ const masks = ref({
               {{ allVisibleSelected ? $t("gestlab.general.labels.clear_selection") : $t("gestlab.general.buttons.select_all") }}
             </button>
             <button
-              v-if="props.createAction && hasPermission('add_' + props.model)"
+              v-if="canCreate"
               type="button"
               class="ds-button ds-button-primary"
               @click="$emit('create-record')"
@@ -580,7 +581,8 @@ const masks = ref({
         v-else
         class="px-4 py-12"
         :name="$t('gestlab.general.labels.no_records')"
-        :description="$t('gestlab.general.labels.start_creating')"
+        :description="canCreate ? $t('gestlab.general.labels.start_creating') : ''"
+        :show-create="canCreate"
         @create-record="$emit('create-record')"
       />
       <template v-if="props.record.data.length" #pagination>

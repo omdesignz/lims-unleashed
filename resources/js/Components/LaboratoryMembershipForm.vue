@@ -14,8 +14,15 @@ function submit() {
   form.transform(({ email }) => ({ email })).post(route('users.membership.store'), {
     preserveScroll: true,
     onSuccess: () => { form.reset(); emit('close') },
-    onNetworkError: () => form.setError('request', 'Ligação interrompida. A adesão não foi confirmada.'),
-    onHttpException: () => form.setError('request', 'Não foi possível adicionar o membro. O email foi preservado.'),
+    onNetworkError: () => {
+      form.setError('request', 'Ligação interrompida. A adesão não foi confirmada; o email foi preservado.')
+      return false
+    },
+    onHttpException: () => {
+      form.setError('request', 'Não foi possível adicionar o membro. O email foi preservado.')
+      return false
+    },
+    onCancel: () => form.setError('request', 'Adesão interrompida. O email foi preservado; a adesão não foi confirmada.'),
   })
 }
 </script>
@@ -23,7 +30,7 @@ function submit() {
 <template>
   <SlideOver title="Adicionar membro" description="Adicione uma conta existente à equipa deste laboratório. Os dados pessoais, a palavra-passe e os acessos globais não serão alterados." :disabled="form.processing" @close="close">
     <template #content>
-      <form id="laboratory-membership-form" class="space-y-4 px-6 py-5" @submit.prevent="submit">
+      <form id="laboratory-membership-form" class="space-y-4 px-6 py-5" :aria-busy="form.processing" @submit.prevent="submit">
         <p class="ds-copy text-sm">Use o email registado de uma conta activa e verificada. Novas contas são criadas pelo administrador do sistema. A adesão não concede acesso à rede nem gestão de marca.</p>
         <label for="membership-email" class="ds-field-label">Email registado</label>
         <BaseInput id="membership-email" v-model="form.email" class="ds-field" type="email" autocomplete="off" required maxlength="255" :disabled="form.processing" :aria-invalid="Boolean(form.errors.email)" :aria-describedby="form.hasErrors ? 'membership-error' : undefined" />
@@ -31,8 +38,10 @@ function submit() {
       </form>
     </template>
     <template #action_buttons>
-      <button type="button" class="ds-button ds-button-secondary" :disabled="form.processing" @click="close">Cancelar</button>
-      <button type="submit" form="laboratory-membership-form" class="ds-button ds-button-primary" :disabled="form.processing">{{ form.processing ? 'A adicionar…' : 'Adicionar membro' }}</button>
+      <div class="flex flex-wrap justify-end gap-3">
+        <button type="button" class="ds-button ds-button-secondary" :disabled="form.processing" @click="close">Cancelar</button>
+        <button type="submit" form="laboratory-membership-form" class="ds-button ds-button-primary" :disabled="form.processing">{{ form.processing ? 'A adicionar…' : 'Adicionar membro' }}</button>
+      </div>
     </template>
   </SlideOver>
 </template>

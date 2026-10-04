@@ -7,7 +7,7 @@
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 11pt;
+            font-size: 9pt;
             margin: 0;
             padding: 0;
             color: #374151;
@@ -15,15 +15,11 @@
         }
         
         @page {
-            margin: 105mm 15mm 10mm 15mm;
-            header: page-header;
-            footer: page-footer;
+            margin: 15mm 15mm 18mm 15mm;
+            odd-footer-name: html_page-footer;
+            even-footer-name: html_page-footer;
             margin-header: 10mm;
             margin-footer: 10mm;
-        }
-        
-        @page :first {
-            margin-top: 105mm;
         }
         
         .section-title {
@@ -31,7 +27,8 @@
             font-weight: 600;
             color: #111827;
             text-align: center;
-            margin: 20px 0 15px 0;
+            margin: 12px 0 8px 0;
+            page-break-after: avoid;
             padding-bottom: 8px;
             border-bottom: 2px solid #1e3a8a;
         }
@@ -61,20 +58,20 @@
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             padding: 0;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             overflow: hidden;
         }
         
         .section-header {
             background: #1e3a8a;
             color: white;
-            padding: 12px 20px;
+            padding: 8px 12px;
             font-size: 13px;
             font-weight: bold;
         }
         
         .section-content {
-            padding: 20px;
+            padding: 10px;
         }
         
         /* Two column table layout - Works with mPDF */
@@ -195,8 +192,9 @@
         }
         
         .signature-area {
-            margin-top: 40px;
-            padding-top: 20px;
+            margin-top: 15px;
+            padding-top: 10px;
+            page-break-inside: avoid;
             border-top: 2px solid #1e3a8a;
         }
         
@@ -276,7 +274,7 @@
 </head>
 <body class="pdf-document commercial-document">
 
-<htmlpageheader name="page-header">
+<div>
     {{-- <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
         <tr>
             <td align="center">
@@ -301,14 +299,18 @@
         </tr>
     </table> --}}
 
-    @include('PDFs.partials.document-letterhead', ['settings' => $settings])
+    @if($settings->app_logo_url)
+        @include('PDFs.partials.document-letterhead', ['settings' => $settings])
+    @else
+        <div style="font-size: 12pt; font-weight: bold; margin-bottom: 5mm;">{{ $settings->app_client_lab_name ?: $settings->app_name }}</div>
+    @endif
     
     <!-- Main Header -->
     <table width="100%" cellpadding="0" cellspacing="0" style="background: #1e3a8a; color: white; border-radius: 8px; margin-bottom: 15px;">
         <tr>
             <td style="padding: 15px; text-align: center;">
                 <div style="font-size: 16px; font-weight: 700; color: white; font-weight:bold;">
-                    GUIA DE CONTRATAÇÃO {!! $model->guide_no !!}
+                    GUIA DE CONTRATAÇÃO {{ $model->guide_no }}
                 </div>
                 <div style="font-size: 11px; color: rgba(255,255,255,0.9); margin-top: 5px; font-weight: 500;">
                     Documento oficial de pedido de serviços
@@ -316,7 +318,7 @@
             </td>
         </tr>
     </table>
-</htmlpageheader>
+</div>
 
 <htmlpagefooter name="page-footer">
     <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 10px;">
@@ -326,10 +328,10 @@
                     <table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
                             <td>
-                                Página {PAGENO} de {nb}
+                                {{ $model->guide_no }} | Página {PAGENO} de {nb}
                             </td>
                             <td align="right">
-                                {!! mb_strtoupper($settings->app_client_address) !!} | {!! mb_strtoupper($settings->app_client_email) !!} | {!! mb_strtoupper($settings->app_client_contact) !!}
+                                {{ implode(' | ', array_filter([$settings->app_client_address, $settings->app_client_email, $settings->app_client_contact])) }}
                             </td>
                         </tr>
                     </table>
@@ -338,11 +340,7 @@
         </tr>
     </table>
 </htmlpagefooter>
-
-<!-- Watermark -->
-<div class="watermark">
-    @include('PDFs.partials.brand-logo', ['settings' => $settings, 'width' => '120px', 'style' => 'height: auto;'])
-</div>
+<sethtmlpagefooter name="page-footer" page="ALL" value="on" />
 
 <!-- Main Content -->
 <div style="width: 100%; max-width: 100%;">
@@ -364,7 +362,7 @@
                         <div class="info-row">
                             <div class="info-label">Empresa / Estabelecimento</div>
                             <div class="info-value highlight-value">
-                                {!! mb_strtoupper($model->customer->company) !!}
+                                {{ mb_strtoupper($model->customer?->name ?? 'Não informado') }}
                             </div>
                         </div>
                         
@@ -372,7 +370,7 @@
                         <div class="info-row">
                             <div class="info-label">NIF</div>
                             <div class="info-value highlight-value">
-                                {!! $model->nif !!}
+                                {{ filled($model->nif) ? $model->nif : 'Não informado' }}
                             </div>
                         </div>
                         
@@ -380,18 +378,22 @@
                         <div class="info-row">
                             <div class="info-label">Telefone</div>
                             <div class="info-value highlight-value">
-                                {!! $model->contact !!}
+                                {{ filled($model->contact) ? $model->contact : 'Não informado' }}
                             </div>
                         </div>
                     </td>
                     
                     <!-- Right Column -->
                     <td class="column-cell right-column">
+                        <div class="info-row">
+                            <div class="info-label">Estabelecimento do cliente</div>
+                            <div class="info-value">{{ $model->warehouse?->name ?? 'Não informado' }}</div>
+                        </div>
                         <!-- Collection Point -->
                         <div class="info-row">
                             <div class="info-label">Local de Recolha</div>
                             <div class="info-value">
-                                {!! mb_strtoupper($model->collection_point) !!}
+                                {{ filled($model->collection_point) ? mb_strtoupper($model->collection_point) : 'Não informado' }}
                             </div>
                         </div>
                         
@@ -399,7 +401,7 @@
                         <div class="info-row">
                             <div class="info-label">Email</div>
                             <div class="info-value highlight-value">
-                                {!! $model->email !!}
+                                {{ filled($model->email) ? $model->email : 'Não informado' }}
                             </div>
                         </div>
                         
@@ -407,17 +409,13 @@
                         <div class="info-row">
                             <div class="info-label">Data do Contrato</div>
                             <div class="info-value">
-                                {!! $model->date !!}
+                                {{ $model->date ?? 'Não informado' }}
                             </div>
                         </div>
                     </td>
                 </tr>
             </table>
             
-            <!-- Status Indicator (Full width below columns) -->
-            <div class="status-indicator">
-                Cliente activo • Registo válido até {!! Carbon\Carbon::parse($model->date)->addYear()->format('d/m/Y') !!}
-            </div>
         </div>
     </div>
 
@@ -433,41 +431,27 @@
             <table class="document-table">
                 <tr>
                     <td class="document-label">Porto / Aeroporto / Posto de Desembarque</td>
-                    <td class="document-value">{!! mb_strtoupper($model->entry_point) !!}</td>
+                    <td class="document-value">{{ filled($model->entry_point) ? mb_strtoupper($model->entry_point) : 'Não informado' }}</td>
                 </tr>
                 <tr>
                     <td class="document-label">B/L ou Carta de Porte</td>
-                    <td class="document-value">{!! mb_strtoupper($model->ref_no) !!}</td>
+                    <td class="document-value">{{ filled($model->bl) ? $model->bl : 'Não informado' }}</td>
+                </tr>
+                <tr>
+                    <td class="document-label">Referência</td>
+                    <td class="document-value">{{ filled($model->ref_no) ? $model->ref_no : 'Não informado' }}</td>
                 </tr>
                 <tr>
                     <td class="document-label">Nº do Documento Único (DU)</td>
-                    <td class="document-value">{!! mb_strtoupper($model->du_no) !!}</td>
+                    <td class="document-value">{{ filled($model->du_no) ? mb_strtoupper($model->du_no) : 'Não informado' }}</td>
                 </tr>
             </table>
             
-            <!-- Document Status -->
-            <div class="document-status">
-                <table class="status-table">
-                    <tr>
-                        <td class="status-label-cell">
-                            <div style="font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 4px;">Estado dos documentos</div>
-                            <div style="font-size: 10px; color: #6b7280;">Documentação completa e válida</div>
-                        </td>
-                        <td class="status-value-cell">
-                            <div class="status-indicator" style="background-color: #d1fae5; color: #065f46; border-color: #a7f3d0; margin: 0;">
-                                Documentação Completa
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-            </div>
         </div>
     </div>
 
-    <pagebreak>
-
     <!-- Food Product Information Section -->
-    <div class="section-title" page-break-before="always">Informação do Produto Alimentar</div>
+    <div class="section-title">Produtos para análise</div>
     
     <div class="info-section" style="padding: 0;">
         <div class="section-header">
@@ -487,11 +471,11 @@
                 <tbody>
                     @foreach($model->items as $item)
                     <tr>
-                        <td>{!! mb_strtoupper($item->product->name) !!}</td>
-                        <td>{!! mb_strtoupper($item->country->name) !!}</td>
-                        <td>{!! mb_strtoupper($item->manufacturer) !!}</td>
-                        <td>{!! mb_strtoupper($item->brand) !!}</td>
-                        <td>{!! mb_strtoupper($item->lot) !!}</td>
+                        <td>{{ mb_strtoupper($item->product?->name ?? 'Não informado') }}</td>
+                        <td>{{ mb_strtoupper($item->country?->name ?? 'Não informado') }}</td>
+                        <td>{{ mb_strtoupper($item->manufacturer ?? '—') }}</td>
+                        <td>{{ mb_strtoupper($item->brand ?? '—') }}</td>
+                        <td>{{ mb_strtoupper($item->lot ?? '—') }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -499,6 +483,13 @@
         </div>
     </div>
 
+    @if(filled($model->obs))
+        <div class="section-title">Observações</div>
+        <div class="info-section"><div class="section-content">{!! nl2br(e($model->obs)) !!}</div></div>
+    @endif
+
+    <pagebreak />
+    <div class="section-title">Guia de contratação {{ $model->guide_no }}</div>
     <!-- Legal Notices Section -->
     <div style="margin: 25px 0;">
         <div class="legal-notice">
@@ -520,13 +511,13 @@
                 <td width="50%" valign="top">
                     <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">Data do Documento</div>
                     <div class="date-badge">
-                        Luanda, {!! $model->date !!}
+                        {{ $model->date ?? 'Não informado' }}
                     </div>
                 </td>
                 <td width="50%" valign="top" align="right">
                     <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">Referência</div>
                     <div style="font-size: 12px; font-weight: 600; color: #1e3a8a; padding: 6px 12px; background-color: #f9fafb; border-radius: 4px; border: 1px solid #e5e7eb; display: inline-block;">
-                        GUID-{!! $model->guide_no !!}
+                        {{ $model->guide_no }}
                     </div>
                 </td>
             </tr>
@@ -550,10 +541,9 @@
     </div>
 
     <!-- Final Information -->
-    <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+    <div style="margin-top: 15px; padding-top: 10px; border-top: 2px solid #e5e7eb; page-break-inside: avoid;">
         <div style="font-size: 9px; color: #6b7280; text-align: center; line-height: 1.4;">
-            <p>Documento gerado por sistema validado N. <strong>{!! $settings->app_agt_validation_number !!}</strong></p>
-            <p>Processado por: <strong>{!! $settings->app_name !!}</strong> • Data: <strong>{!! Carbon\Carbon::now()->format('d/m/Y H:i:s') !!}</strong></p>
+            <p>Sistema: <strong>{{ $settings->app_name }}</strong> • Gerado em: <strong>{{ Carbon\Carbon::now()->format('d/m/Y H:i:s') }}</strong></p>
             <p style="color: #1e3a8a; font-weight: 600; margin-top: 5px;">Documento Confidencial - Uso Exclusivo do Solicitante</p>
         </div>
     </div>

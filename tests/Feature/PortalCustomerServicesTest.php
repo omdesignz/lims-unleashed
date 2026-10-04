@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Customer;
 use App\Models\CustomerRequest;
 use App\Models\CustomerRequestCategory;
+use App\Models\PortalServiceInvitation;
 use App\Models\Profile;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -36,6 +37,11 @@ class PortalCustomerServicesTest extends TestCase
             'email' => 'portal.'.Str::uuid().'@lims-unleashed.test',
             'email_verified_at' => now(),
         ]);
+    }
+
+    private function serviceInvitation(Warehouse $warehouse): string
+    {
+        return PortalServiceInvitation::factory()->create(['warehouse_id' => $warehouse->id, 'customer_id' => $warehouse->customer_id])->token;
     }
 
     private function portalCategory(string $name): CustomerRequestCategory
@@ -229,6 +235,7 @@ class PortalCustomerServicesTest extends TestCase
 
         $this->actingAs($warehouse, 'portal')
             ->post(route('portal.request.store'), [
+                'invitation' => $this->serviceInvitation($warehouse),
                 'request_type' => 'analysis_request',
                 'title' => $title,
                 'description' => 'Solicitamos análise microbiológica e físico-química desta amostra.',
@@ -268,6 +275,7 @@ class PortalCustomerServicesTest extends TestCase
 
         $this->actingAs($warehouse, 'portal')
             ->post(route('portal.request.store'), [
+                'invitation' => $this->serviceInvitation($warehouse),
                 'request_type' => 'analysis_request',
                 'title' => $title,
                 'description' => 'Pedido em lote para validação técnica com múltiplas amostras do mesmo cliente.',
@@ -325,6 +333,7 @@ class PortalCustomerServicesTest extends TestCase
 
         $this->actingAs($warehouse, 'portal')
             ->post(route('portal.request.store'), [
+                'invitation' => $this->serviceInvitation($warehouse),
                 'request_type' => 'collection_request',
                 'title' => $title,
                 'description' => 'Necessitamos de recolha no armazém principal na próxima janela disponível.',
@@ -366,6 +375,7 @@ class PortalCustomerServicesTest extends TestCase
         $title = 'Portal Duplicate Guard '.Str::upper(Str::random(6));
 
         $payload = [
+            'invitation' => $this->serviceInvitation($warehouse),
             'request_type' => 'general_support',
             'title' => $title,
             'description' => 'Precisamos de acompanhamento operacional para um pedido existente.',
@@ -387,7 +397,7 @@ class PortalCustomerServicesTest extends TestCase
         $this->actingAs($warehouse, 'portal')
             ->post(route('portal.request.store'), $payload)
             ->assertRedirect()
-            ->assertSessionHasErrors('duplicate_submission');
+            ->assertSessionHasErrors('invitation');
 
         $this->assertSame(
             1,

@@ -4,9 +4,6 @@ namespace Tests\Feature;
 
 use App\Jobs\ImportEquipmentsChunk;
 use App\Jobs\ImportMaintenanceTasksChunk;
-use App\Models\InventoryItem;
-use App\Models\InventoryItemSupplier;
-use App\Models\MaintenanceCategory;
 use App\Models\MaintenanceTask;
 use App\Models\Permission;
 use App\Models\User;
@@ -61,30 +58,20 @@ class InventoryImportLaboratoryTest extends TestCase
         }
     }
 
-    public function test_maintenance_import_matches_only_existing_local_equipment(): void
+    public function test_retired_maintenance_job_cannot_bypass_canonical_import_validation(): void
     {
         $lab = VAPLab::factory()->create();
-        $peer = VAPLab::factory()->create();
         $member = $this->member($lab);
-        $category = MaintenanceCategory::query()->create(['name' => 'Imported calibration', 'code' => 'IMP-CAL']);
-        $supplier = InventoryItemSupplier::query()->create(['name' => 'Import supplier']);
-        $code = 'PEER-EQ-'.fake()->uuid();
-        InventoryItem::query()->create(['lab_id' => $peer->id, 'name' => 'Peer equipment', 'internal_code' => $code]);
+        $before = MaintenanceTask::query()->count();
         $row = array_fill(0, 16, null);
-        $row[0] = $code;
-        $row[2] = (string) $category->id;
-        $row[8] = today()->addMonth()->toDateString();
-        $row[9] = $supplier->name;
-
-        (new ImportMaintenanceTasksChunk([$row], $lab->id, $member->id))->handle();
-        $this->assertSame(0, MaintenanceTask::query()->count());
-        $local = InventoryItem::query()->create(['lab_id' => $lab->id, 'name' => 'Local equipment', 'internal_code' => $code]);
-
-        (new ImportMaintenanceTasksChunk([$row], $lab->id, $member->id))->handle();
-        $task = MaintenanceTask::query()->sole();
-        $this->assertSame($local->id, $task->equipment_id);
-        $this->assertSame($row[8], $task->due_date->toDateString());
-        $this->assertSame('Manutenção de '.$code, $task->name);
-
+        $row[0] = 'FORGED-EQUIPMENT';
+        $row[8] = today()->toDateString();
+        try {
+            (new ImportMaintenanceTasksChunk([$row], $lab->id, $member->id))->handle();
+            $this->fail('Retired jobs must not create maintenance records.');
+        } catch (HttpException $exception) {
+            $this->assertSame(410, $exception->getStatusCode());
+        }
+        $this->assertSame($before, MaintenanceTask::query()->count());
     }
 }

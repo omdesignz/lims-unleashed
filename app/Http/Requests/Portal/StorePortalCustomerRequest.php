@@ -15,6 +15,12 @@ class StorePortalCustomerRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'invitation' => ['required', 'uuid'],
+            'lab_id' => ['prohibited'],
+            'customer_id' => ['prohibited'],
+            'warehouse_id' => ['prohibited'],
+            'status' => ['prohibited'],
+            'answered' => ['prohibited'],
             'request_type' => ['required', Rule::in([
                 'general_support',
                 'complaint',

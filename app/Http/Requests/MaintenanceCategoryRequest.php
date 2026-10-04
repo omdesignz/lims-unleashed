@@ -2,69 +2,38 @@
 
 namespace App\Http\Requests;
 
+use App\Models\MaintenanceCategory;
+use App\Services\SampleLaboratoryAccess;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class MaintenanceCategoryRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return true;
-    }
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
-     */
-    public function rules(): array
-    {
-        if ($this->isMethod('post')) {
-            $rules = [
-                'name' => 'required|min:1|unique:maintenance_categories,name',
-                'description' => 'nullable',
-                'code' => 'required|min:1',
-            ];
-        } else {
-            $rules = [
-                'name' => 'required|min:1|unique:maintenance_categories,name,' . request()->category,
-                'description' => 'nullable',
-                'code' => 'required|min:1',
-
-            ];
+        $category = $this->route('category');
+        if ($category instanceof MaintenanceCategory) {
+            abort_unless($category->lab_id === app(SampleLaboratoryAccess::class)->activeLabId(), 404);
         }
 
-        return $rules;
+        return ! $this->session()->has('impersonate')
+            && $this->user()->can(($this->isMethod('post') ? 'add' : 'edit').'_maintenance_categories');
     }
 
-    /**
-     * Get custom attributes for validator errors.
-     *
-     * @return array
-     */
-    public function attributes()
+    public function rules(): array
+    {
+        return self::categoryRules($this->route('category')?->id);
+    }
+
+    /** @return array<string, array<int, mixed>> */
+    public static function categoryRules(?int $categoryId = null): array
     {
         return [
-            'name' => trans('gestlab.general.labels.maintenance_categories.name'),
-            'code' => trans('gestlab.general.labels.maintenance_categories.code'),
-            'description' => trans('gestlab.general.labels.maintenance_categories.description'),
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:40', 'regex:/^[A-Z0-9][A-Z0-9_-]*$/', Rule::unique('maintenance_categories', 'code')->ignore($categoryId)],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'lab_id' => ['prohibited'],
+            'deleted_at' => ['prohibited'],
         ];
-    }
-
-    /**
-     * Configure the validator instance.
-     *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
-     */
-    public function prepareForValidation()
-    {
-        // if ($this->isMethod('post')) {
-        //     $this->merge([
-        //         'password' => bcrypt('password'),
-        //     ]);
-        // }
     }
 }

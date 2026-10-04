@@ -37,6 +37,8 @@ class InventoryOrder extends Model
 
     protected $table = 'i_orders';
 
+    protected $hidden = ['receipt_history'];
+
     protected $attributes = [
         'total_amount' => 0,
     ];
@@ -51,6 +53,7 @@ class InventoryOrder extends Model
     protected $casts = [
         'status' => InventoryOrderTrackingStatus::class,
         'total_amount' => 'decimal:4',
+        'receipt_history' => 'array',
     ];
 
     public function sequence(): array

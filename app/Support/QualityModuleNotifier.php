@@ -2,7 +2,6 @@
 
 namespace App\Support;
 
-use App\Models\Permission;
 use App\Models\Rating;
 use App\Models\User;
 use App\Models\VAPNonConformity;
@@ -63,20 +62,20 @@ class QualityModuleNotifier
 
     private function nonConformityStakeholders(VAPNonConformity $nonConformity): Collection
     {
-        $memberIds = DB::table('lab_user')
-            ->where('lab_id', $nonConformity->lab_id)
-            ->pluck('user_id')
-            ->all();
+        return User::query()->where('is_active', true)->whereNotNull('email_verified_at')
+            ->whereIn('id', DB::table('lab_user')->where('lab_id', $nonConformity->lab_id)->select('user_id'))
+            ->with(['roles.permissions', 'permissions'])->get()
+            ->filter(fn (User $recipient): bool => $recipient->can('view_occurrences'))->values();
+    }
 
-        return $this->qualityStakeholders()
-            ->concat(collect([
-                $nonConformity->assignedToUser,
-                $nonConformity->reportedByUser,
-            ]))
-            ->filter()
-            ->filter(fn (User $recipient): bool => in_array($recipient->id, $memberIds, true))
-            ->unique(fn ($recipient) => get_class($recipient).':'.$recipient->getKey())
-            ->values();
+    public function notifyNonConformityTransition(VAPNonConformity $record, string $requestId): void
+    {
+        $transition = collect($record->workflow_history ?? [])->firstWhere('request_id', $requestId);
+        $status = match ($transition['action'] ?? '') {
+            'resolve' => 'resolvida', 'verify' => 'verificada', 'close' => 'encerrada', 'reopen' => 'reaberta', default => $record->status,
+        };
+        $this->send($this->nonConformityStakeholders($record), 'quality.nonconformity.updated',
+            [...$this->nonConformityContext($record), 'status' => $status], 'nc-transition:'.$record->id.':'.$requestId);
     }
 
     private function ratingStakeholders(int $labId): Collection
@@ -85,36 +84,6 @@ class QualityModuleNotifier
             ->whereIn('id', DB::table('lab_user')->where('lab_id', $labId)->select('user_id'))
             ->with(['roles.permissions', 'permissions'])->get()
             ->filter(fn (User $recipient): bool => $recipient->can('view_ratings'))->values();
-    }
-
-    private function qualityStakeholders(): Collection
-    {
-        $admins = User::query()
-            ->whereHas('roles', fn ($query) => $query->where('name', 'admin')->where('guard_name', 'web'))
-            ->whereNotNull('email_verified_at')
-            ->get();
-
-        $nonConformityUsers = $this->usersWithPermission('view_vap_non_conformities');
-        $occurrenceUsers = $this->usersWithPermission('view_occurrences');
-
-        return $admins
-            ->concat($nonConformityUsers)
-            ->concat($occurrenceUsers)
-            ->whereNotNull('email_verified_at')
-            ->unique('id')
-            ->values();
-    }
-
-    private function usersWithPermission(string $permission): Collection
-    {
-        if (! Permission::query()->where('name', $permission)->exists()) {
-            return collect();
-        }
-
-        return User::query()
-            ->permission($permission)
-            ->whereNotNull('email_verified_at')
-            ->get();
     }
 
     /** @param array<string, scalar|null> $context */
@@ -130,7 +99,12 @@ class QualityModuleNotifier
             return;
         }
 
-        $this->templates->notify($targets, $key, $context);
+        try {
+            $this->templates->notify($targets, $key, $context);
+        } catch (\Throwable $exception) {
+            Cache::forget('quality-module-notification:'.$cacheKey);
+            throw $exception;
+        }
     }
 
     /** @return array<string, scalar|null> */

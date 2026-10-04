@@ -1,5 +1,6 @@
 <template>
   <div class="commercial-document-page space-y-8" :class="commercialDocumentThemeClasses">
+    <Head :title="`Proforma${props.record.data?.quote_no ? ' · ' + props.record.data.quote_no : ''}`" />
     <!-- HEADER CARD -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -21,12 +22,10 @@
           </span>
           <span :class="[
             'inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ring-1 ring-inset',
-            props.record.data?.status === 'approved' ? 'bg-green-100 text-green-800 ring-green-700/10' :
-            props.record.data?.status === 'pending' ? 'bg-yellow-100 text-yellow-800 ring-yellow-700/10' :
-            props.record.data?.status === 'rejected' ? 'bg-red-100 text-red-800 ring-red-700/10' :
+            props.record.data?.invoice_id || props.record.data?.converted_to_invoice ? 'bg-green-100 text-green-800 ring-green-700/10' :
             'bg-gray-100 text-gray-800 ring-gray-700/10'
           ]">
-            {{ formatStatus(props.record.data?.status) }}
+            {{ quoteBillingLabel(props.record.data ?? {}) }}
           </span>
         </div>
       </div>
@@ -108,7 +107,7 @@
                     {{ $t('gestlab.general.labels.quotes.warehouse_id') }}
                   </label>
                   <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <p class="text-sm font-semibold text-gray-900">{{ props.record.data?.warehouse }}</p>
+                    <p class="text-sm font-semibold text-gray-900">{{ quoteSiteLabel(props.record.data ?? {}) }}</p>
                     <p v-if="props.record.data?.warehouse?.city" class="text-xs text-gray-500 mt-1">
                       {{ props.record.data?.warehouse.city }}{{ props.record.data?.warehouse?.postal_code ? ', ' + props.record.data?.warehouse.postal_code : '' }}
                     </p>
@@ -415,12 +414,10 @@
               <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.quotes.current_status') }}</span>
               <span :class="[
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                props.record.data?.status === 'approved' ? 'bg-green-100 text-green-800' :
-                props.record.data?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                props.record.data?.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                props.record.data?.invoice_id || props.record.data?.converted_to_invoice ? 'bg-green-100 text-green-800' :
                 'bg-gray-100 text-gray-800'
               ]">
-                {{ formatStatus(props.record.data?.status) }}
+                {{ quoteBillingLabel(props.record.data ?? {}) }}
               </span>
             </div>
             <div class="flex items-center justify-between">
@@ -552,8 +549,10 @@ import '../CommercialDocumentSurface.css';
 import Layout from "@/Shared/Layouts/Layout.vue";
 import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { quoteBillingLabel, quoteSiteLabel } from '@/Composables/useQuoteAuthoring';
+import { usePermission } from '@/Composables/usePermissions';
 import { ref, computed } from "vue";
-import { router } from "@inertiajs/vue3";
+import { Head, router } from "@inertiajs/vue3";
 import {
   FileText as DocumentTextIcon,
   User as UserIcon,
@@ -640,8 +639,8 @@ const viewInvoice = () => {
   router.get(route('invoices.show', { id: props.record.data?.invoice_id }));
 }
 
-// Check if user can edit (based on status)
+const { hasPermission } = usePermission();
 const canEdit = computed(() => {
-  return ['pending', 'draft'].includes(props.record.data?.status);
+  return hasPermission('edit_quotes');
 });
 </script>

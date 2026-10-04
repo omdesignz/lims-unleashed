@@ -1,5 +1,7 @@
 <template>
   <div class="space-y-6" :class="commercialDocumentThemeClasses">
+    <Head title="Categorias de manutenção" />
+    <p v-if="mutationError" class="ds-field-error" role="alert">{{ mutationError }}</p>
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div class="min-w-0">
@@ -18,6 +20,7 @@
         </div>
 
         <button
+          v-if="can.create && !archived"
           type="button"
           class="ds-button ds-button-primary"
           @click="showCreateModal = true"
@@ -60,12 +63,12 @@
               type="search"
               placeholder="Nome, código ou descrição"
               class="ds-field pl-10"
-              @input="applySearch"
             />
           </span>
         </label>
 
         <div class="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+          <Link :href="route('vap-maintenance.categories', archived ? {} : { archived: 1 })" class="ds-button ds-button-secondary">{{ archived ? 'Categorias activas' : 'Arquivo' }}</Link>
           <span class="rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-muted)]">
             {{ categoryTotal }} categorias
           </span>
@@ -83,11 +86,11 @@
       <article
         v-for="category in categoryItems"
         :key="category.id"
-        class="ds-card group flex min-h-full flex-col overflow-hidden p-5 transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
+        class="ds-card flex min-h-full flex-col overflow-hidden p-5"
       >
         <div class="flex items-start justify-between gap-4">
           <div class="min-w-0">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]"> Tipo de serviço </p>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ category.is_preset ? 'Predefinição partilhada · Só leitura' : 'Categoria privada do laboratório' }}</p>
             <h2 class="mt-2 truncate text-base font-black text-[var(--ds-text)]">
               {{ category.name }}
             </h2>
@@ -127,6 +130,7 @@
 
         <div class="mt-auto flex items-center justify-end gap-2 pt-5">
           <button
+            v-if="can.edit && !category.is_preset && !category.deleted"
             type="button"
             class="ds-table-action"
             title="Editar categoria"
@@ -136,14 +140,17 @@
             <span class="sr-only">Editar categoria</span>
           </button>
           <button
+            v-if="can.archive && !category.is_preset && !category.deleted"
             type="button"
             class="ds-table-action text-rose-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 dark:text-rose-200 dark:hover:border-rose-400/30 dark:hover:bg-rose-400/10"
-            title="Eliminar categoria"
+            title="Arquivar categoria"
+            :disabled="mutationPending"
             @click="deleteCategory(category)"
           >
             <TrashIcon class="h-4 w-4" />
-            <span class="sr-only">Eliminar categoria</span>
+            <span class="sr-only">Arquivar categoria</span>
           </button>
+          <button v-if="can.restore && !category.is_preset && category.deleted" type="button" class="ds-table-action" :disabled="mutationPending" @click="restoreCategory(category)">Restaurar</button>
         </div>
       </article>
     </section>
@@ -155,6 +162,7 @@
       </h2>
       <p class="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-[var(--ds-text-muted)]"> Crie categorias para separar calibração interna, calibração externa, manutenção preventiva e verificacoes. </p>
       <button
+        v-if="can.create && !archived"
         type="button"
         class="ds-button ds-button-primary mt-6"
         @click="showCreateModal = true"
@@ -166,10 +174,17 @@
 
     <section v-if="categoryItems.length > 0" class="ds-table-summary flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-sm font-semibold text-[var(--ds-text-muted)]"> Biblioteca de manutenção pronta para planos preventivos e calibracoes. </p>
-      <Pagination :links="categories.links" />
+      <Pagination
+        :links="categories.links"
+        :from="categories.from"
+        :to="categories.to"
+        :total="categories.total"
+        :current_page="categories.current_page"
+        :last_page="categories.last_page"
+      />
     </section>
 
-    <Modal :show="showCreateModal || Boolean(editingCategory)" @close="closeModal">
+    <Modal :show="showCreateModal || Boolean(editingCategory)" :closeable="!form.processing" @close="closeModal">
       <div class="p-6">
         <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] pb-4">
           <div>
@@ -192,6 +207,8 @@
         </div>
 
         <form class="mt-6 space-y-5" @submit.prevent="submitForm">
+          <p v-if="form.hasErrors" class="ds-field-error" role="alert">{{ Object.values(form.errors).join(' ') }}</p>
+          <p v-if="form.processing" class="ds-copy" role="status">A guardar categoria…</p>
           <label class="ds-field-group">
             <span class="ds-field-label">Nome da categoria <span class="ds-field-required">*</span></span>
             <BaseInput
@@ -209,13 +226,15 @@
             <span class="ds-field-label">Código</span>
             <BaseInput
               v-model="form.code"
+              required
+              :readonly="Boolean(editingCategory?.code_locked)"
               type="text"
               :class="fieldClass('code')"
               :aria-invalid="Boolean(form.errors.code)"
               placeholder="Ex: CAL_INT"
             />
             <span v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</span>
-            <span v-else class="ds-field-hint">Use um código curto para filtros, relatórios e planos recorrentes.</span>
+            <span v-else class="ds-field-hint">{{ editingCategory?.code_locked ? 'Código fixo: já integra números emitidos.' : 'Código único com letras maiúsculas, números, hífen ou sublinhado. Fica fixo após o primeiro uso.' }}</span>
           </label>
 
           <label class="ds-field-group">
@@ -240,6 +259,7 @@
               type="submit"
               class="ds-button ds-button-primary"
               :disabled="form.processing"
+              :aria-busy="form.processing"
             >
               <CheckIcon class="h-4 w-4" />
               {{ form.processing ? 'A processar...' : (editingCategory ? 'Actualizar' : 'Criar') }}
@@ -252,8 +272,8 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { computed, ref, watch, onUnmounted } from 'vue'
+import { Head, Link, router, useForm } from '@inertiajs/vue3'
 import {
   Check as CheckIcon,
   Hash as HashtagIcon,
@@ -269,15 +289,25 @@ import { debounce } from 'lodash'
 import Modal from '@/Components/Modal.vue'
 import Pagination from '@/Components/Pagination.vue'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
 
 const props = defineProps({
   categories: Object,
   filters: Object,
+  stats: Object,
+  can: { type: Object, default: () => ({}) },
 })
 
 const search = ref(props.filters?.search || '')
 const showCreateModal = ref(false)
 const editingCategory = ref(null)
+const archived = computed(() => Boolean(Number(props.filters?.archived ?? 0)))
+const archive = useRecordArchive({
+  destroyUrl: ids => route('vap-maintenance.categories.destroy', ids[0]),
+  restoreUrl: ids => route('vap-maintenance.categories.restore', ids[0]),
+})
+const mutationPending = archive.processing
+const mutationError = computed(() => archive.failed.value ? archive.message.value : '')
 
 const form = useForm({
   name: '',
@@ -287,7 +317,6 @@ const form = useForm({
 
 const categoryItems = computed(() => props.categories?.data ?? [])
 const categoryTotal = computed(() => props.categories?.total ?? categoryItems.value.length)
-const codedCategoryCount = computed(() => categoryItems.value.filter((category) => Boolean(category.code)).length)
 const hasSearch = computed(() => search.value.trim().length > 0)
 
 const statsCards = computed(() => [
@@ -299,16 +328,16 @@ const statsCards = computed(() => [
     tone: 'text-cyan-700 dark:text-cyan-200',
   },
   {
-    label: 'Com código',
-    value: codedCategoryCount.value,
-    detail: 'Prontas para filtros',
+    label: 'Predefinições',
+    value: props.stats?.presets ?? 0,
+    detail: 'Partilhadas e só de leitura',
     icon: HashtagIcon,
     tone: 'text-emerald-700 dark:text-emerald-200',
   },
   {
-    label: 'Plano',
-    value: hasSearch.value ? 'Filtro' : 'Activo',
-    detail: 'Uso em tarefas',
+    label: 'Do laboratório',
+    value: props.stats?.owned ?? 0,
+    detail: 'Categorias privadas',
     icon: WrenchScrewdriverIcon,
     tone: 'text-amber-700 dark:text-amber-200',
   },
@@ -332,13 +361,15 @@ const fieldClass = (field) => [
 ]
 
 const applySearch = debounce(() => {
-  router.get(route('vap-maintenance.categories'), { search: search.value }, {
+  router.get(route('vap-maintenance.categories'), { search: search.value, archived: archived.value ? 1 : undefined }, {
     preserveState: true,
     replace: true,
   })
 }, 300)
 
 const editCategory = (category) => {
+  if (!props.can.edit || category.is_preset || category.deleted) return
+  form.clearErrors()
   editingCategory.value = category
   form.name = category.name
   form.code = category.code
@@ -346,30 +377,44 @@ const editCategory = (category) => {
 }
 
 const deleteCategory = (category) => {
-  if (confirm('Tem a certeza que deseja eliminar esta categoria? Esta acção não pode ser revertida.')) {
-    router.delete(route('vap-maintenance.categories.destroy', category.id))
-  }
+  if (!props.can.archive || category.is_preset || !confirm('Arquivar esta categoria? As tarefas existentes mantêm o seu histórico.')) return
+  changeArchive(category, false)
+}
+
+const restoreCategory = category => {
+  if (!props.can.restore || category.is_preset) return
+  changeArchive(category, true)
+}
+
+const changeArchive = (category, restore) => {
+  archive.submit(restore ? 'restore' : 'delete', [category.id])
 }
 
 const submitForm = () => {
-  if (editingCategory.value) {
-    form.put(route('vap-maintenance.categories.update', editingCategory.value.id), {
-      onSuccess: () => {
-        closeModal()
-      },
-    })
-
-    return
-  }
-
-  form.post(route('vap-maintenance.categories.store'), {
-    onSuccess: () => {
-      closeModal()
+  if (form.processing) return
+  form.clearErrors()
+  const options = {
+    onSuccess: () => closeModal(true),
+    onHttpException: () => {
+      form.setError('request', 'O registo ou a autorização já não está disponível. Actualize a lista.')
+      return false
     },
-  })
+    onNetworkError: () => {
+      form.setError('request', 'Falha de ligação. Os dados foram mantidos; tente novamente.')
+      return false
+    },
+    onCancel: () => form.setError('request', 'Operação interrompida. Confirme a lista antes de repetir.'),
+  }
+  try {
+    if (editingCategory.value) form.put(route('vap-maintenance.categories.update', editingCategory.value.id), options)
+    else form.post(route('vap-maintenance.categories.store'), options)
+  } catch {
+    form.setError('request', 'Não foi possível iniciar a operação. Os dados foram mantidos.')
+  }
 }
 
-const closeModal = () => {
+const closeModal = (saved = false) => {
+  if (form.processing && saved !== true) return
   showCreateModal.value = false
   editingCategory.value = null
   form.reset()
@@ -377,4 +422,5 @@ const closeModal = () => {
 }
 
 watch(search, applySearch)
+onUnmounted(() => applySearch.cancel())
 </script>

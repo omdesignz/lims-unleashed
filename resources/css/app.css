@@ -2724,6 +2724,10 @@ input[type="checkbox"]:not(.peer):not(.sr-only):disabled {
 }
 
 /* Rail */
+.app-sidebar {
+  display: contents;
+}
+
 .app-rail {
   display: flex;
   min-height: 0;
@@ -3343,8 +3347,7 @@ input[type="checkbox"]:not(.peer):not(.sr-only):disabled {
     box-shadow: none;
   }
 
-  .app-sheet > .app-rail,
-  .app-sheet > .app-column {
+  .app-sheet > .app-sidebar {
     display: none;
   }
 

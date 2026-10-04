@@ -8,6 +8,18 @@ use Symfony\Component\Process\Process;
 
 class PhpCompilationCompatibilityTest extends TestCase
 {
+    public function test_configuration_sources_do_not_emit_inline_output(): void
+    {
+        $files = glob(dirname(__DIR__, 2).'/config/*.php');
+        $this->assertNotEmpty($files);
+
+        foreach ($files as $file) {
+            $inlineOutput = array_filter(token_get_all(file_get_contents($file)),
+                fn (array|string $token): bool => is_array($token) && $token[0] === T_INLINE_HTML);
+            $this->assertSame([], $inlineOutput, basename($file).' must not emit output outside PHP tags.');
+        }
+    }
+
     #[DataProvider('applicationSources')]
     public function test_application_sources_compile_without_diagnostics(string $source): void
     {

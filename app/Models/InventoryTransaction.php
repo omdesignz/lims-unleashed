@@ -15,6 +15,10 @@ class InventoryTransaction extends Model
 
     public const MENU_NAME = 'itransactions';
 
+    public const ADDITION_CODES = ['stock_in', 'stock_adjustment_add', 'consumption_reversal', 'RECEIPT'];
+
+    public const DEDUCTION_CODES = ['stock_out', 'stock_adjustment_remove', 'consumption'];
+
     //
     protected $table = 'itransactions';
 
@@ -104,13 +108,13 @@ class InventoryTransaction extends Model
         return $this->type->name;
     }
 
-    public function getIsAdditionAttribute()
+    public function getIsAdditionAttribute(): bool
     {
-        return in_array($this->type->code, ['stock_in', 'stock_adjustment_add', 'consumption_reversal']);
+        return in_array($this->type?->code, self::ADDITION_CODES, true);
     }
 
-    public function getIsDeductionAttribute()
+    public function getIsDeductionAttribute(): bool
     {
-        return in_array($this->type->code, ['stock_out', 'stock_adjustment_remove', 'consumption']);
+        return in_array($this->type?->code, self::DEDUCTION_CODES, true);
     }
 }

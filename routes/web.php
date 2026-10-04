@@ -99,6 +99,7 @@ use App\Http\Controllers\PasskeyController;
 use App\Http\Controllers\PaymentCategoryController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PhytosanitaryProductController;
+use App\Http\Controllers\PortalServiceInvitationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProficiencyTestController;
 use App\Http\Controllers\ProfileController;
@@ -171,7 +172,6 @@ use App\Services\ModelsListingService;
 use App\Services\NIFIdentificationService;
 use App\Settings\GeneralSettings;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -283,34 +283,20 @@ Route::post('/language', LanguageStoreController::class)->name('language.store')
 
 Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function () {
 
-    // Import Satus
-    Route::get('/import-status/{batchId}', function ($batchId) {
-        $batch = Bus::findBatch($batchId);
-
-        return [
-            'progress' => $batch->progress(),
-            'totalJobs' => $batch->totalJobs,
-            'pendingJobs' => $batch->pendingJobs,
-            'failedJobs' => $batch->failedJobs,
-            'processedJobs' => $batch->processedJobs(),
-            'finished' => $batch->finished(),
-            'failedJobIds' => $batch->failedJobIds,
-        ];
-    });
-
     Route::controller(OccurrenceImportController::class)->group(function () {
         Route::get('/occurrences/import-template', 'template')->name('occurrences.import.template');
         Route::post('/occurrences/import', 'upload')->name('occurrences.import.upload');
     });
 
-    Route::controller(MaintenanceTaskImportController::class)->group(function () {
+    Route::controller(MaintenanceTaskImportController::class)->middleware('can:add_maintenance_tasks')->group(function () {
         Route::get('/maintenance-tasks/import', 'form')->name('maintenancetasks.import.form');
+        Route::get('/maintenance-tasks/import-template', 'template')->name('maintenancetasks.import.template');
         Route::post('/maintenance-tasks/import', 'upload')->name('maintenancetasks.import.upload');
-        Route::get('/maintenance-tasks/import-progress/{batchId}', 'progress')->name('maintenancetasks.import.progress');
     });
 
     Route::get('/dashboard', LaboratoryWorkbenchController::class)->name('dashboard');
     Route::get('/lab-networks/{network}', [LabNetworkController::class, 'index'])->name('lab-network.index');
+    Route::get('/lab-networks/{network}/stock.csv', [LabNetworkController::class, 'export'])->name('lab-network.export');
     Route::post('/laboratory-context/{lab}', [LabNetworkController::class, 'switchLab'])->name('lab-context.switch');
     Route::put('/laboratory-branding/{lab}', [LabNetworkController::class, 'updateBranding'])->name('lab-branding.update');
     Route::get('/laboratory-workflow', [LaboratoryWorkflowController::class, 'index'])->name('laboratory-workflow.index');
@@ -541,27 +527,16 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
 
     // Maintenance Categories
     Route::controller(MaintenanceCategoryController::class)->group(function () {
-        Route::get('maintenancecategories', 'index')->name('maintenancecategories.index');
-        Route::get('maintenancecategories/create', 'create')->name('maintenancecategories.create');
-        Route::post('maintenancecategories', 'store')->name('maintenancecategories.store');
-        Route::get('maintenancecategories/{category}/edit', 'edit')->name('maintenancecategories.edit');
-        Route::put('maintenancecategories/{category}', 'update')->name('maintenancecategories.update');
-        Route::get('maintenancecategories/destroy', 'destroy')->name('maintenancecategories.destroy');
-        Route::get('maintenancecategories/restore', 'restore')->name('maintenancecategories.restore');
-        Route::get('maintenancecategories/getMaintenanceCategory', 'getMaintenanceCategory')->name('maintenancecategories.getMaintenanceCategory');
+        Route::get('maintenancecategories', 'legacyIndex')->middleware('can:view_maintenance_categories')->name('maintenancecategories.index');
+        Route::get('maintenancecategories/getMaintenanceCategory', 'lookup')->middleware('can:view_maintenance_categories')->name('maintenancecategories.getMaintenanceCategory');
     });
 
     // Maintenance Tasks
     Route::controller(MaintenanceTaskController::class)->group(function () {
         Route::get('maintenancetasks', 'index')->name('maintenancetasks.index');
         Route::get('maintenancetasks/create', 'create')->name('maintenancetasks.create');
-        Route::post('maintenancetasks', 'store')->name('maintenancetasks.store');
         Route::get('maintenancetasks/{maintenancetask}/edit', 'edit')->name('maintenancetasks.edit');
-        Route::put('maintenancetasks/{maintenancetask}', 'update')->name('maintenancetasks.update');
         Route::get('maintenancetasks/{maintenancetask}/show', 'show')->name('maintenancetasks.show');
-        Route::get('maintenancetasks/destroy', 'destroy')->name('maintenancetasks.destroy');
-        Route::get('maintenancetasks/restore', 'restore')->name('maintenancetasks.restore');
-        // Route::get('maintenancetasks/getMaintenanceTask', 'getMaintenanceTask')->name('maintenancetasks.getMaintenanceTask');
     });
 
     // Occurrence Categories
@@ -1007,13 +982,14 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
 
     // Customer Requests
     Route::controller(CustomerRequestController::class)->group(function () {
+        Route::post('customerrequests/invitations', [PortalServiceInvitationController::class, 'store'])->name('customerrequests.invitations.store');
         Route::get('customerrequests', 'index')->name('customerrequests.index');
         Route::get('customerrequests/create', 'create')->name('customerrequests.create');
         Route::post('customerrequests', 'store')->name('customerrequests.store');
         Route::get('customerrequests/{request}/edit', 'edit')->name('customerrequests.edit');
         Route::put('customerrequests/{request}', 'update')->name('customerrequests.update');
-        Route::get('customerrequests/destroy', 'destroy')->name('customerrequests.destroy');
-        Route::get('customerrequests/restore', 'restore')->name('customerrequests.restore');
+        Route::delete('customerrequests/destroy', 'destroy')->name('customerrequests.destroy');
+        Route::post('customerrequests/restore', 'restore')->name('customerrequests.restore');
         Route::get('customerrequests/getCustomerRequest', 'getCustomerRequest')->name('customerrequests.getCustomerRequest');
     });
 
@@ -1813,6 +1789,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     });
 
     Route::prefix('vap-non-conformities')->name('vap_non_conformities.')->middleware('can:view_occurrences')->group(function () {
+        Route::post('/{nonConformity}/workflow/{transition}', [VAPNonConformityController::class, 'transition'])
+            ->whereIn('transition', ['resolve', 'verify', 'close', 'reopen'])->name('transition');
         // Non-Conformities
         Route::get('/', [VAPNonConformityController::class, 'index'])->name('index');
 
@@ -1823,6 +1801,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
             ->name('store');
 
         Route::get('/{nonConformity}', [VAPNonConformityController::class, 'show'])
+            ->withTrashed()
             ->name('show');
 
         Route::get('/{nonConformity}/edit', [VAPNonConformityController::class, 'edit'])
@@ -1830,6 +1809,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
             ->name('edit');
 
         Route::get('/{nonConformity}/attachments/{media}', [VAPNonConformityController::class, 'showAttachment'])
+            ->withTrashed()
             ->name('attachments.show');
 
         Route::put('/{nonConformity}', [VAPNonConformityController::class, 'update'])
@@ -1837,16 +1817,20 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
             ->name('update');
 
         Route::delete('/{nonConformity}', [VAPNonConformityController::class, 'destroy'])
+            ->withTrashed()
             ->middleware('can:delete_occurrences')
             ->name('destroy');
+
+        Route::patch('/{nonConformity}/restore', [VAPNonConformityController::class, 'restore'])
+            ->withTrashed()->middleware('can:restore_occurrences')->name('restore');
 
         Route::get('/export/excel', [VAPNonConformityController::class, 'exportExcel'])->name('export.excel');
 
         Route::get('/export/pdf', [VAPNonConformityController::class, 'exportPdf'])->name('export.pdf');
 
-        Route::get('/{nonConformity}/export/excel', [VAPNonConformityController::class, 'exportDetailsExcel'])->name('export.details.excel');
+        Route::get('/{nonConformity}/export/excel', [VAPNonConformityController::class, 'exportDetailsExcel'])->withTrashed()->name('export.details.excel');
 
-        Route::get('/{nonConformity}/export/pdf', [VAPNonConformityController::class, 'exportDetailsPdf'])->name('export.details.pdf');
+        Route::get('/{nonConformity}/export/pdf', [VAPNonConformityController::class, 'exportDetailsPdf'])->withTrashed()->name('export.details.pdf');
     });
 
     Route::prefix('vap-samples')->name('vap_samples.')->middleware(EnsureSampleLaboratoryAccess::class)->group(function () {
@@ -1888,38 +1872,41 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     // Maintenance and Calibration Routes
     Route::prefix('maintenance')->name('vap-maintenance.')->group(function () {
         // Dashboard
-        Route::get('/dashboard', [VAPMaintenanceController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard', [VAPMaintenanceController::class, 'dashboard'])->middleware('can:view_maintenance_tasks')->name('dashboard');
 
         // Categories
-        Route::get('/categories', [VAPMaintenanceController::class, 'categories'])->name('categories');
-        Route::post('/categories', [VAPMaintenanceController::class, 'storeCategory'])->name('categories.store');
-        Route::put('/categories/{category}', [VAPMaintenanceController::class, 'updateCategory'])->name('categories.update');
-        Route::delete('/categories/{category}', [VAPMaintenanceController::class, 'destroyCategory'])->name('categories.destroy');
+        Route::get('/categories', [MaintenanceCategoryController::class, 'index'])->middleware('can:view_maintenance_categories')->name('categories');
+        Route::post('/categories', [MaintenanceCategoryController::class, 'store'])->middleware('can:add_maintenance_categories')->name('categories.store');
+        Route::put('/categories/{category}', [MaintenanceCategoryController::class, 'update'])->middleware('can:edit_maintenance_categories')->name('categories.update');
+        Route::delete('/categories/{category}', [MaintenanceCategoryController::class, 'destroy'])->withTrashed()->middleware('can:delete_maintenance_categories')->name('categories.destroy');
+        Route::patch('/categories/{category}/restore', [MaintenanceCategoryController::class, 'restore'])->withTrashed()->middleware('can:restore_maintenance_categories')->name('categories.restore');
 
         // Tasks
-        Route::get('/tasks', [VAPMaintenanceController::class, 'tasks'])->name('tasks');
-        Route::get('/tasks/create', [VAPMaintenanceController::class, 'createTask'])->name('tasks.create');
-        Route::post('/tasks', [VAPMaintenanceController::class, 'storeTask'])->name('tasks.store');
-        Route::get('/tasks/{task}', [VAPMaintenanceController::class, 'showTask'])->name('tasks.show');
-        Route::put('/tasks/{task}', [VAPMaintenanceController::class, 'updateTask'])->name('tasks.update');
-        Route::delete('/tasks/{task}', [VAPMaintenanceController::class, 'destroyTask'])->name('tasks.destroy');
+        Route::get('/tasks', [VAPMaintenanceController::class, 'tasks'])->middleware('can:view_maintenance_tasks')->name('tasks');
+        Route::get('/tasks/create', [VAPMaintenanceController::class, 'createTask'])->middleware('can:add_maintenance_tasks')->name('tasks.create');
+        Route::post('/tasks', [VAPMaintenanceController::class, 'storeTask'])->middleware('can:add_maintenance_tasks')->name('tasks.store');
+        Route::get('/tasks/{task}/edit', [VAPMaintenanceController::class, 'editTask'])->middleware('can:edit_maintenance_tasks')->name('tasks.edit');
+        Route::get('/tasks/{task}', [VAPMaintenanceController::class, 'showTask'])->middleware('can:view_maintenance_tasks')->name('tasks.show');
+        Route::put('/tasks/{task}', [VAPMaintenanceController::class, 'updateTask'])->middleware('can:edit_maintenance_tasks')->name('tasks.update');
+        Route::delete('/tasks/{task}', [VAPMaintenanceController::class, 'destroyTask'])->withTrashed()->middleware('can:delete_maintenance_tasks')->name('tasks.destroy');
+        Route::post('/tasks/{task}/restore', [VAPMaintenanceController::class, 'restoreTask'])->withTrashed()->middleware('can:restore_maintenance_tasks')->name('tasks.restore');
 
         // Reports
-        Route::get('/reports/generate', [VAPMaintenanceController::class, 'generateReport'])->name('report.generate');
+        Route::get('/reports/generate', [VAPMaintenanceController::class, 'generateReport'])->middleware('can:export_maintenance_tasks')->name('report.generate');
         Route::post('/tasks/bulk-update', [VAPMaintenanceController::class, 'bulkUpdate'])->name('tasks.bulk-update');
 
         // Notifications
-        Route::post('/send-notifications', [VAPMaintenanceController::class, 'sendNotifications'])
+        Route::post('/send-notifications', [VAPMaintenanceController::class, 'sendNotifications'])->middleware('can:edit_maintenance_tasks')
             ->name('notifications.send');
-        Route::post('/tasks/{task}/notify-completion', [VAPMaintenanceController::class, 'notifyCompletion'])
+        Route::post('/tasks/{task}/notify-completion', [VAPMaintenanceController::class, 'notifyCompletion'])->middleware('can:edit_maintenance_tasks')
             ->name('tasks.notify-completion');
 
         // Reports & Exports
-        Route::get('/export', [VAPMaintenanceController::class, 'exportTasks'])
+        Route::get('/export', [VAPMaintenanceController::class, 'exportTasks'])->middleware('can:export_maintenance_tasks')
             ->name('export');
-        Route::get('/stats', [VAPMaintenanceController::class, 'getDashboardStats'])
+        Route::get('/stats', [VAPMaintenanceController::class, 'getDashboardStats'])->middleware('can:view_maintenance_tasks')
             ->name('stats');
-        Route::get('/equipment/{equipment}/history', [VAPMaintenanceController::class, 'getEquipmentHistory'])
+        Route::get('/equipment/{equipment}/history', [VAPMaintenanceController::class, 'getEquipmentHistory'])->middleware('can:view_maintenance_tasks')
             ->name('equipment.history');
     });
 
@@ -2279,8 +2266,8 @@ Route::prefix('portal')->name('portal.')->middleware(UsePortalFortifyConfigurati
         Route::get('requests', 'requests')->middleware('auth:portal')->name('requests.index');
         Route::post('requests', 'storerequest')->middleware('auth:portal')->name('request.store');
         Route::get('requests/export', 'exportRequests')->middleware('auth:portal')->name('request.export');
-        Route::get('requests/markAsDone/{id}', 'markAsDone')->middleware('auth:portal')->name('request.markAsDone');
-        Route::get('requests/destroy/{id}', 'destroyrequest')->middleware('auth:portal')->name('request.destroy');
+        Route::post('requests/markAsDone/{id}', 'markAsDone')->middleware('auth:portal')->name('request.markAsDone');
+        Route::delete('requests/destroy/{id}', 'destroyrequest')->middleware('auth:portal')->name('request.destroy');
         Route::get('collections', 'collections')->middleware('auth:portal')->name('collections');
         Route::get('collections/export', 'exportCollections')->middleware('auth:portal')->name('collections.export');
         Route::get('invoices', 'invoices')->middleware('auth:portal')->name('invoices');

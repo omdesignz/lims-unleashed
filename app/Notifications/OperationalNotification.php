@@ -91,6 +91,12 @@ class OperationalNotification extends Notification implements ShouldQueue
 
             return app(LaboratoryWorkflowOwnership::class)->eligibleUsers($labId)->find($notifiable->getKey())?->can('view_ratings') ?? false;
         }
+        if (str_starts_with($key, 'quality.nonconformity.')) {
+            $labId = filter_var(data_get($this->payload, 'context.lab_id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+            return $labId && $notifiable instanceof User
+                && (app(LaboratoryWorkflowOwnership::class)->eligibleUsers($labId)->find($notifiable->getKey())?->can('view_occurrences') ?? false);
+        }
         if (! str_starts_with((string) ($this->payload['key'] ?? ''), 'lab.')) {
             return true;
         }

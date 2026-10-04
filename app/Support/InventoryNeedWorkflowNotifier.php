@@ -95,6 +95,7 @@ class InventoryNeedWorkflowNotifier
     private function stakeholderRecipients(InventoryNeed $need)
     {
         return $this->procurementRecipients()
+            ->toBase()
             ->merge([$need->requestedBy, $need->approvedBy]);
     }
 }

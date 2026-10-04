@@ -2129,6 +2129,7 @@ class LimsWriteSmokeTest extends TestCase
         $this->qualifyUser($user, ['sample_intake_validation'], $department);
 
         $portalRequest = CustomerRequest::query()->create([
+            'lab_id' => $lab->id,
             'reference' => 'REQ-'.Str::upper(Str::random(6)),
             'title' => 'Portal prefilling smoke request',
             'request_type' => 'analysis_request',

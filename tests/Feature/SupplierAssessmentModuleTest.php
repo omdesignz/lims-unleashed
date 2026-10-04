@@ -18,6 +18,7 @@ use App\Models\VAPLab;
 use App\Models\VAPNonConformity;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class SupplierAssessmentModuleTest extends TestCase
@@ -271,7 +272,7 @@ class SupplierAssessmentModuleTest extends TestCase
 
         $response
             ->assertRedirect(route('vap-inventory.needs.show', $need))
-            ->assertSessionHas('error');
+            ->assertSessionHasErrors('supplier_id');
 
         $this->assertNull($need->fresh()->inventory_order_id);
         $this->assertDatabaseMissing('i_orders', [
@@ -390,6 +391,7 @@ class SupplierAssessmentModuleTest extends TestCase
                         'unit_price' => 200,
                     ],
                 ],
+                'request_id' => (string) Str::uuid(),
                 'receive_date' => now()->toDateString(),
                 'reason' => 'Recepção com desvio visual',
                 'notes' => 'Embalagem exterior danificada.',

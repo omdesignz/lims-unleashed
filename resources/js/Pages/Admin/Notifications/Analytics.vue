@@ -6,7 +6,7 @@ import {
   notificationTypeLabel,
 } from '@/Composables/useNotificationPresentation'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import {
   Download as ArrowDownTrayIcon,
   ChartColumnBig as ChartBarSquareIcon,
@@ -57,6 +57,7 @@ const updatePeriod = () => {
 
 <template>
   <div class="space-y-5">
+    <Head title="Analítica de comunicação" />
     <NotificationAdminHeader
       title="Analítica de comunicação"
       :description="`Desempenho entre ${formatRangeDate(dateRange[0])} e ${formatRangeDate(dateRange[1])}.`"

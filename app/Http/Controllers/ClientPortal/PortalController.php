@@ -2,18 +2,14 @@
 
 namespace App\Http\Controllers\ClientPortal;
 
+use App\Actions\SubmitPortalServiceRequest;
 use App\Exports\CollectionParametersSheetExport;
 use App\Http\Requests\Portal\StorePortalCustomerRequest;
 use App\Http\Resources\CollectionProductResource;
-use App\Http\Resources\ContractGuideResource;
-use App\Http\Resources\CreditNoteResource;
 use App\Http\Resources\CustomerRequestCategoryResource;
 use App\Http\Resources\CustomerRequestResource;
 use App\Http\Resources\FAQResource;
-use App\Http\Resources\InvoiceResource;
-use App\Http\Resources\QualityCertificateResource;
-use App\Http\Resources\QuoteResource;
-use App\Http\Resources\ReceiptResource;
+use App\Http\Resources\PortalDocumentResource;
 use App\Http\Resources\WarehouseResource;
 use App\Models\CollectionProduct;
 use App\Models\ContractGuide;
@@ -25,22 +21,22 @@ use App\Models\Invoice;
 use App\Models\Matrix;
 use App\Models\PackagingCategory;
 use App\Models\Passkey;
+use App\Models\PortalServiceInvitation;
 use App\Models\Product;
 use App\Models\Profile;
-use App\Models\QualityCertificate;
 use App\Models\Quote;
 use App\Models\Receipt;
-use App\Models\Role;
 use App\Models\User;
+use App\Services\PortalDocumentAccess;
+use App\Services\SharedDocumentDeliveryAccess;
 use App\Settings\GeneralSettings;
-use App\Support\DuplicateSubmissionGuard;
-use App\Support\NotificationTemplateService;
 use App\Support\PdfResponse;
 use App\Support\ReportStudioPdfBuilder;
 use App\Support\ReportStudioPdfRenderer;
 use App\Support\SpreadsheetDownloadResponder;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Collection as SupportCollection;
@@ -53,6 +49,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PortalController extends Controller
 {
+    public function __construct(
+        private readonly PortalDocumentAccess $documents,
+        private readonly SharedDocumentDeliveryAccess $documentIntegrity,
+    ) {}
+
     private function portalWarehouse()
     {
         return auth()->guard('portal')->user();
@@ -121,6 +122,7 @@ class PortalController extends Controller
         $requests = CustomerRequest::query()
             ->selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month_key, request_type, COUNT(*) as aggregate")
             ->where('warehouse_id', $warehouseId)
+            ->where('customer_id', $this->portalWarehouse()->customer_id)
             ->whereDate('created_at', '>=', $chartWindow->first()->copy()->startOfMonth()->toDateString())
             ->groupByRaw("TO_CHAR(created_at, 'YYYY-MM'), request_type")
             ->get()
@@ -168,6 +170,7 @@ class PortalController extends Controller
     {
         $requests = CustomerRequest::query()
             ->where('warehouse_id', $warehouseId)
+            ->where('customer_id', $this->portalWarehouse()->customer_id)
             ->get(['status', 'answered']);
 
         $statusCounts = [
@@ -231,7 +234,8 @@ class PortalController extends Controller
     {
         return CustomerRequest::query()
             ->where('warehouse_id', $this->portalWarehouse()->id)
-            ->with('category', 'customer', 'warehouse')
+            ->where('customer_id', $this->portalWarehouse()->customer_id)
+            ->with('category', 'customer', 'warehouse', 'lab:id,name')
             ->when(request()->input('search'), function ($query, $search) {
                 $query->where(function ($nested) use ($search) {
                     $nested->where('title', 'like', "%{$search}%")
@@ -382,13 +386,13 @@ class PortalController extends Controller
         $warehouse = $this->portalWarehouse();
         $recentRequests = $this->portalRequestBaseQuery()->limit(5)->get();
         $stats = [
-            'overdue' => 'AOA '.number_format(Invoice::unpaid($warehouse->id)->sum('amount_due'), 2),
-            'qualitycertificates' => QualityCertificate::where('warehouse_id', $warehouse->id)->count(),
-            'contractguides' => ContractGuide::where('warehouse_id', $warehouse->id)->count(),
+            'overdue' => 'AOA '.number_format($this->documents->query(Invoice::class, $warehouse)->unpaid($warehouse->id)->sum('amount_due'), 2),
+            'qualitycertificates' => $this->documents->releasedCertificates($warehouse)->count(),
+            'contractguides' => $this->documents->query(ContractGuide::class, $warehouse)->count(),
             'collections' => CollectionProduct::where('warehouse_id', $warehouse->id)->count(),
-            'invoices' => Invoice::where('warehouse_id', $warehouse->id)->count(),
-            'creditnotes' => CreditNote::where('warehouse_id', $warehouse->id)->count(),
-            'receipts' => Receipt::where('warehouse_id', $warehouse->id)->count(),
+            'invoices' => $this->documents->query(Invoice::class, $warehouse)->count(),
+            'creditnotes' => $this->documents->query(CreditNote::class, $warehouse)->count(),
+            'receipts' => $this->documents->query(Receipt::class, $warehouse)->count(),
             'open_requests' => $this->portalRequestBaseQuery()->whereIn('status', ['pending', 'in_progress'])->count(),
             'analysis_requests' => $this->portalRequestBaseQuery()->where('request_type', 'analysis_request')->count(),
             'collection_requests' => $this->portalRequestBaseQuery()->where('request_type', 'collection_request')->count(),
@@ -460,6 +464,11 @@ class PortalController extends Controller
             ->withQueryString();
 
         return Inertia::render('ClientPortal/Requests/Index', [
+            'invitations' => PortalServiceInvitation::query()->availableTo($warehouse)
+                ->with('lab:id,name')->orderBy('expires_at')->get()->map(fn ($invitation): array => [
+                    'token' => $invitation->token, 'lab_name' => $invitation->lab->name,
+                    'expires_at' => $invitation->expires_at->toIso8601String(),
+                ]),
             'warehouse' => WarehouseResource::make($warehouse),
             'request_categories' => $this->portalRequestCategories(),
             'service_catalog' => $this->serviceCatalog(),
@@ -593,18 +602,14 @@ class PortalController extends Controller
     {
 
         return Inertia::render('ClientPortal/Invoices/Index', [
-            'record' => InvoiceResource::collection(
-                Invoice::query()
+            'record' => PortalDocumentResource::collection(
+                $this->documents->query(Invoice::class, $this->portalWarehouse())
                     ->with('warehouse', 'customer')
                     ->where('warehouse_id', auth()->guard('portal')->user()->id)
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('inv_no', 'like', "%{$search}%");
                     })
-                    ->when(request()->input('filter'), function ($query, $filter) {
-                        if ($filter === 'trashed') {
-                            $query->withTrashed();
-                        }
-                    })
+                    ->orderByDesc('id')
                     ->paginate(10)
                     ->withQueryString()
             ),
@@ -631,18 +636,14 @@ class PortalController extends Controller
     {
 
         return Inertia::render('ClientPortal/Receipts/Index', [
-            'record' => ReceiptResource::collection(
-                Receipt::query()
+            'record' => PortalDocumentResource::collection(
+                $this->documents->query(Receipt::class, $this->portalWarehouse())
                     ->with('warehouse', 'customer')
                     ->where('warehouse_id', auth()->guard('portal')->user()->id)
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('rec_no', 'like', "%{$search}%");
                     })
-                    ->when(request()->input('filter'), function ($query, $filter) {
-                        if ($filter === 'trashed') {
-                            $query->withTrashed();
-                        }
-                    })
+                    ->orderByDesc('id')
                     ->paginate(10)
                     ->withQueryString()
             ),
@@ -765,18 +766,14 @@ class PortalController extends Controller
     {
 
         return Inertia::render('ClientPortal/ContractGuides/Index', [
-            'record' => ContractGuideResource::collection(
-                ContractGuide::query()
+            'record' => PortalDocumentResource::collection(
+                $this->documents->query(ContractGuide::class, $this->portalWarehouse())
                     ->with('warehouse', 'customer')
                     ->where('warehouse_id', auth()->guard('portal')->user()->id)
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('guide_no', 'like', "%{$search}%");
                     })
-                    ->when(request()->input('filter'), function ($query, $filter) {
-                        if ($filter === 'trashed') {
-                            $query->withTrashed();
-                        }
-                    })
+                    ->orderByDesc('id')
                     ->paginate(10)
                     ->withQueryString()
             ),
@@ -807,18 +804,14 @@ class PortalController extends Controller
     {
 
         return Inertia::render('ClientPortal/CreditNotes/Index', [
-            'record' => CreditNoteResource::collection(
-                CreditNote::query()
-                    ->with('warehouse', 'customer')
+            'record' => PortalDocumentResource::collection(
+                $this->documents->query(CreditNote::class, $this->portalWarehouse())
+                    ->with(['warehouse', 'customer', 'invoice' => fn (BelongsTo $invoice): BelongsTo => $invoice->withTrashed()])
                     ->where('warehouse_id', auth()->guard('portal')->user()->id)
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('note_no', 'like', "%{$search}%");
                     })
-                    ->when(request()->input('filter'), function ($query, $filter) {
-                        if ($filter === 'trashed') {
-                            $query->withTrashed();
-                        }
-                    })
+                    ->orderByDesc('id')
                     ->paginate(10)
                     ->withQueryString()
             ),
@@ -853,18 +846,14 @@ class PortalController extends Controller
     {
 
         return Inertia::render('ClientPortal/Quotes/Index', [
-            'record' => QuoteResource::collection(
-                Quote::query()
+            'record' => PortalDocumentResource::collection(
+                $this->documents->query(Quote::class, $this->portalWarehouse())
                     ->with('warehouse', 'customer')
                     ->where('warehouse_id', auth()->guard('portal')->user()->id)
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('quote_no', 'like', "%{$search}%");
                     })
-                    ->when(request()->input('filter'), function ($query, $filter) {
-                        if ($filter === 'trashed') {
-                            $query->withTrashed();
-                        }
-                    })
+                    ->orderByDesc('id')
                     ->paginate(10)
                     ->withQueryString()
             ),
@@ -899,23 +888,15 @@ class PortalController extends Controller
     {
 
         return Inertia::render('ClientPortal/QualityCertificates/Index', [
-            'record' => QualityCertificateResource::collection(
-                QualityCertificate::query()
-                    ->with('lab_code', 'customer', 'warehouse', 'invoice')
-                    ->where('warehouse_id', auth()->guard('portal')->user()->id)
-                    ->whereNotNull('validated_at')
-                    ->whereHas('collection', function ($q) {
-                        $q->whereRelation('invoice', 'status', true);
-                    })
+            'record' => PortalDocumentResource::collection(
+                $this->documents->releasedCertificates($this->portalWarehouse())
+                    ->with('lab_code', 'product')
                     ->when(request()->input('search'), function ($query, $search) {
-                        $query->where('code', 'like', "%{$search}%")
-                            ->orWhereRelation('lab_code', 'code', 'like', "%{$search}%");
+                        $query->where(fn (Builder $match): Builder => $match
+                            ->where('code', 'like', "%{$search}%")
+                            ->orWhereRelation('lab_code', 'code', 'like', "%{$search}%"));
                     })
-                    ->when(request()->input('filter'), function ($query, $filter) {
-                        if ($filter === 'trashed') {
-                            $query->withTrashed();
-                        }
-                    })
+                    ->orderByDesc('id')
                     ->paginate(10)
                     ->withQueryString()
             ),
@@ -960,76 +941,14 @@ class PortalController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function storerequest(StorePortalCustomerRequest $request, NotificationTemplateService $templates)
+    public function storerequest(StorePortalCustomerRequest $request, SubmitPortalServiceRequest $submit)
     {
-        $warehouse = $this->portalWarehouse();
         $validated = $request->validated();
-        $validated['details'] = $this->normalizePortalRequestDetails(
-            $validated['request_type'],
-            $validated['details'] ?? []
-        );
-        $guard = app(DuplicateSubmissionGuard::class);
+        $validated['details'] = $this->normalizePortalRequestDetails($validated['request_type'], $validated['details'] ?? []);
+        $validated['category_id'] = $this->resolvePortalCategoryId($validated['request_type'], $validated['category_id'] ?? null);
+        $submit->execute((int) $this->portalWarehouse()->id, $validated);
 
-        if (! $guard->acquire(
-            'portal_customer_request',
-            [
-                'warehouse_id' => $warehouse->id,
-                'request_type' => $validated['request_type'],
-                'title' => $validated['title'],
-                'description' => $validated['description'],
-                'preferred_date' => $validated['preferred_date'] ?? null,
-                'details' => $validated['details'] ?? [],
-            ],
-            45,
-            $warehouse
-        )) {
-            return back()->withErrors([
-                'duplicate_submission' => 'Já existe uma pedido idêntica em processamento. Aguarde alguns segundos antes de reenviar.',
-            ])->withInput();
-        }
-
-        DB::transaction(function () use ($templates, $validated, $warehouse): void {
-            $customerRequest = CustomerRequest::create([
-                'category_id' => $this->resolvePortalCategoryId($validated['request_type'], $validated['category_id'] ?? null),
-                'title' => $validated['title'],
-                'request_type' => $validated['request_type'],
-                'status' => 'pending',
-                'priority' => $validated['priority'] ?? 'normal',
-                'preferred_date' => $validated['preferred_date'] ?? null,
-                'submitted_at' => now(),
-                'description' => $validated['description'],
-                'contact' => $validated['contact'],
-                'email' => $validated['email'],
-                'customer_id' => $warehouse->customer_id,
-                'warehouse_id' => $warehouse->id,
-                'answered' => false,
-                'extra_data' => $validated['details'] ?? [],
-            ]);
-
-            $customerRequest->update([
-                'reference' => 'REQ-'.now()->format('Y').'-'.str_pad((string) $customerRequest->id, 6, '0', STR_PAD_LEFT),
-            ]);
-
-            $administrators = Role::query()->where('name', 'admin')->where('guard_name', 'web')->first()
-                ?->users()->where('is_active', true)->whereNotNull('email_verified_at')->get() ?? collect();
-            $templates->notify(
-                $administrators,
-                'commercial.portal_request.created',
-                [
-                    'customer_name' => $warehouse->name ?? ('Armazém #'.$warehouse->id),
-                    'document_number' => $customerRequest->reference,
-                    'request_type' => $customerRequest->request_type,
-                    'document_url' => route('customerrequests.index'),
-                ]
-            );
-        });
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => 'Notificação',
-                'message' => 'Pedido enviado com êxito.',
-            ],
-        ]);
+        return back()->with('toast', ['title' => 'Notificação', 'message' => 'Pedido enviado com êxito.']);
     }
 
     private function normalizePortalRequestDetails(string $requestType, array $details): array
@@ -1196,61 +1115,34 @@ class PortalController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function markAsDone($id)
+    public function markAsDone(int $id)
     {
-
         DB::transaction(function () use ($id): void {
+            $recipient = $this->portalWarehouse();
+            $record = CustomerRequest::query()->where('warehouse_id', $recipient->id)
+                ->where('customer_id', $recipient->customer_id)->lockForUpdate()->findOrFail($id);
+            if ($record->status !== 'completed') {
+                abort_unless($record->update(['answered' => true, 'status' => 'completed', 'resolved_at' => now()]), 409);
+            }
+        }, 3);
 
-            tap(CustomerRequest::findOrFail($id), function ($record) {
-                abort_unless($record->warehouse_id === $this->portalWarehouse()->id, 403);
-
-                $record->update([
-                    'answered' => true,
-                    'status' => 'completed',
-                    'resolved_at' => now(),
-                ]);
-
-            });
-
-        });
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => 'Notificação',
-                'message' => 'Registo actualizado com êxito',
-            ],
-        ]);
+        return back()->with('toast', ['title' => 'Notificação', 'message' => 'Registo actualizado com êxito']);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroyrequest($id)
+    public function destroyrequest(int $id)
     {
+        DB::transaction(function () use ($id): void {
+            $recipient = $this->portalWarehouse();
+            $record = CustomerRequest::query()->where('warehouse_id', $recipient->id)
+                ->where('customer_id', $recipient->customer_id)->lockForUpdate()->findOrFail($id);
+            abort_unless($record->update(['status' => 'cancelled']), 409);
+            abort_unless($record->delete(), 409);
+        }, 3);
 
-        // Find and delete the record
-        $record = CustomerRequest::findOrFail($id);
-
-        if ($record->warehouse_id == auth()->guard('portal')->id()) {
-            $record->update([
-                'status' => 'cancelled',
-            ]);
-            $record->delete();
-
-            return redirect()->back()->with([
-                'toast' => [
-                    'title' => '',
-                    'message' => 'Registo removido com êxito',
-                ],
-            ]);
-        }
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => '',
-                'message' => 'Não foi possível remover o registo',
-            ],
-        ]);
+        return back()->with('toast', ['title' => 'Notificação', 'message' => 'Registo removido com êxito']);
     }
 
     /**
@@ -1313,7 +1205,7 @@ class PortalController extends Controller
 
     public function getInvoicePDF()
     {
-        $model = Invoice::query()
+        $model = $this->documents->query(Invoice::class, $this->portalWarehouse())
             ->with('items.exemption', 'items.unit', 'items.itemable', 'customer', 'warehouse', 'invoice_category', 'user')
             ->where('warehouse_id', $this->portalWarehouse()->id)
             ->findOrFail(request()->integer('id'));
@@ -1344,7 +1236,7 @@ class PortalController extends Controller
     public function getQuotePDF()
     {
 
-        $model = Quote::query()
+        $model = $this->documents->query(Quote::class, $this->portalWarehouse())
             ->with('items', 'user', 'customer', 'warehouse')
             ->where('warehouse_id', $this->portalWarehouse()->id)
             ->findOrFail(request()->integer('id'));
@@ -1374,8 +1266,8 @@ class PortalController extends Controller
 
     public function getCreditNotePDF()
     {
-        $model = CreditNote::query()
-            ->with('items', 'user', 'customer', 'warehouse', 'invoice')
+        $model = $this->documents->query(CreditNote::class, $this->portalWarehouse())
+            ->with(['items', 'user', 'customer', 'warehouse', 'invoice' => fn (BelongsTo $invoice): BelongsTo => $invoice->withTrashed()])
             ->where('warehouse_id', $this->portalWarehouse()->id)
             ->findOrFail(request()->integer('id'));
         $payload = app(ReportStudioPdfBuilder::class)->buildCreditNotePayload(
@@ -1404,8 +1296,8 @@ class PortalController extends Controller
 
     public function getReceiptPDF()
     {
-        $model = Receipt::query()
-            ->with('items.invoice', 'user', 'customer', 'warehouse')
+        $model = $this->documents->query(Receipt::class, $this->portalWarehouse())
+            ->with(['user', 'customer', 'warehouse', 'items.invoice' => fn (BelongsTo $invoice): BelongsTo => $invoice->withTrashed()])
             ->where('warehouse_id', $this->portalWarehouse()->id)
             ->findOrFail(request()->integer('id'));
         $payload = app(ReportStudioPdfBuilder::class)->buildReceiptPayload(
@@ -1442,7 +1334,7 @@ class PortalController extends Controller
         $app_name = app(GeneralSettings::class)->app_name;
         $app_validation_number = app(GeneralSettings::class)->app_agt_validation_number;
         // $model = ContractGuide::with('items.exemption', 'items.unit', 'items.itemable', 'customer', 'warehouse', 'invoice_category', 'user')->find(request()->id);
-        $model = ContractGuide::query()
+        $model = $this->documents->query(ContractGuide::class, $this->portalWarehouse())
             ->with('items.product', 'items.country', 'warehouse', 'customer', 'user')
             ->where('warehouse_id', $this->portalWarehouse()->id)
             ->findOrFail(request()->integer('id'));
@@ -1459,7 +1351,7 @@ class PortalController extends Controller
             'margin_bottom' => 10,
             'margin_header' => 10,
             'margin_footer' => 10,
-            'title' => 'Factura Nº '.$model->guide_no,
+            'title' => 'Guia de contratação Nº '.$model->guide_no,
             'author' => $model->user?->name,
             'watermark' => 'PAGO',
             'show_watermark' => false,
@@ -1471,13 +1363,13 @@ class PortalController extends Controller
         if (request()->q) {
             activity()
                 ->by(auth()->guard('portal')->user())
-                ->log('baixou o Factura Nº '.$model->guide_no);
+                ->log('baixou a Guia de contratação Nº '.$model->guide_no);
 
             return PdfResponse::download($pdf, $model->guide_no.'.pdf');
         }  if (! request()->q) {
             activity()
                 ->by(auth()->guard('portal')->user())
-                ->log('visualizou o Factura Nº '.$model->guide_no);
+                ->log('visualizou a Guia de contratação Nº '.$model->guide_no);
 
             return PdfResponse::inline($pdf, $model->guide_no.'.pdf');
         }
@@ -1486,10 +1378,11 @@ class PortalController extends Controller
 
     public function getQualityCertificatePDF()
     {
-        $model = QualityCertificate::query()
+        $model = $this->documents->releasedCertificates($this->portalWarehouse())
             ->with('collection', 'lab_code', 'user', 'customer', 'warehouse')
             ->where('warehouse_id', $this->portalWarehouse()->id)
             ->findOrFail(request()->integer('id'));
+        $this->documentIntegrity->assertCertificateIntegrity($model);
         $payload = app(ReportStudioPdfBuilder::class)->buildAnalysisReportPayload($model, app(GeneralSettings::class));
 
         $filename = $model->code.'.pdf';

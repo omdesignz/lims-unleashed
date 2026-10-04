@@ -15,7 +15,8 @@ class QuoteAuthoringResource extends JsonResource
         return [
             ...Arr::only($this->resource->attributesToArray(), ['id', 'date', 'due_date', 'internal_ref', 'description', 'quote_no', 'obs', 'status', 'use_matrix_price', 'is_service', 'is_original', 'converted_to_invoice', 'exported_saft', 'invoice_id', 'total']),
             'customer_id' => ['value' => $this->customer_id, 'label' => $this->customer?->name],
-            'warehouse_id' => ['value' => $this->warehouse_id, 'label' => $this->warehouse?->address],
+            'warehouse_id' => ['value' => $this->warehouse_id,
+                'label' => $this->warehouse?->address ?: ($this->warehouse?->name ?: ($this->warehouse?->code ?: 'Local '.$this->warehouse_id))],
             'items' => $this->items->map(function (QuoteItem $item): array {
                 $metadata = $item->extra_data;
 

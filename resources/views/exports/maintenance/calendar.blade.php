@@ -34,6 +34,10 @@
             padding: 12px 16px 14px;
         }
 
+        .hero-subtitle {
+            color: #ffffff;
+        }
+
         .eyebrow {
             color: #99f6e4;
             font-size: 8px;
@@ -118,7 +122,7 @@
 <body class="pdf-document">
     @php
         $settings = $settings ?? app(\App\Settings\GeneralSettings::class);
-        $labName = $settings->app_client_lab_name ?: ($settings->app_name ?: config('app.name'));
+        $labName = $labName ?? ($settings->app_client_lab_name ?: ($settings->app_name ?: config('app.name')));
         $totalTasks = collect($calendar)->sum(fn ($day) => collect($day['tasks'] ?? [])->count());
     @endphp
 
@@ -129,7 +133,7 @@
                     <td>
                         <div class="eyebrow">{{ $labName }}</div>
                         <h1>Calendário de Manutenção</h1>
-                        <div>Calendário de manutenção · Planeamento e lembretes operacionais</div>
+                        <div class="hero-subtitle">Planeamento e lembretes operacionais</div>
                     </td>
                     <td class="meta">
                         Emitido em {{ $generated_at->format('d/m/Y H:i') }}<br>
@@ -158,10 +162,10 @@
                         <td class="date-cell">{{ $day['date'] ?? 'N/A' }}<br>{{ $day['day'] ?? '' }}</td>
                         <td>
                             @foreach($tasks as $task)
-                                <span class="task-pill">
+                                <div class="task-pill">
                                     <strong>{{ $task->maintenance_task_no ?: $task->name }}</strong><br>
                                     {{ $task->name ?: 'N/A' }} · {{ $task->equipment->name ?? 'Equipamento não informado' }} · {{ $task->category->name ?? 'Categoria não informada' }}
-                                </span>
+                                </div>
                             @endforeach
                         </td>
                     </tr>

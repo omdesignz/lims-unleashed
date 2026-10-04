@@ -13,10 +13,12 @@ use App\Models\InventoryOrderDetail;
 use App\Models\InventoryTransaction;
 use App\Models\InventoryTransactionType;
 use App\Models\VAPNonConformity;
+use App\Services\LaboratoryWorkflowMutationAccess;
 use App\Services\SampleLaboratoryAccess;
 use App\Support\InventoryQuantity;
 use App\Support\PdfResponse;
 use Carbon\Carbon;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +31,10 @@ use PDF;
 
 class VAPInventoryOrderController extends Controller
 {
-    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+        private readonly LaboratoryWorkflowMutationAccess $mutationAccess,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -124,6 +129,7 @@ class VAPInventoryOrderController extends Controller
             'filters' => $request->only(['search', 'status', 'supplier_id', 'date_from', 'date_to', 'sort_by', 'sort_direction']),
             'stats' => $stats,
             'nonConformitiesAvailable' => $nonConformitiesAvailable,
+            'receivingAbilities' => $this->receivingAbilities(),
         ]);
     }
 
@@ -319,6 +325,7 @@ class VAPInventoryOrderController extends Controller
         return Inertia::render('VAPInventory/Orders/Show', [
             'order' => $order,
             'nonConformitiesAvailable' => $nonConformitiesAvailable,
+            'receivingAbilities' => $this->receivingAbilities(),
             'charts' => [
                 'reception_progress' => [
                     'labels' => ['Linhas pedidas', 'Com entrada', 'Sem entrada'],
@@ -406,9 +413,12 @@ class VAPInventoryOrderController extends Controller
                 ->with('error', 'Apenas os pedidos pendentes ou aprovados podem ser editados.');
         }
 
-        $order->load(['items' => function ($query) {
-            $query->with('item');
-        }]);
+        $order->load([
+            'items.item',
+            'items.warehouse' => fn ($query) => $query
+                ->where('lab_id', $order->lab_id)
+                ->select('id', 'name'),
+        ]);
 
         // Get received quantity for each item
         $order->items->each(function ($item) {
@@ -751,17 +761,13 @@ class VAPInventoryOrderController extends Controller
     public function receive(Request $request, InventoryOrder $order)
     {
         $this->ensureOwnedOrder($order);
-        // Only allow receiving of ordered or partially_received orders
-        if (! in_array($order->status, [InventoryOrderTrackingStatus::ORDERED, InventoryOrderTrackingStatus::PARTIALLY_RECEIVED])) {
-            return redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('error', 'Apenas os pedidos encomendados ou parcialmente recebidos podem ser recepcionados.');
-        }
-
-        $request->validate([
+        abort_if($request->hasSession() && $request->session()->has('impersonate'), 403);
+        $receipt = $request->validate([
+            'request_id' => ['required', 'uuid'],
             'items' => 'required|array|min:1',
             'items.*.id' => ['required', 'integer', 'distinct', Rule::exists('i_order_details', 'id')->where('order_id', $order->id)->whereNull('deleted_at')],
             'items.*.received_qty' => 'required|numeric|decimal:0,4|min:0.0001',
-            'items.*.unit_price' => 'nullable|numeric|min:0',
+            'items.*.unit_price' => 'nullable|numeric|min:0|decimal:0,4',
             'receive_date' => 'required|date',
             'reason' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:500',
@@ -780,20 +786,46 @@ class VAPInventoryOrderController extends Controller
         DB::beginTransaction();
 
         try {
-            $order = InventoryOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            $this->authorizeReceiving($request, (int) $order->lab_id);
+            $order = InventoryOrder::query()->where('lab_id', $order->lab_id)->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            $fingerprint = hash('sha256', json_encode($receipt, JSON_THROW_ON_ERROR));
+            $history = $order->receipt_history ?? [];
+            $previous = collect($history)->firstWhere('request_id', $receipt['request_id']);
+            if ($previous !== null) {
+                if ($previous['actor_id'] !== $request->user()->id || ! hash_equals($previous['fingerprint'], $fingerprint)) {
+                    throw ValidationException::withMessages(['request_id' => 'Esta referência de recepção já foi usada com outros dados. Confirme o estado do pedido.']);
+                }
+                $this->authorizeReceiving($request, (int) $order->lab_id);
+                DB::commit();
+
+                return redirect()->route('vap-inventory.orders.show', $order->id)
+                    ->with('success', 'Esta recepção já foi registada. As quantidades não foram repetidas.');
+            }
             if (! in_array($order->status, [InventoryOrderTrackingStatus::ORDERED, InventoryOrderTrackingStatus::PARTIALLY_RECEIVED], true)) {
                 throw ValidationException::withMessages(['items' => 'Este pedido já não pode ser recepcionado.']);
+            }
+            $orderItems = $order->items()->whereKey(array_column($request->items, 'id'))
+                ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            if ($orderItems->count() !== count($request->items)) {
+                throw ValidationException::withMessages(['items' => 'Um item do pedido já não está disponível. Actualize a página.']);
+            }
+            $materials = InventoryItem::forLaboratory($order->lab_id)
+                ->whereKey($orderItems->pluck('item_id'))->whereNotNull('unit_id')
+                ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            $warehouses = InventoryItemWarehouse::query()->where('lab_id', $order->lab_id)
+                ->whereKey($orderItems->pluck('warehouse_id'))
+                ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            foreach ($orderItems as $orderItem) {
+                if (! $materials->has($orderItem->item_id) || ! $warehouses->has($orderItem->warehouse_id)) {
+                    throw ValidationException::withMessages(['items' => 'Um material ou armazém já não está disponível neste laboratório. A recepção não foi alterada.']);
+                }
+                $orderItem->setRelation('item', $materials->get($orderItem->item_id));
+                $orderItem->setRelation('warehouse', $warehouses->get($orderItem->warehouse_id));
             }
             $receivedItems = [];
 
             foreach ($request->items as $itemData) {
-                $orderItem = InventoryOrderDetail::query()->where('order_id', $order->id)
-                    ->whereKey($itemData['id'])->lockForUpdate()->firstOrFail();
-
-                // Check if item belongs to this order
-                if ($orderItem->order_id !== $order->id) {
-                    throw new \Exception('O artigo do pedido não é válido.');
-                }
+                $orderItem = $orderItems->get($itemData['id']);
 
                 // Use provided unit price or fallback to order price
                 $unitPrice = $itemData['unit_price'] ?? $orderItem->unit_price;
@@ -825,7 +857,9 @@ class VAPInventoryOrderController extends Controller
                     $orderItem->actual_date = $request->receive_date;
                 }
 
-                $orderItem->save();
+                if (! $orderItem->save()) {
+                    throw new \RuntimeException('Receipt line persistence was rejected.');
+                }
 
                 // Update item's last purchase price if different
                 if ($unitPrice != $orderItem->unit_price) {
@@ -853,6 +887,19 @@ class VAPInventoryOrderController extends Controller
                 );
             }
 
+            $history[] = [
+                'request_id' => $receipt['request_id'],
+                'fingerprint' => $fingerprint,
+                'actor_id' => $request->user()->id,
+                'recorded_at' => now()->toIso8601String(),
+                'non_conformity_id' => $createdNonConformity?->id,
+            ];
+            $order->receipt_history = $history;
+            if (! $order->save()) {
+                throw new \RuntimeException('Receipt replay evidence persistence was rejected.');
+            }
+
+            $this->authorizeReceiving($request, (int) $order->lab_id);
             DB::commit();
 
             $response = redirect()->route('vap-inventory.orders.show', $order->id)
@@ -863,16 +910,35 @@ class VAPInventoryOrderController extends Controller
             }
 
             return $response;
-        } catch (ValidationException $e) {
+        } catch (ValidationException|AuthorizationException $e) {
             DB::rollBack();
 
             throw $e;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
+            report($e);
 
-            return redirect()->back()
-                ->with('error', 'Não foi possível registar a recepção dos itens do pedido.');
+            throw ValidationException::withMessages([
+                'items' => 'Não foi possível registar a recepção dos itens do pedido.',
+            ]);
         }
+    }
+
+    private function authorizeReceiving(Request $request, int $labId): void
+    {
+        $this->mutationAccess->operator($request->user()->id, $labId, 'edit_iorders');
+        if ($request->boolean('register_non_conformity')) {
+            $this->mutationAccess->operator($request->user()->id, $labId, 'add_occurrences');
+        }
+    }
+
+    /** @return array{receive: bool, register_non_conformity: bool} */
+    private function receivingAbilities(): array
+    {
+        $user = request()->user();
+
+        return ['receive' => $user->can('edit_iorders'),
+            'register_non_conformity' => $user->can('edit_iorders') && $user->can('add_occurrences')];
     }
     // public function receive(Request $request, InventoryOrder $order)
     // {
@@ -1008,6 +1074,9 @@ class VAPInventoryOrderController extends Controller
                 'reorder_point' => 0,
                 'status' => 'AVAILABLE',
             ]);
+            if (! $inventory->exists) {
+                throw new \RuntimeException('Receipt stock creation was rejected.');
+            }
         }
 
         // Get receipt transaction type
@@ -1019,13 +1088,16 @@ class VAPInventoryOrderController extends Controller
                 'code' => 'RECEIPT',
                 'description' => 'Recepção de existências provenientes de pedidos de compra',
             ]);
+            if (! $receiptType->exists) {
+                throw new \RuntimeException('Receipt transaction type creation was rejected.');
+            }
         }
 
         // Calculate total cost
         $totalCost = $unitPrice * $receivedQty;
 
         // Create transaction record with cost
-        InventoryTransaction::create([
+        $movement = InventoryTransaction::create([
             'inventory_id' => $inventory->id,
             'user_id' => auth()->id(),
             'warehouse_id' => $orderItem->warehouse_id,
@@ -1037,9 +1109,14 @@ class VAPInventoryOrderController extends Controller
             'created_at' => $receiveDate,
             'updated_at' => $receiveDate,
         ]);
+        if (! $movement->exists) {
+            throw new \RuntimeException('Receipt ledger persistence was rejected.');
+        }
 
         // Update inventory quantity
-        $inventory->increment('qty_available', $receivedQty);
+        if ($inventory->increment('qty_available', $receivedQty) !== 1) {
+            throw new \RuntimeException('Receipt stock increment was rejected.');
+        }
     }
 
     /**
@@ -1076,7 +1153,7 @@ class VAPInventoryOrderController extends Controller
         $reason = trim((string) $request->string('reason'));
         $severity = $request->input('non_conformity_severity', 'medium');
 
-        return VAPNonConformity::query()->create([
+        $nonConformity = VAPNonConformity::query()->create([
             'lab_id' => $order->lab_id,
             'department_id' => $departmentId,
             'nc_number' => (new VAPNonConformity)->generateNcNumber((int) $order->lab_id),
@@ -1108,6 +1185,11 @@ class VAPInventoryOrderController extends Controller
                 ])->values()->all(),
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ]);
+        if (! $nonConformity->exists) {
+            throw new \RuntimeException('Receipt nonconformity persistence was rejected.');
+        }
+
+        return $nonConformity;
     }
 
     /**
@@ -1173,9 +1255,11 @@ class VAPInventoryOrderController extends Controller
     {
         $item = InventoryItem::forLaboratory($this->laboratoryAccess->activeLabId())->find($itemId);
         if ($item) {
-            $item->update([
+            if (! $item->update([
                 'last_purchase_price' => $unitPrice,
-            ]);
+            ])) {
+                throw new \RuntimeException('Purchase price persistence was rejected.');
+            }
         }
     }
 
@@ -1187,7 +1271,9 @@ class VAPInventoryOrderController extends Controller
         $items = $order->items()->with('item')->get();
 
         if ($items->count() === 0) {
-            $order->update(['status' => InventoryOrderTrackingStatus::CANCELLED]);
+            if (! $order->update(['status' => InventoryOrderTrackingStatus::CANCELLED])) {
+                throw new \RuntimeException('Order status persistence was rejected.');
+            }
 
             return;
         }
@@ -1218,7 +1304,9 @@ class VAPInventoryOrderController extends Controller
                 $allCancelled = false;
             }
 
-            $item->save();
+            if (! $item->save()) {
+                throw new \RuntimeException('Order line status persistence was rejected.');
+            }
         }
 
         // Determine order status
@@ -1231,7 +1319,9 @@ class VAPInventoryOrderController extends Controller
         }
         // If no items have been received, status remains as set by user
 
-        $order->save();
+        if (! $order->save()) {
+            throw new \RuntimeException('Order status persistence was rejected.');
+        }
     }
     // private function updateOrderStatus(InventoryOrder $order)
     // {

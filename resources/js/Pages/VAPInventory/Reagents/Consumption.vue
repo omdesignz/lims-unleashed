@@ -1,5 +1,6 @@
 <template>
   <div class="min-w-0 space-y-6 overflow-x-clip">
+    <Head title="Consumo de reagentes" />
     <section class="ds-panel overflow-hidden">
       <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
         <div class="max-w-3xl">
@@ -18,10 +19,7 @@
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <button type="button" class="ds-button ds-button-secondary" @click="exportReport">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar
-          </button>
+          <InventoryReportExportButton report-type="consumption" :filters="filters.data()" />
           <Link v-if="hasPermission('add_reagent_consumption')" :href="route('vap-inventory.reagents.consumption.create')" class="ds-button ds-button-primary">
             <PlusIcon class="h-4 w-4" />
             Registrar consumo
@@ -368,11 +366,11 @@
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import { useConsumptionReversal } from '@/Composables/useConsumptionReversal'
 import { usePermission } from '@/Composables/usePermissions'
-import { Link, router, useForm } from '@inertiajs/vue3'
+import { Head, Link, router, useForm } from '@inertiajs/vue3'
 import {
-  Download as ArrowDownTrayIcon,
   RefreshCw as ArrowPathIcon,
   FlaskConical as BeakerIcon,
   ChartColumn as ChartBarIcon,
@@ -572,14 +570,6 @@ function resetFilters() {
   filters.sort_direction = 'desc'
 
   applyFilters()
-}
-
-function exportReport() {
-  router.post(route('vap-inventory.reports.export'), {
-    report_type: 'consumption',
-    format: 'pdf',
-    filters: filters.data(),
-  })
 }
 
 function previousPage() {

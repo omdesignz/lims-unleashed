@@ -627,6 +627,7 @@ class ExportHubQuery
     public function customerRequests(array $filters): Builder
     {
         $query = DB::table('customer_requests')
+            ->where('customer_requests.lab_id', $this->laboratoryAccess->activeLabId())
             ->leftJoin('customers', 'customers.id', '=', 'customer_requests.customer_id')
             ->leftJoin('warehouses', 'warehouses.id', '=', 'customer_requests.warehouse_id')
             ->leftJoin('customer_request_categories', 'customer_request_categories.id', '=', 'customer_requests.category_id')
@@ -723,8 +724,8 @@ class ExportHubQuery
             ],
             'customer_requests' => $this->partyOptions() + [
                 'request_categories' => $this->recordOptions('customer_request_categories'),
-                'workflow_statuses' => $this->simpleOptions('customer_requests', 'status'),
-                'priorities' => $this->simpleOptions('customer_requests', 'priority'),
+                'workflow_statuses' => $this->customerRequests([])->reorder()->distinct()->pluck('customer_requests.status')->map(fn ($value): array => ['value' => $value, 'label' => $value])->all(),
+                'priorities' => $this->customerRequests([])->reorder()->distinct()->pluck('customer_requests.priority')->map(fn ($value): array => ['value' => $value, 'label' => $value])->all(),
             ],
             'occurrences' => [
                 'occurrence_statuses' => $this->recordOptions('occurrence_statuses'),

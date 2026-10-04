@@ -55,6 +55,15 @@ test('owner payload cannot smuggle global grants and admin submits only explicit
     assert.equal('password' in admin, false);
 });
 
+test('dossier qualification-only changes do not resubmit unchanged account identity or global grants', () => {
+    const original = { name: 'Original name', gender: 'O', roles: [{ value: 1 }], personnel_qualifications: [] };
+    const data = { ...original, personnel_qualifications: [{ capability: 'Training', is_active: false }] };
+    const capabilities = { profile: true, roles: true, qualifications: true };
+    assert.deepEqual(Object.keys(staffAccountPayload(data, capabilities, original)), ['personnel_qualifications']);
+    assert.deepEqual(staffAccountPayload(original, capabilities, original), {});
+    assert.deepEqual(staffAccountPayload({ ...original, name: 'Changed name' }, capabilities, original), { name: 'Changed name' });
+});
+
 test('account mutations freeze IDs, name real routes and retain failure feedback', () => {
     let transform;
     let request;
@@ -68,11 +77,14 @@ test('account mutations freeze IDs, name real routes and retain failure feedback
     assert.equal(request.url, 'users.destroy');
     assert.deepEqual(transform(), { recordIds: [4, 5] });
     assert.equal(submitStaffAccountMutation(form, 'delete', ids, (name) => name, () => {}), false);
-    request.options.onHttpException();
+    assert.equal(request.options.onHttpException(), false);
     assert.equal(completed, false);
     assert.ok(errors.request);
-    request.options.onNetworkError();
+    assert.equal(request.options.onNetworkError(), false);
     assert.match(errors.request, /interrompida/);
+    request.options.onCancel();
+    assert.match(errors.request, /não foi confirmada/);
+    assert.equal(completed, false);
     request.options.onSuccess();
     assert.equal(completed, true);
 });
@@ -121,8 +133,9 @@ test('membership form uses the existing slide-over action slot, keeps input on f
     submit(form, emit, name => name);
     assert.deepEqual(payload, { email: 'shared@example.test' });
     assert.equal(request.url, 'users.membership.store');
-    request.options.onNetworkError();
-    request.options.onHttpException();
+    assert.equal(request.options.onNetworkError(), false);
+    assert.equal(request.options.onHttpException(), false);
+    request.options.onCancel();
     assert.equal(form.email, 'shared@example.test');
     assert.ok(errors.request);
     assert.deepEqual(calls, []);
@@ -132,6 +145,8 @@ test('membership form uses the existing slide-over action slot, keeps input on f
     assert.match(text, /#action_buttons/);
     assert.match(text, /role="alert"/);
     assert.match(text, /:disabled="form.processing"/);
+    assert.match(text, /:aria-busy="form.processing"/);
+    assert.match(text, /flex flex-wrap justify-end gap-3/);
 });
 
 test('shared slide-over cannot hide itself while pending and retains its default close behavior', () => {
@@ -203,6 +218,66 @@ test('staff bulk confirmation captures the selection and blocks unauthorized or 
     assert.deepEqual(pendingRecordIds.value, [4]);
 });
 
+test('dossier success refreshes saved qualification evidence before any separate password operation', () => {
+    const text = read('Pages/Users/Edit.vue');
+    const form = { isDirty: true, processing: false, id: 4, clearErrors() {}, setError() {}, transform() { return this; }, put(url, options) { this.options = options; } };
+    const passwordForm = { isDirty: true, processing: false };
+    const isSaving = ref(false);
+    const events = [];
+    const save = new Function('form', 'passwordForm', 'isSaving', 'props', 'staffAccountPayload', 'route', 'syncSavedDossier', 'savePassword', 'finishSaving', body(text, 'saveDossier'));
+    save(form, passwordForm, isSaving, { accountCapabilities: {} }, staffAccountPayload, name => name,
+        record => events.push(['saved', record]), () => events.push(['password']), () => events.push(['finished']));
+    const saved = { id: 4, personnel_qualifications: [{ id: 12, monitoring_status: 'inactive', qualified_by: 'Manager' }] };
+    form.options.onSuccess({ props: { record: saved } });
+    assert.deepEqual(events, [['saved', saved], ['password']]);
+    assert.equal(form.options.onNetworkError(), false);
+    assert.equal(form.options.onHttpException(), false);
+});
+
+test('dossier saved defaults come from a detached server snapshot, not stale draft metadata', () => {
+    const text = read('Pages/Users/Edit.vue');
+    const record = { id: 4, gender: null, roles: [{ value: 1 }], personnel_qualifications: [{ id: 15, department_id: { value: 3 }, monitoring_status: 'inactive' }] };
+    const normalize = new Function('record', body(text, 'dossierFormData'));
+    const normalized = normalize(record);
+    normalized.roles[0].value = 99;
+    normalized.personnel_qualifications[0].department_id.value = 99;
+    assert.equal(record.roles[0].value, 1);
+    assert.equal(record.personnel_qualifications[0].department_id.value, 3);
+    assert.equal(normalized.gender, 'O');
+    const calls = [];
+    const form = { defaults(value) { calls.push(value); }, reset() { calls.push('reset'); }, clearErrors() { calls.push('clear'); } };
+    new Function('record', 'form', 'dossierFormData', body(text, 'syncSavedDossier'))(record, form, normalize);
+    assert.equal(calls[0].personnel_qualifications[0].id, 15);
+    assert.deepEqual(calls.slice(1), ['reset', 'clear']);
+    assert.doesNotMatch(body(text, 'finishSaving'), /form\.defaults/);
+    assert.match(text, /<fieldset[^>]+:disabled="isSaving"/);
+    assert.match(text, /<Head :title="`Dossier de pessoal/);
+});
+
+for (const name of ['loadDepartments', 'loadRoles']) {
+    test(`${name} settles empty, successful and failed lookups without discarding the dossier`, async () => {
+        const load = new Function('query', 'setOptions', 'fetch', 'route', 'lookupErrors', body(read('Pages/Users/Edit.vue'), name));
+        const options = [];
+        const lookupErrors = ref({});
+        const key = name === 'loadRoles' ? 'roles' : 'departments';
+        const route = (name, params) => `${name}?q=${params.q}`;
+        let requests = 0;
+        const fetch = async () => { requests++; return { ok: true, json: async () => [{ id: 5, name: 'Available option', label: null }] }; };
+        await load('', value => options.push(value), fetch, route, lookupErrors);
+        assert.equal(requests, 0);
+        assert.deepEqual(options.pop(), []);
+        await load('option', value => options.push(value), fetch, route, lookupErrors);
+        assert.deepEqual(options.pop(), [{ value: 5, label: 'Available option' }]);
+        for (const failed of [async () => ({ ok: false }), async () => { throw new Error('offline'); }]) {
+            await load('option', value => options.push(value), failed, route, lookupErrors);
+            assert.deepEqual(options.pop(), []);
+            assert.match(lookupErrors.value[key], /alterações foram preservadas/);
+        }
+        await load('option', value => options.push(value), fetch, route, lookupErrors);
+        assert.equal(lookupErrors.value[key], '');
+    });
+}
+
 for (const path of ['Pages/Users/Index.vue', 'Pages/Users/Edit.vue', 'Pages/Roles/Index.vue', 'Pages/Permissions/Index.vue', 'Components/records-table.vue', 'Components/confirm-dialog.vue', 'Components/LaboratoryMembershipForm.vue', 'Components/slide-over.vue']) {
     test(`${path} compiles with capability/recovery controls`, () => {
         const text = readFileSync(new URL(`../../resources/js/${path}`, import.meta.url), 'utf8');
@@ -212,12 +287,13 @@ for (const path of ['Pages/Users/Index.vue', 'Pages/Users/Edit.vue', 'Pages/Role
         const template = compileTemplate({ source: descriptor.template.content, filename: path, id: path, compilerOptions: { bindingMetadata: script.bindings } });
         assert.deepEqual(template.errors, []);
         if (path === 'Pages/Users/Edit.vue') {
-            assert.match(text, /staffAccountPayload\(data, props.accountCapabilities\)/);
+            assert.match(text, /staffAccountPayload\(data, props.accountCapabilities, dossierFormData\(props.record\)\)/);
             assert.match(text, /editUserInfo && accountCapabilities.profile/);
             assert.match(text, /role="alert"/);
             assert.match(text, /if \(isSaving.value \|\| form.processing \|\| passwordForm.processing\) return/);
         }
         if (path === 'Pages/Users/Index.vue') {
+            assert.match(text, /<Head :title="\$t\('gestlab.general.labels.users.page_title'\)"/);
             assert.match(text, /keep-open-on-confirm/);
             assert.match(text, /mutationForm.hasErrors/);
             assert.match(text, /:archive-handler=/);

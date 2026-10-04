@@ -73,6 +73,67 @@ class StaffAccountHistoryTest extends TestCase
         $this->assertSame(['old' => [$role->id], 'new' => []], $latest->properties['changes']['roles']);
     }
 
+    public function test_unchanged_qualification_retries_preserve_identity_attribution_and_history(): void
+    {
+        [$lab, , $actor, $target, $local, $foreign] = $this->fixture();
+        $local->update(['qualified_by_id' => $target->id, 'is_active' => false,
+            'authorized_from' => '2026-01-01', 'authorized_until' => '2026-12-31', 'notes' => '0']);
+        $before = $local->fresh()->getRawOriginal();
+        $peerBefore = $foreign->fresh()->getRawOriginal();
+        $payload = ['personnel_qualifications' => [$local->only(array_diff($local->getFillable(), ['lab_id', 'user_id', 'qualified_by_id']))]];
+        $this->actingAs($actor)->withSession(['active_lab_id' => $lab->id]);
+        foreach ([1, 2] as $attempt) {
+            $this->put(route('users.update', $target), $payload)->assertRedirect()->assertSessionHasNoErrors();
+            $this->assertSame($before, $local->fresh()?->getRawOriginal(), 'Attempt '.$attempt);
+            $this->assertSame($peerBefore, $foreign->fresh()->getRawOriginal());
+            $this->assertSame(0, $this->audits()->count());
+        }
+    }
+
+    public function test_mixed_qualification_edits_preserve_unchanged_rows_and_retry_without_new_evidence(): void
+    {
+        [$lab, , $actor, $target, $local, $foreign] = $this->fixture();
+        $local->update(['qualified_by_id' => $target->id]);
+        $before = $local->fresh()->getRawOriginal();
+        $changed = $local->replicate();
+        $changed->training_reference = 'SECOND-OLD';
+        $changed->save();
+        $unchanged = $local->only(array_diff($local->getFillable(), ['lab_id', 'user_id', 'qualified_by_id']));
+        $payload = ['personnel_qualifications' => [
+            [...$unchanged, 'training_reference' => 'SECOND-NEW'],
+            $unchanged,
+        ]];
+        $this->actingAs($actor)->withSession(['active_lab_id' => $lab->id]);
+        $this->put(route('users.update', $target), $payload)->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame($before, $local->fresh()?->getRawOriginal());
+        $this->assertModelMissing($changed);
+        $this->assertModelExists($foreign);
+        $new = PersonnelQualification::where('user_id', $target->id)->where('lab_id', $lab->id)->where('training_reference', 'SECOND-NEW')->sole();
+        $this->assertSame($actor->id, $new->qualified_by_id);
+        $this->assertSame(1, $this->audits()->where('log_name', 'personnel_qualifications')->count());
+        $after = PersonnelQualification::where('user_id', $target->id)->orderBy('id')->get()->map->getRawOriginal()->all();
+        $this->put(route('users.update', $target), $payload)->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame($after, PersonnelQualification::where('user_id', $target->id)->orderBy('id')->get()->map->getRawOriginal()->all());
+        $this->assertSame(1, $this->audits()->where('log_name', 'personnel_qualifications')->count());
+    }
+
+    public function test_identical_qualifications_preserve_multiplicity_and_the_surviving_original(): void
+    {
+        [$lab, , $actor, $target, $local] = $this->fixture();
+        $duplicate = $local->replicate();
+        $duplicate->save();
+        $before = $local->fresh()->getRawOriginal();
+        $attributes = $local->only(array_diff($local->getFillable(), ['lab_id', 'user_id', 'qualified_by_id']));
+        $this->actingAs($actor)->withSession(['active_lab_id' => $lab->id]);
+        $this->put(route('users.update', $target), ['personnel_qualifications' => [$attributes]])->assertSessionHasNoErrors();
+        $this->assertSame($before, $local->fresh()->getRawOriginal());
+        $this->assertModelMissing($duplicate);
+        $this->put(route('users.update', $target), ['personnel_qualifications' => [$attributes, $attributes]])->assertSessionHasNoErrors();
+        $this->assertSame($before, $local->fresh()->getRawOriginal());
+        $this->assertSame(2, PersonnelQualification::where('lab_id', $lab->id)->where('user_id', $target->id)->count());
+        $this->assertSame(2, $this->audits()->where('log_name', 'personnel_qualifications')->count());
+    }
+
     public function test_history_visibility_distinguishes_account_owner_system_admin_and_local_staff(): void
     {
         [$lab, $peer, $actor, $target] = $this->fixture();

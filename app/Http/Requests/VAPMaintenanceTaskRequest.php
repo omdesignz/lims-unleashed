@@ -2,57 +2,53 @@
 
 namespace App\Http\Requests;
 
+use App\Models\MaintenanceTask;
 use App\Services\SampleLaboratoryAccess;
+use App\Support\MaintenanceTaskValidation;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class VAPMaintenanceTaskRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        abort_if($this->session()->has('impersonate'), 403);
+        $task = $this->route('task');
+        if ($task instanceof MaintenanceTask) {
+            abort_unless(MaintenanceTask::forLaboratory(app(SampleLaboratoryAccess::class)->activeLabId())->whereKey($task->id)->exists(), 404);
+        }
+
+        return $this->user()?->can($this->isMethod('post') ? 'add_maintenance_tasks' : 'edit_maintenance_tasks') ?? false;
     }
 
+    /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
-        $isUpdate = $this->isMethod('put') || $this->isMethod('patch');
-        $requiresSupplier = (bool) $this->boolean('executed_by_supplier');
-        $marksExecuted = (bool) $this->boolean('is_executed');
-        $labId = app(SampleLaboratoryAccess::class)->activeLabId();
+        $task = $this->route('task');
 
-        return [
-            'name' => [$isUpdate ? 'sometimes' : 'required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'category_id' => [$isUpdate ? 'sometimes' : 'required', 'exists:maintenance_categories,id'],
-            'equipment_id' => [$isUpdate ? 'sometimes' : 'required', 'integer', Rule::exists('i_items', 'id')->where('lab_id', $labId)->whereNull('deleted_at')],
-            'due_date' => [$isUpdate ? 'sometimes' : 'required', 'date'],
-            'maintenance_task_no' => ['nullable', 'string', 'max:255'],
-            'periodicity' => ['nullable', 'integer', 'min:1'],
-            'periodicity_unit' => ['nullable', Rule::in(['hours', 'days', 'weeks', 'months', 'years'])],
-            'cost' => ['nullable', 'numeric', 'min:0'],
-            'executed_by_supplier' => ['nullable', 'boolean'],
-            'supplier_id' => [$requiresSupplier ? 'required' : 'nullable', 'exists:i_suppliers,id'],
-            'obs' => ['nullable', 'string', 'max:5000'],
-            'is_planned' => ['nullable', 'boolean'],
-            'is_executed' => ['nullable', 'boolean'],
-            'acceptance_criteria' => ['nullable', 'string', 'max:255'],
-            'result' => [$marksExecuted ? 'required' : 'nullable', 'string'],
-            'range' => ['nullable', 'string', 'max:255'],
-            'calibration_points' => ['nullable', 'string'],
-            'calibration_status' => ['nullable', Rule::in(['pending', 'approved', 'rejected'])],
-            'calibration_certificate_no' => ['nullable', 'string', 'max:255'],
-        ];
+        return MaintenanceTaskValidation::rules(app(SampleLaboratoryAccess::class)->activeLabId(), $task instanceof MaintenanceTask ? $task : null);
     }
 
-    protected function prepareForValidation(): void
+    /** @return array<string, mixed> */
+    public function validationData(): array
     {
-        $this->merge([
-            'executed_by_supplier' => $this->boolean('executed_by_supplier'),
-            'is_planned' => $this->boolean('is_planned'),
-            'is_executed' => $this->boolean('is_executed'),
-        ]);
+        $task = $this->route('task');
+
+        return MaintenanceTaskValidation::mergeCurrentState($this->all(), $task instanceof MaintenanceTask ? $task : null);
     }
 
+    /** @return array<string, mixed> */
+    public function submittedData(): array
+    {
+        return array_intersect_key($this->validated(), $this->all());
+    }
+
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return MaintenanceTaskValidation::messages();
+    }
+
+    /** @return array<string, string> */
     public function attributes(): array
     {
         return [

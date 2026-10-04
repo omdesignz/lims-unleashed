@@ -347,8 +347,8 @@ class ContractGuideController extends Controller
             'margin_bottom' => 10,
             'margin_header' => 10,
             'margin_footer' => 10,
-            'title' => 'Factura Nº '.$model->guide_no,
-            'author' => $model->user->name,
+            'title' => 'Guia de contratação Nº '.$model->guide_no,
+            'author' => $model->user?->name,
             'watermark' => 'PAGO',
             'show_watermark' => false,
             'display_mode' => 'fullpage',
@@ -357,7 +357,7 @@ class ContractGuideController extends Controller
         ]);
 
         if (request()->q) {
-            activity()->log('baixou o Factura Nº '.$model->guide_no);
+            activity()->log('baixou a Guia de contratação Nº '.$model->guide_no);
 
             return PdfResponse::download($pdf, $model->guide_no.'.pdf');
         }
@@ -365,7 +365,7 @@ class ContractGuideController extends Controller
         if (! request()->q) {
             activity()
                 ->causedBy(auth()->user()->id)
-                ->log('visualizou o Factura Nº '.$model->guide_no);
+                ->log('visualizou a Guia de contratação Nº '.$model->guide_no);
 
             return PdfResponse::inline($pdf, $model->guide_no.'.pdf');
         }

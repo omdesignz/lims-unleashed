@@ -3,363 +3,156 @@
 namespace App\Exports;
 
 use App\Models\VAPNonConformity;
+use App\Support\NonConformityLifecycleReport;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class NonConformityDetailsExport implements WithMultipleSheets
 {
-    protected $nonConformity;
-
-    public function __construct(VAPNonConformity $nonConformity)
+    public function __construct(private readonly VAPNonConformity $nonConformity)
     {
-        $this->nonConformity = $nonConformity;
+        $nonConformity->load(['lab:id,name', 'department:id,name',
+            'actions' => fn ($query) => $query->withTrashed()->where('lab_id', $nonConformity->lab_id)->orderBy('id')]);
     }
 
     public function sheets(): array
     {
-        $sheets = [
-            new NonConformityDetailsSheet($this->nonConformity),
-            new NonConformityActionsSheet($this->nonConformity),
-        ];
-
-        return $sheets;
+        return [new NonConformityDetailsSheet($this->nonConformity), new NonConformityActionsSheet($this->nonConformity), new NonConformityLifecycleSheet($this->nonConformity)];
     }
 }
 
-class NonConformityDetailsSheet implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithHeadings, WithMapping, WithStyles
+class NonConformityDetailsSheet extends StringValueBinder implements FromCollection, WithCustomValueBinder, WithHeadings, WithStyles, WithTitle
 {
-    protected $nonConformity;
+    public function __construct(private readonly VAPNonConformity $nonConformity) {}
 
-    public function __construct(VAPNonConformity $nonConformity)
+    public function title(): string
     {
-        $this->nonConformity = $nonConformity;
-    }
-
-    public function collection()
-    {
-        return collect([$this->nonConformity]);
+        return 'Dossier';
     }
 
     public function headings(): array
     {
-        return [
-            'DETALHES DA NÃO CONFORMIDADE',
-            '',
-        ];
+        return ['Campo', 'Valor'];
     }
 
-    public function map($nonConformity): array
+    public function collection(): Collection
     {
-        return [
-            ['Campo', 'Valor'],
-            ['Número NC', $nonConformity->nc_number],
-            ['Título', $nonConformity->title],
-            ['Descrição', $nonConformity->description],
-            ['Status', $this->getStatusText($nonConformity->status)],
-            ['Severidade', $this->getSeverityText($nonConformity->severity)],
-            ['Categoria', $this->getCategoryText($nonConformity->category)],
-            ['Laboratório', $nonConformity->lab?->name],
-            ['Departamento', $nonConformity->department?->name],
-            ['Reportado por', $nonConformity->reported_by],
-            ['Data do Relato', $nonConformity->reported_at?->format('d/m/Y H:i')],
-            ['Data de Vencimento', $nonConformity->due_date?->format('d/m/Y')],
-            ['Atribuído para', $nonConformity->assigned_to],
-            ['Amostra ID', $nonConformity->sample_id],
-            ['Método de Teste', $nonConformity->test_method],
-            ['Equipamento ID', $nonConformity->equipment_id],
-            ['Número do Lote', $nonConformity->batch_number],
-            ['Área de Ocorrência', $nonConformity->occurrence_area],
-            ['Causa Raiz', $nonConformity->root_cause],
-            ['Acções Corretivas', $nonConformity->corrective_actions],
-            ['Acções Preventivas', $nonConformity->preventive_actions],
-            ['Comentários', $nonConformity->comments],
-            ['Dias Abertos', $nonConformity->daysOpen()],
-            ['Criado em', $nonConformity->created_at?->format('d/m/Y H:i')],
-            ['Actualizado em', $nonConformity->updated_at?->format('d/m/Y H:i')],
-        ];
-    }
+        $record = $this->nonConformity;
 
-    public function styles(Worksheet $sheet)
-    {
-        // Title style
-        $sheet->mergeCells('A1:B1');
-        $sheet->getStyle('A1')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'size' => 16,
-                'color' => ['rgb' => '1E3A8A'],
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-            ],
+        return collect([
+            ['Número NC', $record->nc_number],
+            ['Título', $record->title],
+            ['Descrição', $record->description],
+            ['Estado', ['opened' => 'Aberta', 'in_progress' => 'Em progresso', 'resolved' => 'Resolvida', 'closed' => 'Fechada'][$record->status] ?? $record->status],
+            ['Severidade', ['low' => 'Baixa', 'medium' => 'Média', 'high' => 'Alta', 'critical' => 'Crítica'][$record->severity] ?? $record->severity],
+            ['Categoria', $record->category],
+            ['Laboratório', $record->lab?->name],
+            ['Departamento', $record->department?->name],
+            ['Reportado por', $record->reported_by],
+            ['Data do Relato', $record->reported_at?->format('d/m/Y H:i')],
+            ['Data de Vencimento', $record->due_date?->format('d/m/Y H:i')],
+            ['Atribuído para', $record->assigned_to],
+            ['Amostra ID', $record->sample_id],
+            ['Método de Teste', $record->test_method],
+            ['Equipamento ID', $record->equipment_id],
+            ['Número do Lote', $record->batch_number],
+            ['Área de Ocorrência', $record->occurrence_area],
+            ['Causa Raiz', $record->root_cause],
+            ['Acções Correctivas', $record->corrective_actions],
+            ['Acções Preventivas', $record->preventive_actions],
+            ['Comentários', $record->comments],
+            ['Criada em', $record->created_at?->format('d/m/Y H:i')],
+            ['Actualizada em', $record->updated_at?->format('d/m/Y H:i')],
+            ['Arquivo', $record->trashed() ? 'Arquivada' : 'Activa'],
+            ['Arquivada em', $record->deleted_at?->format('d/m/Y H:i')],
+            ...NonConformityLifecycleReport::summary($record),
         ]);
-
-        // Header style for field names
-        $sheet->getStyle('A2:B2')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'color' => ['rgb' => 'FFFFFF'],
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '1E3A8A'],
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-            ],
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000'],
-                ],
-            ],
-        ]);
-
-        // Data rows style
-        $lastRow = count($this->map($this->nonConformity)) + 1;
-
-        for ($i = 3; $i <= $lastRow; $i++) {
-            // Field name column
-            $sheet->getStyle("A{$i}")->applyFromArray([
-                'font' => ['bold' => true],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'F0F4FF'],
-                ],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => 'DDDDDD'],
-                    ],
-                ],
-            ]);
-
-            // Field value column
-            $sheet->getStyle("B{$i}")->applyFromArray([
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => 'DDDDDD'],
-                    ],
-                ],
-            ]);
-        }
-
-        // Wrap text for long fields
-        $sheet->getStyle('B3:B'.$lastRow)->getAlignment()->setWrapText(true);
-
-        // Set column widths
-        $sheet->getColumnDimension('A')->setWidth(25);
-        $sheet->getColumnDimension('B')->setWidth(50);
-
-        return [];
     }
 
-    public function columnFormats(): array
+    public function styles(Worksheet $sheet): array
     {
-        return [
-            'B' => NumberFormat::FORMAT_TEXT,
-        ];
-    }
+        $sheet->getColumnDimension('A')->setWidth(28);
+        $sheet->getColumnDimension('B')->setWidth(85);
+        $sheet->getStyle('A1:B'.$sheet->getHighestRow())->getAlignment()->setWrapText(true);
 
-    private function getStatusText($status): string
-    {
-        $statuses = [
-            'opened' => 'Aberto',
-            'in_progress' => 'Em Andamento',
-            'resolved' => 'Resolvido',
-            'closed' => 'Fechado',
-        ];
-
-        return $statuses[$status] ?? $status;
-    }
-
-    private function getSeverityText($severity): string
-    {
-        $severities = [
-            'low' => 'Baixa',
-            'medium' => 'Média',
-            'high' => 'Alta',
-            'critical' => 'Crítica',
-        ];
-
-        return $severities[$severity] ?? $severity;
-    }
-
-    private function getCategoryText($category): string
-    {
-        $categories = [
-            'quality' => 'Qualidade',
-            'safety' => 'Segurança',
-            'environmental' => 'Ambiental',
-            'regulatory' => 'Regulatório',
-            'other' => 'Outro',
-        ];
-
-        return $categories[$category] ?? $category;
+        return [1 => ['font' => ['bold' => true]]];
     }
 }
 
-class NonConformityActionsSheet implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
+class NonConformityLifecycleSheet extends StringValueBinder implements FromCollection, WithCustomValueBinder, WithHeadings, WithStyles, WithTitle
 {
-    protected $nonConformity;
+    public function __construct(private readonly VAPNonConformity $nonConformity) {}
 
-    public function __construct(VAPNonConformity $nonConformity)
+    public function title(): string
     {
-        $this->nonConformity = $nonConformity;
+        return 'Histórico do fluxo';
     }
 
-    public function collection()
+    public function headings(): array
+    {
+        return ['Revisão', 'Etapa', 'Estado anterior', 'Estado seguinte', 'Responsável', 'Data e hora', 'Evidência / motivo'];
+    }
+
+    public function collection(): Collection
+    {
+        return collect(NonConformityLifecycleReport::history($this->nonConformity))->map(fn (array $entry): array => array_values($entry));
+    }
+
+    public function styles(Worksheet $sheet): array
+    {
+        foreach (['A' => 12, 'B' => 25, 'C' => 20, 'D' => 20, 'E' => 32, 'F' => 24, 'G' => 85] as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
+        $sheet->getStyle('A1:G'.$sheet->getHighestRow())->getAlignment()->setWrapText(true);
+        $sheet->freezePane('A2');
+
+        return [1 => ['font' => ['bold' => true]]];
+    }
+}
+
+class NonConformityActionsSheet extends StringValueBinder implements FromCollection, WithCustomValueBinder, WithHeadings, WithMapping, WithStyles, WithTitle
+{
+    public function __construct(private readonly VAPNonConformity $nonConformity) {}
+
+    public function title(): string
+    {
+        return 'Histórico CAPA';
+    }
+
+    public function collection(): Collection
     {
         return $this->nonConformity->actions;
     }
 
     public function headings(): array
     {
-        return [
-            'ACÇÕES CORRETIVAS DA NC: '.$this->nonConformity->nc_number,
-        ];
+        return ['ID', 'Correcção', 'Acção Correctiva', 'Prazo', 'Aprovada em', 'Efectiva?', 'Evidências', 'Criada em', 'Actualizada em', 'Arquivo', 'Arquivada em'];
     }
 
     public function map($action): array
     {
-        return [
-            ['Campo', 'Valor'],
-            ['Correcção', $action->correction],
-            ['Acção Corretiva', $action->corrective_action],
-            ['Data de Vencimento', $action->due_at?->format('d/m/Y')],
-            ['Data de Aprovação', $action->approved_at?->format('d/m/Y H:i')],
-            ['Efectiva?', $action->was_effective ? 'Sim' : 'Não'],
-            ['Evidências', $action->evidence],
-            ['Criado em', $action->created_at?->format('d/m/Y H:i')],
-            ['Actualizado em', $action->updated_at?->format('d/m/Y H:i')],
-            ['', ''], // Empty row separator
-        ];
+        return [$action->id, $action->correction, $action->corrective_action,
+            $action->due_at?->format('d/m/Y H:i'), $action->approved_at?->format('d/m/Y H:i'),
+            $action->was_effective === null ? 'Não avaliada' : ($action->was_effective ? 'Sim' : 'Não'),
+            $action->evidence, $action->created_at?->format('d/m/Y H:i'), $action->updated_at?->format('d/m/Y H:i'),
+            $action->trashed() ? 'Arquivada' : 'Activa', $action->deleted_at?->format('d/m/Y H:i')];
     }
 
-    public function styles(Worksheet $sheet)
+    public function styles(Worksheet $sheet): array
     {
-        // Title style
-        $sheet->mergeCells('A1:B1');
-        $sheet->getStyle('A1')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'size' => 16,
-                'color' => ['rgb' => '1E3A8A'],
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-            ],
-        ]);
-
-        $row = 2;
-        foreach ($this->nonConformity->actions as $index => $action) {
-            $startRow = $row;
-
-            // Action header
-            $sheet->mergeCells("A{$row}:B{$row}");
-            $sheet->getStyle("A{$row}")->applyFromArray([
-                'font' => [
-                    'bold' => true,
-                    'color' => ['rgb' => 'FFFFFF'],
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '4B5563'],
-                ],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical' => Alignment::VERTICAL_CENTER,
-                ],
-            ]);
-            $sheet->setCellValue("A{$row}", 'ACÇÃO #'.($index + 1));
-
-            $row++;
-
-            // Field names header
-            $sheet->getStyle("A{$row}:B{$row}")->applyFromArray([
-                'font' => [
-                    'bold' => true,
-                    'color' => ['rgb' => 'FFFFFF'],
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '1E3A8A'],
-                ],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical' => Alignment::VERTICAL_CENTER,
-                ],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => '000000'],
-                    ],
-                ],
-            ]);
-
-            $row++;
-
-            // Data rows
-            $dataRows = $this->map($action);
-            foreach ($dataRows as $dataRow) {
-                if (! empty($dataRow[0]) && ! empty($dataRow[1])) {
-                    $sheet->setCellValue("A{$row}", $dataRow[0]);
-                    $sheet->setCellValue("B{$row}", $dataRow[1]);
-
-                    // Style field name column
-                    $sheet->getStyle("A{$row}")->applyFromArray([
-                        'font' => ['bold' => true],
-                        'fill' => [
-                            'fillType' => Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => 'F0F4FF'],
-                        ],
-                    ]);
-
-                    $row++;
-                }
-            }
-
-            // Add borders to action block
-            $endRow = $row - 1;
-            $sheet->getStyle("A{$startRow}:B{$endRow}")->applyFromArray([
-                'borders' => [
-                    'outline' => [
-                        'borderStyle' => Border::BORDER_MEDIUM,
-                        'color' => ['rgb' => '1E3A8A'],
-                    ],
-                    'inside' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => 'DDDDDD'],
-                    ],
-                ],
-            ]);
-
-            // Add empty row between actions
-            $row++;
+        foreach (range('A', 'K') as $column) {
+            $sheet->getColumnDimension($column)->setWidth(in_array($column, ['B', 'C', 'G']) ? 45 : 22);
         }
+        $sheet->getStyle('A1:K'.$sheet->getHighestRow())->getAlignment()->setWrapText(true);
 
-        // Wrap text for long fields
-        $lastRow = $sheet->getHighestRow();
-        $sheet->getStyle('B3:B'.$lastRow)->getAlignment()->setWrapText(true);
-
-        // Set column widths
-        $sheet->getColumnDimension('A')->setWidth(25);
-        $sheet->getColumnDimension('B')->setWidth(50);
-
-        return [];
+        return [1 => ['font' => ['bold' => true]]];
     }
 }

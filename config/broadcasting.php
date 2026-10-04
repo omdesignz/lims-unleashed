@@ -1,4 +1,4 @@
- <?php
+<?php
 
 return [
 
@@ -72,9 +72,9 @@ return [
         //     'options' => [
         //         'host' => env('PUSHER_HOST', '127.0.0.1'),
         //         'port' => env('PUSHER_PORT', 6001),
-        //         'scheme' => env('PUSHER_SCHEME', 'http'), 
+        //         'scheme' => env('PUSHER_SCHEME', 'http'),
         //         'encrypted' => true,
-        //         'cluster' => env('PUSHER_APP_CLUSTER', 'mt1'), 
+        //         'cluster' => env('PUSHER_APP_CLUSTER', 'mt1'),
         //         'useTLS' => env('PUSHER_SCHEME') === 'https',
         //     ],
         // ],

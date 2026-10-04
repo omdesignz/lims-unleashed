@@ -325,6 +325,7 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  receivingAbilities: { type: Object, default: () => ({ receive: false, register_non_conformity: false }) },
 })
 
 const loading = ref(false)
@@ -579,10 +580,11 @@ function canEdit(order) {
 }
 
 function canReceive(order) {
-  return ['ORDERED', 'PARTIALLY_RECEIVED'].includes(normalizeStatus(order.status))
+  return props.receivingAbilities.receive && ['ORDERED', 'PARTIALLY_RECEIVED'].includes(normalizeStatus(order.status))
 }
 
 function receiveOrder(order) {
+  if (!canReceive(order)) return
   router.visit(route('vap-inventory.orders.show', order.id))
 }
 

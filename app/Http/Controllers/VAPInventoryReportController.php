@@ -9,6 +9,7 @@ use App\Models\InventoryItem;
 use App\Models\InventoryItemTransfer;
 use App\Models\InventoryItemWarehouse;
 use App\Models\InventoryTransaction;
+use App\Models\InventoryTransactionType;
 use App\Models\ReagentConsumption;
 use App\Models\User;
 use App\Models\VAPLab;
@@ -90,12 +91,15 @@ class VAPInventoryReportController extends Controller
         ])
             ->orderBy($request->sort_by ?? 'created_at', $request->sort_direction ?? 'desc');
 
+        $typeTable = (new InventoryTransactionType)->getTable();
+        $incomingPlaceholders = implode(', ', array_fill(0, count(InventoryTransaction::ADDITION_CODES), '?'));
+        $outgoingPlaceholders = implode(', ', array_fill(0, count(InventoryTransaction::DEDUCTION_CODES), '?'));
         $movementTrend = $this->transactions($labId)->select(
             DB::raw('DATE(created_at) as date'),
             DB::raw('COUNT(*) as total_transactions'),
-            DB::raw("SUM(CASE WHEN type_id IN (SELECT id FROM itransaction_types WHERE code IN ('stock_in', 'stock_adjustment_add', 'consumption_reversal')) THEN ABS(CAST(qty AS NUMERIC)) ELSE 0 END) as total_in"),
-            DB::raw("SUM(CASE WHEN type_id IN (SELECT id FROM itransaction_types WHERE code IN ('stock_out', 'stock_adjustment_remove', 'consumption')) THEN ABS(CAST(qty AS NUMERIC)) ELSE 0 END) as total_out")
         )
+            ->selectRaw("SUM(CASE WHEN type_id IN (SELECT id FROM {$typeTable} WHERE code IN ({$incomingPlaceholders})) THEN ABS(CAST(qty AS NUMERIC)) ELSE 0 END) as total_in", InventoryTransaction::ADDITION_CODES)
+            ->selectRaw("SUM(CASE WHEN type_id IN (SELECT id FROM {$typeTable} WHERE code IN ({$outgoingPlaceholders})) THEN ABS(CAST(qty AS NUMERIC)) ELSE 0 END) as total_out", InventoryTransaction::DEDUCTION_CODES)
             ->groupBy(DB::raw('DATE(created_at)'))
             ->orderBy('date')
             ->get();
@@ -131,7 +135,7 @@ class VAPInventoryReportController extends Controller
                 'type_mix' => [
                     'labels' => ['Entradas', 'Saídas', 'Consumo', 'Transferências'],
                     'series' => [
-                        (int) ($typeMix['stock_in'] ?? 0) + (int) ($typeMix['stock_adjustment_add'] ?? 0) + (int) ($typeMix['consumption_reversal'] ?? 0),
+                        collect(InventoryTransaction::ADDITION_CODES)->sum(fn (string $code): int => (int) ($typeMix[$code] ?? 0)),
                         (int) ($typeMix['stock_out'] ?? 0) + (int) ($typeMix['stock_adjustment_remove'] ?? 0),
                         (int) ($typeMix['consumption'] ?? 0),
                         (int) ($typeMix['transfer'] ?? 0),
@@ -169,11 +173,11 @@ class VAPInventoryReportController extends Controller
         $query = $this->transactions($this->laboratoryAccess->activeLabId());
 
         $totalIn = (clone $query)->whereHas('type', function ($q) {
-            $q->withTrashed()->whereIn('code', ['stock_in', 'stock_adjustment_add', 'consumption_reversal']);
+            $q->withTrashed()->whereIn('code', InventoryTransaction::ADDITION_CODES);
         })->sum(DB::raw('ABS(CAST(qty AS NUMERIC))'));
 
         $totalOut = (clone $query)->whereHas('type', function ($q) {
-            $q->withTrashed()->whereIn('code', ['stock_out', 'stock_adjustment_remove', 'consumption']);
+            $q->withTrashed()->whereIn('code', InventoryTransaction::DEDUCTION_CODES);
         })->sum(DB::raw('ABS(CAST(qty AS NUMERIC))'));
 
         $netMovement = $totalIn - $totalOut;

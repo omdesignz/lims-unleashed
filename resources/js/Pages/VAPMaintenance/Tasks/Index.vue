@@ -1,5 +1,6 @@
 <template>
   <div class="space-y-6" :class="commercialDocumentThemeClasses">
+    <Head title="Tarefas de manutenção" />
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:flex sm:items-start sm:justify-between sm:gap-6 lg:px-6">
         <div class="min-w-0">
@@ -24,10 +25,14 @@
 
         <div class="mt-4 flex flex-wrap items-center gap-2 sm:mt-0 sm:justify-end">
           <span class="ds-chip">{{ taskTotal }} tarefas</span>
-          <Link :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary">
+          <Link :href="route('vap-maintenance.tasks', archived ? {} : { archived: 1 })" class="ds-button ds-button-secondary">
+            {{ archived ? 'Tarefas activas' : 'Arquivo' }}
+          </Link>
+          <Link v-if="can.create" :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary">
             <PlusIcon class="h-4 w-4" />
             Nova tarefa
           </Link>
+          <Link v-if="can.create" :href="route('maintenancetasks.import.form')" class="ds-button ds-button-secondary">Importar CSV</Link>
         </div>
       </div>
 
@@ -46,6 +51,11 @@
         </article>
       </div>
     </section>
+
+    <div v-if="completionRequest.hasErrors || completionError" class="ds-panel ds-field-error p-4" role="alert">
+      <p v-if="completionError">{{ completionError }}</p>
+      <p v-for="(error, key) in completionRequest.errors" :key="key">{{ error }}</p>
+    </div>
 
     <section class="ds-command-surface p-4">
       <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -188,7 +198,7 @@
       </div>
     </section>
 
-    <section v-if="selectedTasks.length > 0" class="ds-command-toolbar px-5 py-4">
+    <section v-if="canSelect && selectedTasks.length > 0" class="ds-command-toolbar px-5 py-4">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-start gap-3">
           <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[rgb(var(--primary-50-rgb)/0.9)] text-[rgb(var(--primary-800-rgb)/1)] ring-1 ring-[rgb(var(--primary-200-rgb)/0.8)] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-100-rgb)/1)] dark:ring-[rgb(var(--primary-300-rgb)/0.18)]">
@@ -203,15 +213,16 @@
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
           <BaseSelect v-model="bulkAction" class="ds-field min-w-60">
             <option value="">Seleccionar acção</option>
-            <option value="mark_executed">Marcar como executadas</option>
-            <option value="reschedule">Reagendar</option>
-            <option value="delete">Eliminar</option>
+            <option v-if="can.edit && !archived" value="mark_executed">Marcar como executadas</option>
+            <option v-if="can.edit && !archived" value="reschedule">Reagendar</option>
+            <option v-if="can.delete && !archived" value="delete">Arquivar</option>
+            <option v-if="can.restore && archived" value="restore">Restaurar</option>
           </BaseSelect>
-          <button type="button" class="ds-button ds-button-primary" :disabled="!bulkAction" @click="executeBulkAction">
+          <button type="button" class="ds-button ds-button-primary" :disabled="!bulkAction || completionRequest.processing" :aria-busy="completionRequest.processing" @click="executeBulkAction">
             <PlayIcon class="h-4 w-4" />
             Aplicar
           </button>
-          <button type="button" class="ds-button ds-button-secondary" @click="clearSelection">
+          <button type="button" class="ds-button ds-button-secondary" :disabled="completionRequest.processing" @click="clearSelection">
             <XMarkIcon class="h-4 w-4" />
             Cancelar
           </button>
@@ -224,13 +235,13 @@
         <div>
           <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
             <ClipboardDocumentListIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
-            Lista de tarefas
+            {{ archived ? 'Arquivo de tarefas' : 'Lista de tarefas' }}
           </h2>
           <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">
             {{ taskItems.length }} tarefas nesta página, {{ taskTotal }} no total.
           </p>
         </div>
-        <button type="button" class="ds-button ds-button-secondary" @click="exportTasks">
+        <button v-if="can.export && !archived" type="button" class="ds-button ds-button-secondary" @click="exportTasks">
           <ArrowDownTrayIcon class="h-4 w-4" />
           Exportar
         </button>
@@ -248,8 +259,10 @@
           <div class="flex items-start justify-between gap-3">
             <label class="flex min-w-0 items-start gap-3">
               <CheckboxInput
+                :disabled="!canSelect || completionRequest.processing"
                 type="checkbox"
                 :checked="selectedTaskIds.includes(task.id)"
+                :aria-label="`Seleccionar ${task.maintenance_task_no || task.name}`"
                 class="ds-checkbox mt-1 shrink-0"
                 @change="toggleTaskSelection(task.id)"
               />
@@ -283,15 +296,15 @@
           </dl>
 
           <div class="mt-4 flex flex-wrap gap-2">
-            <Link :href="route('vap-maintenance.tasks.show', task.id)" class="ds-table-action">
+            <Link v-if="!task.deleted_at" :href="route('vap-maintenance.tasks.show', task.id)" class="ds-table-action">
               <EyeIcon class="mr-1 h-4 w-4" />
               Abrir
             </Link>
-            <button v-if="!task.is_executed" type="button" class="ds-table-action" @click="markAsExecuted(task)">
+            <button v-if="can.edit && !task.deleted_at && !task.is_executed" type="button" class="ds-table-action" :disabled="completionRequest.processing" :aria-busy="completionRequest.processing" @click="markAsExecuted(task)">
               <CheckCircleIcon class="mr-1 h-4 w-4" />
               Concluir
             </button>
-            <Link :href="route('vap-maintenance.tasks.show', task.id)" class="ds-table-action">
+            <Link v-if="can.edit && !task.deleted_at" :href="route('vap-maintenance.tasks.edit', task.id)" class="ds-table-action">
               <PencilIcon class="mr-1 h-4 w-4" />
               Actualizar
             </Link>
@@ -305,8 +318,10 @@
             <tr>
               <th class="w-12 px-5 py-3">
                 <CheckboxInput
+                  :disabled="!canSelect || completionRequest.processing"
                   type="checkbox"
                   :checked="allTasksSelected"
+                  aria-label="Seleccionar todas as tarefas desta página"
                   class="ds-checkbox"
                   @change="toggleAllTasks"
                 />
@@ -330,8 +345,10 @@
             >
               <td class="px-5 py-4">
                 <CheckboxInput
+                  :disabled="!canSelect || completionRequest.processing"
                   type="checkbox"
                   :checked="selectedTaskIds.includes(task.id)"
+                  :aria-label="`Seleccionar ${task.maintenance_task_no || task.name}`"
                   class="ds-checkbox"
                   @change="toggleTaskSelection(task.id)"
                 />
@@ -420,15 +437,15 @@
               </td>
               <td class="px-5 py-4 text-right">
                 <div class="inline-flex flex-wrap items-center justify-end gap-1">
-                  <Link :href="route('vap-maintenance.tasks.show', task.id)" class="ds-table-action">
+                  <Link v-if="!task.deleted_at" :href="route('vap-maintenance.tasks.show', task.id)" class="ds-table-action">
                     <EyeIcon class="mr-1 h-4 w-4" />
                     Ver
                   </Link>
-                  <button v-if="!task.is_executed" type="button" class="ds-table-action" @click="markAsExecuted(task)">
+                  <button v-if="can.edit && !task.deleted_at && !task.is_executed" type="button" class="ds-table-action" :disabled="completionRequest.processing" :aria-busy="completionRequest.processing" @click="markAsExecuted(task)">
                     <CheckCircleIcon class="mr-1 h-4 w-4" />
                     Concluir
                   </button>
-                  <Link :href="route('vap-maintenance.tasks.show', task.id)" class="ds-table-action">
+                  <Link v-if="can.edit && !task.deleted_at" :href="route('vap-maintenance.tasks.edit', task.id)" class="ds-table-action">
                     <PencilIcon class="mr-1 h-4 w-4" />
                     Editar
                   </Link>
@@ -471,7 +488,7 @@
       </div>
     </section>
 
-    <Modal :show="showExportModal" @close="showExportModal = false">
+    <Modal :show="showExportModal" :closeable="!downloading" @close="showExportModal = false">
       <div class="p-5 sm:p-6">
         <div>
           <p class="ds-kicker">Relatório operacional</p>
@@ -545,39 +562,15 @@
             </div>
           </div>
 
-          <div class="ds-field-group">
-            <span class="ds-field-label">Campos incluídos</span>
-            <div class="space-y-3">
-              <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-                <CheckboxInput v-model="exportFields" type="checkbox" value="all" class="ds-checkbox" />
-                Todos os campos
-              </label>
-              <div class="grid gap-2 sm:grid-cols-2">
-                <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <CheckboxInput v-model="exportFields" type="checkbox" value="equipment" class="ds-checkbox" />
-                  Equipamento
-                </label>
-                <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <CheckboxInput v-model="exportFields" type="checkbox" value="dates" class="ds-checkbox" />
-                  Datas
-                </label>
-                <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <CheckboxInput v-model="exportFields" type="checkbox" value="cost" class="ds-checkbox" />
-                  Custo
-                </label>
-                <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <CheckboxInput v-model="exportFields" type="checkbox" value="supplier" class="ds-checkbox" />
-                  Fornecedor
-                </label>
-              </div>
-            </div>
-          </div>
+          <p class="ds-copy text-sm">Inclui identificação, categoria, equipamento, datas, estado, custo e fornecedor. Máximo: 5000 tarefas. Os valores reflectem os registos seleccionados, não apenas esta página.</p>
+          <p v-if="downloadError" class="ds-field-error" role="alert">{{ downloadError }}</p>
+          <p v-if="downloading" class="ds-copy text-sm" role="status">A preparar o ficheiro…</p>
 
           <div class="flex items-center justify-end gap-2 border-t border-[var(--ds-border)] pt-5">
-            <button type="button" class="ds-button ds-button-secondary" @click="showExportModal = false">
+            <button type="button" class="ds-button ds-button-secondary" :disabled="downloading" @click="showExportModal = false">
               Cancelar
             </button>
-            <button type="button" class="ds-button ds-button-primary" @click="proceedExport">
+            <button type="button" class="ds-button ds-button-primary" :disabled="downloading" :aria-busy="downloading" @click="proceedExport">
               <ArrowDownTrayIcon class="h-4 w-4" />
               Exportar
             </button>
@@ -586,7 +579,7 @@
       </div>
     </Modal>
 
-    <Modal :show="showRescheduleModal" @close="showRescheduleModal = false">
+    <Modal :show="showRescheduleModal" :closeable="!completionRequest.processing" @close="showRescheduleModal = false">
       <div class="p-5 sm:p-6">
         <div>
           <p class="ds-kicker">Ajuste de agenda</p>
@@ -595,39 +588,31 @@
         </div>
 
         <div class="mt-6 space-y-6">
+          <div v-if="completionRequest.hasErrors || completionError" class="ds-field-error" role="alert">
+            <p v-if="completionError">{{ completionError }}</p>
+            <p v-for="(error, key) in completionRequest.errors" :key="key">{{ error }}</p>
+          </div>
           <label class="ds-field-group">
             <span class="ds-field-label">Nova data de vencimento</span>
             <DateTimePicker
               v-model="rescheduleDate"
               type="date"
-              :min="new Date().toISOString().split('T')[0]"
               class="ds-field" />
           </label>
 
-          <div class="ds-command-toolbar p-4">
-            <label class="flex items-start gap-3">
-              <CheckboxInput v-model="sendRescheduleNotification" type="checkbox" class="ds-checkbox mt-1" />
-              <span>
-                <span class="block text-sm font-bold text-[var(--ds-text)]">Enviar notificação aos responsáveis</span>
-                <span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">
-                  Os responsáveis serão notificados sobre a alteração das datas.
-                </span>
-              </span>
-            </label>
-          </div>
-
           <div class="flex items-center justify-end gap-2 border-t border-[var(--ds-border)] pt-5">
-            <button type="button" class="ds-button ds-button-secondary" @click="showRescheduleModal = false">
+            <button type="button" class="ds-button ds-button-secondary" :disabled="completionRequest.processing" @click="showRescheduleModal = false">
               Cancelar
             </button>
             <button
               type="button"
               class="ds-button ds-button-primary"
-              :disabled="!rescheduleDate"
+              :disabled="!rescheduleDate || completionRequest.processing"
+              :aria-busy="completionRequest.processing"
               @click="executeReschedule"
             >
               <CalendarIcon class="h-4 w-4" />
-              Reagendar
+              {{ completionRequest.processing ? 'A guardar…' : 'Reagendar' }}
             </button>
           </div>
         </div>
@@ -637,9 +622,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useFileDownload } from '@/Composables/useFileDownload'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
-import { Link, router } from '@inertiajs/vue3'
+import { Head, Link, router, useHttp } from '@inertiajs/vue3'
 import {
   Wrench as WrenchScrewdriverIcon,
   Plus as PlusIcon,
@@ -670,25 +656,30 @@ import Pagination from '@/Components/Pagination.vue'
 import { debounce } from 'lodash'
 
 const props = defineProps({
+  can: { type: Object, default: () => ({}) },
   tasks: Object,
   categories: Array,
   equipment: Array,
   suppliers: Array,
   filters: Object,
   stats: Object,
+  today: String,
 })
 
 // State
 const showAdvancedFilters = ref(false)
 const selectedTaskIds = ref([])
+const completionRequest = useHttp({ task_ids: [], action: 'mark_executed', new_date: null })
+const completionError = ref('')
 const bulkAction = ref('')
 const showExportModal = ref(false)
 const showRescheduleModal = ref(false)
 const exportFormat = ref('pdf')
 const exportRange = ref('filtered')
-const exportFields = ref(['all'])
-const rescheduleDate = ref('')
-const sendRescheduleNotification = ref(true)
+const { download, processing: downloading, error: downloadError } = useFileDownload()
+const rescheduleDate = ref(props.today)
+const archived = computed(() => Boolean(Number(props.filters?.archived)))
+const canSelect = computed(() => archived.value ? props.can.restore : props.can.edit || props.can.delete)
 
 // Computed
 const taskItems = computed(() => props.tasks?.data ?? [])
@@ -719,7 +710,7 @@ const exportRanges = [
 // Methods
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString('pt-PT', {
+  return new Date(`${dateString}T12:00:00`).toLocaleDateString('pt-PT', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
@@ -751,14 +742,14 @@ const statsCards = computed(() => [
   {
     label: 'Custo total',
     value: formatCurrency(props.stats?.total_cost ?? 0),
-    caption: 'Serviços e calibrações',
+    caption: 'Custo dos resultados filtrados',
     icon: CurrencyEuroIcon,
     tone: 'bg-cyan-50 text-cyan-700 ring-cyan-200 dark:bg-cyan-500/10 dark:text-cyan-200 dark:ring-cyan-400/20',
   },
   {
-    label: 'Média mensal',
-    value: props.stats?.monthly_average ?? 0,
-    caption: 'Cadência operacional',
+    label: 'Vencem este mês',
+    value: props.stats?.due_this_month ?? 0,
+    caption: 'Tarefas pendentes nos resultados',
     icon: PresentationChartBarIcon,
     tone: 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20',
   },
@@ -772,9 +763,7 @@ const getTaskColor = (task) => {
     }
   }
   
-  const dueDate = new Date(task.due_date)
-  const today = new Date()
-  const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
+  const daysDiff = task.days_until_due ?? Infinity
   
   if (daysDiff < 0) {
     return {
@@ -802,9 +791,7 @@ const getTaskColor = (task) => {
 const getDueDateColor = (task) => {
   if (task.is_executed) return 'text-emerald-700 dark:text-emerald-200'
   
-  const dueDate = new Date(task.due_date)
-  const today = new Date()
-  const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
+  const daysDiff = task.days_until_due ?? Infinity
   
   if (daysDiff < 0) return 'text-rose-700 dark:text-rose-200'
   if (daysDiff <= 7) return 'text-orange-700 dark:text-orange-200'
@@ -828,9 +815,7 @@ const getStatusClasses = (task) => {
     return 'inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20'
   }
   
-  const dueDate = new Date(task.due_date)
-  const today = new Date()
-  const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
+  const daysDiff = task.days_until_due ?? Infinity
   
   if (daysDiff < 0) {
     return 'inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20'
@@ -844,11 +829,10 @@ const getStatusClasses = (task) => {
 }
 
 const getStatusText = (task) => {
+  if (task.deleted_at) return 'Arquivada'
   if (task.is_executed) return 'Concluída'
   
-  const dueDate = new Date(task.due_date)
-  const today = new Date()
-  const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
+  const daysDiff = task.days_until_due ?? Infinity
   
   if (daysDiff < 0) return 'Atrasada'
   if (daysDiff <= 7) return 'Vencendo em Breve'
@@ -892,12 +876,14 @@ const clearSelection = () => {
   bulkAction.value = ''
 }
 
+watch(() => props.tasks, clearSelection)
+
 const executeBulkAction = async () => {
-  if (!bulkAction.value || selectedTaskIds.value.length === 0) return
+  if (completionRequest.processing || !bulkAction.value || selectedTaskIds.value.length === 0) return
 
   switch (bulkAction.value) {
     case 'mark_executed':
-      if (confirm(`Marcar ${selectedTaskIds.value.length} tarefas como executadas?`)) {
+      if (confirm(`Concluir ${selectedTaskIds.value.length} tarefas? Todas devem ter um resultado registado. As já concluídas permanecem inalteradas.`)) {
         await executeMarkAsExecuted()
       }
       break
@@ -905,72 +891,79 @@ const executeBulkAction = async () => {
       showRescheduleModal.value = true
       break
     case 'delete':
-      if (confirm(`Eliminar ${selectedTaskIds.value.length} tarefas? Esta acção não pode ser revertida.`)) {
+      if (confirm(`Arquivar ${selectedTaskIds.value.length} tarefas? Os registos serão preservados e poderão ser restaurados por utilizadores autorizados.`)) {
         await executeDelete()
       }
+      break
+    case 'restore':
+      await executeLifecycle('restore')
       break
   }
 }
 
 const executeMarkAsExecuted = async () => {
+  if (completionRequest.processing || selectedTaskIds.value.length === 0) return
+  completionError.value = ''
+  completionRequest.action = 'mark_executed'
+  completionRequest.new_date = null
+  completionRequest.task_ids = [...selectedTaskIds.value]
   try {
-    await axios.post(route('vap-maintenance.tasks.bulk-update'), {
-      task_ids: selectedTaskIds.value,
-      action: 'mark_executed'
+    await completionRequest.post(route('vap-maintenance.tasks.bulk-update'), {
+      onSuccess: () => {
+        clearSelection()
+        router.reload()
+      },
     })
-    clearSelection()
-    router.reload()
-  } catch (error) {
-    console.error('Error marking tasks as executed:', error)
-    alert('Erro ao marcar tarefas como executadas')
+  } catch {
+    if (!completionRequest.hasErrors) {
+      completionError.value = 'Não foi possível concluir as tarefas. A selecção foi mantida; tente novamente.'
+    }
   }
 }
 
 const executeReschedule = async () => {
-  if (!rescheduleDate.value) return
-
-  try {
-    await axios.post(route('vap-maintenance.tasks.bulk-update'), {
-      task_ids: selectedTaskIds.value,
-      action: 'reschedule',
-      new_date: rescheduleDate.value,
-      send_notification: sendRescheduleNotification.value
-    })
-    clearSelection()
-    showRescheduleModal.value = false
-    router.reload()
-  } catch (error) {
-    console.error('Error rescheduling tasks:', error)
-    alert('Erro ao reagendar tarefas')
-  }
+  if (!rescheduleDate.value || completionRequest.processing) return
+  await executeLifecycle('reschedule', rescheduleDate.value)
 }
 
 const executeDelete = async () => {
+  await executeLifecycle('delete')
+}
+
+const executeLifecycle = async (action, newDate = null) => {
+  if (completionRequest.processing || selectedTaskIds.value.length === 0) return
+  completionError.value = ''
+  completionRequest.action = action
+  completionRequest.new_date = newDate
+  completionRequest.task_ids = [...selectedTaskIds.value]
   try {
-    await axios.post(route('vap-maintenance.tasks.bulk-update'), {
-      task_ids: selectedTaskIds.value,
-      action: 'delete'
+    await completionRequest.post(route('vap-maintenance.tasks.bulk-update'), {
+      onSuccess: () => {
+        clearSelection()
+        showRescheduleModal.value = false
+        router.reload()
+      },
     })
-    clearSelection()
-    router.reload()
-  } catch (error) {
-    console.error('Error deleting tasks:', error)
-    alert('Erro ao eliminar tarefas')
+  } catch {
+    if (!completionRequest.hasErrors) {
+      completionError.value = 'Não foi possível guardar a alteração. A selecção foi mantida; tente novamente.'
+    }
   }
 }
 
 const markAsExecuted = async (task) => {
-  if (confirm('Marcar esta tarefa como concluída?')) {
-    try {
-      await axios.put(route('vap-maintenance.tasks.update', task.id), {
-        is_executed: true,
-        result: 'Concluído via lista'
-      })
-      router.reload()
-    } catch (error) {
-      console.error('Error marking task as executed:', error)
-      alert('Erro ao marcar tarefa como executada')
-    }
+  if (!props.can.edit || completionRequest.processing) return
+  if (!confirm('Concluir esta tarefa com o resultado registado?')) return
+  completionError.value = ''
+  completionRequest.action = 'mark_executed'
+  completionRequest.new_date = null
+  completionRequest.task_ids = [task.id]
+  try {
+    await completionRequest.post(route('vap-maintenance.tasks.bulk-update'), {
+      onSuccess: () => router.reload(),
+    })
+  } catch {
+    completionError.value = 'Não foi possível concluir a tarefa. Tente novamente.'
   }
 }
 
@@ -978,26 +971,17 @@ const exportTasks = () => {
   showExportModal.value = true
 }
 
-const proceedExport = () => {
+const proceedExport = async () => {
+  if (downloading.value) return
   const params = {
+    ...Object.fromEntries(Object.entries(props.filters ?? {}).filter(([key]) => key !== 'archived')),
     format: exportFormat.value,
     type: 'tasks',
     range: exportRange.value,
-    fields: exportFields.value.join(','),
-    ...props.filters
   }
-
-  window.open(route('vap-maintenance.export', params), '_blank')
-  showExportModal.value = false
+  if (await download(route('vap-maintenance.export', params))) {
+    showExportModal.value = false
+  }
 }
 
-// Watch filters
-// watch(
-//   () => props.filters,
-//   applyFilters,
-//   { deep: true }
-// )
-
-// Initialize reschedule date
-rescheduleDate.value = new Date().toISOString().split('T')[0]
 </script>

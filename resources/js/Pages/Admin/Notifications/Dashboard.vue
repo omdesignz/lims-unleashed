@@ -6,7 +6,7 @@ import {
   notificationTypeLabel,
 } from '@/Composables/useNotificationPresentation'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { Link } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
 import {
   ArrowRight as ArrowRightIcon,
   BellRing as BellAlertIcon,
@@ -60,6 +60,7 @@ const readRate = computed(() => Math.min(Number(props.stats.read_rate ?? 0), 100
 
 <template>
   <div class="space-y-5">
+    <Head title="Visão geral de notificações" />
     <NotificationAdminHeader
       title="Visao geral"
       description="Acompanhe alcance, leitura e distribuição das mensagens operacionais do laboratório."

@@ -152,6 +152,7 @@
     <div class="header">
         <h1>{{ $title }}</h1>
         <div class="subtitle">
+            {{ $labName }} · {{ !empty($filters['archived']) ? 'Arquivo' : 'Registos activos' }}<br>
             Gerado em: {{ $exportDate }}
         </div>
     </div>
@@ -160,6 +161,9 @@
     <div class="filters">
         <h3>Filtros Aplicados:</h3>
         <ul>
+            @if(!empty($filters['search']))
+                <li>Pesquisa: {{ $filters['search'] }}</li>
+            @endif
             @if(!empty($filters['status']))
                 <li>Estado: {{ $filters['status'] }}</li>
             @endif
@@ -239,8 +243,8 @@
                     </span>
                 </td>
                 <td>{{ $nc->reported_by }}</td>
-                <td>{{ $nc->reported_at->format('d/m/Y H:i') }}</td>
-                <td>{{ $nc->due_date ? $nc->due_date->format('d/m/Y') : 'N/A' }}</td>
+                <td>{{ $nc->reported_at?->format('d/m/Y H:i') ?? 'N/A' }}</td>
+                <td>{{ $nc->due_date ? $nc->due_date->format('d/m/Y H:i') : 'N/A' }}</td>
                 <td>{{ $nc->lab?->name ?? 'N/A' }}</td>
             </tr>
             @endforeach

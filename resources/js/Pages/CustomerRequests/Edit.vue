@@ -18,6 +18,7 @@ const props = defineProps({
 const request = props.record?.data ?? props.record;
 
 const form = useForm({
+  id: request.id,
   email: request.email || "",
   contact: request.contact || "",
   description: request.description || "",
@@ -52,7 +53,7 @@ function submit() {
           <div class="min-w-0">
             <p class="ds-kicker">Pedido #{{ request.id }}</p>
             <h1 class="ds-heading mt-1 text-2xl">Editar pedido de cliente</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm"> Actualize a classificação, o local e os dados usados no acompanhamento deste pedido. </p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Actualize a classificação e os dados de contacto. O cliente, local e laboratório permanecem fixos.</p>
             <div class="mt-3 flex flex-wrap gap-2">
               <span v-if="request.reference" class="ds-chip">{{ request.reference }}</span>
               <span class="ds-chip">{{ request.status || "pending" }}</span>

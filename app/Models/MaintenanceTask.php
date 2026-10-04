@@ -78,7 +78,7 @@ class MaintenanceTask extends Model
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(MaintenanceCategory::class);
+        return $this->belongsTo(MaintenanceCategory::class)->withTrashed();
     }
 
     public function supplier(): BelongsTo

@@ -1,5 +1,14 @@
 const optionValue = (value) => value && typeof value === 'object' ? value.value || null : value || null;
 
+export function quoteSiteLabel(quote) {
+    return quote.warehouse?.trim() || quote.warehouse_id?.address?.trim() || quote.warehouse_id?.name?.trim()
+        || quote.warehouse_id?.code || 'Local não disponível';
+}
+
+export function quoteBillingLabel(quote) {
+    return quote.invoice_id || quote.converted_to_invoice ? 'Facturada' : 'Não facturada';
+}
+
 export function prepareQuoteLine(line = {}) {
     return {
         ...line,
@@ -74,8 +83,14 @@ export function saveQuoteForm(form, url, method, onSuccess = () => {}) {
             preserveScroll: true,
             preserveState: true,
             onSuccess,
-            onNetworkError: () => form.setError('request', 'Ligação interrompida. O rascunho foi preservado.'),
-            onHttpException: () => form.setError('request', 'Não foi possível guardar. O rascunho foi preservado.'),
+            onNetworkError: () => {
+                form.setError('request', 'Ligação interrompida. O rascunho foi preservado.');
+                return false;
+            },
+            onHttpException: () => {
+                form.setError('request', 'Não foi possível guardar. O rascunho foi preservado.');
+                return false;
+            },
         });
     } catch {
         form.setError('request', 'Não foi possível iniciar o pedido. O rascunho foi preservado.');

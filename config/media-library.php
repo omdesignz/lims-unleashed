@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\InventoryItem;
+use App\Models\VAPNonConformity;
 use App\Services\InventoryItemDocumentPathGenerator;
+use App\Services\NonConformityEvidencePathGenerator;
 use Spatie\ImageOptimizer\Optimizers\Cwebp;
 use Spatie\ImageOptimizer\Optimizers\Gifsicle;
 use Spatie\ImageOptimizer\Optimizers\Jpegoptim;
@@ -94,6 +96,7 @@ return [
      */
     'custom_path_generators' => [
         InventoryItem::class => InventoryItemDocumentPathGenerator::class,
+        VAPNonConformity::class => NonConformityEvidencePathGenerator::class,
         // Model::class => PathGenerator::class
         // or
         // 'model_morph_alias' => PathGenerator::class

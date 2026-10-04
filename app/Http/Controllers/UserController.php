@@ -177,13 +177,13 @@ class UserController extends Controller
                 'permissions' => collect($record->permissions)->map(function ($item) {
                     return [
                         'value' => $item['id'],
-                        'label' => $item['label'],
+                        'label' => filled($item['label']) ? $item['label'] : $item['name'],
                     ];
                 })->toArray(),
                 'roles' => collect($record->roles)->map(function ($item) {
                     return [
                         'value' => $item['id'],
-                        'label' => $item['label'],
+                        'label' => filled($item['label']) ? $item['label'] : $item['name'],
                     ];
                 })->toArray(),
                 'personnel_qualifications' => $qualifications->map(function ($qualification) {
@@ -214,13 +214,13 @@ class UserController extends Controller
             'permissions' => collect(Permission::all())->map(function ($item) {
                 return [
                     'value' => $item['id'],
-                    'label' => $item['label'],
+                    'label' => filled($item['label']) ? $item['label'] : $item['name'],
                 ];
             })->toArray(),
             'roles' => collect(Role::all())->map(function ($item) {
                 return [
                     'value' => $item['id'],
-                    'label' => $item['label'],
+                    'label' => filled($item['label']) ? $item['label'] : $item['name'],
                 ];
             })->toArray(),
         ]);

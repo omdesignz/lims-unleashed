@@ -262,6 +262,7 @@ class SampleEntryCreationBoundaryTest extends TestCase
     {
         $payload = $this->creationPayload();
         $request = CustomerRequest::query()->create([
+            'lab_id' => $this->lab->id,
             'reference' => 'CREATION-PORTAL-BATCH', 'title' => 'Portal batch', 'request_type' => 'analysis_request',
             'customer_id' => $this->customer->id, 'warehouse_id' => $this->warehouse->id,
             'extra_data' => [
@@ -292,6 +293,7 @@ class SampleEntryCreationBoundaryTest extends TestCase
     public function test_portal_row_selector_requires_an_owned_source_row(): void
     {
         $request = CustomerRequest::query()->create([
+            'lab_id' => $this->lab->id,
             'reference' => 'CREATION-PORTAL-SOURCE', 'title' => 'Portal source',
             'customer_id' => $this->customer->id, 'warehouse_id' => $this->warehouse->id,
             'extra_data' => ['samples' => [['batch_index' => 3, 'sample_name' => 'Only portal row']]],
@@ -457,6 +459,7 @@ class SampleEntryCreationBoundaryTest extends TestCase
     private function portalRequestForReplay(): CustomerRequest
     {
         return CustomerRequest::query()->create([
+            'lab_id' => $this->lab->id,
             'reference' => fake()->unique()->bothify('REPLAY-PORTAL-######'), 'title' => 'Replay source',
             'customer_id' => $this->customer->id, 'warehouse_id' => $this->warehouse->id,
             'extra_data' => [
@@ -470,6 +473,7 @@ class SampleEntryCreationBoundaryTest extends TestCase
     public function test_selected_portal_row_supplies_catalogue_and_metadata_when_header_fields_are_empty(): void
     {
         $request = CustomerRequest::query()->create([
+            'lab_id' => $this->lab->id,
             'reference' => 'ROW-CATALOGUE-SOURCE', 'title' => 'Row catalogue source',
             'customer_id' => $this->customer->id, 'warehouse_id' => $this->warehouse->id,
             'extra_data' => [
@@ -501,6 +505,7 @@ class SampleEntryCreationBoundaryTest extends TestCase
     {
         $row = ['batch_index' => 7, 'sample_name' => 'Fallback row', 'product_id' => null, 'matrix_id' => null, 'lot' => '', 'quantity' => null];
         $request = CustomerRequest::query()->create([
+            'lab_id' => $this->lab->id,
             'reference' => 'HEADER-FALLBACK-SOURCE', 'title' => 'Header fallback source',
             'customer_id' => $this->customer->id, 'warehouse_id' => $this->warehouse->id,
             'extra_data' => [
@@ -531,6 +536,7 @@ class SampleEntryCreationBoundaryTest extends TestCase
             ? Matrix::query()->create(['code' => fake()->unique()->bothify('MISMATCHED-ROW-######')])->id
             : $value;
         $request = CustomerRequest::query()->create([
+            'lab_id' => $this->lab->id,
             'reference' => 'INVALID-ROW-SOURCE', 'title' => 'Invalid row source',
             'customer_id' => $this->customer->id, 'warehouse_id' => $this->warehouse->id,
             'extra_data' => ['requested_profiles' => [$this->profile->id], 'samples' => [$row]],
@@ -562,7 +568,7 @@ class SampleEntryCreationBoundaryTest extends TestCase
 
     public function test_conflicting_portal_request_aliases_are_rejected_without_writes(): void
     {
-        $attributes = ['title' => 'Alias source', 'customer_id' => $this->customer->id, 'warehouse_id' => $this->warehouse->id];
+        $attributes = ['lab_id' => $this->lab->id, 'title' => 'Alias source', 'customer_id' => $this->customer->id, 'warehouse_id' => $this->warehouse->id];
         $first = CustomerRequest::query()->create($attributes + ['reference' => 'FIRST-ALIAS-SOURCE']);
         $second = CustomerRequest::query()->create($attributes + ['reference' => 'SECOND-ALIAS-SOURCE']);
         $payload = $this->creationPayload();
@@ -576,11 +582,25 @@ class SampleEntryCreationBoundaryTest extends TestCase
         $this->assertSame($before, VAPSampleEntry::query()->count());
     }
 
+    public function test_portal_source_from_another_lab_is_not_available_to_intake(): void
+    {
+        $request = CustomerRequest::query()->create([
+            'lab_id' => VAPLab::factory()->create()->id, 'customer_id' => $this->customer->id,
+            'warehouse_id' => $this->warehouse->id, 'title' => 'Private peer-lab request', 'status' => 'pending',
+        ]);
+        $payload = $this->creationPayload();
+        $payload['portal_request_id'] = $request->id;
+        $before = VAPSampleEntry::query()->count();
+        $this->postJson(route('vap_samples.samples.store'), $payload)->assertUnprocessable()->assertJsonValidationErrors('portal_request_id');
+        $this->assertSame($before, VAPSampleEntry::query()->count());
+    }
+
     public function test_portal_aliases_cannot_select_another_customer_site_source(): void
     {
         $otherCustomer = Customer::query()->create(['name' => 'Other portal customer']);
         $otherSite = Warehouse::query()->create(['name' => 'Other portal site', 'customer_id' => $otherCustomer->id]);
         $request = CustomerRequest::query()->create([
+            'lab_id' => $this->lab->id,
             'reference' => 'OTHER-SITE-SOURCE', 'title' => 'Other site source',
             'customer_id' => $otherCustomer->id, 'warehouse_id' => $otherSite->id,
         ]);

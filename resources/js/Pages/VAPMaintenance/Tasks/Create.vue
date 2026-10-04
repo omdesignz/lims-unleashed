@@ -4,7 +4,7 @@
       <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:flex sm:items-start sm:justify-between sm:gap-6 lg:px-6">
         <div class="min-w-0">
           <p class="ds-kicker">Metrologia e manutenção</p>
-          <h1 class="ds-heading mt-2 text-2xl">Nova tarefa de manutenção</h1>
+          <h1 class="ds-heading mt-2 text-2xl">{{ task ? 'Editar tarefa de manutenção' : 'Nova tarefa de manutenção' }}</h1>
           <p class="ds-copy mt-2 max-w-3xl text-sm">
             Registe uma actividade de calibração, verificação ou manutenção com equipamento, agenda, fornecedor e custo rastreáveis.
           </p>
@@ -16,6 +16,10 @@
         </Link>
       </div>
     </section>
+
+    <div v-if="form.hasErrors" class="ds-panel ds-field-error p-4" role="alert">
+      <p v-for="(error, field) in form.errors" :key="field">{{ error }}</p>
+    </div>
 
     <form class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]" @submit.prevent="submit">
       <div class="space-y-6">
@@ -42,13 +46,14 @@
 
             <label class="ds-field-group">
               <span class="ds-field-label">Categoria <span class="ds-field-required">*</span></span>
-              <BaseSelect v-model="form.category_id" required :class="fieldClass('category_id')">
+              <BaseSelect v-model="form.category_id" required :disabled="Boolean(task)" :class="fieldClass('category_id')">
                 <option value="">Seleccione uma categoria</option>
                 <option v-for="category in categories" :key="category.id" :value="category.id">
                   {{ category.name }}
                 </option>
               </BaseSelect>
               <span v-if="form.errors.category_id" class="ds-field-error">{{ form.errors.category_id }}</span>
+              <span v-if="task" class="ds-field-hint">A categoria faz parte do número emitido e não pode ser alterada.</span>
             </label>
 
             <label class="ds-field-group">
@@ -62,16 +67,10 @@
               <span v-if="form.errors.equipment_id" class="ds-field-error">{{ form.errors.equipment_id }}</span>
             </label>
 
-            <label class="ds-field-group">
+            <div class="ds-field-group">
               <span class="ds-field-label">Número da tarefa</span>
-              <BaseInput
-                v-model="form.maintenance_task_no"
-                type="text"
-                :class="fieldClass('maintenance_task_no')"
-                placeholder="Gerado automaticamente se vazio"
-              />
-              <span v-if="form.errors.maintenance_task_no" class="ds-field-error">{{ form.errors.maintenance_task_no }}</span>
-            </label>
+              <p class="ds-copy text-sm">{{ task?.maintenance_task_no || 'Gerado automaticamente ao guardar.' }}</p>
+            </div>
 
             <label class="ds-field-group md:col-span-2">
               <span class="ds-field-label">Descrição</span>
@@ -204,7 +203,7 @@
           <div class="mt-4 space-y-3">
             <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing">
               <CheckCircleIcon class="h-4 w-4" />
-              {{ form.processing ? 'A processar...' : 'Criar tarefa' }}
+              {{ form.processing ? 'A guardar...' : task ? 'Guardar alterações' : 'Criar tarefa' }}
             </button>
 
             <Link :href="route('vap-maintenance.tasks')" class="ds-button ds-button-secondary w-full">
@@ -220,7 +219,7 @@
 
 <script setup>
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
-import { Link, router, useForm } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
 import {
   Wrench as WrenchScrewdriverIcon,
   ArrowLeft as ArrowLeftIcon,
@@ -234,6 +233,8 @@ import {
 } from '@lucide/vue'
 
 const props = defineProps({
+  task: { type: Object, default: null },
+  today: String,
   categories: Array,
   equipment: Array,
   suppliers: Array,
@@ -241,19 +242,14 @@ const props = defineProps({
 
 const equipmentList = props.equipment ?? []
 
-const form = useForm({
+const defaults = {
   name: '',
   description: '',
   category_id: '',
   equipment_id: '',
-  due_date: new Date().toISOString().split('T')[0],
-  previous_date: null,
-  next_date: null,
-  maintenance_task_no: '',
-  maintenance_task_year: new Date().getFullYear().toString(),
+  due_date: props.today,
   acceptance_criteria: '',
   range: '',
-  calibration_status: 'pending',
   calibration_certificate_no: '',
   periodicity: '',
   periodicity_unit: '',
@@ -262,11 +258,12 @@ const form = useForm({
   obs: '',
   cost: 0,
   is_planned: true,
-  is_executed: false,
   calibration_points: '',
-  result: '',
-  seq: null,
-})
+}
+const form = useForm(Object.fromEntries(Object.entries(defaults).map(([key, value]) => [
+  key, props.task?.[key] ?? value,
+])))
+form.due_date = String(form.due_date).slice(0, 10)
 
 const fieldClass = (field) => [
   'ds-field',
@@ -274,10 +271,11 @@ const fieldClass = (field) => [
 ]
 
 const submit = () => {
-  form.post(route('vap-maintenance.tasks.store'), {
-    onSuccess: () => {
-      router.visit(route('vap-maintenance.tasks'))
-    }
-  })
+  if (form.processing) return
+  if (props.task) {
+    form.put(route('vap-maintenance.tasks.update', props.task.id))
+  } else {
+    form.post(route('vap-maintenance.tasks.store'))
+  }
 }
 </script>

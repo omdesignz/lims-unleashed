@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class NotificationAdminFlowTest extends TestCase
@@ -29,6 +30,129 @@ class NotificationAdminFlowTest extends TestCase
         DB::table('lab_user')->insert(['lab_id' => $this->lab->id, 'user_id' => $admin->id]);
 
         return $admin;
+    }
+
+    public function test_creation_lists_only_eligible_local_recipients_without_hiding_historical_members(): void
+    {
+        $admin = $this->verifiedAdmin();
+        $admin->forceFill(['last_login_at' => now(), 'created_at' => now()->subMonth()])->save();
+        $eligible = User::factory()->create(['is_active' => true, 'last_login_at' => now()]);
+        $inactive = User::factory()->create(['is_active' => false, 'last_login_at' => now()]);
+        $unverified = User::factory()->unverified()->create(['is_active' => true]);
+        $archived = User::factory()->create(['is_active' => true]);
+        foreach ([$eligible, $inactive, $unverified, $archived] as $user) {
+            DB::table('lab_user')->insert(['lab_id' => $this->lab->id, 'user_id' => $user->id]);
+        }
+        $archived->delete();
+        $inactive->assignRole(Role::findOrCreate('admin', 'web'));
+        $peerLab = VAPLab::factory()->create();
+        $peer = User::factory()->create(['is_active' => true]);
+        DB::table('lab_user')->insert(['lab_id' => $peerLab->id, 'user_id' => $peer->id]);
+        $oldNotice = $inactive->notifications()->create([
+            'id' => (string) Str::uuid(), 'type' => GlobalNotification::class,
+            'data' => ['lab_id' => $this->lab->id, 'title' => 'Historical local notice'],
+        ]);
+        $eligible->notifications()->create([
+            'id' => (string) Str::uuid(), 'type' => GlobalNotification::class,
+            'data' => ['lab_id' => $this->lab->id, 'title' => 'Unread local notice'],
+        ]);
+        $eligible->notifications()->create([
+            'id' => (string) Str::uuid(), 'type' => GlobalNotification::class,
+            'data' => ['lab_id' => $peerLab->id, 'title' => 'Unread peer notice'],
+        ]);
+
+        $this->actingAs($admin)->withSession(['active_lab_id' => $this->lab->id])
+            ->get(route('admin.notifications.create'))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('users', 2)
+                ->where('users', fn ($users): bool => collect($users)->pluck('id')->sort()->values()->all() === collect([$admin->id, $eligible->id])->sort()->values()->all())
+                ->where('users', fn ($users): bool => collect($users)->firstWhere('id', $eligible->id)['unread_count'] === 1)
+                ->has('userGroups', 4)
+                ->where('userGroups.0.count', 2)->where('userGroups.1.count', 2)
+                ->where('userGroups.2.count', 1)->where('userGroups.3.count', 1));
+
+        $this->get(route('admin.notifications.index'))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('users', fn ($users): bool => collect($users)->contains('id', $inactive->id))
+                ->where('notifications.data', fn ($notices): bool => collect($notices)->contains('id', $oldNotice->id)));
+        $this->get(route('admin.notifications.show', $oldNotice->id))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('notification.user_name', $inactive->name));
+    }
+
+    #[DataProvider('eligibleAudienceModes')]
+    public function test_all_and_group_queue_counts_exclude_ineligible_members(string $mode, string $group): void
+    {
+        $admin = $this->verifiedAdmin();
+        $admin->update(['last_login_at' => now()]);
+        $inactive = User::factory()->create(['is_active' => false, 'last_login_at' => now()]);
+        $unverified = User::factory()->unverified()->create(['is_active' => true, 'last_login_at' => now()]);
+        foreach ([$inactive, $unverified] as $user) {
+            $user->assignRole(Role::findOrCreate('admin', 'web'));
+            DB::table('lab_user')->insert(['lab_id' => $this->lab->id, 'user_id' => $user->id]);
+        }
+        Notification::fake();
+
+        $this->actingAs($admin)->post(route('admin.notifications.store'), [
+            'title' => 'Eligible audience', 'message' => 'Queue only eligible members.', 'type' => 'info', 'priority' => 'normal',
+            'recipient_type' => $mode, 'group' => $group, 'recipients' => [],
+        ])->assertRedirect(route('admin.notifications.index'))
+            ->assertSessionHas('toast.title', 'Notificação colocada na fila');
+
+        Notification::assertSentTo($admin, GlobalNotification::class);
+        Notification::assertNotSentTo([$inactive, $unverified], GlobalNotification::class);
+        Notification::assertCount(1);
+        $this->assertDatabaseHas('broadcast_notifications', ['lab_id' => $this->lab->id, 'recipient_count' => 1]);
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function eligibleAudienceModes(): array
+    {
+        return ['all' => ['all', 'all'], 'all group' => ['group', 'all'], 'recent' => ['group', 'active'],
+            'new' => ['group', 'new'], 'admins' => ['group', 'admins']];
+    }
+
+    #[DataProvider('invalidRecipientStates')]
+    public function test_specific_ineligible_recipients_reject_the_whole_submission(string $state): void
+    {
+        $admin = $this->verifiedAdmin();
+        $invalid = User::factory()->create(['is_active' => $state !== 'inactive', 'email_verified_at' => $state === 'unverified' ? null : now()]);
+        if ($state !== 'foreign') {
+            DB::table('lab_user')->insert(['lab_id' => $this->lab->id, 'user_id' => $invalid->id]);
+        }
+        if ($state === 'archived') {
+            $invalid->delete();
+        }
+        Notification::fake();
+        $invalidId = match ($state) {
+            'missing' => PHP_INT_MAX,
+            'duplicate' => $admin->id,
+            default => $invalid->id,
+        };
+        $this->actingAs($admin)->post(route('admin.notifications.store'), [
+            'title' => 'Invalid audience', 'message' => 'Must not partially send.', 'type' => 'info', 'priority' => 'normal',
+            'recipient_type' => 'specific', 'recipients' => [$admin->id, $invalidId],
+        ])->assertSessionHasErrors('recipients.1');
+
+        Notification::assertNothingSent();
+        $this->assertDatabaseCount('broadcast_notifications', 0);
+    }
+
+    /** @return array<string, array{string}> */
+    public static function invalidRecipientStates(): array
+    {
+        return array_combine($states = ['inactive', 'unverified', 'archived', 'foreign', 'missing', 'duplicate'], array_map(fn (string $state): array => [$state], $states));
+    }
+
+    public function test_retired_unverified_group_is_rejected_without_falling_back_to_everyone(): void
+    {
+        $admin = $this->verifiedAdmin();
+        Notification::fake();
+        $this->actingAs($admin)->post(route('admin.notifications.store'), [
+            'title' => 'Invalid group', 'message' => 'Must not send.', 'type' => 'info', 'priority' => 'normal',
+            'recipient_type' => 'group', 'group' => 'unverified', 'recipients' => [],
+        ])->assertSessionHasErrors('group');
+        Notification::assertNothingSent();
+        $this->assertDatabaseCount('broadcast_notifications', 0);
     }
 
     public function test_admin_can_send_immediate_notification_to_specific_user(): void

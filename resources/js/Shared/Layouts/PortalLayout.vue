@@ -1,16 +1,17 @@
 <template>
   <div class="lims-app-shell ds-app-canvas" :style="brandingCssVariables" :data-theme-preset="themePreset">
+    <Head :title="pageTitle" />
     <header class="sticky top-0 z-40 bg-[var(--ds-canvas)]">
-      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <div class="flex items-center gap-3">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
+        <div class="flex min-w-0 items-center gap-2 sm:gap-3">
           <button type="button" class="ds-icon-button lg:hidden" :aria-label="labels.navigation" @click="sidebarOpen = true">
             <Bars3Icon class="h-5 w-5" aria-hidden="true" />
           </button>
-          <Link :href="route('portal.home')" class="flex items-center gap-3 rounded-lg">
-            <img v-if="brandLogoUrl" class="h-8 w-auto max-w-40 object-contain" :src="brandLogoUrl" :alt="brandAppName">
+          <Link :href="route('portal.home')" class="flex min-w-0 items-center gap-3 rounded-lg">
+            <img v-if="brandLogoUrl" class="h-8 w-auto max-w-16 object-contain sm:max-w-40" :src="brandLogoUrl" :alt="brandAppName">
             <BrandMark v-else :width="52" :data-initials="brandInitials" />
-            <span class="h-5 w-px bg-[var(--ds-border-strong)]" aria-hidden="true" />
-            <span>
+            <span class="hidden h-5 w-px bg-[var(--ds-border-strong)] sm:block" aria-hidden="true" />
+            <span class="sr-only sm:not-sr-only">
               <span class="block text-[0.9375rem] font-semibold leading-tight tracking-tight text-[var(--ds-text)]">{{ brandAppName }}</span>
               <span class="block text-xs leading-tight text-[var(--ds-text-soft)]">{{ labels.portalArea }}</span>
             </span>
@@ -44,13 +45,13 @@
 
           <div class="relative">
             <button type="button" class="ds-button ds-button-secondary gap-2.5 py-1 pl-1 pr-2.5" :aria-expanded="profileMenuOpen" @click="profileMenuOpen = !profileMenuOpen">
-              <span class="app-avatar h-7 w-7">{{ page.props?.auth?.user?.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
-              <span class="hidden max-w-40 truncate md:block">{{ page.props?.auth?.user?.name || labels.customer }}</span>
+              <span class="app-avatar h-7 w-7">{{ portalAccount.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
+              <span class="hidden max-w-40 truncate md:block">{{ portalAccount.name || labels.customer }}</span>
               <ChevronDownIcon class="h-4 w-4 text-[var(--ds-text-soft)]" aria-hidden="true" />
             </button>
 
             <div v-if="profileMenuOpen" class="ds-floating-panel absolute right-0 mt-1.5 w-60 p-1.5">
-              <p class="truncate px-2.5 pb-1.5 pt-1 text-xs text-[var(--ds-text-soft)]">{{ page.props?.auth?.user?.email }}</p>
+              <p class="truncate px-2.5 pb-1.5 pt-1 text-xs text-[var(--ds-text-soft)]">{{ portalAccount.email }}</p>
               <Link :href="route('portal.profile')" class="app-menu-item hover:bg-[var(--ds-panel-muted)]" @click="profileMenuOpen = false">
                 <UserCircleIcon aria-hidden="true" />
                 {{ labels.portalProfile }}
@@ -77,10 +78,10 @@
         <DialogPanel class="ds-sidebar-panel fixed inset-y-0 left-0 flex w-full max-w-xs flex-col rounded-none border-0 border-r">
           <div class="flex items-center justify-between px-4 py-3">
             <div>
-              <div class="text-sm font-semibold text-[var(--ds-text)]">{{ labels.navigation }}</div>
+              <DialogTitle class="text-sm font-semibold text-[var(--ds-text)]">{{ labels.navigation }}</DialogTitle>
               <div class="text-xs text-[var(--ds-text-soft)]">{{ labels.portalArea }}</div>
             </div>
-            <button type="button" class="ds-icon-button" @click="sidebarOpen = false">
+            <button type="button" class="ds-icon-button" :aria-label="labels.closeNavigation" @click="sidebarOpen = false">
               <XMarkIcon class="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
@@ -106,10 +107,10 @@
       <aside class="hidden w-60 shrink-0 lg:block">
         <div class="sticky top-20">
           <div class="flex items-center gap-2.5 px-2.5 pb-3">
-            <span class="app-avatar">{{ page.props?.auth?.user?.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
+            <span class="app-avatar">{{ portalAccount.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
             <span class="min-w-0">
-              <span class="block truncate text-[0.8125rem] font-medium leading-tight text-[var(--ds-text)]">{{ page.props?.auth?.user?.name || labels.customer }}</span>
-              <span class="block truncate text-xs leading-tight text-[var(--ds-text-soft)]">{{ page.props?.auth?.user?.customer || page.props?.auth?.user?.email }}</span>
+              <span class="block truncate text-[0.8125rem] font-medium leading-tight text-[var(--ds-text)]">{{ portalAccount.name || labels.customer }}</span>
+              <span class="block truncate text-xs leading-tight text-[var(--ds-text-soft)]">{{ portalAccount.customer || portalAccount.email }}</span>
             </span>
           </div>
 
@@ -139,8 +140,8 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Dialog, DialogPanel } from '@headlessui/vue'
-import { Link, router, useForm, usePage } from '@inertiajs/vue3'
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue'
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
 import ToastList from '@/Components/toast-list.vue'
 import { loadLanguageAsync } from 'laravel-vue-i18n'
 import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
@@ -165,6 +166,7 @@ import {
 } from '@lucide/vue'
 
 const page = usePage()
+const portalAccount = computed(() => page.props?.auth?.user?.data ?? page.props?.auth?.user ?? {})
 const sidebarOpen = ref(false)
 const profileMenuOpen = ref(false)
 const languageMenuOpen = ref(false)
@@ -178,6 +180,8 @@ const dictionary = {
     certificates: 'Certificates',
     invoices: 'Invoices',
     receipts: 'Receipts',
+    quotes: 'Quotes',
+    creditNotes: 'Credit notes',
     contractGuides: 'Contract guides',
     faq: 'FAQ',
     profile: 'Perfil',
@@ -187,6 +191,7 @@ const dictionary = {
     portalSecurity: 'Definições de segurança',
     logout: 'Terminar sessão',
     navigation: 'Navigation',
+    closeNavigation: 'Close navigation',
     portalArea: 'Portal do cliente',
     customer: 'Cliente',
   },
@@ -198,6 +203,8 @@ const dictionary = {
     certificates: 'Certificados',
     invoices: 'Facturas',
     receipts: 'Recibos',
+    quotes: 'Cotações',
+    creditNotes: 'Notas de crédito',
     contractGuides: 'Guias contratuais',
     faq: 'FAQ',
     profile: 'Perfil',
@@ -207,6 +214,7 @@ const dictionary = {
     portalSecurity: 'Definições de segurança',
     logout: 'Terminar sessão',
     navigation: 'Navegação',
+    closeNavigation: 'Fechar navegação',
     portalArea: 'Área do cliente',
     customer: 'Cliente',
   },
@@ -238,6 +246,8 @@ const navigation = [
   { href: route('portal.qualitycertificates'), key: 'certificates', icon: BeakerIcon, match: '/portal/qualitycertificates' },
   { href: route('portal.invoices'), key: 'invoices', icon: BanknotesIcon, match: '/portal/invoices' },
   { href: route('portal.receipts'), key: 'receipts', icon: DocumentTextIcon, match: '/portal/receipts' },
+  { href: route('portal.quotes'), key: 'quotes', icon: DocumentTextIcon, match: '/portal/quotes' },
+  { href: route('portal.creditnotes'), key: 'creditNotes', icon: DocumentTextIcon, match: '/portal/creditnotes' },
   { href: route('portal.contractguides'), key: 'contractGuides', icon: ClipboardDocumentCheckIcon, match: '/portal/contractguides' },
   { href: route('portal.faqs'), key: 'faq', icon: QuestionMarkCircleIcon, match: '/portal/faqs' },
   { href: route('portal.profile'), key: 'profile', icon: UserCircleIcon, match: '/portal/profile' },
@@ -245,6 +255,7 @@ const navigation = [
 ]
 
 const isActive = (item) => page.url.startsWith(item.match)
+const pageTitle = computed(() => labels.value[navigation.find(isActive)?.key] || labels.value.portalArea)
 
 const logout = () => {
   useForm({}).post(route('portal.logout'))

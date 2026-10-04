@@ -1,5 +1,8 @@
 <template>
   <div class="space-y-6" :class="commercialDocumentThemeClasses">
+    <Head title="Manutenção e calibração" />
+    <p v-if="completionError || completionRequest.hasErrors || downloadError" class="ds-field-error" role="alert">{{ completionError || Object.values(completionRequest.errors).flat().join(' ') || downloadError }}</p>
+    <p v-if="downloading" class="ds-copy text-sm" role="status">A preparar o ficheiro…</p>
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:flex sm:items-start sm:justify-between sm:gap-6 lg:px-6">
         <div class="min-w-0">
@@ -27,6 +30,7 @@
             {{ stats.total_tasks }} tarefas totais
           </span>
           <Link
+            v-if="can.create"
             :href="route('vap-maintenance.tasks.create')"
             class="ds-button ds-button-primary"
           >
@@ -203,7 +207,7 @@
                     <EyeIcon class="mr-1 h-4 w-4" />
                     Ver
                   </Link>
-                  <button v-if="!task.is_executed" type="button" class="ds-table-action" @click="markAsExecuted(task)">
+                  <button v-if="can.edit && !task.is_executed" type="button" class="ds-table-action" :disabled="completionRequest.processing" :aria-busy="completionRequest.processing" @click="markAsExecuted(task)">
                     <CheckCircleIcon class="mr-1 h-4 w-4" />
                     Concluir
                   </button>
@@ -221,7 +225,7 @@
           <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">
             Não foram encontradas tarefas correspondentes aos filtros activos.
           </p>
-          <Link :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary mt-5">
+          <Link v-if="can.create" :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary mt-5">
             <PlusIcon class="h-4 w-4" />
             Criar primeira tarefa
           </Link>
@@ -248,22 +252,23 @@
               <ChartBarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
               Distribuição de tarefas
             </h3>
-            <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Estado agregado por período operacional.</p>
+            <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Estado actual das tarefas criadas no período, com os filtros desta página.</p>
           </div>
           <BaseSelect v-model="chartPeriod" class="ds-field w-48" @change="loadChartData">
-            <option value="month">Último mês</option>
-            <option value="quarter">Último trimestre</option>
-            <option value="year">Último ano</option>
+            <option value="month">Este mês</option>
+            <option value="quarter">Últimos 3 meses</option>
+            <option value="year">Últimos 12 meses</option>
           </BaseSelect>
         </div>
 
+        <p v-if="chartError" class="ds-field-error" role="alert">{{ chartError }}</p>
         <simpleChart
-          v-if="chartData.status_stats"
+          v-else-if="!chartLoading && chartData.status_stats"
           type="bar"
           :height="300"
           :chart-data="chartData"
         />
-        <div v-else class="ds-empty-state flex h-64 items-center justify-center text-sm font-semibold text-[var(--ds-text-muted)]">
+        <div v-else class="ds-empty-state flex h-64 items-center justify-center text-sm font-semibold text-[var(--ds-text-muted)]" role="status">
           A carregar dados...
         </div>
       </article>
@@ -274,7 +279,7 @@
           Acções rápidas
         </h3>
         <div class="mt-5 grid gap-3">
-          <button type="button" class="ds-card flex items-center justify-between gap-4 p-4 text-left transition hover:border-[rgb(var(--primary-300-rgb)/0.8)]" @click="generateReport('overdue')">
+          <button v-if="can.export" type="button" :disabled="downloading" :aria-busy="downloading" class="ds-card flex items-center justify-between gap-4 p-4 text-left transition hover:border-[rgb(var(--primary-300-rgb)/0.8)]" @click="generateReport('overdue')">
             <span class="flex items-center gap-3">
               <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-rose-50 text-rose-700 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20">
                 <ExclamationTriangleIcon class="h-5 w-5" />
@@ -300,14 +305,14 @@
             <ChevronRightIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
           </Link>
 
-          <button type="button" class="ds-card flex items-center justify-between gap-4 p-4 text-left transition hover:border-[rgb(var(--primary-300-rgb)/0.8)]" @click="exportSchedule">
+          <button v-if="can.export" type="button" :disabled="downloading" :aria-busy="downloading" class="ds-card flex items-center justify-between gap-4 p-4 text-left transition hover:border-[rgb(var(--primary-300-rgb)/0.8)]" @click="exportSchedule">
             <span class="flex items-center gap-3">
               <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20">
                 <ArrowDownTrayIcon class="h-5 w-5" />
               </span>
               <span>
                 <span class="block text-sm font-bold text-[var(--ds-text)]">Exportar agenda</span>
-                <span class="mt-0.5 block text-xs font-medium text-[var(--ds-text-muted)]">Exportar para PDF ou Excel.</span>
+                <span class="mt-0.5 block text-xs font-medium text-[var(--ds-text-muted)]">Descarregar agenda em Excel.</span>
               </span>
             </span>
             <ChevronRightIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
@@ -327,11 +332,11 @@
         </div>
         <div class="text-right">
           <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Custo total</p>
-          <p class="mt-1 text-2xl font-bold text-[var(--ds-text)]">{{ formatCurrency(chartData.total_cost || 0) }}</p>
+          <p class="mt-1 text-2xl font-bold text-[var(--ds-text)]">{{ chartLoading || chartError ? '—' : formatCurrency(chartData.total_cost || 0) }}</p>
         </div>
       </div>
 
-      <div class="mt-5 grid gap-px overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-border)] md:grid-cols-2 xl:grid-cols-4">
+      <div v-if="!chartLoading && !chartError" class="mt-5 grid gap-px overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-border)] md:grid-cols-2 xl:grid-cols-4">
         <div v-for="card in costCards" :key="card.label" class="bg-[var(--ds-panel)] p-4">
           <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
           <p class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</p>
@@ -343,9 +348,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { Link, router } from '@inertiajs/vue3'
+import { Head, Link, router, useHttp } from '@inertiajs/vue3'
+import { useFileDownload } from '@/Composables/useFileDownload'
 import {
   Wrench as WrenchScrewdriverIcon,
   Plus as PlusIcon,
@@ -374,9 +380,16 @@ const props = defineProps({
   filters: Object,
   stats: Object,
   initialChartData: Object,
+  can: { type: Object, default: () => ({}) },
 })
 
 const chartPeriod = ref('month')
+const chartLoading = ref(false)
+const chartError = ref('')
+let chartRequest = null
+const completionRequest = useHttp({ task_ids: [], action: 'mark_executed' })
+const completionError = ref('')
+const { download, processing: downloading, error: downloadError } = useFileDownload()
 
 const filterState = reactive({
   category_id: props.filters?.category_id ?? '',
@@ -392,6 +405,7 @@ watch(
     filterState.status = filters?.status ?? ''
     filterState.sort_by = filters?.sort_by ?? 'due_date'
     filterState.sort_direction = filters?.sort_direction ?? 'asc'
+    loadChartData()
   },
   { deep: true },
 )
@@ -466,7 +480,7 @@ const formatDate = (dateString) => {
     return ''
   }
 
-  const date = new Date(dateString)
+  const date = new Date(`${dateString}T12:00:00`)
 
   return date.toLocaleDateString('pt-PT', {
     year: 'numeric',
@@ -586,18 +600,24 @@ const getStatusText = (task) => {
 }
 
 const getDaysUntilDue = (task) => {
-  const dueDate = new Date(task.due_date)
-  const today = new Date()
-
-  return Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
+  return task.days_until_due ?? Infinity
 }
 
 const loadChartData = async () => {
+  chartRequest?.abort()
+  const request = new AbortController()
+  chartRequest = request
+  chartLoading.value = true
+  chartError.value = ''
   try {
     const url = new URL(route('vap-maintenance.stats'), window.location.origin)
     url.searchParams.set('period', chartPeriod.value)
+    for (const [key, value] of Object.entries(filterState)) {
+      if (value !== '') url.searchParams.set(key, value)
+    }
 
     const response = await fetch(url.toString(), {
+      signal: request.signal,
       headers: {
         Accept: 'application/json',
       },
@@ -607,9 +627,12 @@ const loadChartData = async () => {
       throw new Error(`Unable to load maintenance chart data: ${response.status}`)
     }
 
-    chartData.value = await response.json()
+    const data = await response.json()
+    if (chartRequest === request) chartData.value = data
   } catch (error) {
-    console.error('Error loading chart data:', error)
+    if (!request.signal.aborted) chartError.value = 'Não foi possível carregar os indicadores. Altere o período ou actualize a página para tentar novamente.'
+  } finally {
+    if (chartRequest === request) chartLoading.value = false
   }
 }
 
@@ -621,27 +644,32 @@ const applyFilters = debounce(() => {
 }, 300)
 
 const markAsExecuted = async (task) => {
-  if (confirm('Marcar esta tarefa como concluída?')) {
-    await router.put(route('vap-maintenance.tasks.update', task.id), {
-      is_executed: true,
-      result: 'Concluído através do painel',
-    })
+  if (!props.can.edit || completionRequest.processing || !confirm('Concluir esta tarefa com o resultado já registado?')) return
+  completionError.value = ''
+  completionRequest.task_ids = [task.id]
+  try {
+    await completionRequest.post(route('vap-maintenance.tasks.bulk-update'), { onSuccess: () => router.reload() })
+  } catch {
+    completionError.value = 'Não foi possível concluir a tarefa. O resultado registado foi preservado.'
   }
 }
 
 const generateReport = (type) => {
-  window.open(route('vap-maintenance.report.generate', {
+  if (!props.can.export || downloading.value) return
+  download(route('vap-maintenance.report.generate', {
+    ...filterState,
     report_type: type,
     format: 'pdf',
-  }), '_blank')
+  }))
 }
 
 const exportSchedule = () => {
-  window.open(route('vap-maintenance.report.generate', {
-    report_type: 'schedule',
+  if (!props.can.export || downloading.value) return
+  download(route('vap-maintenance.export', {
+    ...filterState,
+    type: 'calendar',
     format: 'excel',
-    filters: JSON.stringify({ ...filterState }),
-  }), '_blank')
+  }))
 }
 
 onMounted(() => {
@@ -649,4 +677,5 @@ onMounted(() => {
     loadChartData()
   }
 })
+onUnmounted(() => chartRequest?.abort())
 </script>

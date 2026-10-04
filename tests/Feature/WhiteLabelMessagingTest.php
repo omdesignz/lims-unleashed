@@ -73,7 +73,7 @@ class WhiteLabelMessagingTest extends TestCase
         ];
 
         try {
-            $response = $this->actingAs($admin)->post(route('generalsettings.update'), $payload);
+            $response = $this->actingAs($admin)->post(route('generalsettings.update'), ['settings_revision' => $settings->revision(), ...$payload]);
 
             $response->assertRedirect();
 

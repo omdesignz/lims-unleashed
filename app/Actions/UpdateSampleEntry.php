@@ -41,7 +41,7 @@ class UpdateSampleEntry
             }
 
             $portalRequest = $entry->customer_request_id
-                ? CustomerRequest::query()->where('customer_id', $customerId)->where('warehouse_id', $warehouseId)
+                ? CustomerRequest::query()->forLaboratory((int) $entry->lab_id)->where('customer_id', $customerId)->where('warehouse_id', $warehouseId)
                     ->lockForUpdate()->findOrFail($entry->customer_request_id)
                 : null;
             $proposalId = array_key_exists('proposal_id', $data) ? $data['proposal_id'] : $entry->proposal_id;

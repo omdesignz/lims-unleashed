@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Services\StaffAccountAccess;
+use App\Support\PersonnelQualificationValidation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -65,15 +66,7 @@ class UserRequest extends FormRequest
                 'roles.*' => ['required', 'integer', 'distinct', Rule::exists('roles', 'id')->where('guard_name', 'web')],
                 'permissions' => 'sometimes|array',
                 'permissions.*' => ['required', 'integer', 'distinct', Rule::exists('permissions', 'id')->where('guard_name', 'web')],
-                'personnel_qualifications' => 'sometimes|array',
-                'personnel_qualifications.*.capability' => 'required_with:personnel_qualifications|string|max:255',
-                'personnel_qualifications.*.department_id' => 'nullable|integer|exists:departments,id',
-                'personnel_qualifications.*.authorized_from' => 'nullable|date',
-                'personnel_qualifications.*.authorized_until' => 'nullable|date|after_or_equal:personnel_qualifications.*.authorized_from',
-                'personnel_qualifications.*.training_completed_at' => 'nullable|date',
-                'personnel_qualifications.*.training_reference' => 'nullable|string|max:255',
-                'personnel_qualifications.*.notes' => 'nullable|string',
-                'personnel_qualifications.*.is_active' => 'nullable|boolean',
+                ...app(PersonnelQualificationValidation::class)->rules(),
             ];
         }
 
@@ -90,6 +83,7 @@ class UserRequest extends FormRequest
             'email' => trans('gestlab.general.labels.users.email'),
             'username' => trans('gestlab.general.labels.users.username'),
             'gender' => trans('gestlab.general.labels.users.gender'),
+            ...app(PersonnelQualificationValidation::class)->attributes(),
         ];
     }
 
@@ -133,24 +127,6 @@ class UserRequest extends FormRequest
             }
         }
 
-        if ($this->has('personnel_qualifications') && is_array($this->input('personnel_qualifications'))) {
-            $normalized['personnel_qualifications'] = collect($this->input('personnel_qualifications'))
-                ->map(function ($item): array {
-                    $item = is_array($item) ? $item : [];
-
-                    return [
-                        'capability' => $item['capability'] ?? null,
-                        'department_id' => data_get($item, 'department_id.value', $item['department_id'] ?? null),
-                        'authorized_from' => $item['authorized_from'] ?? null,
-                        'authorized_until' => $item['authorized_until'] ?? null,
-                        'training_completed_at' => $item['training_completed_at'] ?? null,
-                        'training_reference' => $item['training_reference'] ?? null,
-                        'notes' => $item['notes'] ?? null,
-                        'is_active' => $item['is_active'] ?? true,
-                    ];
-                })->values()->all();
-        }
-
-        $this->merge($normalized);
+        $this->merge([...$normalized, ...app(PersonnelQualificationValidation::class)->normalize($this->all())]);
     }
 }

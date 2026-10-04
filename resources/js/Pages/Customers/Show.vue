@@ -225,7 +225,7 @@ function statusClass(status) {
             </h2>
           </header>
           <p class="px-5 py-4 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-            Os dados do cliente e os locais são partilhados. Propostas e amostras pertencem apenas ao laboratório activo. Facturas, pedidos do portal e outros documentos sem titularidade laboratorial definida não são apresentados aqui.
+            Os dados do cliente e os locais são partilhados. Propostas e amostras pertencem apenas ao laboratório activo. Consulte facturas, pedidos do portal e outros documentos nas respectivas áreas, de acordo com as suas permissões.
           </p>
         </section>
       </aside>

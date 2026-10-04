@@ -21,10 +21,21 @@ class SaveNotificationTemplate
             $validated = collect(Validator::make($data, $request->rulesForKey($key))->validate())
                 ->only(NotificationTemplate::EDITABLE_FIELDS)->all();
 
-            return NotificationTemplate::query()->updateOrCreate(
-                ['lab_id' => $labId, 'key' => $key],
-                [...$validated, 'updated_by_id' => $operator->id],
-            );
+            $template = NotificationTemplate::query()->where('lab_id', $labId)->where('key', $key)
+                ->lockForUpdate()->first() ?? new NotificationTemplate(['lab_id' => $labId, 'key' => $key]);
+            $template->fill([...$validated, 'updated_by_id' => $operator->id]);
+            $expected = $template->only([...NotificationTemplate::EDITABLE_FIELDS, 'lab_id', 'key', 'updated_by_id']);
+
+            if (! $template->exists || $template->isDirty()) {
+                abort_unless($template->save(), 409, 'Não foi possível guardar o modelo de notificação.');
+            }
+
+            $persisted = $template->fresh();
+            abort_unless($persisted && $persisted->only(array_keys($expected)) === $expected, 409,
+                'Não foi possível confirmar o modelo de notificação guardado.');
+            $this->access->operator($userId, $labId, 'edit_settings');
+
+            return $persisted;
         }, 3);
     }
 }

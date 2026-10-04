@@ -11,7 +11,7 @@ import {
   Eye as EyeIcon,
   ShieldCheck as ShieldCheckIcon,
 } from "@lucide/vue";
-import { Link } from "@inertiajs/vue3";
+import { Head, Link } from "@inertiajs/vue3";
 import { computed } from "vue";
 
 defineOptions({ layout: Layout });
@@ -25,10 +25,8 @@ const props = defineProps({
 const { hasPermission } = usePermission();
 const rows = computed(() => props.record?.data ?? []);
 const totalRecords = computed(() => props.record?.meta?.total ?? rows.value.length);
-const incomingCodes = ["stock_in", "stock_adjustment_add", "receipt", "transfer_in"];
-const outgoingCodes = ["stock_out", "stock_adjustment_remove", "consumption", "transfer_out"];
-const incomingCount = computed(() => rows.value.filter((row) => incomingCodes.includes(row.type_code)).length);
-const outgoingCount = computed(() => rows.value.filter((row) => outgoingCodes.includes(row.type_code)).length);
+const incomingCount = computed(() => rows.value.filter((row) => row.is_addition).length);
+const outgoingCount = computed(() => rows.value.filter((row) => row.is_deduction).length);
 const metrics = computed(() => [
   { label: "Movimentos", value: totalRecords.value, detail: "registos do livro", icon: ArrowsRightLeftIcon },
   { label: "Entradas", value: incomingCount.value, detail: "nesta página", icon: ArrowDownTrayIcon },
@@ -38,6 +36,7 @@ const metrics = computed(() => [
 
 <template>
   <div class="space-y-6">
+    <Head title="Livro de movimentos" />
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div class="flex items-start gap-3">

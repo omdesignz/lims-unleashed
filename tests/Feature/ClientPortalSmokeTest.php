@@ -2,19 +2,23 @@
 
 namespace Tests\Feature;
 
+use App\Models\CollectionProduct;
 use App\Models\ContractGuide;
 use App\Models\CreditNote;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\LabCode;
 use App\Models\QualityCertificate;
 use App\Models\Quote;
 use App\Models\Receipt;
 use App\Models\User;
 use App\Models\VAPLab;
+use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -93,6 +97,14 @@ class ClientPortalSmokeTest extends TestCase
         $response = $this->actingAs($warehouse, 'portal')->get($url);
         $response->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->assertStringStartsWith('%PDF-', (string) $response->getContent());
+        $this->get(route(Str::beforeLast($routeName, '.')))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->has('record.data', 1)
+                ->where('record.data.0.id', $document->id)
+                ->missing('record.data.0.file_path')->missing('record.data.0.unique_hash')
+                ->missing('record.data.0.links')->missing('record.data.0.extra_data')
+                ->missing('record.data.0.customer_id')->missing('record.data.0.warehouse_id')
+                ->missing('record.data.0.user')->missing('record.data.0.user_id')
+                ->missing('record.data.0.recipient_emails'));
 
         $this->actingAs($warehouse, 'portal')
             ->get(route($routeName, ['id' => $siblingDocument->id]))
@@ -103,6 +115,8 @@ class ClientPortalSmokeTest extends TestCase
 
         $document->delete();
         $this->actingAs($warehouse, 'portal')->get($url)->assertNotFound();
+        $this->get(route(Str::beforeLast($routeName, '.'), ['filter' => 'trashed']))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->has('record.data', 0));
     }
 
     /** @return array<string, array{class-string<Model>, string}> */
@@ -139,6 +153,21 @@ class ClientPortalSmokeTest extends TestCase
         ]);
         if (in_array($modelClass, [Invoice::class, Receipt::class, CreditNote::class, Quote::class], true)) {
             $document->lab_id = VAPLab::factory()->create()->id;
+        }
+        if ($document instanceof QualityCertificate) {
+            $invoice = $this->portalDocument(Invoice::class, $warehouse);
+            $invoice->forceFill(['status' => true])->saveQuietly();
+            $collection = new CollectionProduct(['customer_id' => $warehouse->customer_id,
+                'warehouse_id' => $warehouse->id, 'invoice_id' => $invoice->id]);
+            $collection->saveQuietly();
+            VAPSampleEntry::factory()->createQuietly(['lab_id' => $invoice->lab_id,
+                'customer_id' => $warehouse->customer_id, 'warehouse_id' => $warehouse->id,
+                'collection_product_id' => $collection->id]);
+            $code = new LabCode(['collection_id' => $collection->id, 'code' => $number,
+                'cl_month' => now()->format('Y'), 'codeable_type' => 'analysis']);
+            $code->saveQuietly();
+            $document->forceFill(['collection_id' => $collection->id, 'cl_id' => $code->id,
+                'validated_at' => now()]);
         }
         $document->saveQuietly();
 

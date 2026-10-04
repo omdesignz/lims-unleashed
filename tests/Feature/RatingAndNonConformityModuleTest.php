@@ -335,7 +335,7 @@ class RatingAndNonConformityModuleTest extends TestCase
         $this->assertSame('Não deve mudar', $otherAction->fresh()->correction);
     }
 
-    public function test_non_conformity_update_can_remove_all_actions(): void
+    public function test_non_conformity_update_archives_all_removed_actions(): void
     {
         $user = $this->verifiedAdmin();
         $nonConformity = $this->makeNonConformity($user, 'NC-SCOPE-003');
@@ -353,6 +353,25 @@ class RatingAndNonConformityModuleTest extends TestCase
             ->assertRedirect(route('vap_non_conformities.show', $nonConformity));
 
         $this->assertSame(0, $nonConformity->actions()->count());
+        $this->assertSame(1, $nonConformity->actions()->onlyTrashed()->count());
+    }
+
+    public function test_non_conformity_update_preserves_actions_when_the_field_is_omitted(): void
+    {
+        $user = $this->verifiedAdmin();
+        $nonConformity = $this->makeNonConformity($user, 'NC-RETAIN-001');
+        $action = VAPNonConformityAction::create([
+            'lab_id' => $nonConformity->lab_id, 'nc_id' => $nonConformity->id,
+            'correction' => 'Retained corrective work',
+        ]);
+        $before = $action->fresh()->getRawOriginal();
+        $payload = $this->nonConformityPayload($nonConformity);
+        unset($payload['actions']);
+        $payload['comments'] = 'Updated metadata only';
+        $this->actingAs($user)->put(route('vap_non_conformities.update', $nonConformity), $payload)
+            ->assertRedirect(route('vap_non_conformities.show', $nonConformity));
+        $this->assertSame('Updated metadata only', $nonConformity->fresh()->comments);
+        $this->assertSame($before, $action->fresh()->getRawOriginal());
     }
 
     public function test_non_conformity_index_exposes_apex_chart_payloads(): void
@@ -452,7 +471,8 @@ class RatingAndNonConformityModuleTest extends TestCase
             ->get(route('vap_non_conformities.show', $nonConformity))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->where('nonConformity.media_attachments.0.file_name', 'evidencia.pdf'));
+                ->where('nonConformity.media_attachments.0.name', 'evidencia')
+                ->where('nonConformity.media_attachments.0.file_name', $nonConformity->getMedia('attachments')->sole()->file_name));
     }
 
     private function makeNonConformity(User $user, string $number): VAPNonConformity

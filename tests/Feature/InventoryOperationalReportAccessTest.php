@@ -261,6 +261,54 @@ class InventoryOperationalReportAccessTest extends TestCase
             ->assertOk()->assertSee('Stock in', false);
     }
 
+    public function test_purchase_receipts_are_incoming_movements_in_rows_summaries_charts_and_exports(): void
+    {
+        [, , $data] = $this->fixture('material');
+        $type = $data['material']['transaction']->type;
+        $type->update(['code' => 'RECEIPT', 'name' => 'Purchase receipt']);
+
+        foreach ([false, true] as $archived) {
+            if ($archived) {
+                $type->delete();
+            }
+            $props = $this->get(route(self::routeName('stock_movement'), ['view' => 'summary']))
+                ->assertOk()->viewData('page')['props'];
+            $this->assertCount(1, $props['transactions']['data']);
+            $this->assertTrue($props['transactions']['data'][0]['is_addition']);
+            $this->assertFalse($props['transactions']['data'][0]['is_deduction']);
+            $this->assertSame(1.25, $props['stats']['total_in']);
+            $this->assertSame(0.0, $props['stats']['total_out']);
+            $this->assertSame(1.25, $props['stats']['net_movement']);
+            $this->assertSame(1.25, (float) $props['summary'][0]['total_in']);
+            $this->assertSame([1, 0, 0, 0], $props['charts']['type_mix']['series']);
+            $this->assertSame([1.25], $props['charts']['daily_activity']['series'][0]['data']);
+            $this->assertSame([1.25, 0.0, 1.25], $props['charts']['direction_breakdown']['series'][0]['data']);
+            $ledger = $this->get(route('itransactions.index'))->assertOk()->viewData('page')['props']['record']['data'];
+            $this->assertCount(1, $ledger);
+            $this->assertTrue($ledger[0]['is_addition']);
+            $this->assertFalse($ledger[0]['is_deduction']);
+            $this->post(route('vap-inventory.reports.export'), ['report_type' => 'stock_movement', 'format' => 'csv'])
+                ->assertOk()->assertSee('Purchase receipt', false)->assertDontSee($data['material']['peer']->name, false);
+        }
+    }
+
+    public function test_movement_direction_classification_preserves_known_codes_and_leaves_unknown_types_neutral(): void
+    {
+        foreach ([
+            'stock_in' => [true, false], 'stock_adjustment_add' => [true, false],
+            'consumption_reversal' => [true, false], 'RECEIPT' => [true, false],
+            'stock_out' => [false, true], 'stock_adjustment_remove' => [false, true],
+            'consumption' => [false, true], 'transfer' => [false, false], 'unknown' => [false, false],
+        ] as $code => [$addition, $deduction]) {
+            $movement = (new InventoryTransaction)->setRelation('type', new InventoryTransactionType(['code' => $code]));
+            $this->assertSame($addition, $movement->is_addition, $code);
+            $this->assertSame($deduction, $movement->is_deduction, $code);
+        }
+        $missingType = (new InventoryTransaction)->setRelation('type', null);
+        $this->assertFalse($missingType->is_addition);
+        $this->assertFalse($missingType->is_deduction);
+    }
+
     #[DataProvider('datedReports')]
     public function test_daily_averages_use_the_same_filtered_inclusive_date_window(string $report): void
     {

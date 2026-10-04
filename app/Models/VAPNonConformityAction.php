@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class VAPNonConformityAction extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'v_non_conformity_actions';
 
@@ -22,13 +23,13 @@ class VAPNonConformityAction extends Model
         'approved_at',
         'due_at',
         'was_effective',
-        'evidence'
+        'evidence',
     ];
 
     protected $casts = [
         'due_at' => 'datetime',
         'approved_at' => 'datetime',
-        'was_effective' => 'boolean'
+        'was_effective' => 'boolean',
     ];
 
     // Relationships

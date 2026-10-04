@@ -6,10 +6,10 @@
       <h3 class="ds-heading mt-4 text-base">
           {{ name }}
       </h3>
-      <p class="ds-copy mx-auto mt-2 max-w-md text-sm">
+      <p v-if="description" class="ds-copy mx-auto mt-2 max-w-md text-sm">
         {{ description }}
       </p>
-      <div class="mt-6">
+      <div v-if="showCreate" class="mt-6">
         <button type="button" @click="$emit('create-record')" class="ds-button ds-button-primary">
           <SquaresPlusIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
           {{ $t('gestlab.general.buttons.new_record') }}
@@ -25,6 +25,7 @@
   defineProps({
       name: String,
       description: String,
+      showCreate: { type: Boolean, default: true },
   });
   
   </script>

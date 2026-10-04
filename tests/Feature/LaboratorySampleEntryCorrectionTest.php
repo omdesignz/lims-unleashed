@@ -391,6 +391,7 @@ class LaboratorySampleEntryCorrectionTest extends TestCase
     private function portalRequest(): CustomerRequest
     {
         return CustomerRequest::query()->create([
+            'lab_id' => $this->lab->id,
             'reference' => 'CORRECTION-PORTAL-SOURCE', 'title' => 'Correction source',
             'customer_id' => $this->customer->id, 'warehouse_id' => $this->warehouse->id,
             'extra_data' => [

@@ -2,14 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Actions\IssueLaboratoryNotification;
 use App\Actions\RecordPublicProposalDecision;
 use App\Actions\ReviseProposal;
 use App\Actions\SendProposal;
+use App\Models\BroadcastNotification;
 use App\Models\Customer;
 use App\Models\Department;
 use App\Models\InventorySupplierAssessment;
 use App\Models\NotificationTemplate;
 use App\Models\Permission;
+use App\Models\Role;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\VAPLab;
@@ -25,6 +28,7 @@ use App\Support\NotificationTemplateService;
 use App\Support\ProposalWorkflowNotifier;
 use App\Support\ReportStudioPdfRenderer;
 use App\Support\SupplierAssessmentNotifier;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Broadcasting\Factory as BroadcastingFactory;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Queue\Jobs\DatabaseJob;
@@ -120,6 +124,79 @@ class LaboratoryNotificationCommitTest extends TestCase
         config(['database.connections.pgsql' => $this->originalConnection]);
         DB::purge('pgsql');
         $this->schema = null;
+    }
+
+    #[DataProvider('nestedOutcomes')]
+    public function test_manual_issuance_dispatch_waits_for_the_root_transaction(bool $rollback): void
+    {
+        $this->sender->assignRole(Role::findOrCreate('admin', 'web'));
+        DB::beginTransaction();
+        $result = app(IssueLaboratoryNotification::class)->execute($this->sender->id, $this->lab->id, $this->manualNotificationPayload());
+        $this->assertModelExists($result['notification']);
+        $this->assertSame(0, DB::table('jobs')->count());
+        $rollback ? DB::rollBack() : DB::commit();
+
+        $this->assertSame($rollback ? 0 : 1, BroadcastNotification::query()->count());
+        $this->assertSame($rollback ? 0 : 2, DB::table('jobs')->where('queue', 'notifications')->count());
+        if (! $rollback) {
+            $this->deliverInFreshWorker(2);
+            $notice = DatabaseNotification::query()->sole();
+            $this->assertSame($this->recipient->id, (int) $notice->notifiable_id);
+            $this->assertSame($this->lab->id, $notice->data['lab_id']);
+            $this->assertSame('Manual fixture notification', $notice->data['title']);
+        }
+    }
+
+    #[DataProvider('manualQueueFailures')]
+    public function test_manual_queue_failure_preserves_issuance_and_returns_an_honest_warning(int $failingInsert): void
+    {
+        $this->sender->assignRole(Role::findOrCreate('admin', 'web'));
+        Exceptions::fake();
+        $inserts = 0;
+        DB::connection()->beforeExecuting(function (string $query) use (&$inserts, $failingInsert): void {
+            if (str_starts_with($query, 'insert into "jobs"') && ++$inserts === $failingInsert) {
+                throw new RuntimeException('Manual notification queue unavailable');
+            }
+        });
+
+        $this->actingAs($this->sender)->withSession(['active_lab_id' => $this->lab->id])
+            ->post(route('admin.notifications.store'), $this->manualNotificationPayload())
+            ->assertRedirect(route('admin.notifications.index'))
+            ->assertSessionHas('toast.type', 'warning')
+            ->assertSessionHas('toast.title', 'Emissão registada; envio por confirmar');
+
+        $this->assertSame(0, DB::connection()->transactionLevel());
+        $this->assertSame(1, BroadcastNotification::query()->count());
+        $this->assertSame($failingInsert - 1, DB::table('jobs')->count());
+        $this->assertSame(0, DatabaseNotification::query()->count());
+        Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'Manual notification queue unavailable');
+    }
+
+    /** @return array<string, array{int}> */
+    public static function manualQueueFailures(): array
+    {
+        return ['before first channel' => [1], 'after one channel' => [2]];
+    }
+
+    public function test_manual_issuance_does_not_dispatch_if_sender_loses_authority_before_outer_commit(): void
+    {
+        $this->sender->assignRole(Role::findOrCreate('admin', 'web'));
+        Exceptions::fake();
+        DB::beginTransaction();
+        app(IssueLaboratoryNotification::class)->execute($this->sender->id, $this->lab->id, $this->manualNotificationPayload());
+        DB::table('lab_user')->where('lab_id', $this->lab->id)->where('user_id', $this->sender->id)->delete();
+        DB::commit();
+
+        $this->assertSame(1, BroadcastNotification::query()->count());
+        $this->assertSame(0, DB::table('jobs')->count());
+        Exceptions::assertNotReported(AuthorizationException::class);
+    }
+
+    /** @return array<string, mixed> */
+    private function manualNotificationPayload(): array
+    {
+        return ['title' => 'Manual fixture notification', 'message' => 'Local isolated delivery.', 'type' => 'info',
+            'priority' => 'normal', 'recipient_type' => 'specific', 'recipients' => [$this->recipient->id]];
     }
 
     public function test_rollback_does_not_claim_the_window_and_a_committed_retry_delivers_once_in_a_fresh_worker(): void
@@ -636,15 +713,22 @@ class LaboratoryNotificationCommitTest extends TestCase
             throw new RuntimeException('Notification worker requires its disposable test schema.');
         }
         $processed = 0;
-        while ($job = Illuminate\Support\Facades\Queue::connection('database')->pop('notifications')) {
-            $job->fire();
-            if (! $job->isDeleted() || ++$processed > 5) {
-                throw new RuntimeException('Unexpected notification worker state.');
+        Illuminate\Support\Facades\Queue::after(function (Illuminate\Queue\Events\JobProcessed $event) use (&$processed): void {
+            if ($event->connectionName !== 'database' || $event->job->getQueue() !== 'notifications') {
+                throw new RuntimeException('Notification worker left its isolated queue.');
             }
+            $processed++;
+        });
+        $status = Illuminate\Support\Facades\Artisan::call('queue:work', [
+            'connection' => 'database', '--queue' => 'notifications', '--stop-when-empty' => true,
+            '--max-jobs' => (int) $argv[2], '--sleep' => 0, '--tries' => 1, '--timeout' => 20,
+        ]);
+        if ($status !== 0) {
+            throw new RuntimeException('Isolated notification worker failed.');
         }
         echo json_encode(['processed' => $processed], JSON_THROW_ON_ERROR);
         PHP;
-        $process = new Process([PHP_BINARY, '-r', $worker, $this->schema], base_path(), [
+        $process = new Process([PHP_BINARY, '-r', $worker, $this->schema, (string) $expectedProcessed], base_path(), [
             'APP_ENV' => 'testing', 'DB_CONNECTION' => 'pgsql', 'DATABASE_URL' => '',
             'DB_HOST' => $connection->getConfig('host'), 'DB_PORT' => (string) $connection->getConfig('port'),
             'DB_DATABASE' => $connection->getDatabaseName(), 'DB_USERNAME' => $connection->getConfig('username'),

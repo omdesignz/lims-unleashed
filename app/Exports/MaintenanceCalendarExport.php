@@ -2,16 +2,17 @@
 
 namespace App\Exports;
 
-use App\Models\MaintenanceTask;
-use Carbon\Carbon;
+use App\Support\MaintenanceTaskQuery;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMapping, WithStyles
+class MaintenanceCalendarExport extends StringValueBinder implements FromCollection, WithCustomValueBinder, WithHeadings, WithMapping, WithStyles
 {
     protected $filters;
 
@@ -28,59 +29,27 @@ class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMap
         return collect($this->calendar);
     }
 
-    private function buildCalendar()
+    private function buildCalendar(): array
     {
-        $startDate = $this->filters['date_from'] ?? now()->startOfMonth();
-        $endDate = $this->filters['date_to'] ?? now()->addMonths(3)->endOfMonth();
+        $rows = [];
+        foreach (app(MaintenanceTaskQuery::class)->calendar($this->labId, $this->filters) as $day) {
+            if ($day['tasks']->isEmpty()) {
+                $rows[] = ['date' => $day['date'], 'day' => $day['day'], 'task_number' => '', 'task_name' => 'Sem tarefas agendadas', 'category' => '', 'equipment' => '', 'status' => ''];
 
-        $tasks = MaintenanceTask::forLaboratory($this->labId)->with(['category', 'equipment'])
-            ->whereBetween('due_date', [$startDate, $endDate])
-            ->when(isset($this->filters['category_id']), function ($query) {
-                $query->where('category_id', $this->filters['category_id']);
-            })
-            ->orderBy('due_date')
-            ->get();
-
-        $calendar = [];
-        $currentDate = Carbon::parse($startDate);
-
-        while ($currentDate <= Carbon::parse($endDate)) {
-            $dateKey = $currentDate->format('Y-m-d');
-            $dayTasks = $tasks->filter(function ($task) use ($currentDate) {
-                return Carbon::parse($task->due_date)->format('Y-m-d') === $currentDate->format('Y-m-d');
-            });
-
-            if ($dayTasks->count() > 0) {
-                foreach ($dayTasks as $task) {
-                    $calendar[] = [
-                        'date' => $currentDate->format('d/m/Y'),
-                        'day' => $currentDate->locale('pt')->translatedFormat('l'),
-                        'task_number' => $task->maintenance_task_no,
-                        'task_name' => $task->name,
-                        'category' => $task->category->name,
-                        'equipment' => $task->equipment->name,
-                        'status' => $task->is_executed ? 'Executada' :
-                                   ($task->due_date < now() ? 'Em atraso' : 'Agendada'),
-                        'time' => $task->due_date->format('H:i'),
-                    ];
-                }
-            } else {
-                $calendar[] = [
-                    'date' => $currentDate->format('d/m/Y'),
-                    'day' => $currentDate->locale('pt')->translatedFormat('l'),
-                    'task_number' => '',
-                    'task_name' => 'Sem tarefas agendadas',
-                    'category' => '',
-                    'equipment' => '',
-                    'status' => '',
-                    'time' => '',
+                continue;
+            }
+            foreach ($day['tasks'] as $task) {
+                $rows[] = [
+                    'date' => $day['date'], 'day' => $day['day'],
+                    'task_number' => $task->maintenance_task_no, 'task_name' => $task->name,
+                    'category' => $task->category?->name ?? 'Categoria arquivada',
+                    'equipment' => $task->equipment?->name ?? 'Equipamento indisponível',
+                    'status' => $task->is_executed ? 'Executada' : ($task->due_date->lt(today()) ? 'Em atraso' : 'Agendada'),
                 ];
             }
-
-            $currentDate->addDay();
         }
 
-        return $calendar;
+        return $rows;
     }
 
     public function headings(): array
@@ -93,13 +62,12 @@ class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMap
             'Categoria',
             'Equipamento',
             'Estado',
-            'Hora',
         ];
     }
 
     public function map($row): array
     {
-        return [
+        $values = [
             $row['date'],
             $row['day'],
             $row['task_number'],
@@ -107,8 +75,9 @@ class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMap
             $row['category'],
             $row['equipment'],
             $row['status'],
-            $row['time'],
         ];
+
+        return array_map(fn ($value) => is_string($value) && preg_match('/^[\s]*[=+\-@]/', $value) ? "'".$value : $value, $values);
     }
 
     public function styles(Worksheet $sheet)

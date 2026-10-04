@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -13,8 +14,13 @@ class VAPNonConformity extends Model implements HasMedia
 {
     use HasFactory;
     use InteractsWithMedia;
+    use SoftDeletes;
 
     protected $table = 'v_non_conformities';
+
+    protected $attributes = ['workflow_revision' => 0];
+
+    protected $hidden = ['workflow_history'];
 
     protected $fillable = [
         'lab_id',
@@ -52,6 +58,9 @@ class VAPNonConformity extends Model implements HasMedia
     ];
 
     protected $casts = [
+        'workflow_revision' => 'integer',
+        'workflow_history' => 'array',
+        'closed_at' => 'datetime',
         'reported_at' => 'datetime',
         'due_date' => 'datetime',
         'resolved_at' => 'datetime',
@@ -144,11 +153,16 @@ class VAPNonConformity extends Model implements HasMedia
         $prefix = 'NC';
         $year = now()->format('Y');
         $month = now()->format('m');
-        $count = self::where('lab_id', $labId)
+        $count = self::withTrashed()->where('lab_id', $labId)
             ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->count() + 1;
 
-        return sprintf('%s-%s%s-%04d', $prefix, $year, $month, $count);
+        do {
+            $number = sprintf('%s-%s%s-%04d', $prefix, $year, $month, $count);
+            $count++;
+        } while (self::withTrashed()->where('lab_id', $labId)->where('nc_number', $number)->exists());
+
+        return $number;
     }
 }

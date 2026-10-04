@@ -103,6 +103,21 @@ class GeneralSettings extends Settings
         return 'general';
     }
 
+    public static function repository(): ?string
+    {
+        return 'database';
+    }
+
+    public function revision(): string
+    {
+        $values = $this->toArray();
+        ksort($values);
+        $locked = $this->getLockedProperties();
+        sort($locked);
+
+        return hash_hmac('sha256', 'general-settings:v1:'.json_encode([$values, $locked], JSON_THROW_ON_ERROR), (string) config('app.key'));
+    }
+
     public function getAbilities()
     {
 

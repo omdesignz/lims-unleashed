@@ -34,6 +34,10 @@
             padding: 12px 16px 14px;
         }
 
+        .hero-subtitle {
+            color: #ffffff;
+        }
+
         .eyebrow {
             color: #bfdbfe;
             font-size: 8px;
@@ -138,9 +142,9 @@
 <body class="pdf-document">
     @php
         $settings = $settings ?? app(\App\Settings\GeneralSettings::class);
-        $labName = $settings->app_client_lab_name ?: ($settings->app_name ?: config('app.name'));
-        $overdueCount = $tasks->where('is_executed', false)->filter(fn ($task) => $task->due_date && $task->due_date->lt(now()))->count();
-        $pendingCount = $tasks->where('is_executed', false)->filter(fn ($task) => ! $task->due_date || $task->due_date->gte(now()))->count();
+        $labName = $labName ?? ($settings->app_client_lab_name ?: ($settings->app_name ?: config('app.name')));
+        $overdueCount = $tasks->where('is_executed', false)->filter(fn ($task) => $task->due_date && $task->due_date->lt(today()))->count();
+        $pendingCount = $tasks->where('is_executed', false)->filter(fn ($task) => ! $task->due_date || $task->due_date->gte(today()))->count();
         $periodStart = isset($filters['date_from']) ? \Carbon\Carbon::parse($filters['date_from'])->format('d/m/Y') : 'Início';
         $periodEnd = isset($filters['date_to']) ? \Carbon\Carbon::parse($filters['date_to'])->format('d/m/Y') : 'Fim';
     @endphp
@@ -152,7 +156,7 @@
                     <td>
                         <div class="eyebrow">{{ $labName }}</div>
                         <h1>Relatório de Manutenção</h1>
-                        <div>Relatório de tarefas de manutenção · Equipamentos, calibração e rastreabilidade</div>
+                        <div class="hero-subtitle">Equipamentos, calibração e rastreabilidade</div>
                     </td>
                     <td class="meta">
                         Emitido em {{ $generated_at->format('d/m/Y H:i') }}<br>
@@ -169,11 +173,11 @@
 
     <table class="summary-table">
         <tr>
-            <td><span class="summary-label">Total de tarefas</span><span class="summary-value">{{ $tasks->count() }}</span></td>
-            <td><span class="summary-label">Executadas</span><span class="summary-value">{{ $tasks->where('is_executed', true)->count() }}</span></td>
-            <td><span class="summary-label">Vencidas</span><span class="summary-value">{{ $overdueCount }}</span></td>
-            <td><span class="summary-label">Pendentes</span><span class="summary-value">{{ $pendingCount }}</span></td>
-            <td><span class="summary-label">Custo total</span><span class="summary-value">AOA {{ number_format((float) $tasks->sum('cost'), 2, ',', '.') }}</span></td>
+            <td><div class="summary-label">Total de tarefas</div><div class="summary-value">{{ $tasks->count() }}</div></td>
+            <td><div class="summary-label">Executadas</div><div class="summary-value">{{ $tasks->where('is_executed', true)->count() }}</div></td>
+            <td><div class="summary-label">Vencidas</div><div class="summary-value">{{ $overdueCount }}</div></td>
+            <td><div class="summary-label">Pendentes</div><div class="summary-value">{{ $pendingCount }}</div></td>
+            <td><div class="summary-label">Custo total</div><div class="summary-value">AOA {{ number_format((float) $tasks->sum('cost'), 2, ',', '.') }}</div></td>
         </tr>
     </table>
 
@@ -192,7 +196,7 @@
         <tbody>
             @forelse($tasks as $task)
                 @php
-                    $isOverdue = ! $task->is_executed && $task->due_date && $task->due_date->lt(now());
+                    $isOverdue = ! $task->is_executed && $task->due_date && $task->due_date->lt(today());
                     $statusLabel = $task->is_executed ? 'Executada' : ($isOverdue ? 'Vencida' : 'Pendente');
                     $statusClass = $task->is_executed ? 'executed' : ($isOverdue ? 'overdue' : 'pending');
                 @endphp

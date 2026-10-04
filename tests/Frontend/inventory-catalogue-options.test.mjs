@@ -8,8 +8,8 @@ import { createInventoryCatalogueLoader } from '../../resources/js/Composables/u
 
 const paths = [
   'Inventory/Index.vue', 'InventoryOrders/Create.vue', 'InventoryOrders/Edit.vue',
-  'InventoryDeliveries/InventoryDeliveryForm.vue', 'MaintenanceTasks/Create.vue',
-  'MaintenanceTasks/Edit.vue', 'MaintenanceTasks/Index.vue', 'ReagentConsumption/Dashboard.vue',
+  'InventoryDeliveries/InventoryDeliveryForm.vue', 'VAPMaintenance/Tasks/Create.vue',
+  'VAPMaintenance/Tasks/Show.vue', 'VAPMaintenance/Tasks/Index.vue', 'ReagentConsumption/Dashboard.vue',
 ]
 const read = path => readFileSync(new URL(`../../resources/js/Pages/${path}`, import.meta.url), 'utf8')
 
@@ -20,15 +20,18 @@ for (const path of paths) {
     compileScript(descriptor, { id: path })
     const result = compileTemplate({ source: descriptor.template.content, filename: path, id: path })
     assert.deepEqual(result.errors, [])
-    assert.match(descriptor.scriptSetup.content, /useInventoryCatalogueOptions/)
+    if (path.startsWith('VAPMaintenance/')) {
+      assert.doesNotMatch(descriptor.scriptSetup.content, /maintenancetasks\.(store|update)/)
+    } else {
+      assert.match(descriptor.scriptSetup.content, /useInventoryCatalogueOptions/)
+    }
     assert.doesNotMatch(descriptor.scriptSetup.content, /\/iitems\/get(?:Reagent)?InventoryItem/)
   })
 }
 
-test('maintenance selectors freeze equipment type while stock and procurement use the permitted union', () => {
-  for (const path of paths.filter(path => path.startsWith('MaintenanceTasks/'))) {
-    assert.match(read(path), /const loadEquipment = useInventoryCatalogueOptions\(\{ inventoryType: 'equipment' \}\)/)
-  }
+test('canonical maintenance uses server-owned equipment choices while procurement uses the permitted union', () => {
+  assert.match(read('VAPMaintenance/Tasks/Create.vue'), /equipment: Array/)
+  assert.match(read('VAPMaintenance/Tasks/Index.vue'), /equipment: Array/)
   for (const path of paths.filter(path => path.startsWith('InventoryOrders/') || path === 'Inventory/Index.vue')) {
     assert.match(read(path), /const loadItems = useInventoryCatalogueOptions\(\)/)
   }

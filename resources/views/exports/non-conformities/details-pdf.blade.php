@@ -6,6 +6,8 @@
     <style>
         @page {
             margin: 20mm;
+            margin-footer: 8mm;
+            footer: html_dossier-pages;
         }
         
         body {
@@ -43,6 +45,7 @@
         }
         
         .info-card h3 {
+            page-break-after: avoid;
             color: #374151;
             margin-top: 0;
             font-size: 14px;
@@ -103,12 +106,17 @@
         }
         
         .action-header {
+            page-break-after: avoid;
             background-color: #1e3a8a;
             color: white;
             padding: 8px 12px;
             border-radius: 4px;
             margin-bottom: 10px;
             font-weight: bold;
+        }
+
+        .lifecycle-entry {
+            page-break-inside: avoid;
         }
         
         .long-text {
@@ -151,9 +159,15 @@
     </style>
 </head>
 <body>
+    <htmlpagefooter name="dossier-pages">
+        <div style="font-size: 9px; color: #6b7280; text-align: right;">{{ $nonConformity->nc_number }} | {PAGENO} / {nbpg}</div>
+    </htmlpagefooter>
+    <sethtmlpagefooter name="dossier-pages" value="on" page="ALL" />
     <div class="header">
         <h1>{{ $title }}</h1>
         <div class="subtitle">
+            {{ $nonConformity->lab?->name }}<br>
+            {{ $nonConformity->trashed() ? 'Arquivada · Histórico preservado' : 'Registo activo' }}<br>
             Gerado em: {{ $exportDate }}
         </div>
     </div>
@@ -301,11 +315,17 @@
     </div>
     @endif
     
-    @if($nonConformity->root_cause || $nonConformity->preventive_actions || $nonConformity->comments)
+    @if(filled($nonConformity->root_cause) || filled($nonConformity->corrective_actions) || filled($nonConformity->preventive_actions) || filled($nonConformity->comments))
     <div class="info-card">
         <h3>Análise e Observações</h3>
         <div class="info-grid full-width">
-            @if($nonConformity->root_cause)
+            @if(filled($nonConformity->corrective_actions))
+            <div class="info-item">
+                <span class="info-label">Acções Correctivas:</span>
+                <div class="text-box mt-3"><div class="long-text">{{ $nonConformity->corrective_actions }}</div></div>
+            </div>
+            @endif
+            @if(filled($nonConformity->root_cause))
             <div class="info-item">
                 <span class="info-label">Causa Raiz:</span>
                 <div class="text-box mt-3">
@@ -313,7 +333,7 @@
                 </div>
             </div>
             @endif
-            @if($nonConformity->preventive_actions)
+            @if(filled($nonConformity->preventive_actions))
             <div class="info-item">
                 <span class="info-label">Acções Preventivas:</span>
                 <div class="text-box mt-3">
@@ -321,7 +341,7 @@
                 </div>
             </div>
             @endif
-            @if($nonConformity->comments)
+            @if(filled($nonConformity->comments))
             <div class="info-item">
                 <span class="info-label">Comentários:</span>
                 <div class="text-box mt-3">
@@ -339,9 +359,9 @@
             <h3>Acções Corretivas</h3>
             @foreach($nonConformity->actions as $index => $action)
             <div class="action-card">
-                <div class="action-header">ACÇÃO #{{ $index + 1 }}</div>
+                <div class="action-header">ACÇÃO #{{ $action->id }} · {{ $action->trashed() ? 'Arquivada · Histórico preservado' : 'Activa' }}</div>
                 <div class="info-grid">
-                    @if($action->correction)
+                    @if(filled($action->correction))
                     <div class="info-item full-width">
                         <span class="info-label">Correcção:</span>
                         <div class="text-box mt-3">
@@ -349,7 +369,7 @@
                         </div>
                     </div>
                     @endif
-                    @if($action->corrective_action)
+                    @if(filled($action->corrective_action))
                     <div class="info-item full-width">
                         <span class="info-label">Acção Corretiva:</span>
                         <div class="text-box mt-3">
@@ -367,8 +387,20 @@
                     </div>
                     <div class="info-item">
                         <span class="info-label">Efectiva:</span>
-                        <span class="info-value">{{ $action->was_effective ? 'Sim' : 'Não' }}</span>
+                        <span class="info-value">{{ $action->was_effective === null ? 'Não avaliada' : ($action->was_effective ? 'Sim' : 'Não') }}</span>
                     </div>
+                    @if(filled($action->evidence))
+                    <div class="info-item full-width">
+                        <span class="info-label">Evidências:</span>
+                        <div class="long-text">{{ $action->evidence }}</div>
+                    </div>
+                    @endif
+                    @if($action->deleted_at)
+                    <div class="info-item">
+                        <span class="info-label">Arquivada em:</span>
+                        <span class="info-value">{{ $action->deleted_at->format('d/m/Y H:i') }}</span>
+                    </div>
+                    @endif
                 </div>
             </div>
             @endforeach
@@ -376,6 +408,29 @@
     </div>
     @endif
     
+    <div class="info-card">
+        <h3>Ciclo actual: resolução, verificação e encerramento</h3>
+        <p>Datas e evidências abaixo correspondem ao ciclo actual. A reabertura não apaga o histórico dos ciclos anteriores.</p>
+        @foreach($lifecycleSummary as [$label, $value])
+        <div class="info-item">
+            <span class="info-label">{{ $label }}:</span>
+            <div class="long-text">{{ filled($value) ? $value : 'Não registada' }}</div>
+        </div>
+        @endforeach
+    </div>
+
+    <h3 @class(['page-break' => count($lifecycleHistory) > 0]) style="page-break-after: avoid;">Histórico do fluxo</h3>
+    @forelse($lifecycleHistory as $entry)
+    <div class="action-card lifecycle-entry">
+        <div class="action-header">Revisão {{ $entry['revision'] }} - {{ $entry['action'] }}</div>
+        <p>{{ $entry['at'] }} | {{ $entry['actor'] }}</p>
+        <p>{{ $entry['from'] }} → {{ $entry['to'] }}</p>
+        <div class="long-text">{{ filled($entry['evidence']) ? $entry['evidence'] : 'Sem observação adicional' }}</div>
+    </div>
+    @empty
+    <p>Não existem etapas registadas neste fluxo. Não foram inferidas aprovações nem datas históricas.</p>
+    @endforelse
+
     <div class="footer">
         Sistema LIMS - Relatório gerado automaticamente
     </div>

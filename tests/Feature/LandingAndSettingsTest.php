@@ -69,6 +69,7 @@ class LandingAndSettingsTest extends TestCase
         ];
 
         $payload = [
+            'settings_revision' => $settings->revision(),
             'app_name' => 'LIMS Unleashed QA',
             'app_version' => '13.0.0',
             'app_slogan' => 'ISO-ready laboratory operations',

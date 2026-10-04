@@ -4,8 +4,9 @@ import { prepareQuoteLine, selectQuoteCatalog, quoteLinePreview, saveQuoteForm }
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { optionRows } from "@/Composables/useCommercialDocumentOptions";
-import { ref, computed, reactive, watch } from "vue";
-import { router, useForm } from "@inertiajs/vue3";
+import { useCustomerSiteOptions } from '@/Composables/useCustomerSiteOptions';
+import { ref, computed } from "vue";
+import { Head, router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
 import {throttle} from "lodash";
 import datePickerEnhanced from '@/Components/date-picker-enhanced.vue'
@@ -42,16 +43,10 @@ const props = defineProps({
       type: Array,
       default: () => []
     },
-    discount_categories: {
-      type: Array,
-      default: () => []
-    }
 });
 
-let customerWarehouses = reactive([]);
 const showDeleteConfirmation = ref(false);
 const labcode_id = ref('');
-const loadingWarehouses = ref(false);
 
 const masks = ref({
   modelValue: 'YYYY-MM-DD',
@@ -73,23 +68,7 @@ const updateDate = (e) => {
   form.due_date = e;
 }
 
-let warehouseLookupVersion = 0;
-watch(() => form.customer_id?.value, async (customerId) => {
-    const version = ++warehouseLookupVersion;
-    form.warehouse_id = null;
-    customerWarehouses = [];
-    if (!customerId) return;
-    try {
-        const response = await fetch('/warehouses/getWarehouse?customer_id=' + encodeURIComponent(customerId));
-        if (!response.ok) throw new Error('Warehouse lookup failed');
-        const results = await response.json();
-        if (version !== warehouseLookupVersion) return;
-        customerWarehouses = optionRows(results).map((result) => ({ value: result.id, label: result.address }));
-        form.warehouse_id = customerWarehouses[0] ?? null;
-    } catch {
-        if (version === warehouseLookupVersion) form.setError('warehouse_id', 'Não foi possível carregar os locais. Tente seleccionar novamente.');
-    }
-});
+const { loadWarehouses, loadingWarehouses } = useCustomerSiteOptions(form);
 
 const addItem = () => {
     form.items.push(prepareQuoteLine({
@@ -142,19 +121,6 @@ function loadCustomers(query, setOptions) {
             optionRows(results).map(result => ({
                 value: result.id,
                 label: result.name,
-            }))
-        );
-    });
-}
-
-let loadWarehouses = (query, setOptions) => {
-    fetch('/warehouses/getWarehouse?q=' + query + '&customer_id=' + form.customer_id?.value)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-            optionRows(results).map(result => ({
-                value: result.id,
-                label: result.address,
             }))
         );
     });
@@ -257,7 +223,7 @@ function loadParametersBasedOnLabCode(code_id) {
     fetch('/labcodes/getCodeParameters?code_id=' + code_id + '&use_matrix_price=' + form.use_matrix_price)
     .then(response => response.json())
     .then(results => {
-        form.items = results.map(prepareQuoteLine);
+        form.items = optionRows(results).map(prepareQuoteLine);
     });
 }
 
@@ -265,7 +231,7 @@ function loadProductsBasedOnLabCode(code_id) {
     fetch('/labcodes/getCodeProducts?code_id=' + code_id + '&use_matrix_price=' + form.use_matrix_price)
     .then(response => response.json())
     .then(results => {
-        form.items = results.map(prepareQuoteLine);
+        form.items = optionRows(results).map(prepareQuoteLine);
     });
 }
 
@@ -274,11 +240,14 @@ function loadUninvoiceProductsByWarehouse(warehouse_id)
     fetch('/labcodes/getWarehouseUninvoicedProducts?warehouse_id=' + warehouse_id + '&use_matrix_price=' + form.use_matrix_price)
     .then(response => response.json())
     .then(results => {
-        form.items = results.map(prepareQuoteLine);
+        form.items = optionRows(results).map(prepareQuoteLine);
     });
 }
 
-let submit = () => saveQuoteForm(form, route('quotes.store'), 'post', () => form.reset());
+const submit = () => {
+    showDeleteConfirmation.value = false;
+    saveQuoteForm(form, route('quotes.store'), 'post', () => form.reset());
+};
 
 const itemsWithSubTotal = computed(() => form.items.map(quoteLinePreview));
 const subTotal = computed(() => itemsWithSubTotal.value.reduce((sum, line) => sum + line.total, 0).toFixed(2));
@@ -290,6 +259,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
 
 <template>
     <div class="commercial-document-page commercial-document-create min-w-0 space-y-5 overflow-x-clip pb-10" :class="commercialDocumentThemeClasses">
+        <Head title="Criar proforma" />
         <p v-if="Object.keys(form.errors).length" role="alert" class="text-sm text-red-600">{{ Object.values(form.errors).flat().join(' ') }}</p>
         <p v-if="form.items.some((line) => !line.catalog_type)" role="status" class="text-sm text-gray-600">Seleccione novamente os artigos sem tipo de catálogo antes de guardar.</p>
         <!-- Header -->
@@ -354,6 +324,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
                         <comboboxEnhanced
                             :hasError="form.errors.customer_id"
                             v-model="form.customer_id"
+                            :input-label="$t('gestlab.general.labels.quotes.customer_id')"
                             :load-options="loadCustomers"
                             :placeholder="$t('gestlab.general.labels.quotes.placeholders.select_customer')"
                         />
@@ -373,6 +344,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
                             :loading="loadingWarehouses"
                             :hasError="form.errors.warehouse_id"
                             v-model="form.warehouse_id"
+                            :input-label="$t('gestlab.general.labels.quotes.warehouse_id')"
                             :load-options="loadWarehouses"
                             :placeholder="$t('gestlab.general.labels.quotes.placeholders.select_warehouse')"
                         />
@@ -388,6 +360,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
                         </label>
                         <BaseInput
                             v-model="form.internal_ref"
+                            :aria-label="$t('gestlab.general.labels.quotes.internal_ref')"
                             type="text"
                             class="ds-field"
                             :placeholder="$t('gestlab.general.labels.quotes.placeholders.enter_reference')"
@@ -602,6 +575,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
                                         v-if="!form.is_service"
                                         v-model="item.item.item_id"
                                         :load-options="loadProducts"
+                                        :input-label="`${$t('gestlab.general.labels.quotes.item_id')} ${index + 1}`"
                                         @update:model-value="onSelectedItem(item)"
                                         :placeholder="$t('gestlab.general.labels.quotes.placeholders.select_product')"
                                         class="min-w-[250px]"
@@ -610,6 +584,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
                                         v-else
                                         v-model="item.item.item_id"
                                         :load-options="loadServices"
+                                        :input-label="`${$t('gestlab.general.labels.quotes.item_id')} ${index + 1}`"
                                         @update:model-value="onSelectedItem(item)"
                                         :placeholder="$t('gestlab.general.labels.quotes.placeholders.select_parameter')"
                                         class="min-w-[250px]"
@@ -628,6 +603,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
                                 <div class="space-y-2">
                                     <BaseInput
                                         v-model="item.item.qty"
+                                        :aria-label="`${$t('gestlab.general.labels.quotes.qty')} ${index + 1}`"
                                         type="number"
                                         step="0.01"
                                         min="0.01"
@@ -635,6 +611,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
                                     />
                                     <comboboxEnhanced
                                         v-model="item.item.unit_id"
+                                        :input-label="`Unidade ${index + 1}`"
                                         :load-options="loadUnits"
                                         :placeholder="$t('gestlab.general.labels.quotes.placeholders.unit')"
                                         class="w-32"
@@ -650,6 +627,7 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
 
                                     <BaseInput
                                         v-model="item.item.agreed_unit_price"
+                                        :aria-label="`${$t('gestlab.general.labels.quotes.unit_price')} ${index + 1}`"
                                         type="number"
                                         step="0.01"
                                         min="0"
@@ -664,21 +642,18 @@ const onSelectedItem = (wrapper) => selectQuoteCatalog(wrapper.item ?? wrapper);
                                 <div class="flex items-center justify-end gap-2">
                                     <BaseInput
                                         v-model="item.item.discount_value"
+                                        :aria-label="`${$t('gestlab.general.labels.quotes.discount')} ${index + 1}`"
                                         type="number"
                                         min="0"
                                         class="ds-field w-24 text-right"
                                     />
                                     <BaseSelect
                                         v-model="item.item.discount_mode"
+                                        :aria-label="`Tipo de desconto ${index + 1}`"
                                         class="ds-field px-2 py-1.5 text-sm"
                                     >
-                                        <option
-                                            v-for="(type, typeIndex) in props.discount_categories"
-                                            :key="typeIndex"
-                                            :value="type.value"
-                                        >
-                                            {{ type.label }}
-                                        </option>
+                                        <option value="percentage">%</option>
+                                        <option value="fixed">Montante</option>
                                     </BaseSelect>
                                 </div>
                             </td>

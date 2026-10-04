@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BroadcastNotification;
+use App\Actions\IssueLaboratoryNotification;
+use App\Http\Requests\StoreAdminNotificationRequest;
 use App\Models\User;
-use App\Notifications\GlobalNotification;
 use App\Services\LaboratoryWorkflowOwnership;
 use App\Services\SampleLaboratoryAccess;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class NotificationController extends Controller
 {
@@ -46,6 +46,12 @@ class NotificationController extends Controller
     {
         return User::query()->whereIn('users.id', DB::table('lab_user')
             ->where('lab_id', $this->laboratoryAccess->activeLabId())->select('user_id'));
+    }
+
+    /** @return Builder<User> */
+    private function eligibleRecipients(): Builder
+    {
+        return $this->ownership->eligibleUsers($this->laboratoryAccess->activeLabId());
     }
 
     public function index(Request $request)
@@ -354,15 +360,11 @@ class NotificationController extends Controller
     {
         abort_if(! auth()->user()->hasRole('admin'), 403);
 
-        $users = $this->laboratoryUsers()->select('id', 'name', 'email', 'created_at')
+        $users = $this->eligibleRecipients()->select('id', 'name', 'email', 'created_at')
+            ->withCount(['unreadNotifications as unread_count' => fn (Builder $query) => $query
+                ->whereIn('notifications.id', $this->administrativeNotificationQuery()->select('notifications.id'))])
             ->orderBy('name')
-            ->get()
-            ->map(function ($user) {
-                $user->unread_count = $this->administrativeNotificationQuery()->where('notifiable_id', $user->id)
-                    ->where('notifiable_type', $user->getMorphClass())->whereNull('read_at')->count();
-
-                return $user;
-            });
+            ->get();
 
         $userGroups = $this->getUserGroups();
 
@@ -377,71 +379,19 @@ class NotificationController extends Controller
     /**
      * Store new notification
      */
-    public function adminStore(Request $request)
+    public function adminStore(StoreAdminNotificationRequest $request, IssueLaboratoryNotification $issue): RedirectResponse
     {
-        abort_if(! auth()->user()->hasRole('admin'), 403);
-
-        $labId = $this->laboratoryAccess->activeLabId();
-
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'message' => 'required|string',
-            'type' => 'required|in:info,success,warning,error,alert',
-            'priority' => 'required|in:low,normal,high,urgent',
-            'recipient_type' => 'required|in:specific,group,all',
-            'recipients' => 'required_if:recipient_type,specific|array|min:1',
-            'recipients.*' => [Rule::exists('lab_user', 'user_id')->where('lab_id', $labId)],
-            'group' => 'required_if:recipient_type,group|in:all,active,new,admins,unverified',
-            'schedule_send' => 'nullable|boolean',
-            'scheduled_at' => 'prohibited',
-            'expires_at' => 'prohibited',
-        ]);
-
-        $sender = auth()->user();
-        $recipients = $this->getRecipients($request);
-
-        if ($recipients->isEmpty()) {
-            return back()->withErrors(['recipients' => 'Nenhum destinatário seleccionado.']);
-        }
-
-        if ($request->boolean('schedule_send')) {
-            return back()->withErrors([
-                'scheduled_at' => 'As notificações agendadas ainda não estão disponíveis. Envie esta notificação imediatamente.',
-            ])->withInput();
-        }
-
-        $sentCount = $recipients->count();
-        DB::transaction(function () use ($request, $sender, $recipients, $labId, $sentCount): void {
-            BroadcastNotification::create([
-                'lab_id' => $labId,
-                'sender_id' => $sender->id,
-                'title' => $request->title,
-                'message' => $request->message,
-                'type' => $request->type,
-                'priority' => $request->priority,
-                'recipient_type' => $request->recipient_type,
-                'recipient_count' => $sentCount,
-                'scheduled_at' => null,
-                'expires_at' => null,
-            ]);
-
-            foreach ($recipients as $user) {
-                $user->notify(new GlobalNotification(
-                    $request->title,
-                    $request->message,
-                    $sender,
-                    $request->type,
-                    $request->priority,
-                    labId: $labId
-                ));
-            }
-        });
+        $result = $issue->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $request->validated());
+        $queuedCount = $result['notification']->recipient_count;
+        $failed = $result['dispatch_failed'];
 
         return redirect()->route('admin.notifications.index')->with([
             'toast' => [
-                'type' => 'success',
-                'title' => 'Notificação enviada',
-                'message' => "Notificação enviada com sucesso a {$sentCount} utilizadores.",
+                'type' => $failed ? 'warning' : 'success',
+                'title' => $failed ? 'Emissão registada; envio por confirmar' : 'Notificação colocada na fila',
+                'message' => $failed
+                    ? "A emissão #{$result['notification']->id} foi registada, mas o envio pode estar parcial. Não repita a emissão; contacte o suporte."
+                    : "Envio preparado para {$queuedCount} utilizadores elegíveis. A entrega será processada em segundo plano.",
             ],
         ]);
     }
@@ -685,49 +635,18 @@ class NotificationController extends Controller
         ];
     }
 
-    private function getUserGroups()
+    private function getUserGroups(): array
     {
-        $totalUsers = $this->laboratoryUsers()->count();
-        $activeUsers = $this->laboratoryUsers()->where('last_login_at', '>=', Carbon::now()->subMonth())->count();
-        $newUsers = $this->laboratoryUsers()->where('created_at', '>=', Carbon::now()->subWeek())->count();
+        $totalUsers = $this->eligibleRecipients()->count();
+        $activeUsers = $this->eligibleRecipients()->where('last_login_at', '>=', Carbon::now()->subMonth())->count();
+        $newUsers = $this->eligibleRecipients()->where('created_at', '>=', Carbon::now()->subWeek())->count();
 
         return [
-            ['id' => 'all', 'name' => 'Todos os utilizadores', 'count' => $totalUsers, 'description' => 'Todos os utilizadores registados'],
-            ['id' => 'active', 'name' => 'Utilizadores activos', 'count' => $activeUsers, 'description' => 'Utilizadores activos nos últimos 30 dias'],
-            ['id' => 'new', 'name' => 'Novos utilizadores', 'count' => $newUsers, 'description' => 'Utilizadores registados nos últimos 7 dias'],
-            ['id' => 'admins', 'name' => 'Administradores', 'count' => $this->laboratoryUsers()->role('admin')->count(), 'description' => 'Administradores deste laboratório'],
-            ['id' => 'unverified', 'name' => 'Utilizadores não verificados', 'count' => $this->laboratoryUsers()->whereNull('email_verified_at')->count(), 'description' => 'Utilizadores deste laboratório com correio electrónico não verificado'],
+            ['id' => 'all', 'name' => 'Todos os utilizadores elegíveis', 'count' => $totalUsers, 'description' => 'Membros activos deste laboratório com correio electrónico verificado'],
+            ['id' => 'active', 'name' => 'Acesso recente', 'count' => $activeUsers, 'description' => 'Membros elegíveis com acesso nos últimos 30 dias'],
+            ['id' => 'new', 'name' => 'Novos utilizadores', 'count' => $newUsers, 'description' => 'Membros elegíveis registados nos últimos 7 dias'],
+            ['id' => 'admins', 'name' => 'Administradores', 'count' => $this->eligibleRecipients()->role('admin')->count(), 'description' => 'Administradores elegíveis deste laboratório'],
         ];
-    }
-
-    private function getRecipients(Request $request)
-    {
-        switch ($request->recipient_type) {
-            case 'specific':
-                return $this->laboratoryUsers()->whereIn('id', $request->recipients ?? [])->get();
-            case 'group':
-                return $this->getUsersByGroup($request->group);
-            case 'all':
-                return $this->laboratoryUsers()->get();
-            default:
-                return collect();
-        }
-    }
-
-    private function getUsersByGroup($group)
-    {
-        switch ($group) {
-            case 'active':
-                return $this->laboratoryUsers()->where('last_login_at', '>=', Carbon::now()->subMonth())->get();
-            case 'new':
-                return $this->laboratoryUsers()->where('created_at', '>=', Carbon::now()->subWeek())->get();
-            case 'admins':
-                return $this->laboratoryUsers()->role('admin')->get();
-            case 'unverified':
-                return $this->laboratoryUsers()->whereNull('email_verified_at')->get();
-            default:
-                return $this->laboratoryUsers()->get();
-        }
     }
 
     private function calculateReadRate()

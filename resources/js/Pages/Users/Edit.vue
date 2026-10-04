@@ -1,5 +1,7 @@
 <template>
   <div class="space-y-6">
+    <Head :title="`Dossier de pessoal — ${record.name}`" />
+    <fieldset :disabled="isSaving" :aria-busy="isSaving" class="min-w-0 space-y-6 border-0 p-0">
     <section class="ds-command-surface overflow-hidden">
       <div class="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
         <div class="flex min-w-0 items-start gap-4">
@@ -348,7 +350,7 @@
     </section>
 
     <div v-if="editUserInfo" class="ds-command-surface sticky bottom-4 z-20 flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <p v-if="form.hasErrors || passwordForm.hasErrors" role="alert" class="ds-field-error">{{ Object.values(form.errors)[0] || Object.values(passwordForm.errors)[0] }}</p>
+      <p v-if="form.hasErrors || passwordForm.hasErrors || Object.values(lookupErrors).some(Boolean)" role="alert" class="ds-field-error">{{ Object.values(form.errors)[0] || Object.values(passwordForm.errors)[0] || Object.values(lookupErrors).find(Boolean) }}</p>
       <p class="text-xs font-semibold text-[var(--ds-text-muted)]">
         {{ hasUnsavedChanges ? 'Existem alterações por guardar neste dossier.' : 'Nenhuma alteração pendente.' }}
       </p>
@@ -357,10 +359,12 @@
         <button type="button" class="ds-button ds-button-primary" :disabled="!hasUnsavedChanges || isSaving" @click="requestSave">
           <ArrowPathIcon v-if="isSaving" class="h-4 w-4 animate-spin" />
           <CheckIcon v-else class="h-4 w-4" />
-          Guardar alterações
+          {{ isSaving ? 'A guardar…' : 'Guardar alterações' }}
         </button>
       </div>
     </div>
+
+    </fieldset>
 
     <ConfirmDialog
       v-if="confirmationAction"
@@ -393,7 +397,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { Head, useForm } from '@inertiajs/vue3'
 import {
   GraduationCap as AcademicCapIcon,
   RefreshCw as ArrowPathIcon,
@@ -434,17 +438,22 @@ const props = defineProps({
 const { hasPermission } = usePermission()
 const editUserInfo = ref(false)
 const permissionQuery = ref('')
+const lookupErrors = ref({})
 const confirmationAction = ref(null)
 const isSaving = ref(false)
 
-const form = useForm({
-  ...props.record,
-  gender: props.record.gender || 'O',
-  departments: [...(props.record.departments || [])],
-  roles: [...(props.record.roles || [])],
-  permissions: [...(props.record.permissions || [])],
-  personnel_qualifications: (props.record.personnel_qualifications || []).map((qualification) => ({ ...qualification })),
-})
+function dossierFormData(record) {
+  return JSON.parse(JSON.stringify({
+    ...record,
+    gender: record.gender || 'O',
+    departments: record.departments || [],
+    roles: record.roles || [],
+    permissions: record.permissions || [],
+    personnel_qualifications: record.personnel_qualifications || [],
+  }))
+}
+
+const form = useForm(dossierFormData(props.record))
 
 const passwordForm = useForm({
   password: '',
@@ -573,19 +582,35 @@ function followUpBadge(status) {
 }
 
 function loadDepartments(query, setOptions) {
-  if (!query) return
+  lookupErrors.value.departments = ''
+  if (!query) { setOptions([]); return }
 
-  fetch(`/departments/getDepartment?q=${encodeURIComponent(query)}`)
-    .then((response) => response.json())
+  return fetch(route('departments.getDepartment', { q: query }))
+    .then((response) => {
+      if (!response.ok) throw new Error('Department lookup failed')
+      return response.json()
+    })
     .then((results) => setOptions(results.map((result) => ({ value: result.id, label: result.name }))))
+    .catch(() => {
+      setOptions([])
+      lookupErrors.value.departments = 'Não foi possível pesquisar departamentos. As alterações foram preservadas; tente pesquisar novamente.'
+    })
 }
 
 function loadRoles(query, setOptions) {
-  if (!query) return
+  lookupErrors.value.roles = ''
+  if (!query) { setOptions([]); return }
 
-  fetch(`/roles/getRole?q=${encodeURIComponent(query)}`)
-    .then((response) => response.json())
-    .then((results) => setOptions(results.map((result) => ({ value: result.id, label: result.label }))))
+  return fetch(route('roles.getRole', { q: query }))
+    .then((response) => {
+      if (!response.ok) throw new Error('Role lookup failed')
+      return response.json()
+    })
+    .then((results) => setOptions(results.map((result) => ({ value: result.id, label: result.label?.trim() || result.name }))))
+    .catch(() => {
+      setOptions([])
+      lookupErrors.value.roles = 'Não foi possível pesquisar funções. As alterações foram preservadas; tente pesquisar novamente.'
+    })
 }
 
 function togglePermission(permission) {
@@ -661,6 +686,7 @@ function performConfirmedAction() {
     passwordForm.reset()
     form.clearErrors()
     passwordForm.clearErrors()
+    lookupErrors.value = {}
     editUserInfo.value = false
     return
   }
@@ -671,11 +697,13 @@ function performConfirmedAction() {
 function saveDossier() {
   if (isSaving.value || form.processing || passwordForm.processing) return
   isSaving.value = true
+  form.clearErrors()
 
   if (form.isDirty) {
-    form.transform((data) => staffAccountPayload(data, props.accountCapabilities)).put(route('users.update', { user: form.id }), {
+    form.transform((data) => staffAccountPayload(data, props.accountCapabilities, dossierFormData(props.record))).put(route('users.update', { user: form.id }), {
       preserveScroll: true,
-      onSuccess: () => {
+      onSuccess: (page) => {
+        syncSavedDossier(page.props.record)
         if (passwordForm.isDirty) {
           savePassword()
           return
@@ -686,8 +714,15 @@ function saveDossier() {
       onError: () => {
         isSaving.value = false
       },
-      onNetworkError: () => form.setError('request', 'Ligação interrompida. As alterações foram preservadas.'),
-      onHttpException: () => form.setError('request', 'Não foi possível guardar. As alterações foram preservadas.'),
+      onNetworkError: () => {
+        form.setError('request', 'Ligação interrompida. As alterações foram preservadas; confirme o dossier antes de repetir.')
+        return false
+      },
+      onHttpException: () => {
+        form.setError('request', 'Não foi possível guardar. As alterações foram preservadas.')
+        return false
+      },
+      onCancel: () => form.setError('request', 'Operação interrompida. As alterações foram preservadas; a gravação não foi confirmada.'),
       onFinish: () => { if (!passwordForm.processing) isSaving.value = false },
     })
     return
@@ -710,9 +745,13 @@ function savePassword() {
   })
 }
 
-function finishSaving() {
-  form.defaults({ ...form.data() })
+function syncSavedDossier(record) {
+  form.defaults(dossierFormData(record))
   form.reset()
+  form.clearErrors()
+}
+
+function finishSaving() {
   passwordForm.reset()
   editUserInfo.value = false
   isSaving.value = false

@@ -67,6 +67,7 @@ class LaboratoryPortalIntakeConcurrencyTest extends TestCase
             $matrix->profiles()->attach($profile);
             $product = Product::query()->create(['name' => 'Concurrent portal product', 'matrix_id' => $matrix->id]);
             $source = CustomerRequest::query()->create([
+                'lab_id' => $lab->id,
                 'reference' => 'CONCURRENT-PORTAL-'.Str::uuid(), 'title' => 'Concurrent source row',
                 'customer_id' => $customer->id, 'warehouse_id' => $warehouse->id,
                 'request_type' => 'analysis_request', 'status' => 'pending',

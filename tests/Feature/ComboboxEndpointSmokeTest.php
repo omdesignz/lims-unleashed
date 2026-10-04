@@ -63,6 +63,8 @@ class ComboboxEndpointSmokeTest extends TestCase
             'iitems.getReagentInventoryItem',
             'iequipments.getInventoryItem',
             'iorders.getInventoryOrder',
+            'maintenancecategories.getMaintenanceCategory',
+            'customerrequests.getCustomerRequest',
         ], true)) {
             $this->actingAs($user)->getJson(route($routeName, $parameters))->assertForbidden();
             $lab = VAPLab::factory()->create();

@@ -26,6 +26,8 @@ class InventoryTransactionResource extends JsonResource
             'type_id' => $this->type_id,
             'type' => $this->whenLoaded('type')?->name,
             'type_code' => $this->whenLoaded('type')?->code,
+            'is_addition' => $this->is_addition,
+            'is_deduction' => $this->is_deduction,
             'qty' => $this->qty,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

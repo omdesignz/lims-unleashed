@@ -41,6 +41,8 @@ class InventoryOperationalReportResource extends JsonResource
         $data['user'] = $this->user ? ['id' => $this->user->id, 'name' => $this->user->name] : null;
         if ($this->resource instanceof InventoryTransaction) {
             return $data + $this->resource->only(['item_id', 'warehouse_id', 'created_at', 'qty', 'notes', 'reason']) + [
+                'is_addition' => $this->is_addition,
+                'is_deduction' => $this->is_deduction,
                 'type' => $this->type ? ['id' => $this->type->id, 'name' => $this->type->name, 'code' => $this->type->code] : null,
             ];
         }

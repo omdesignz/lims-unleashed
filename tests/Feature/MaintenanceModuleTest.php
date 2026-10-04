@@ -4,19 +4,129 @@ namespace Tests\Feature;
 
 use App\Models\InventoryItem;
 use App\Models\InventoryItemSupplier;
+use App\Models\ItemCategory;
 use App\Models\MaintenanceCategory;
 use App\Models\MaintenanceTask;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VAPLab;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class MaintenanceModuleTest extends TestCase
 {
     use DatabaseTransactions;
+
+    public function test_bulk_completion_requires_existing_results_and_is_atomic(): void
+    {
+        $user = $this->verifiedAdmin();
+        [$equipment, $first] = $this->completionFixture($user);
+        $second = $first->replicate(['seq', 'maintenance_task_no']);
+        $second->result = '   ';
+        $second->save();
+        $this->actingAs($user)->postJson(route('vap-maintenance.tasks.bulk-update'), [
+            'task_ids' => [$first->id, $second->id], 'action' => 'mark_executed',
+        ])->assertUnprocessable()->assertJsonValidationErrors('task_ids');
+        $this->assertFalse($first->fresh()->is_executed);
+        $this->assertFalse($second->fresh()->is_executed);
+        $this->assertSame('2026-10-01', $first->fresh()->due_date->toDateString());
+        $this->assertNull($equipment->fresh()->last_calibration_date);
+    }
+
+    public function test_bulk_completion_preserves_results_and_retries_do_not_advance_dates(): void
+    {
+        $user = $this->verifiedAdmin();
+        [$equipment, $task] = $this->completionFixture($user);
+        $data = ['task_ids' => [$task->id], 'action' => 'mark_executed'];
+        $this->actingAs($user)->postJson(route('vap-maintenance.tasks.bulk-update'), $data)->assertOk();
+        $task->refresh();
+        $equipment->refresh();
+        $this->assertTrue($task->is_executed);
+        $this->assertSame('Conforme: medições registadas.', $task->result);
+        $this->assertSame('2026-10-01', $task->previous_date->toDateString());
+        $this->assertSame('2027-10-01', $task->due_date->toDateString());
+        $this->assertSame('2028-10-01', $task->next_date->toDateString());
+        $this->assertSame('2026-10-01', $equipment->last_calibration_date->toDateString());
+        $this->assertSame('2027-10-01', $equipment->next_calibration_date->toDateString());
+        $before = $task->getRawOriginal();
+        $equipmentBefore = $equipment->getRawOriginal();
+        $this->travel(1)->days();
+        $this->postJson(route('vap-maintenance.tasks.bulk-update'), $data)->assertOk();
+        $this->assertSame($before, $task->fresh()->getRawOriginal());
+        $this->assertSame($equipmentBefore, $equipment->fresh()->getRawOriginal());
+    }
+
+    public function test_bulk_completion_rolls_back_tasks_when_equipment_write_is_vetoed(): void
+    {
+        $user = $this->verifiedAdmin();
+        [$equipment, $task] = $this->completionFixture($user);
+        $event = 'eloquent.updating: '.InventoryItem::class;
+        $listeners = Event::getRawListeners()[$event] ?? [];
+        Event::listen($event, fn (): bool => false);
+        try {
+            $this->actingAs($user)->postJson(route('vap-maintenance.tasks.bulk-update'), [
+                'task_ids' => [$task->id], 'action' => 'mark_executed',
+            ])->assertStatus(409);
+        } finally {
+            Event::forget($event);
+            foreach ($listeners as $listener) {
+                Event::listen($event, $listener);
+            }
+        }
+        $this->assertFalse($task->fresh()->is_executed);
+        $this->assertSame('2026-10-01', $task->fresh()->due_date->toDateString());
+        $this->assertNull($equipment->fresh()->last_calibration_date);
+    }
+
+    public function test_partial_task_update_preserves_absent_boolean_fields(): void
+    {
+        $user = $this->verifiedAdmin();
+        [, $task] = $this->completionFixture($user);
+        $task->update(['is_executed' => true, 'is_planned' => true, 'executed_by_supplier' => true]);
+        $this->actingAs($user)->put(route('vap-maintenance.tasks.update', $task), ['name' => 'Corrected name'])->assertRedirect();
+        $task->refresh();
+        $this->assertTrue($task->is_executed);
+        $this->assertTrue($task->is_planned);
+        $this->assertTrue($task->executed_by_supplier);
+        $this->assertSame('Conforme: medições registadas.', $task->result);
+        $this->assertSame('2026-10-01', $task->due_date->toDateString());
+    }
+
+    public function test_view_only_member_cannot_complete_tasks_in_bulk(): void
+    {
+        $admin = $this->verifiedAdmin();
+        [$equipment, $task] = $this->completionFixture($admin);
+        $user = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+        $user->givePermissionTo(Permission::findOrCreate('view_maintenance_tasks', 'web'));
+        DB::table('lab_user')->insert(['lab_id' => $equipment->lab_id, 'user_id' => $user->id]);
+        $this->actingAs($user)->postJson(route('vap-maintenance.tasks.bulk-update'), [
+            'task_ids' => [$task->id], 'action' => 'mark_executed',
+        ])->assertForbidden();
+        $this->assertFalse($task->fresh()->is_executed);
+    }
+
+    /** @return array{InventoryItem, MaintenanceTask} */
+    private function completionFixture(User $user): array
+    {
+        $equipment = InventoryItem::create([
+            'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'), 'name' => 'Calibration equipment',
+            'category_id' => ItemCategory::create(['name' => 'Equipment', 'inventory_type' => 'equipment'])->id,
+        ]);
+        $category = MaintenanceCategory::create(['name' => 'Internal calibration', 'code' => 'CAL_INT']);
+        $supplier = InventoryItemSupplier::create(['name' => 'Calibration supplier']);
+        $task = MaintenanceTask::create([
+            'name' => 'Annual calibration', 'equipment_id' => $equipment->id, 'category_id' => $category->id,
+            'supplier_id' => $supplier->id, 'due_date' => '2026-10-01', 'periodicity' => 12,
+            'periodicity_unit' => 'months', 'maintenance_task_year' => 2026,
+            'result' => 'Conforme: medições registadas.', 'is_executed' => false,
+        ]);
+
+        return [$equipment, $task];
+    }
 
     private function verifiedAdmin(): User
     {
@@ -35,6 +145,7 @@ class MaintenanceModuleTest extends TestCase
         $equipment = InventoryItem::query()->create([
             'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'name' => 'Maintenance equipment',
+            'category_id' => ItemCategory::create(['name' => 'Equipment', 'inventory_type' => 'equipment'])->id,
         ]);
         $supplier = InventoryItemSupplier::query()->create(['name' => 'Maintenance supplier']);
         $category = MaintenanceCategory::query()->create([
@@ -82,6 +193,7 @@ class MaintenanceModuleTest extends TestCase
         $equipment = InventoryItem::query()->create([
             'lab_id' => DB::table('lab_user')->where('user_id', $user->id)->value('lab_id'),
             'name' => 'Calibration equipment',
+            'category_id' => ItemCategory::create(['name' => 'Equipment', 'inventory_type' => 'equipment'])->id,
         ]);
         $supplier = InventoryItemSupplier::query()->create(['name' => 'Calibration supplier']);
         $category = MaintenanceCategory::query()->create([

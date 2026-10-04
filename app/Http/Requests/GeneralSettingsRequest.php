@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class GeneralSettingsRequest extends FormRequest
 {
@@ -12,12 +13,36 @@ class GeneralSettingsRequest extends FormRequest
         return $this->user()?->can('edit_settings') ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->replace($this->normalizeSettings($this->all()));
+    }
+
+    /** @param array<string,mixed> $input
+     * @return array<string,mixed>
+     */
+    public function normalizeSettings(array $input): array
+    {
+        foreach ($input as $name => $value) {
+            if (is_string($value)) {
+                $input[$name] = Str::trim($value);
+                $input[$name] = $input[$name] === '' ? null : $input[$name];
+            }
+        }
+        if (($input['app_private_key'] ?? null) === null) {
+            unset($input['app_private_key']);
+        }
+
+        return $input;
+    }
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
+            'settings_revision' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/'],
             'app_name' => ['nullable', 'string', 'max:255'],
             'app_version' => ['nullable', 'string', 'max:255'],
             'app_slogan' => ['nullable', 'string', 'max:255'],
@@ -68,6 +93,12 @@ class GeneralSettingsRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'settings_revision' => 'versão das definições',
+            'app_name' => 'nome da aplicação',
+            'app_email' => 'correio electrónico',
+            'app_primary_color' => 'cor principal',
+            'app_secondary_color' => 'cor secundária',
+            'app_accent_color' => 'cor de destaque',
             'app_agt_valid_name' => 'nome AGT válido',
             'app_agt_validation_number' => 'número de validação AGT',
             'app_private_key' => 'chave privada',

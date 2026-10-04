@@ -452,11 +452,11 @@
 
                     <div class="ds-card border-l-4 border-l-[color:var(--lims-hold)] p-4">
                       <div class="flex items-start gap-3">
-                        <CheckboxInput id="registerNonConformity" v-model="registerNonConformity" type="checkbox" class="ds-checkbox mt-1" :disabled="!nonConformitiesAvailable" aria-describedby="ncAvailabilityNote" />
+                        <CheckboxInput id="registerNonConformity" v-model="registerNonConformity" type="checkbox" class="ds-checkbox mt-1" :disabled="!nonConformitiesAvailable || !receivingAbilities.register_non_conformity" aria-describedby="ncAvailabilityNote" />
                         <div class="flex-1">
                           <label for="registerNonConformity" class="text-sm font-bold text-[color:var(--ds-text)]">Registar não conformidade de recepção</label>
                           <p id="ncAvailabilityNote" class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
-                            {{ nonConformitiesAvailable ? 'Use esta opção para divergências de qualidade, documentação, dano, preço, lote ou qualquer desvio que exija rastreabilidade.' : 'Registo indisponível nesta instalação. Esta recepção não criará uma não conformidade.' }}
+                            {{ !receivingAbilities.register_non_conformity ? 'Sem permissão para criar não conformidades. A recepção normal permanece disponível.' : nonConformitiesAvailable ? 'Use esta opção para divergências de qualidade, documentação, dano, preço, lote ou qualquer desvio que exija rastreabilidade.' : 'Registo indisponível nesta instalação. Esta recepção não criará uma não conformidade.' }}
                           </p>
                         </div>
                       </div>
@@ -570,6 +570,7 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  receivingAbilities: { type: Object, default: () => ({ receive: false, register_non_conformity: false }) },
 })
 
 const isDarkMode = ref(false)
@@ -592,6 +593,7 @@ const nonConformityTitle = ref('')
 const nonConformitySeverity = ref('medium')
 const nonConformityDescription = ref('')
 const isSubmitting = ref(false)
+const receiptRequestId = ref(null)
 const receiptError = ref('')
 const isCancelModalOpen = ref(false)
 const receivingQuantities = reactive({})
@@ -858,7 +860,7 @@ const partiallyReceivedItemsCount = computed(() => orderItems.value.filter((item
 const fullyReceivedItemsCount = computed(() => orderItems.value.filter((item) => Number(item.received_qty || 0) >= Number(item.qty || 0)).length)
 
 const canEdit = computed(() => ['PENDING', 'APPROVED'].includes(normalizeStatus(props.order.status)))
-const canReceiveOrder = computed(() => ['ORDERED', 'PARTIALLY_RECEIVED'].includes(normalizeStatus(props.order.status)) && pendingItems.value.length > 0)
+const canReceiveOrder = computed(() => props.receivingAbilities.receive && ['ORDERED', 'PARTIALLY_RECEIVED'].includes(normalizeStatus(props.order.status)) && pendingItems.value.length > 0)
 const canCancel = computed(() => ['PENDING', 'APPROVED', 'ORDERED'].includes(normalizeStatus(props.order.status)))
 
 const receivingSupplierMessage = computed(() => {
@@ -1086,7 +1088,7 @@ function formatItemStatus(status) {
 function canReceiveItem(item) {
   const received = Number(item.received_qty || 0)
 
-  return received < Number(item.qty || 0) && ['ORDERED', 'PARTIALLY_RECEIVED'].includes(normalizeStatus(item.status))
+  return props.receivingAbilities.receive && received < Number(item.qty || 0) && ['ORDERED', 'PARTIALLY_RECEIVED'].includes(normalizeStatus(item.status))
 }
 
 function openCancelModal() {
@@ -1120,6 +1122,8 @@ function goBack() {
 }
 
 function openReceivingModal(item = null) {
+  if (!canReceiveOrder.value || (item && !canReceiveItem(item))) return
+  receiptRequestId.value = crypto.randomUUID()
   receiptError.value = ''
   isReceivingSingleItem.value = Boolean(item)
   receivingItem.value = item
@@ -1170,12 +1174,16 @@ function receiveOrder() {
   openReceivingModal()
 }
 
-async function submitReceipt() {
-  if (isSubmitting.value) {
+function submitReceipt() {
+  if (isSubmitting.value || !props.receivingAbilities.receive) {
     return
   }
 
   receiptError.value = ''
+  if (registerNonConformity.value && !props.receivingAbilities.register_non_conformity) {
+    receiptError.value = 'Sem permissão para criar não conformidades. Desmarque essa opção para continuar.'
+    return
+  }
 
   try {
     isSubmitting.value = true
@@ -1193,7 +1201,9 @@ async function submitReceipt() {
       itemsData.push({
         id: receivingItem.value.id,
         received_qty: receivingQuantity.value,
-        unit_price: receivingUnitPrice.value || receivingItem.value.unit_price || 0,
+        unit_price: receivingUnitPrice.value === '' || receivingUnitPrice.value == null
+          ? (receivingItem.value.unit_price ?? 0)
+          : receivingUnitPrice.value,
       })
     } else {
       if (pendingItems.value.some((item) => Number(receivingQuantities[item.id] || 0) > 0 && !isValidReceiptQuantity(receivingQuantities[item.id], item))) {
@@ -1227,6 +1237,7 @@ async function submitReceipt() {
     }
 
     const receiptData = {
+      request_id: receiptRequestId.value,
       items: itemsData,
       receive_date: receiveDate.value,
       reason: receivingReason.value || 'Recepção de Item',
@@ -1237,20 +1248,33 @@ async function submitReceipt() {
       non_conformity_description: registerNonConformity.value ? nonConformityDescription.value : null,
     }
 
-    await router.post(route('vap-inventory.orders.receive', props.order.id), receiptData, {
+    router.post(route('vap-inventory.orders.receive', props.order.id), receiptData, {
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => {
+        isSubmitting.value = false
         closeReceivingModal()
-        router.reload({ only: ['order'] })
       },
       onError: (errors) => {
-        receiptError.value = errors.register_non_conformity || errors.message || 'Erro ao processar a recepção.'
+        receiptError.value = Object.values(errors).flat().find((error) => typeof error === 'string') || 'Erro ao processar a recepção.'
+      },
+      onNetworkError: () => {
+        receiptError.value = 'Ligação interrompida. Confirme o estado do pedido antes de tentar novamente.'
+        return false
+      },
+      onHttpException: () => {
+        receiptError.value = 'Não foi possível confirmar a recepção. Verifique o estado do pedido antes de tentar novamente.'
+        return false
+      },
+      onCancel: () => {
+        receiptError.value = 'Pedido interrompido. Confirme o estado da recepção antes de tentar novamente.'
+      },
+      onFinish: () => {
+        isSubmitting.value = false
       },
     })
   } catch (error) {
     receiptError.value = 'Erro ao processar a recepção.'
-  } finally {
     isSubmitting.value = false
   }
 }

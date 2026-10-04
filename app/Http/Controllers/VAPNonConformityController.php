@@ -2,70 +2,52 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ArchiveNonConformity;
+use App\Actions\SaveNonConformity;
+use App\Actions\TransitionNonConformity;
 use App\Exports\NonConformitiesExport;
 use App\Exports\NonConformityDetailsExport;
+use App\Http\Requests\NonConformityFilterRequest;
+use App\Http\Requests\SaveNonConformityRequest;
+use App\Http\Requests\TransitionNonConformityRequest;
+use App\Http\Resources\NonConformityResource;
 use App\Models\Department;
 use App\Models\VAPLab;
 use App\Models\VAPNonConformity;
-use App\Models\VAPNonConformityAction;
 use App\Services\SampleLaboratoryAccess;
+use App\Support\NonConformityLifecycleReport;
+use App\Support\NonConformityQuery;
 use App\Support\PdfResponse;
 use App\Support\QualityModuleNotifier;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use PDF;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class VAPNonConformityController extends Controller
 {
-    public function __construct(private readonly SampleLaboratoryAccess $access) {}
+    public function __construct(private readonly SampleLaboratoryAccess $access, private readonly NonConformityQuery $query) {}
 
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(NonConformityFilterRequest $request): \Inertia\Response
     {
         $labId = $this->access->activeLabId();
-        $query = VAPNonConformity::with(['lab', 'department'])
-            ->where('lab_id', $labId)
-            ->orderBy('created_at', 'desc');
-
-        // Apply filters
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('severity')) {
-            $query->where('severity', $request->severity);
-        }
-
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('nc_number', 'like', "%{$search}%")
-                    ->orWhere('title', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        $nonConformities = $query->paginate(20);
+        $filters = $request->validated();
+        $query = $this->query->query($labId, $filters);
 
         return Inertia::render('VAPNonConformities/Index', [
-            'nonConformities' => $nonConformities,
-            'filters' => $request->only(['search', 'status', 'severity', 'category']),
-            'stats' => $this->getStats($labId),
-            'charts' => $this->getCharts($labId),
-            'labs' => VAPLab::query()->whereKey($labId)->get(['id', 'name']),
-            'departments' => Department::all(['id', 'name']),
+            'nonConformities' => (clone $query)->with(['lab:id,name', 'department:id,name'])
+                ->orderByDesc('created_at')->orderByDesc('id')->paginate(20)->withQueryString(),
+            'filters' => $filters,
+            'can' => $this->abilities(),
+            'stats' => $this->query->stats($query),
+            'charts' => $this->query->charts($query),
         ]);
     }
 
@@ -86,65 +68,13 @@ class VAPNonConformityController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(SaveNonConformityRequest $request, SaveNonConformity $save): RedirectResponse
     {
-        $labId = $this->access->activeLabId();
-        $validated = $request->validate([
-            'department_id' => 'nullable|exists:departments,id',
-            'nc_number' => ['required', 'string', 'max:255', Rule::unique('v_non_conformities', 'nc_number')->where('lab_id', $labId)],
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'status' => 'required|in:opened,in_progress,resolved,closed',
-            'severity' => 'required|in:low,medium,high,critical',
-            'category' => 'required|in:quality,safety,environmental,regulatory,other',
-            'sample_id' => 'nullable|string|max:255',
-            'test_method' => 'nullable|string|max:255',
-            'equipment_id' => 'nullable|string|max:255',
-            'batch_number' => 'nullable|string|max:255',
-            'reported_by' => 'required|string|max:255',
-            'assigned_to' => 'nullable|string|max:255',
-            'assigned_to_id' => ['nullable', Rule::exists('lab_user', 'user_id')->where('lab_id', $labId)],
-            'reported_at' => 'required|date',
-            'due_date' => 'nullable|date',
-            'occurrence_area' => 'nullable|string|max:255',
-            'root_cause' => 'nullable|string',
-            'corrective_actions' => 'nullable|string',
-            'preventive_actions' => 'nullable|string',
-            'comments' => 'nullable|string',
-            'attachments' => 'nullable|array',
-            'attachment_files' => 'nullable|array',
-            'attachment_files.*' => 'file|mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,csv,txt|max:10240',
-            'actions' => 'nullable|array',
-            'actions.*.correction' => 'nullable|string',
-            'actions.*.corrective_action' => 'nullable|string',
-            'actions.*.due_at' => 'nullable|date',
-        ]);
-
-        $nonConformity = DB::transaction(function () use ($request, $validated, $labId) {
-            $nonConformity = VAPNonConformity::create([
-                ...Arr::except($validated, ['actions', 'attachment_files']),
-                'lab_id' => $labId,
-                'reported_by_id' => $request->user()->id,
-            ]);
-
-            // Save actions if provided
-            if (! empty($validated['actions'])) {
-                foreach ($validated['actions'] as $actionData) {
-                    $actionData['nc_id'] = $nonConformity->id;
-                    $actionData['lab_id'] = $labId;
-                    VAPNonConformityAction::create($actionData);
-                }
-            }
-
-            return $nonConformity->load(['assignedToUser', 'reportedByUser']);
-        });
-
-        $this->storeAttachments($request, $nonConformity);
-
+        $nonConformity = $save->execute($request->user()->id, $this->access->activeLabId(), $request->validated());
+        $nonConformity->load(['assignedToUser', 'reportedByUser']);
         app(QualityModuleNotifier::class)->notifyNonConformityCreated($nonConformity);
 
-        return redirect()->route('vap_non_conformities.index')
-            ->with('success', 'Não conformidade criada com sucesso.');
+        return to_route('vap_non_conformities.index')->with('success', 'Não conformidade criada com sucesso.');
     }
 
     /**
@@ -153,10 +83,11 @@ class VAPNonConformityController extends Controller
     public function show(VAPNonConformity $nonConformity)
     {
         $this->assertOwned($nonConformity);
-        $nonConformity->load(['lab', 'department', 'actions', 'reportedByUser', 'assignedToUser', 'media']);
+        $nonConformity->load(['lab', 'department', 'actions' => fn ($query) => $query->withTrashed()->orderBy('id'), 'reportedByUser', 'assignedToUser', 'media']);
 
         return Inertia::render('VAPNonConformities/Show', [
-            'nonConformity' => $this->serializeNonConformity($nonConformity),
+            'can' => $this->abilities(),
+            'nonConformity' => NonConformityResource::make($nonConformity)->resolve(),
             'labs' => VAPLab::query()->whereKey($nonConformity->lab_id)->get(['id', 'name']),
             'departments' => Department::all(['id', 'name']),
         ]);
@@ -171,7 +102,7 @@ class VAPNonConformityController extends Controller
         $nonConformity->load(['lab', 'department', 'actions', 'media']);
 
         return Inertia::render('VAPNonConformities/Edit', [
-            'nonConformity' => $this->serializeNonConformity($nonConformity),
+            'nonConformity' => NonConformityResource::make($nonConformity)->resolve(),
             'labs' => VAPLab::query()->whereKey($nonConformity->lab_id)->get(['id', 'name']),
             'departments' => Department::all(['id', 'name']),
         ]);
@@ -180,325 +111,120 @@ class VAPNonConformityController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, VAPNonConformity $nonConformity)
+    public function update(SaveNonConformityRequest $request, VAPNonConformity $nonConformity, SaveNonConformity $save): RedirectResponse
     {
-        $this->assertOwned($nonConformity);
-        $labId = $this->access->activeLabId();
-        $validated = $request->validate([
-            'department_id' => 'nullable|exists:departments,id',
-            'nc_number' => ['required', 'string', 'max:255', Rule::unique('v_non_conformities', 'nc_number')->where('lab_id', $labId)->ignore($nonConformity->id)],
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'status' => 'required|in:opened,in_progress,resolved,closed',
-            'severity' => 'required|in:low,medium,high,critical',
-            'category' => 'required|in:quality,safety,environmental,regulatory,other',
-            'sample_id' => 'nullable|string|max:255',
-            'test_method' => 'nullable|string|max:255',
-            'equipment_id' => 'nullable|string|max:255',
-            'batch_number' => 'nullable|string|max:255',
-            'reported_by' => 'required|string|max:255',
-            'assigned_to' => 'nullable|string|max:255',
-            'assigned_to_id' => ['nullable', Rule::exists('lab_user', 'user_id')->where('lab_id', $labId)],
-            'reported_at' => 'required|date',
-            'due_date' => 'nullable|date',
-            'occurrence_area' => 'nullable|string|max:255',
-            'root_cause' => 'nullable|string',
-            'corrective_actions' => 'nullable|string',
-            'preventive_actions' => 'nullable|string',
-            'comments' => 'nullable|string',
-            'attachments' => 'nullable|array',
-            'attachment_files' => 'nullable|array',
-            'attachment_files.*' => 'file|mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,csv,txt|max:10240',
-            'actions' => 'nullable|array',
-            'actions.*.id' => 'nullable|exists:v_non_conformity_actions,id',
-            'actions.*.correction' => 'nullable|string',
-            'actions.*.corrective_action' => 'nullable|string',
-            'actions.*.due_at' => 'nullable|date',
-        ]);
-
         $before = $nonConformity->only(['status', 'severity']);
-
-        DB::transaction(function () use ($nonConformity, $validated, $labId) {
-            $nonConformity->update(Arr::except($validated, ['actions', 'attachment_files']));
-
-            $existingActionIds = [];
-
-            foreach ($validated['actions'] ?? [] as $actionData) {
-                if (isset($actionData['id'])) {
-                    $action = $nonConformity->actions()
-                        ->whereKey($actionData['id'])
-                        ->firstOrFail();
-                    $action->update($actionData);
-                    $existingActionIds[] = $action->id;
-
-                    continue;
-                }
-
-                $actionData['nc_id'] = $nonConformity->id;
-                $actionData['lab_id'] = $labId;
-                $action = VAPNonConformityAction::create($actionData);
-                $existingActionIds[] = $action->id;
-            }
-
-            VAPNonConformityAction::query()
-                ->where('nc_id', $nonConformity->id)
-                ->when($existingActionIds !== [], fn ($query) => $query->whereNotIn('id', $existingActionIds))
-                ->delete();
-        });
-
-        $this->storeAttachments($request, $nonConformity);
-
-        $nonConformity->refresh()->load(['assignedToUser', 'reportedByUser']);
+        $nonConformity = $save->execute($request->user()->id, $this->access->activeLabId(), $request->validated(), $nonConformity->id);
+        $nonConformity->load(['assignedToUser', 'reportedByUser']);
         app(QualityModuleNotifier::class)->notifyNonConformityUpdated($nonConformity, $before);
 
-        return redirect()->route('vap_non_conformities.show', $nonConformity)
-            ->with('success', 'Não conformidade actualizada com sucesso.');
-    }
-
-    private function storeAttachments(Request $request, VAPNonConformity $nonConformity): void
-    {
-        if (! $request->hasFile('attachment_files')) {
-            return;
-        }
-
-        foreach ($request->file('attachment_files', []) as $file) {
-            $nonConformity
-                ->addMedia($file)
-                ->toMediaCollection('attachments');
-        }
-    }
-
-    private function serializeNonConformity(VAPNonConformity $nonConformity): array
-    {
-        $payload = Arr::except($nonConformity->toArray(), ['media']);
-        $payload['media_attachments'] = $nonConformity
-            ->getMedia('attachments')
-            ->map(fn ($media) => [
-                'id' => $media->id,
-                'name' => $media->name,
-                'file_name' => $media->file_name,
-                'mime_type' => $media->mime_type,
-                'size' => $media->size,
-                'human_readable_size' => $media->human_readable_size,
-                'url' => route('vap_non_conformities.attachments.show', [$nonConformity, $media]),
-            ])
-            ->values();
-
-        return $payload;
+        return to_route('vap_non_conformities.show', $nonConformity)->with('success', 'Não conformidade actualizada com sucesso.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(VAPNonConformity $nonConformity)
+    public function destroy(Request $request, VAPNonConformity $nonConformity, ArchiveNonConformity $archive): RedirectResponse
     {
-        $this->assertOwned($nonConformity);
-        $nonConformity->delete();
+        $archive->execute($request->user()->id, $this->access->activeLabId(), $nonConformity->id);
 
-        return redirect()->route('vap_non_conformities.index')
-            ->with('success', 'Não conformidade eliminada com sucesso.');
+        return to_route('vap_non_conformities.index')->with('success', 'Não conformidade arquivada. Histórico e anexos preservados.');
     }
 
-    /**
-     * Get statistics for vap_non_conformities.
-     */
-    private function getStats(int $labId): array
+    public function restore(Request $request, VAPNonConformity $nonConformity, ArchiveNonConformity $archive): RedirectResponse
     {
-        return [
-            'total' => VAPNonConformity::where('lab_id', $labId)->count(),
-            'open' => VAPNonConformity::where('lab_id', $labId)->whereIn('status', ['opened', 'in_progress'])->count(),
-            'critical' => VAPNonConformity::where('lab_id', $labId)->where('severity', 'critical')->count(),
-            'overdue' => VAPNonConformity::where('lab_id', $labId)->open()
-                ->whereNotNull('due_date')
-                ->where('due_date', '<', now())
-                ->count(),
-            'by_status' => VAPNonConformity::where('lab_id', $labId)->groupBy('status')
-                ->selectRaw('status, count(*) as count')
-                ->pluck('count', 'status'),
-            'by_severity' => VAPNonConformity::where('lab_id', $labId)->groupBy('severity')
-                ->selectRaw('severity, count(*) as count')
-                ->pluck('count', 'severity'),
-            'by_category' => VAPNonConformity::where('lab_id', $labId)->groupBy('category')
-                ->selectRaw('category, count(*) as count')
-                ->pluck('count', 'category'),
-        ];
+        $archive->execute($request->user()->id, $this->access->activeLabId(), $nonConformity->id, true);
+
+        return to_route('vap_non_conformities.show', $nonConformity)->with('success', 'Não conformidade restaurada.');
     }
 
-    private function getCharts(int $labId): array
+    private function abilities(): array
     {
-        return [
-            'status' => $this->distributionChart($labId, 'status', [
-                'opened' => 'Aberta',
-                'in_progress' => 'Em progresso',
-                'resolved' => 'Resolvida',
-                'closed' => 'Fechada',
-            ]),
-            'severity' => $this->distributionChart($labId, 'severity', [
-                'low' => 'Baixa',
-                'medium' => 'Média',
-                'high' => 'Alta',
-                'critical' => 'Crítica',
-            ]),
-            'category' => $this->distributionChart($labId, 'category', [
-                'quality' => 'Qualidade',
-                'safety' => 'Segurança',
-                'environmental' => 'Ambiental',
-                'regulatory' => 'Regulatório',
-                'other' => 'Outro',
-            ]),
-            'trend' => $this->monthlyTrendChart($labId),
-        ];
+        return collect(['create' => 'add', 'edit' => 'edit', 'archive' => 'delete', 'restore' => 'restore'])
+            ->map(fn ($ability) => ! session()->has('impersonate') && auth()->user()->can($ability.'_occurrences'))
+            ->merge(collect(['resolve', 'verify', 'close', 'reopen'])->mapWithKeys(fn ($ability) => [$ability => ! session()->has('impersonate') && auth()->user()->can($ability.'_non_conformities')]))->all();
     }
 
-    private function distributionChart(int $labId, string $column, array $labels): array
+    public function transition(TransitionNonConformityRequest $request, VAPNonConformity $nonConformity, string $transition, TransitionNonConformity $action): RedirectResponse
     {
-        $distribution = VAPNonConformity::query()
-            ->where('lab_id', $labId)
-            ->selectRaw("{$column}, count(*) as aggregate")
-            ->groupBy($column)
-            ->pluck('aggregate', $column);
+        $action->execute($request->user()->id, $this->access->activeLabId(), $nonConformity->id, $transition, $request->validated());
 
-        $items = collect($labels)->map(fn (string $label, string $key) => [
-            'label' => $label,
-            'value' => (int) ($distribution[$key] ?? 0),
-        ]);
-
-        return [
-            'labels' => $items->pluck('label')->values()->all(),
-            'series' => $items->pluck('value')->values()->all(),
-        ];
-    }
-
-    private function monthlyTrendChart(int $labId): array
-    {
-        $months = collect(range(5, 0))->map(fn (int $monthsAgo) => now()->startOfMonth()->subMonths($monthsAgo));
-        $firstMonth = $months->first()->copy();
-        $lastMonth = $months->last()->copy()->endOfMonth();
-
-        $created = VAPNonConformity::query()
-            ->where('lab_id', $labId)
-            ->whereBetween('created_at', [$firstMonth, $lastMonth])
-            ->selectRaw("to_char(created_at, 'YYYY-MM') as month_key, count(*) as aggregate")
-            ->groupByRaw("to_char(created_at, 'YYYY-MM')")
-            ->pluck('aggregate', 'month_key');
-
-        $closed = VAPNonConformity::query()
-            ->where('lab_id', $labId)
-            ->whereBetween('resolved_at', [$firstMonth, $lastMonth])
-            ->selectRaw("to_char(resolved_at, 'YYYY-MM') as month_key, count(*) as aggregate")
-            ->groupByRaw("to_char(resolved_at, 'YYYY-MM')")
-            ->pluck('aggregate', 'month_key');
-
-        return [
-            'categories' => $months->map(fn ($month) => $month->translatedFormat('M Y'))->values()->all(),
-            'series' => [
-                [
-                    'name' => 'Registadas',
-                    'data' => $months->map(fn ($month) => (int) ($created[$month->format('Y-m')] ?? 0))->values()->all(),
-                ],
-                [
-                    'name' => 'Resolvidas',
-                    'data' => $months->map(fn ($month) => (int) ($closed[$month->format('Y-m')] ?? 0))->values()->all(),
-                ],
-            ],
-        ];
+        return to_route('vap_non_conformities.show', $nonConformity)->with('success', 'Etapa registada. Histórico preservado.');
     }
 
     /**
      * Export non-conformities to Excel.
      */
-    public function exportExcel(Request $request)
+    public function exportExcel(NonConformityFilterRequest $request): Response
     {
         $labId = $this->access->activeLabId();
-        $filters = $request->only(['status', 'severity', 'category', 'start_date', 'end_date']);
+        $filters = $request->validated();
 
         $fileName = 'non_conformities_'.now()->format('Y_m_d_His').'.xlsx';
 
-        return Excel::download(new NonConformitiesExport($labId, $filters), $fileName);
+        return $this->privateReport(Excel::download(new NonConformitiesExport($labId, $filters), $fileName));
     }
 
     /**
      * Export non-conformity details to Excel.
      */
-    public function exportDetailsExcel(VAPNonConformity $nonConformity)
+    public function exportDetailsExcel(VAPNonConformity $nonConformity): Response
     {
         $this->assertOwned($nonConformity);
-        $fileName = 'nc_details_'.$nonConformity->nc_number.'_'.now()->format('Y_m_d_His').'.xlsx';
+        $fileName = 'nc_details_'.$nonConformity->id.'_'.now()->format('Y_m_d_His').'.xlsx';
 
-        return Excel::download(new NonConformityDetailsExport($nonConformity), $fileName);
+        return $this->privateReport(Excel::download(new NonConformityDetailsExport($nonConformity), $fileName));
     }
 
     /**
      * Export non-conformities to PDF.
      */
-    public function exportPdf(Request $request)
+    public function exportPdf(NonConformityFilterRequest $request): Response
     {
         $labId = $this->access->activeLabId();
-        $filters = $request->only(['status', 'severity', 'category', 'start_date', 'end_date']);
+        $filters = $request->validated();
 
-        $nonConformities = $this->getFilteredNonConformities($labId, $filters);
+        $nonConformities = $this->query->exportRows($labId, $filters);
 
         $pdf = PDF::loadView('exports.non-conformities.pdf', [
             'nonConformities' => $nonConformities,
             'filters' => $filters,
+            'labName' => VAPLab::findOrFail($labId)->name,
             'title' => 'Relatório de Não Conformidades',
             'exportDate' => now()->format('d/m/Y H:i:s'),
-        ]);
+        ], [], ['format' => 'A4-L']);
 
         $fileName = 'non_conformities_'.now()->format('Y_m_d_His').'.pdf';
 
-        return PdfResponse::download($pdf, $fileName);
+        return $this->privateReport(PdfResponse::download($pdf, $fileName));
     }
 
     /**
      * Export non-conformity details to PDF.
      */
-    public function exportDetailsPdf(VAPNonConformity $nonConformity)
+    public function exportDetailsPdf(VAPNonConformity $nonConformity): Response
     {
         $this->assertOwned($nonConformity);
-        $nonConformity->load(['lab', 'department', 'actions', 'reportedByUser', 'assignedToUser']);
+        $nonConformity->load(['lab', 'department', 'actions' => fn ($query) => $query->withTrashed()->where('lab_id', $nonConformity->lab_id)->orderBy('id'), 'reportedByUser', 'assignedToUser']);
 
         $pdf = PDF::loadView('exports.non-conformities.details-pdf', [
             'nonConformity' => $nonConformity,
+            'lifecycleSummary' => NonConformityLifecycleReport::summary($nonConformity),
+            'lifecycleHistory' => NonConformityLifecycleReport::history($nonConformity),
             'title' => 'Detalhes da Não Conformidade '.$nonConformity->nc_number,
             'exportDate' => now()->format('d/m/Y H:i:s'),
         ]);
 
-        $fileName = 'nc_details_'.$nonConformity->nc_number.'_'.now()->format('Y_m_d_His').'.pdf';
+        $fileName = 'nc_details_'.$nonConformity->id.'_'.now()->format('Y_m_d_His').'.pdf';
 
-        return PdfResponse::download($pdf, $fileName);
+        return $this->privateReport(PdfResponse::download($pdf, $fileName));
     }
 
-    /**
-     * Get filtered non-conformities for export.
-     */
-    private function getFilteredNonConformities(int $labId, array $filters)
+    private function privateReport(Response $response): Response
     {
-        $query = VAPNonConformity::with(['lab', 'department'])
-            ->where('lab_id', $labId)
-            ->orderBy('created_at', 'desc');
+        $response->headers->set('Cache-Control', 'private, no-store');
 
-        if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
-        if (! empty($filters['severity'])) {
-            $query->where('severity', $filters['severity']);
-        }
-
-        if (! empty($filters['category'])) {
-            $query->where('category', $filters['category']);
-        }
-
-        if (! empty($filters['start_date'])) {
-            $query->whereDate('reported_at', '>=', $filters['start_date']);
-        }
-
-        if (! empty($filters['end_date'])) {
-            $query->whereDate('reported_at', '<=', $filters['end_date']);
-        }
-
-        return $query->get();
+        return $response;
     }
 
     public function showAttachment(Request $request, VAPNonConformity $nonConformity, Media $media): StreamedResponse

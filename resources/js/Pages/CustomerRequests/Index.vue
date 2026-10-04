@@ -60,10 +60,19 @@ const emptyForm = () => ({
 });
 
 const form = useForm(emptyForm());
+const invitationForm = useForm({ recipient_email: "" });
+
+function issueInvitation() {
+  if (invitationForm.processing) return;
+  invitationForm.post(route("customerrequests.invitations.store"), {
+    preserveScroll: true,
+    onSuccess: () => invitationForm.reset(),
+  });
+}
 
 const panelTitle = computed(() => form.id ? `Editar pedido #${form.id}` : "Novo pedido de cliente");
 const panelDescription = computed(() => form.id
-  ? "Actualize a classificação, o local e os dados de contacto do pedido."
+  ? "Actualize a classificação e os dados de contacto. O cliente, local e laboratório permanecem fixos."
   : "Registe uma nova necessidade para triagem comercial e laboratorial.");
 
 const confirmationDialogTitle = computed(() => {
@@ -151,10 +160,11 @@ function executeBulkAction() {
     return;
   }
 
-  router.get(
-    route(`customerrequests.${selectedAction.value}`),
-    { recordIds },
+  router.visit(
+    route(`customerrequests.${selectedAction.value === 'delete' ? 'destroy' : 'restore'}`),
     {
+      method: selectedAction.value === "delete" ? "delete" : "post",
+      data: { recordIds },
       preserveScroll: true,
       onFinish: () => {
         showActionConfirmation.value = false;
@@ -211,6 +221,20 @@ function executeBulkAction() {
       </dl>
     </section>
 
+    <section v-if="hasPermission('add_customer_requests')" class="ds-panel p-5 sm:p-6" aria-labelledby="service-invitation-heading">
+      <h2 id="service-invitation-heading" class="ds-heading text-base">Convidar cliente pelo portal</h2>
+      <p class="ds-copy mt-1 text-sm">Convite de uso único, válido por 30 dias. O pedido fica privado neste laboratório.</p>
+      <form class="mt-4 space-y-3" @submit.prevent="issueInvitation">
+        <label class="ds-field-group" for="service-invitation-email">
+          <span class="ds-field-label">Email da conta verificada do portal</span>
+          <BaseInput id="service-invitation-email" v-model="invitationForm.recipient_email" type="email" required autocomplete="off" class="ds-field" :aria-invalid="Boolean(invitationForm.errors.recipient_email)" aria-describedby="service-invitation-error" />
+        </label>
+        <p v-if="invitationForm.errors.recipient_email" id="service-invitation-error" class="ds-field-error" role="alert">{{ invitationForm.errors.recipient_email }}</p>
+        <p v-if="invitationForm.recentlySuccessful" role="status" class="ds-copy">Convite disponível na conta do portal.</p>
+        <button type="submit" class="ds-button ds-button-secondary" :disabled="invitationForm.processing" :aria-busy="invitationForm.processing">{{ invitationForm.processing ? "A emitir…" : "Emitir convite" }}</button>
+      </form>
+    </section>
+
     <RecordsTable
       :record="props.record"
       :model="props.model"
@@ -219,6 +243,7 @@ function executeBulkAction() {
       :slide-over-edit="props.slideOverEdit"
       :query="props.query"
       :actions="actions"
+      :action-methods="{ delete: 'delete', restore: 'post' }"
       :create-action="false"
       @execute-action="requestBulkAction"
       @create-record="openCreatePanel"

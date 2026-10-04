@@ -5,7 +5,7 @@ import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import CheckboxInput from '@/Components/base/CheckboxInput.vue'
 import NotificationAdminHeader from '@/Components/notifications/NotificationAdminHeader.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { useForm } from '@inertiajs/vue3'
+import { Head, useForm } from '@inertiajs/vue3'
 import {
   RefreshCw as ArrowPathIcon,
   CircleCheck as CheckCircleIcon,
@@ -81,6 +81,7 @@ const loadTemplate = (template) => {
   })
   form.reset()
   form.clearErrors()
+  resetForm.clearErrors()
 }
 
 watch([() => props.laboratory.id, selectedKey], () => loadTemplate(selectedTemplate.value), { immediate: true })
@@ -103,26 +104,49 @@ const variableToken = (variable) => `{{${variable}}}`
 function save() {
   if (!selectedTemplate.value || busy.value || !props.canEdit || !form.isDirty) return
 
+  form.clearErrors('request')
+  resetForm.clearErrors()
   form.put(route('admin.notification-templates.update', { key: selectedTemplate.value.key }), {
     preserveScroll: true,
     preserveState: true,
     onSuccess: () => loadTemplate(selectedTemplate.value),
+    onNetworkError: () => {
+      form.setError('request', 'Ligação interrompida. A gravação não foi confirmada; o rascunho foi preservado. Pode tentar guardar novamente.')
+      return false
+    },
+    onHttpException: () => {
+      form.setError('request', 'Não foi possível confirmar a gravação. O rascunho foi preservado. Confirme o acesso ao laboratório antes de tentar novamente.')
+      return false
+    },
+    onCancel: () => form.setError('request', 'Gravação interrompida. O rascunho foi preservado; a gravação não foi confirmada.'),
   })
 }
 
 function restorePreset() {
   if (!selectedTemplate.value?.is_overridden || busy.value || !props.canEdit) return
   if (!window.confirm('Remover a personalização deste laboratório e restaurar o modelo partilhado?')) return
+  resetForm.clearErrors()
+  form.clearErrors('request')
   resetForm.delete(route('admin.notification-templates.destroy', { key: selectedTemplate.value.key }), {
     preserveScroll: true,
     preserveState: true,
     onSuccess: () => loadTemplate(selectedTemplate.value),
+    onNetworkError: () => {
+      resetForm.setError('request', 'Ligação interrompida. A restauração não foi confirmada; o rascunho foi preservado. Pode tentar restaurar novamente.')
+      return false
+    },
+    onHttpException: () => {
+      resetForm.setError('request', 'Não foi possível confirmar a restauração. O rascunho foi preservado. Confirme o acesso ao laboratório antes de tentar novamente.')
+      return false
+    },
+    onCancel: () => resetForm.setError('request', 'Restauração interrompida. O rascunho foi preservado; a restauração não foi confirmada.'),
   })
 }
 </script>
 
 <template>
   <div class="space-y-5">
+    <Head title="Modelos de comunicação" />
     <NotificationAdminHeader
       title="Modelos de comunicação"
       :description="`Personalizações de ${laboratory.name}. Os modelos de origem permanecem partilhados.`"
@@ -166,6 +190,7 @@ function restorePreset() {
       </aside>
 
       <form v-if="selectedTemplate" class="ds-panel overflow-hidden" :aria-busy="busy" @submit.prevent="save">
+        <p v-if="form.errors.request" role="alert" class="ds-field-error p-5">{{ form.errors.request }}</p>
         <fieldset class="contents" :disabled="busy || !canEdit">
           <header class="flex flex-col gap-4 border-b border-[var(--ds-border)] px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -223,7 +248,7 @@ function restorePreset() {
                 </div>
                 <p v-if="form.errors.channels" class="ds-field-error mt-2">{{ form.errors.channels }}</p>
               </div>
-              <div class="flex shrink-0 gap-2">
+              <div class="flex min-w-0 flex-wrap gap-2">
                 <button v-if="selectedTemplate.is_overridden && canEdit" type="button" class="ds-button ds-button-secondary" :disabled="busy" @click="restorePreset">
                   {{ resetForm.processing ? 'A restaurar…' : 'Usar modelo partilhado' }}
                 </button>

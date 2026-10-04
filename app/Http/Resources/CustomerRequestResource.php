@@ -16,6 +16,7 @@ class CustomerRequestResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'lab_name' => $this->whenLoaded('lab', fn (): ?string => $this->lab?->name),
             'reference' => $this->reference,
             'title' => $this->title,
             'request_type' => $this->request_type,
@@ -42,12 +43,12 @@ class CustomerRequestResource extends JsonResource
             'links' => [
                 'edit_path' => route('customerrequests.edit', $this->id),
                 'delete_path' => route('customerrequests.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('customerrequests.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

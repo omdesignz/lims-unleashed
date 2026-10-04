@@ -9,7 +9,7 @@ import {
   notificationTypeLabel,
 } from '@/Composables/useNotificationPresentation'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import {
   ArrowLeft as ArrowLeftIcon,
   RefreshCw as ArrowPathIcon,
@@ -58,6 +58,7 @@ const deleteNotification = () => {
 
 <template>
   <div class="space-y-5">
+    <Head title="Detalhe da notificação" />
     <NotificationAdminHeader
       title="Detalhe da notificacao"
       :description="`Registo auditável ${notification.id} e respectivo estado de leitura.`"

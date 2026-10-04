@@ -29,23 +29,29 @@ class SharedDocumentDeliveryAccess
             ->with($definition['relations'])->when($lock, fn ($query) => $query->lockForUpdate())->findOrFail($documentId);
         $this->assertOwner($document, $labId);
         if ($document instanceof QualityCertificate) {
-            $document->loadMissing(['collection.product.matrix', 'collection.packaging', 'collection.sampleEntry.customerRequest',
-                'collection.code', 'results.parameter', 'results.unit', 'results.profile', 'results.standard',
-                'results.protocol', 'results.counter_analysis', 'results.sample']);
-            foreach ($document->results as $result) {
-                $entry = $this->ownership->resolve(['result_id' => $result->id, 'lab_id' => $labId,
-                    'collection_product_id' => $document->collection_id]);
-                if (! $entry || ! $result->sample || (int) $result->sample->cl_id !== (int) $document->cl_id
-                    || ($result->counter_analysis && ! $this->ownership->resolve([
-                        'counter_analysis_id' => $result->counter_analysis->id, 'sample_entry_id' => $entry->id,
-                    ]))) {
-                    throw new AuthorizationException('O boletim contém resultados sem uma origem laboratorial coerente.');
-                }
-            }
+            $this->assertCertificateIntegrity($document);
         }
 
         return ['document' => $document, 'operator' => $operator,
             'fingerprint' => hash('sha256', serialize($this->graph($document)))];
+    }
+
+    public function assertCertificateIntegrity(QualityCertificate $document): void
+    {
+        $labId = $this->owner($document);
+        $document->loadMissing(['collection.product.matrix', 'collection.packaging', 'collection.sampleEntry.customerRequest',
+            'collection.code', 'results.parameter', 'results.unit', 'results.profile', 'results.standard',
+            'results.protocol', 'results.counter_analysis', 'results.sample']);
+        foreach ($document->results as $result) {
+            $entry = $this->ownership->resolve(['result_id' => $result->id, 'lab_id' => $labId,
+                'collection_product_id' => $document->collection_id]);
+            if (! $entry || ! $result->sample || (int) $result->sample->cl_id !== (int) $document->cl_id
+                || ($result->counter_analysis && ! $this->ownership->resolve([
+                    'counter_analysis_id' => $result->counter_analysis->id, 'sample_entry_id' => $entry->id,
+                ]))) {
+                throw new AuthorizationException('O boletim contém resultados sem uma origem laboratorial coerente.');
+            }
+        }
     }
 
     public function owner(Model $document): int

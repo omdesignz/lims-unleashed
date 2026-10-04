@@ -21,6 +21,7 @@ import { computed, reactive, ref, watch } from "vue";
 defineOptions({ layout: PortalLayout });
 
 const props = defineProps({
+  invitations: { type: Array, default: () => [] },
   record: { type: Object, default: () => ({ data: [], meta: {} }) },
   request_categories: { type: Array, default: () => [] },
   service_catalog: { type: Array, default: () => [] },
@@ -69,12 +70,14 @@ function buildDefaultDetails() {
 }
 
 function initialFormData(type = props.prefill?.request_type || props.service_catalog[0]?.type || "general_support") {
+  const warehouse = props.warehouse?.data ?? props.warehouse;
   return {
     request_type: type,
+    invitation: props.invitations[0]?.token || "",
     title: props.prefill?.title || "",
     description: "",
-    email: props.warehouse?.email || "",
-    contact: props.warehouse?.primary_phone || props.warehouse?.alternative_phone || "",
+    email: warehouse?.email || "",
+    contact: warehouse?.primary_phone || warehouse?.alternative_phone || "",
     category_id: null,
     priority: "normal",
     preferred_date: "",
@@ -135,6 +138,7 @@ function handleRequestTypeChange() {
 }
 
 function submitRequest() {
+  if (form.processing || !form.invitation) return;
   form.transform((data) => ({
     ...data,
     details: {
@@ -282,11 +286,12 @@ function requestDetailLines(request) {
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-[var(--ds-text-muted)]">{{ request.reference || `REQ-${request.id}` }}</span><span :class="['ds-chip', statusClass(request.status)]">{{ statusLabel(request.status) }}</span><span class="ds-chip">{{ typeLabel(request.request_type) }}</span><span class="ds-chip">Prioridade {{ priorityLabel(request.priority) }}</span></div>
                 <h3 class="mt-3 break-words text-base font-bold text-[var(--ds-text)]">{{ request.title || "Pedido sem título" }}</h3>
+                <p v-if="request.lab_name" class="ds-copy mt-1 text-sm">Laboratório: {{ request.lab_name }}</p>
                 <p class="ds-copy mt-1 max-w-3xl text-sm">{{ request.description }}</p>
               </div>
               <div class="flex flex-wrap gap-2">
-                <Link v-if="request.status !== 'completed'" :href="route('portal.request.markAsDone', { id: request.id })" class="ds-button ds-button-secondary"><CheckCircleIcon class="h-4 w-4" />Concluir</Link>
-                <Link v-if="request.status !== 'cancelled'" :href="route('portal.request.destroy', { id: request.id })" class="ds-button ds-button-secondary text-rose-700 dark:text-rose-200"><XMarkIcon class="h-4 w-4" />Cancelar</Link>
+                <Link v-if="request.status !== 'completed'" :href="route('portal.request.markAsDone', { id: request.id })" method="post" as="button" class="ds-button ds-button-secondary"><CheckCircleIcon class="h-4 w-4" />Concluir</Link>
+                <Link v-if="request.status !== 'cancelled'" :href="route('portal.request.destroy', { id: request.id })" method="delete" as="button" class="ds-button ds-button-secondary text-rose-700 dark:text-rose-200"><XMarkIcon class="h-4 w-4" />Cancelar</Link>
               </div>
             </div>
 
@@ -308,12 +313,23 @@ function requestDetailLines(request) {
     <SlideOver v-if="isPanelOpen" title="Nova pedido" :description="selectedService?.description || 'Descreva a necessidade para triagem pela equipa do laboratório.'" @close="closeRequestPanel">
       <template #content>
         <form id="portal-request-form" @submit.prevent="submitRequest">
+          <div class="space-y-3 p-5 sm:p-6">
+            <label for="portal-service-invitation" class="ds-field-group">
+              <span class="ds-field-label">Laboratório destinatário</span>
+              <BaseSelect id="portal-service-invitation" v-model="form.invitation" class="ds-field" :disabled="!invitations.length" :aria-invalid="Boolean(form.errors.invitation)" aria-describedby="portal-invitation-help">
+                <option value="">Seleccione um convite</option>
+                <option v-for="invitation in invitations" :key="invitation.token" :value="invitation.token">{{ invitation.lab_name }} · válido até {{ formatDate(invitation.expires_at) }}</option>
+              </BaseSelect>
+            </label>
+            <p id="portal-invitation-help" class="ds-copy text-sm">{{ invitations.length ? "O pedido será partilhado apenas com o laboratório seleccionado. Cada convite permite um pedido." : "Sem convites disponíveis. Peça ao laboratório um convite para esta conta antes de submeter um pedido." }}</p>
+            <p v-if="form.errors.invitation" class="ds-field-error" role="alert">{{ form.errors.invitation }}</p>
+          </div>
           <div v-if="form.errors.duplicate_submission" class="m-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 sm:m-6 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-200">{{ form.errors.duplicate_submission }}</div>
-          <PortalRequestForm :form="form" :services="service_catalog" :categories="request_categories" :profiles="analysis_profiles" :products="products" :matrixes="matrixes" :packaging-categories="packaging_categories" :warehouse="warehouse" @request-type-change="handleRequestTypeChange" />
+          <PortalRequestForm :form="form" :services="service_catalog" :categories="request_categories" :profiles="analysis_profiles" :products="products" :matrixes="matrixes" :packaging-categories="packaging_categories" :warehouse="props.warehouse?.data ?? props.warehouse" @request-type-change="handleRequestTypeChange" />
         </form>
       </template>
       <template #action_buttons>
-        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" class="ds-button ds-button-secondary" @click="closeRequestPanel">Cancelar</button><button type="submit" form="portal-request-form" class="ds-button ds-button-primary" :disabled="form.processing">{{ form.processing ? "A submeter..." : "Submeter pedido" }}</button></div>
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" class="ds-button ds-button-secondary" @click="closeRequestPanel">Cancelar</button><button type="submit" form="portal-request-form" class="ds-button ds-button-primary" :disabled="form.processing || !form.invitation || !invitations.length">{{ form.processing ? "A submeter..." : "Submeter pedido" }}</button></div>
       </template>
     </SlideOver>
   </div>

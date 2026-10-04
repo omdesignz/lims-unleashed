@@ -2,29 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Orders\InventoryOrderItemStatus;
-use App\Enums\Orders\InventoryOrderTrackingStatus;
+use App\Actions\ApproveInventoryNeed;
+use App\Actions\ConvertInventoryNeedToOrder;
+use App\Actions\RejectInventoryNeed;
+use App\Http\Requests\ApproveInventoryNeedRequest;
+use App\Http\Requests\ConvertInventoryNeedToOrderRequest;
 use App\Http\Requests\InventoryNeedRequest;
+use App\Http\Requests\RejectInventoryNeedRequest;
 use App\Models\Department;
 use App\Models\InventoryItem;
 use App\Models\InventoryItemSupplier;
 use App\Models\InventoryItemWarehouse;
 use App\Models\InventoryNeed;
 use App\Models\InventoryNeedItem;
-use App\Models\InventoryOrder;
-use App\Models\InventoryOrderDetail;
 use App\Models\InventorySupplierAssessment;
 use App\Models\VAPLab;
 use App\Services\SampleLaboratoryAccess;
 use App\Support\InventoryNeedWorkflowNotifier;
-use App\Support\InventoryQuantity;
 use App\Support\PdfResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use PDF;
 
@@ -364,8 +364,10 @@ class VAPInventoryNeedController extends Controller
 
         return Inertia::render('VAPInventory/Needs/Show', [
             'need' => $need,
-            'canApprove' => in_array($need->status, ['submitted'], true),
-            'canConvertToOrder' => $need->status === 'approved' && $need->inventory_order_id === null,
+            'canApprove' => $need->status === 'submitted' && $need->inventory_order_id === null
+                && auth()->user()->can('edit_iorders') && ! session()->has('impersonate'),
+            'canConvertToOrder' => $need->status === 'approved' && $need->inventory_order_id === null
+                && auth()->user()->can('add_iorders') && ! session()->has('impersonate'),
             'suppliers' => $this->supplierOptions(),
             'charts' => [
                 'quantity_scope' => [
@@ -427,151 +429,29 @@ class VAPInventoryNeedController extends Controller
         return PdfResponse::inline($pdf, $filename);
     }
 
-    public function approve(Request $request, InventoryNeed $need, InventoryNeedWorkflowNotifier $notifier)
+    public function approve(ApproveInventoryNeedRequest $request, InventoryNeed $need, ApproveInventoryNeed $approve, InventoryNeedWorkflowNotifier $notifier): RedirectResponse
     {
-        $this->ensureOwnedNeed($need);
-        abort_if(! auth()->user()->hasRole('admin') && ! auth()->user()->can('edit_iorders'), 403);
-
-        $validated = $request->validate([
-            'approval_notes' => ['nullable', 'string', 'max:5000'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.id' => ['required', 'integer', 'distinct', Rule::exists('inventory_need_items', 'id')->where('inventory_need_id', $need->id)],
-            'items.*.quantity_approved' => ['required', 'numeric', 'decimal:0,4', 'min:0.0001'],
-        ]);
-
-        DB::transaction(function () use ($need, $validated): void {
-            foreach ($validated['items'] as $itemPayload) {
-                /** @var InventoryNeedItem $item */
-                $item = $need->items()->findOrFail($itemPayload['id']);
-                if (InventoryQuantity::compare($itemPayload['quantity_approved'], $item->quantity_requested) > 0) {
-                    throw ValidationException::withMessages([
-                        'items' => 'A quantidade aprovada não pode exceder a quantidade solicitada.',
-                    ]);
-                }
-                $item->update([
-                    'quantity_approved' => InventoryQuantity::fromScaled(InventoryQuantity::toScaled($itemPayload['quantity_approved'])),
-                    'status' => 'approved',
-                ]);
-            }
-
-            $need->update([
-                'status' => 'approved',
-                'approval_notes' => $validated['approval_notes'] ?? null,
-                'approved_by_id' => auth()->id(),
-                'approved_at' => now(),
-                'rejected_at' => null,
-            ]);
-        });
-
-        $need->refresh();
-        $need->load(['requestedBy:id,name,email']);
-        $notifier->approved($need);
+        $need = $approve->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $need->id, $request->validated());
+        $notifier->approved($need->load('requestedBy:id,name,email'));
 
         return back()->with('success', 'Necessidade aprovada e pronta para aquisição.');
     }
 
-    public function reject(Request $request, InventoryNeed $need, InventoryNeedWorkflowNotifier $notifier)
+    public function reject(RejectInventoryNeedRequest $request, InventoryNeed $need, RejectInventoryNeed $reject, InventoryNeedWorkflowNotifier $notifier): RedirectResponse
     {
-        $this->ensureOwnedNeed($need);
-        abort_if(! auth()->user()->hasRole('admin') && ! auth()->user()->can('edit_iorders'), 403);
-
-        $validated = $request->validate([
-            'approval_notes' => ['required', 'string', 'max:5000'],
-        ]);
-
-        $need->update([
-            'status' => 'rejected',
-            'approval_notes' => $validated['approval_notes'],
-            'approved_by_id' => auth()->id(),
-            'rejected_at' => now(),
-        ]);
-
-        $need->refresh();
-        $need->load(['requestedBy:id,name,email']);
-        $notifier->rejected($need);
+        $need = $reject->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $need->id, $request->validated('approval_notes'));
+        $notifier->rejected($need->load('requestedBy:id,name,email'));
 
         return back()->with('success', 'Necessidade rejeitada com registo do motivo.');
     }
 
-    public function convertToOrder(Request $request, InventoryNeed $need, InventoryNeedWorkflowNotifier $notifier)
+    public function convertToOrder(ConvertInventoryNeedToOrderRequest $request, InventoryNeed $need, ConvertInventoryNeedToOrder $convert, InventoryNeedWorkflowNotifier $notifier): RedirectResponse
     {
-        $this->ensureOwnedNeed($need);
-        abort_if(! auth()->user()->hasRole('admin') && ! auth()->user()->can('add_iorders'), 403);
-
-        $validated = $request->validate([
-            'supplier_id' => ['required', 'exists:i_suppliers,id'],
-            'date' => ['required', 'date'],
-            'expected_date' => ['nullable', 'date'],
-            'reference' => ['nullable', 'string', 'max:255'],
-            'obs' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        abort_if($need->status !== 'approved', 422, 'Apenas necessidades aprovadas podem ser convertidas em pedidos.');
-        abort_if($need->inventory_order_id !== null, 422, 'Esta necessidade já foi convertida num pedido.');
-
-        $supplier = InventoryItemSupplier::query()->findOrFail($validated['supplier_id']);
-        $supplierAssessmentBlocker = $this->supplierAssessmentBlocker($supplier);
-
-        if ($supplierAssessmentBlocker !== null) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', $supplierAssessmentBlocker);
-        }
-
-        $order = DB::transaction(function () use ($need, $validated, $supplier): InventoryOrder {
-            $order = InventoryOrder::query()->create([
-                'lab_id' => $need->lab_id,
-                'date' => $validated['date'],
-                'user_id' => auth()->id(),
-                'supplier_id' => $supplier->id,
-                'order_year' => now()->format('Y'),
-                'reference' => $validated['reference'] ?? null,
-                'obs' => trim(($validated['obs'] ?? '')."\nOrigem: necessidade {$need->reference}"),
-                'status' => InventoryOrderTrackingStatus::PENDING,
-                'currency' => $supplier->currency ?? 'USD',
-                'total_amount' => 0,
-            ]);
-
-            $totalAmount = 0;
-
-            foreach ($need->items as $needItem) {
-                $quantity = $needItem->quantity_approved ?: $needItem->quantity_requested;
-                $unitPrice = (float) ($needItem->estimated_unit_price ?? 0);
-
-                InventoryOrderDetail::query()->create([
-                    'order_id' => $order->id,
-                    'item_id' => $needItem->inventory_item_id,
-                    'qty' => $quantity,
-                    'received_qty' => 0,
-                    'unit_price' => $unitPrice,
-                    'warehouse_id' => $needItem->warehouse_id,
-                    'expected_date' => $validated['expected_date'] ?? $need->needed_by_date,
-                    'status' => InventoryOrderItemStatus::PENDING,
-                    'currency' => $supplier->currency ?? 'USD',
-                ]);
-
-                $needItem->update(['status' => 'ordered']);
-                $totalAmount += $quantity * $unitPrice;
-            }
-
-            $order->update(['total_amount' => $totalAmount]);
-
-            $need->update([
-                'status' => 'ordered',
-                'inventory_order_id' => $order->id,
-            ]);
-
-            return $order;
-        });
-
+        $order = $convert->execute($request->user()->id, $this->laboratoryAccess->activeLabId(), $need->id, $request->validated());
+        $notifier->convertedToOrder($need->refresh()->load(['requestedBy:id,name,email', 'approvedBy:id,name,email']), $order);
         $response = redirect()->route('vap-inventory.orders.show', $order)
             ->with('success', 'Necessidade convertida em pedido de compra.');
-
-        $need->refresh();
-        $need->load(['requestedBy:id,name,email', 'approvedBy:id,name,email']);
-        $notifier->convertedToOrder($need, $order);
-
-        if ($warning = $this->supplierAssessmentWarning($supplier)) {
+        if ($warning = $this->supplierAssessmentWarning($order->supplier)) {
             $response->with('warning', $warning);
         }
 
@@ -622,33 +502,6 @@ class VAPInventoryNeedController extends Controller
                     ] : null,
                 ];
             });
-    }
-
-    private function supplierAssessmentBlocker(?InventoryItemSupplier $supplier): ?string
-    {
-        if ($supplier === null) {
-            return 'O fornecedor seleccionado não está disponível.';
-        }
-
-        $assessment = InventorySupplierAssessment::query()
-            ->where('lab_id', $this->laboratoryAccess->activeLabId())
-            ->where('inventory_item_supplier_id', $supplier->id)
-            ->latest('assessment_date')
-            ->first();
-
-        if ($assessment === null) {
-            return null;
-        }
-
-        if (in_array($assessment->status, ['rejected', 'suspended'], true)) {
-            return 'Este fornecedor está bloqueado pela avaliação mais recente e não pode ser usado nesta aquisição.';
-        }
-
-        if ($assessment->risk_level === 'critical' && ! $assessment->approved_supplier) {
-            return 'Este fornecedor apresenta risco crítico sem aprovação activa e não pode ser usado nesta aquisição.';
-        }
-
-        return null;
     }
 
     private function supplierAssessmentWarning(?InventoryItemSupplier $supplier): ?string

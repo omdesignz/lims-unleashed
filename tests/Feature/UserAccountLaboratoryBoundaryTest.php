@@ -20,6 +20,29 @@ class UserAccountLaboratoryBoundaryTest extends TestCase
 {
     use DatabaseTransactions;
 
+    public function test_dossier_access_labels_fall_back_to_names_when_translation_is_missing(): void
+    {
+        $lab = VAPLab::factory()->create();
+        $actor = $this->member($lab, true);
+        $target = $this->member($lab);
+        $permission = Permission::findOrCreate('dossier-unlabelled-permission', 'web');
+        $role = Role::findOrCreate('dossier-unlabelled-role', 'web');
+        $permission->update(['label' => null]);
+        $role->update(['label' => '  ']);
+        $target->givePermissionTo($permission);
+        $target->assignRole($role);
+        $response = $this->actingAs($actor)->withSession(['active_lab_id' => $lab->id])
+            ->get(route('users.edit', $target))->assertOk();
+        foreach (['record.permissions', 'permissions'] as $key) {
+            $options = collect(data_get($response->viewData('page'), 'props.'.$key))->keyBy('value');
+            $this->assertSame($permission->name, $options[$permission->id]['label']);
+        }
+        foreach (['record.roles', 'roles'] as $key) {
+            $options = collect(data_get($response->viewData('page'), 'props.'.$key))->keyBy('value');
+            $this->assertSame($role->name, $options[$role->id]['label']);
+        }
+    }
+
     public function test_user_creation_requires_a_real_password_and_joins_the_active_laboratory(): void
     {
         $lab = VAPLab::factory()->create();

@@ -13,10 +13,11 @@ test('save prevents duplicates, read-only and unchanged writes, and uses preset 
   const selectedTemplate = { value: { key: 'quality.rating.requested', id: 999 } };
   const busy = { value: false };
   const props = { canEdit: true };
-  const form = { isDirty: true, put: (...args) => { calls.push(args); busy.value = true; } };
+  const form = { isDirty: true, clearErrors() {}, put: (...args) => { calls.push(args); busy.value = true; } };
+  const resetForm = { clearErrors() {} };
   let loads = 0;
-  const save = new Function('selectedTemplate', 'busy', 'props', 'form', 'route', 'loadTemplate', body('save'));
-  const execute = () => save(selectedTemplate, busy, props, form, (name, parameters) => ({ name, parameters }), () => loads++);
+  const save = new Function('selectedTemplate', 'busy', 'props', 'form', 'route', 'loadTemplate', 'resetForm', body('save'));
+  const execute = () => save(selectedTemplate, busy, props, form, (name, parameters) => ({ name, parameters }), () => loads++, resetForm);
   execute(); execute();
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0][0], { name: 'admin.notification-templates.update', parameters: { key: 'quality.rating.requested' } });
@@ -38,10 +39,11 @@ test('restore requires a saved local override, confirmation, and an idle mutatio
   const busy = { value: false };
   const selectedTemplate = { value: { key: 'quality.rating.requested', is_overridden: true } };
   const props = { canEdit: true };
-  const resetForm = { delete: (...args) => { calls.push(args); busy.value = true; } };
+  const resetForm = { clearErrors() {}, delete: (...args) => { calls.push(args); busy.value = true; } };
+  const form = { clearErrors() {} };
   let loads = 0;
-  const restore = new Function('selectedTemplate', 'busy', 'props', 'window', 'resetForm', 'route', 'loadTemplate', body('restorePreset'));
-  const execute = (confirm) => restore(selectedTemplate, busy, props, { confirm: () => confirm }, resetForm, (name, parameters) => ({ name, parameters }), () => loads++);
+  const restore = new Function('selectedTemplate', 'busy', 'props', 'window', 'resetForm', 'route', 'loadTemplate', 'form', body('restorePreset'));
+  const execute = (confirm) => restore(selectedTemplate, busy, props, { confirm: () => confirm }, resetForm, (name, parameters) => ({ name, parameters }), () => loads++, form);
   execute(false);
   assert.equal(calls.length, 0);
   execute(true); execute(true);
@@ -76,6 +78,42 @@ test('changing selection never discards a draft without confirmation and never i
   assert.equal(selectedKey.value, 'new.key');
   assert.doesNotMatch(source, /watch\(filteredTemplates/);
   assert.doesNotMatch(source, /useForm\(['"]/);
+});
+
+test('save and restore retain drafts on transport failure or cancellation and allow an explicit retry', () => {
+  for (const operation of ['save', 'restorePreset']) {
+    const calls = [];
+    const busy = { value: false };
+    const makeForm = () => ({
+      title_template: 'Retained draft', channels: ['database'], isDirty: true, errors: {},
+      clearErrors() { this.errors = {}; },
+      setError(key, value) { this.errors[key] = value; },
+      put(...args) { calls.push(args); busy.value = true; },
+      delete(...args) { calls.push(args); busy.value = true; },
+    });
+    const form = makeForm();
+    const resetForm = makeForm();
+    let loads = 0;
+    const execute = new Function('selectedTemplate', 'busy', 'props', 'window', 'form', 'resetForm', 'route', 'loadTemplate', body(operation));
+    const run = () => execute({ value: { key: 'commercial.invoice.paid', is_overridden: true } }, busy, { canEdit: true }, { confirm: () => true }, form, resetForm, (name) => name, () => loads++);
+    run();
+    for (const callback of ['onNetworkError', 'onHttpException', 'onCancel']) {
+      const result = calls.at(-1)[1][callback]();
+      if (callback !== 'onCancel') assert.equal(result, false);
+      const errors = operation === 'save' ? form.errors : resetForm.errors;
+      assert.match(errors.request, /rascunho foi preservado/);
+      assert.equal(form.title_template, 'Retained draft');
+      assert.deepEqual(form.channels, ['database']);
+      assert.equal(loads, 0);
+      busy.value = false;
+      run();
+      assert.deepEqual(form.errors, {});
+      assert.deepEqual(resetForm.errors, {});
+    }
+    assert.equal(calls.length, 4);
+    calls.at(-1)[1].onSuccess();
+    assert.equal(loads, 1);
+  }
 });
 
 test('rejected response prop refresh does not overwrite drafts; changing owner or preset loads new defaults', async () => {
@@ -115,8 +153,8 @@ test('editor renders ownership, inheritance, errors, busy and read-only states',
       setup: () => ({
         laboratory: { name: 'Owning Lab' }, search: '', category: '', categoryOptions: [], priorityOptions: [],
         selectedKey: selectedTemplate.key, selectedTemplate, filteredTemplates: [selectedTemplate], ...state,
-        form: { enabled: true, channels: ['database'], errors: { title_template: 'Title required', channels: 'Channel required' }, processing: state.busy, isDirty: true },
-        resetForm: { processing: false, errors: {} },
+        form: { enabled: true, channels: ['database'], errors: { title_template: 'Title required', channels: 'Channel required', request: 'Save failed; draft retained' }, processing: state.busy, isDirty: true },
+        resetForm: { processing: false, errors: { request: 'Restore failed; draft retained' } },
         selectTemplate: () => {}, toggleChannel: () => {}, save: () => {}, restorePreset: () => {}, variableToken: (name) => `{{${name}}}`,
       }), render,
     });
@@ -124,6 +162,7 @@ test('editor renders ownership, inheritance, errors, busy and read-only states',
       app.component(name, { props: ['error', 'label'], render() { return Vue.h('label', [this.label, this.error ? Vue.h('span', { role: 'alert' }, this.error) : null]); } });
     }
     app.component('NotificationAdminHeader', { props: ['description'], render() { return Vue.h('header', this.description); } });
+    app.component('Head', { render: () => null });
     for (const name of ['ArrowPathIcon', 'CheckCircleIcon', 'EnvelopeIcon', 'MagnifyingGlassIcon', 'SignalIcon']) {
       app.component(name, { render: () => Vue.h('svg') });
     }
@@ -133,6 +172,8 @@ test('editor renders ownership, inheritance, errors, busy and read-only states',
     assert.match(html, /aria-pressed="true"/);
     assert.match(html, /Title required/);
     assert.match(html, /Channel required/);
+    assert.match(html, /role="alert"[^>]*>Save failed; draft retained/);
+    assert.match(html, /role="alert"[^>]*>Restore failed; draft retained/);
     assert.match(html, state.overridden ? /Personalização deste laboratório/ : /Modelo partilhado · sem personalização/);
     if (state.busy || !state.canEdit) assert.match(html, /<fieldset[^>]*disabled/);
     else assert.doesNotMatch(html, /<fieldset[^>]*disabled/);
@@ -142,6 +183,43 @@ test('editor renders ownership, inheritance, errors, busy and read-only states',
     }
     if (state.busy) assert.match(html, /A guardar…/);
   }
+});
+
+test('all administrative notification pages compile with meaningful document titles', () => {
+  const titles = {
+    Index: 'Registo de notificações', Dashboard: 'Visão geral de notificações',
+    Analytics: 'Analítica de comunicação', Show: 'Detalhe da notificação',
+    Templates: 'Modelos de comunicação', Create: 'Compor notificação',
+  };
+  for (const [page, title] of Object.entries(titles)) {
+    const content = readFileSync(new URL(`../../resources/js/Pages/Admin/Notifications/${page}.vue`, import.meta.url), 'utf8');
+    assert.ok(content.includes(`<Head title="${title}" />`));
+    const { descriptor, errors } = parse(content);
+    assert.deepEqual(errors, []);
+    const script = compileScript(descriptor, { id: `notification-${page}` });
+    const result = compileTemplate({ id: `notification-${page}`, source: descriptor.template.content, compilerOptions: { bindingMetadata: script.bindings } });
+    assert.deepEqual(result.errors, []);
+  }
+});
+
+test('horizontal notification navigation overrides sidebar widths and identifies the current page', async () => {
+  const header = readFileSync(new URL('../../resources/js/Components/notifications/NotificationAdminHeader.vue', import.meta.url), 'utf8');
+  const { descriptor } = parse(header);
+  assert.match(header, /class="ds-settings-tab w-auto! min-w-0! items-center!"/);
+  assert.doesNotMatch(header, /route\(\)\.current/);
+  const compiled = compileTemplate({ id: 'notification-header', source: descriptor.template.content, compilerOptions: { mode: 'function' } });
+  assert.deepEqual(compiled.errors, []);
+  const render = new Function('Vue', compiled.code)(Vue);
+  const navigation = ['dashboard', 'index', 'create', 'templates', 'analytics'].map((name) => ({ label: name, route: name, icon: 'span' }));
+  const app = Vue.createSSRApp({
+    setup: () => ({ title: 'Notifications', description: 'Lab', navigation, page: { url: '/templates?search=invoice' }, route: (name) => `/${name}` }), render,
+  });
+  app.component('Link', { props: ['href'], render() { return Vue.h('a', { href: this.href }, this.$slots.default()); } });
+  app.component('BellAlertIcon', { render: () => Vue.h('svg') });
+  const html = await renderToString(app);
+  assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1);
+  assert.match(html, /href="\/templates"[^>]*aria-current="page"/);
+  assert.equal((html.match(/class="ds-settings-tab w-auto!/g) ?? []).length, 5);
 });
 
 test('template editor compiles and exposes empty search results without switching the selected draft', () => {
@@ -156,4 +234,5 @@ test('template editor compiles and exposes empty search results without switchin
   assert.match(source, /label="Destino definido pelo sistema" readonly/);
   assert.match(source, /id="template-priority"[^>]*:disabled="busy \|\| !canEdit"/);
   assert.match(source, /motion-reduce:animate-none/);
+  assert.match(source, /class="flex min-w-0 flex-wrap gap-2"[\s\S]*Usar modelo partilhado[\s\S]*Guardar para este laboratório/);
 });

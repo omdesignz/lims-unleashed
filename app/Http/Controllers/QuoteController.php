@@ -11,7 +11,6 @@ use App\Http\Requests\SetBillingDocumentsArchivedRequest;
 use App\Http\Resources\FinancialObservationResource;
 use App\Http\Resources\QuoteAuthoringResource;
 use App\Http\Resources\QuoteResource;
-use App\Models\DiscountCategory;
 use App\Models\Quote;
 use App\Settings\GeneralSettings;
 use App\Support\ReportStudioPdfBuilder;
@@ -88,14 +87,7 @@ class QuoteController extends Controller
     {
         abort_if(! auth()->user()->can('add_quotes'), 403, '');
 
-        return Inertia::render('Quotes/Create', [
-            'discount_categories' => collect(DiscountCategory::all())->map(function ($item) {
-                return [
-                    'value' => $item->id,
-                    'label' => $item->symbol,
-                ];
-            }),
-        ]);
+        return Inertia::render('Quotes/Create');
     }
 
     /**

@@ -9,7 +9,7 @@ import {
   notificationTypeLabel,
 } from '@/Composables/useNotificationPresentation'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { Link, router, useForm } from '@inertiajs/vue3'
+import { Head, Link, router, useForm } from '@inertiajs/vue3'
 import {
   Download as ArrowDownTrayIcon,
   RefreshCw as ArrowPathIcon,
@@ -68,6 +68,7 @@ const markAsUnread = (notification) => {
 
 <template>
   <div class="space-y-5">
+    <Head title="Registo de notificações" />
     <NotificationAdminHeader
       title="Registo de notificações"
       :description="`${notifications.total} mensagens auditáveis no histórico de comunicação.`"

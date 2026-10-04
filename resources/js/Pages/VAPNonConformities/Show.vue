@@ -1,5 +1,10 @@
 <template>
   <div class="min-w-0 space-y-6 overflow-x-clip">
+    <Head title="Não conformidades" />
+    <p v-if="downloads.error.value" role="alert" class="ds-alert ds-alert-danger">{{ downloads.error.value }}</p>
+    <p v-if="downloads.processing.value" role="status">A preparar exportação…</p>
+    <p v-if="archive.failed.value" role="alert" class="ds-alert ds-alert-danger">{{ archive.message.value }}</p>
+    <p v-if="archive.processing.value" role="status">A guardar…</p>
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div class="min-w-0">
@@ -26,15 +31,15 @@
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
-          <a :href="route('vap_non_conformities.export.details.pdf', nonConformity.id)" class="ds-button ds-button-secondary">
+          <button type="button" :disabled="downloads.processing.value" @click="downloads.download(route('vap_non_conformities.export.details.pdf', nonConformity.id))" class="ds-button ds-button-secondary">
             <ArrowDownTrayIcon class="h-4 w-4" />
             PDF
-          </a>
-          <a :href="route('vap_non_conformities.export.details.excel', nonConformity.id)" class="ds-button ds-button-secondary">
+          </button>
+          <button type="button" :disabled="downloads.processing.value" @click="downloads.download(route('vap_non_conformities.export.details.excel', nonConformity.id))" class="ds-button ds-button-secondary">
             <DocumentArrowDownIcon class="h-4 w-4" />
             Excel
-          </a>
-          <Link :href="route('vap_non_conformities.edit', nonConformity.id)" class="ds-button ds-button-primary">
+          </button>
+          <Link v-if="can.edit && !nonConformity.deleted_at" :href="route('vap_non_conformities.edit', nonConformity.id)" class="ds-button ds-button-primary">
             <PencilSquareIcon class="h-4 w-4" />
             {{ $t('gestlab.general.labels.vap_non_conformities.buttons.edit') }}
           </Link>
@@ -68,6 +73,7 @@
       </nav>
     </section>
 
+    <NonConformityLifecycle :record="nonConformity" :can="can" />
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <div class="space-y-6">
         <section v-show="activeDossierSection === 'overview'" class="ds-panel overflow-hidden">
@@ -126,6 +132,7 @@
 
           <div v-if="actionRows.length" class="divide-y divide-[var(--ds-border)]">
             <article v-for="(action, index) in actionRows" :key="action.id || index" class="p-5">
+              <p v-if="action.deleted_at" class="ds-chip mb-3">Arquivada · Histórico preservado</p>
               <div class="flex items-start justify-between gap-4">
                 <div class="flex min-w-0 items-start gap-3">
                   <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-sm font-black text-[var(--ds-text)]">
@@ -235,13 +242,14 @@
           <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.vap_non_conformities.actions.title') }}</h2>
           <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">Acções administrativas para este dossier.</p>
           <div class="mt-5 space-y-2">
-            <Link :href="route('vap_non_conformities.edit', nonConformity.id)" class="ds-button ds-button-primary w-full">
+            <button v-if="can.restore && nonConformity.deleted_at" type="button" :disabled="archive.processing.value" class="ds-button ds-button-primary w-full" @click="archive.submit('restore', [nonConformity.id])">Restaurar não conformidade</button>
+            <Link v-if="can.edit && !nonConformity.deleted_at" :href="route('vap_non_conformities.edit', nonConformity.id)" class="ds-button ds-button-primary w-full">
               <PencilSquareIcon class="h-4 w-4" />
               {{ $t('gestlab.general.labels.vap_non_conformities.buttons.edit_nc') }}
             </Link>
-            <button type="button" class="ds-button ds-button-danger w-full" @click="openDeleteModal">
+            <button v-if="can.archive && !nonConformity.deleted_at" type="button" :disabled="archive.processing.value" class="ds-button ds-button-danger w-full" @click="openDeleteModal">
               <TrashIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.labels.vap_non_conformities.buttons.delete_nc') }}
+              Arquivar não conformidade
             </button>
           </div>
         </section>
@@ -267,14 +275,17 @@
 
     <confirm-dialog
       v-if="showDeleteModal"
-      :title="$t('gestlab.general.labels.vap_non_conformities.delete_title')"
-      :description="$t('gestlab.general.labels.vap_non_conformities.delete_message')"
+      title="Arquivar não conformidade?"
+      description="O dossier, as acções e os anexos serão preservados. Pode restaurar o registo com autorização."
       :cancel="$t('gestlab.general.labels.vap_non_conformities.buttons.cancel')"
-      :confirm="$t('gestlab.general.labels.vap_non_conformities.buttons.delete')"
+      :disabled="archive.processing.value"
+      :keep-open-on-confirm="true"
+      confirm="Arquivar"
       variant="danger"
       @confirmed="deleteNc"
       @canceled="closeDeleteModal"
     >
+      <p v-if="archive.failed.value" role="alert" class="ds-alert ds-alert-danger">{{ archive.message.value }}</p>
       <div class="mt-4 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 text-left">
         <p class="font-mono text-xs font-black text-[var(--ds-text-soft)]">{{ nonConformity.nc_number }}</p>
         <p class="mt-1 text-sm font-bold text-[var(--ds-text)]">{{ nonConformity.title }}</p>
@@ -284,8 +295,11 @@
 </template>
 
 <script setup>
+import NonConformityLifecycle from '@/Pages/VAPNonConformities/NonConformityLifecycle.vue'
+import { useFileDownload } from '@/Composables/useFileDownload'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import {
   Download as ArrowDownTrayIcon,
   ClipboardCheck as ClipboardDocumentCheckIcon,
@@ -302,7 +316,9 @@ import {
 } from '@lucide/vue'
 import { computed, ref } from 'vue'
 
+const downloads = useFileDownload()
 const props = defineProps({
+  can: { type: Object, default: () => ({}) },
   nonConformity: {
     type: Object,
     required: true,
@@ -317,6 +333,11 @@ const props = defineProps({
   },
 })
 
+const archive = useRecordArchive({
+  destroyUrl: ids => route('vap_non_conformities.destroy', ids[0]),
+  restoreUrl: ids => route('vap_non_conformities.restore', ids[0]),
+  onSuccess: () => { showDeleteModal.value = false },
+})
 const showDeleteModal = ref(false)
 const activeDossierSection = ref('overview')
 
@@ -546,14 +567,11 @@ function openDeleteModal() {
 }
 
 function closeDeleteModal() {
+  if (archive.processing.value) return
   showDeleteModal.value = false
 }
 
 function deleteNc() {
-  router.delete(route('vap_non_conformities.destroy', props.nonConformity.id), {
-    onSuccess: () => {
-      router.visit(route('vap_non_conformities.index'))
-    },
-  })
+  archive.submit('delete', [props.nonConformity.id])
 }
 </script>

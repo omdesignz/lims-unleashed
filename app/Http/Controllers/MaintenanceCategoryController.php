@@ -2,200 +2,94 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Actions\ArchiveMaintenanceCategory;
+use App\Actions\SaveMaintenanceCategory;
+use App\Http\Requests\MaintenanceCategoryIndexRequest;
 use App\Http\Requests\MaintenanceCategoryRequest;
 use App\Http\Resources\MaintenanceCategoryResource;
-use Illuminate\Support\Facades\DB;
 use App\Models\MaintenanceCategory;
+use App\Services\SampleLaboratoryAccess;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Spatie\QueryBuilder\QueryBuilder;
+use Inertia\Response;
 
 class MaintenanceCategoryController extends Controller
 {
+    public function __construct(private readonly SampleLaboratoryAccess $access) {}
 
-    /**
-     * Display a listing of the resource.
-     *
-     */
-    public function index()
+    public function index(MaintenanceCategoryIndexRequest $request): Response
     {
-        abort_if( !auth()->user()->can('view_maintenance_categories'), 403, '');
+        $labId = $this->access->activeLabId();
+        $query = MaintenanceCategory::availableToLaboratory($labId)
+            ->when($request->boolean('archived'), fn ($query) => $query->onlyTrashed())
+            ->when($request->validated('search'), fn ($query, $search) => $query
+                ->where(fn ($query) => $query->where('name', 'ilike', '%'.$search.'%')
+                    ->orWhere('code', 'ilike', '%'.$search.'%')->orWhere('description', 'ilike', '%'.$search.'%')));
+        $stats = [
+            'total' => (clone $query)->count(),
+            'presets' => (clone $query)->whereNull('lab_id')->count(),
+            'owned' => (clone $query)->where('lab_id', $labId)->count(),
+        ];
 
-        $records = QueryBuilder::for(MaintenanceCategory::class)
-                                ->allowedFilters(MaintenanceCategory::getAllowedFilters())
-                                ->allowedSorts(MaintenanceCategory::getAllowedSorts())
-                                ->paginate(request()->query('per_page', 10)); 
-
-
-        return Inertia::render('MaintenanceCategories/Index', [
-            'record' => MaintenanceCategoryResource::collection($records),
-            'initialFilters' => request()->query('filter', ['name' => '', 'description' => '', 'code' => '', 'created_at' => '', 'globalFilter' => '']),
-            'initialSortField' => request()->query('sort') ? (request()->query('sort')[0] === '-' ? ltrim(request()->query('sort'), '-') : request()->query('sort')) : '',
-            'initialSortDirection' => request()->query('sort') ? (request()->query('sort')[0] === '-' ? 'desc' : 'asc') : 'asc',
-            'initialIncludes' => request()->query('includes', []),
-            'initialGlobalFilter' => request()->query('globalFilter', ''),
-            'per_page' => request()->query('per_page', 2),
-            'slideOverEdit' => true,  
-            'trashedFilter' => true,
-            'trashedOptions' => MaintenanceCategory::getTrashedOptions(),
-            'fields' => MaintenanceCategory::getColumns(),
-            'model' => MaintenanceCategory::MENU_NAME,
-            'abilities' => method_exists(MaintenanceCategory::class, 'getAbilities') ? collect(MaintenanceCategory::ABILITIES)->map(function($item){
-                return $item . '_' . MaintenanceCategory::MENU_NAME;
-            }) : collect(config('gestlab.default_abilities'))->map(function($item){
-                return $item . '_' . MaintenanceCategory::MENU_NAME;
-            }),                           
-            'query' => request()->only(['search', 'trashed', 'date', 'orderBy'])
+        return Inertia::render('VAPMaintenance/Categories/Index', [
+            'breadcrumbs' => [
+                ['title' => 'Tarefas de manutenção', 'url' => route('vap-maintenance.tasks'), 'current' => false],
+                ['title' => 'Categorias', 'current' => true],
+            ],
+            'categories' => $query->withExists(['tasks as code_locked' => fn ($query) => $query->withTrashed()])
+                ->orderBy('name')->orderBy('id')->paginate($request->validated('per_page') ?? 15)->withQueryString()
+                ->through(fn ($category) => MaintenanceCategoryResource::make($category)->resolve($request)),
+            'stats' => $stats,
+            'filters' => $request->safe()->except(['page', 'per_page']),
+            'can' => collect(['create' => 'add', 'edit' => 'edit', 'archive' => 'delete', 'restore' => 'restore'])
+                ->map(fn ($ability) => ! $request->session()->has('impersonate') && $request->user()->can($ability.'_maintenance_categories')),
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     */
-    public function create()
+    public function store(MaintenanceCategoryRequest $request, SaveMaintenanceCategory $save): RedirectResponse
     {
-        abort_if(!auth()->user()->can('add_maintenance_categories'), 403, '');
+        $save->execute($request->user()->id, $this->access->activeLabId(), $request->validated());
 
-        // Get any required data
-
-        // Load form
-
-        return Inertia::render('MaintenanceCategories/Create', []);
+        return to_route('vap-maintenance.categories')->with('toast', ['message' => 'Categoria criada.']);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     */
-    public function store(MaintenanceCategoryRequest $request)
+    public function update(MaintenanceCategoryRequest $request, MaintenanceCategory $category, SaveMaintenanceCategory $save): RedirectResponse
     {
-        abort_if(!auth()->user()->can('add_maintenance_categories'), 403, '');
+        $save->execute($request->user()->id, $this->access->activeLabId(), $request->validated(), $category->id);
 
-        // Persiste data to DB
-        MaintenanceCategory::create($request->validated());
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
-        ]);
+        return back()->with('toast', ['message' => 'Categoria actualizada.']);
     }
 
-    /**
-     * Display the specified resource.
-     *
-     */
-    public function show($id)
+    public function destroy(Request $request, MaintenanceCategory $category, ArchiveMaintenanceCategory $archive): RedirectResponse
     {
-        //
+        $archive->execute($request->user()->id, $this->access->activeLabId(), $category->id);
+
+        return back()->with('toast', ['message' => 'Categoria arquivada. Os registos existentes foram preservados.']);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     */
-    public function edit($id)
+    public function restore(Request $request, MaintenanceCategory $category, ArchiveMaintenanceCategory $archive): RedirectResponse
     {
-        abort_if(!auth()->user()->can('edit_maintenance_categories'), 403, '');
+        $archive->execute($request->user()->id, $this->access->activeLabId(), $category->id, true);
 
-        // Find the record
-        $record = MaintenanceCategory::findOrFail($id);
-
-        // Return Inertia View with record data
-        return Inertia::render('MaintenanceCategories/Edit', [
-            'record' => MaintenanceCategoryResource::make($record)
-        ]);
+        return back()->with('toast', ['message' => 'Categoria restaurada.']);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     */
-    public function update(MaintenanceCategoryRequest $request, $id)
+    public function legacyIndex(): RedirectResponse
     {
-        abort_if(!auth()->user()->can('edit_maintenance_categories'), 403, '');
+        $this->access->activeLabId();
 
-        // Find the record
-        $record = MaintenanceCategory::findOrFail($id);
-
-        $record->update($request->validated());
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
-        ]);
+        return to_route('vap-maintenance.categories');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     */
-    public function destroy()
+    public function lookup(Request $request): JsonResponse
     {
-        abort_if(!auth()->user()->can('delete_maintenance_categories'), 403, '');
+        $data = $request->validate(['q' => ['nullable', 'string', 'max:200']]);
+        $query = MaintenanceCategory::availableToLaboratory($this->access->activeLabId());
 
-        request()->validate([
-            'recordIds' => ['required', 'array']
-        ]);
-        // Find and delete the record
-        foreach (MaintenanceCategory::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->delete();
-        }
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
-        ]);
-    }
-
-    /**
-     * restore the specified resource from storage.
-     *
-     */
-    public function restore()
-    {
-        abort_if(!auth()->user()->can('restore_maintenance_categories'), 403, '');
-
-        request()->validate([
-            'recordIds' => ['required', 'array']
-        ]);
-        // Find and restore the record
-        foreach (MaintenanceCategory::withTrashed()->findOrFail(request('recordIds')) as $record) {
-            $record->restore();
-        }
-
-        return redirect()->back()->with([
-            'toast' => [
-                'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ]
-        ]);
-    }
-
-
-    public function getMaintenanceCategory()
-    {
-        $data = [];
-
-        if (request()->filled('q')) {
-            $search = request('q');
-
-            $data = MaintenanceCategory::query()
-                ->select(['id', 'name', 'code', 'description'])
-                ->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                })
-                ->limit(25)
-                ->get();
-        }
-
-        return response()->json($data);
+        return response()->json(blank($data['q'] ?? null) ? [] : $query
+            ->where(fn ($query) => $query->where('name', 'ilike', '%'.$data['q'].'%')->orWhere('code', 'ilike', '%'.$data['q'].'%'))
+            ->orderBy('name')->limit(25)->get(['id', 'name', 'code', 'description']));
     }
 }
