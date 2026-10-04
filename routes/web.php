@@ -896,10 +896,12 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
 
     Route::controller(ControlChartController::class)->group(function () {
         Route::get('control-charts', 'index')->name('control-charts.index');
+        Route::get('control-charts/materials', 'materials')->name('control-charts.materials');
         Route::post('control-charts', 'store')->name('control-charts.store');
         Route::get('control-charts/{chart}', 'show')->whereNumber('chart')->name('control-charts.show');
         Route::put('control-charts/{chart}', 'update')->whereNumber('chart')->name('control-charts.update');
         Route::delete('control-charts/{chart}', 'destroy')->whereNumber('chart')->name('control-charts.destroy');
+        Route::post('control-charts/{chart}/feed', 'feedResults')->whereNumber('chart')->name('control-charts.feed');
         Route::post('control-charts/{chart}/limits', 'computeLimits')->whereNumber('chart')->name('control-charts.limits');
         Route::post('control-charts/{chart}/points', 'storePoint')->whereNumber('chart')->name('control-charts.points.store');
         Route::put('control-charts/{chart}/points/{point}', 'updatePoint')->whereNumber(['chart', 'point'])->name('control-charts.points.update');

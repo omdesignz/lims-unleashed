@@ -1401,7 +1401,12 @@ Basis: ISO/IEC 17025:2017 clause 7.8 (reporting of results) and the Portuguese a
   - **PDF:** a controlled record with the drawing (SVG both renderers draw), limits, statistics, points, actions and the rules.
   - **Code and tests:** `App\Support\ControlChartEvaluation` (pure, tested in `tests/Unit/ControlChartEvaluationTest`), `ControlChartDocument`, `ControlChartController`, and the `ControlCharts/Index` and `ControlCharts/Show` pages. Workflow, permission and laboratory-scope tests are in `ControlChartManagementTest`. Permissions are `view|add|edit|delete|restore_control_charts`; a migration creates them and gives them to `admin`.
   - **PlanoChart:** reference lines now always fit inside the value axis. A line chart can show its points and colour some of them by state (`points`); its limit labels sit at the right end.
-- **Not done:** points are entered by hand, not taken from results of QC samples, because the application does not mark which samples are control samples.
+- **Quality control samples feed the charts (same day).**
+  - **Marking:** a catalogue product can be marked "Material de controlo interno" (`products.is_control_material`). Every sample of it is a quality control sample, and the sample page says so and names the charts it feeds.
+  - **Chart side:** a chart names its control material (`control_charts.control_product_id`, only marked products are accepted) and its parameter.
+  - **Feeding:** `ControlChartFeed` turns each approved, numeric result of that parameter, on samples of that material received in the chart's laboratory, into a point. A range chart takes the first two approved results of a sample (analysis and counter-analysis) as duplicates.
+  - **When it runs:** on approval (`FeedControlCharts` listens to `AnalysisResultsApproved` and `CounterAnalysisResultsApproved` after commit; a failure is reported and never undoes the approval), when the chart is saved, and from "Trazer resultados aprovados".
+  - **Each result plotted once:** points keep `result_id` / `paired_result_id` / `sample_entry_id`, unique per chart, so a result is plotted once and an excluded point does not come back. Manual entry stays available.
 
 ### Open items
 

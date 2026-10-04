@@ -32,6 +32,7 @@ class ProductResource extends JsonResource
             'tax_id' => $this->tax_id,
             'tax_category' => TaxTypeResource::make($this->tax_category)?->name ?? null,
             'withhold_tax' => $this->withhold_tax,
+            'is_control_material' => (bool) $this->is_control_material,
             'deleted' => $this->deleted_at ? true : false,
             'links' => [
                 'edit_path' => route('products.edit', $this->id),

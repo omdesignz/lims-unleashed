@@ -12,6 +12,7 @@ use App\Http\Requests\VAP\UpdateInternalQualityControlDecisionRequest;
 use App\Http\Resources\SampleIntakeResource;
 use App\Imports\VAPSampleEntriesImport;
 use App\Models\Analysis;
+use App\Models\ControlChart;
 use App\Models\Customer;
 use App\Models\CustomerRequest;
 use App\Models\Department;
@@ -311,7 +312,21 @@ class VAPSampleEntryController extends Controller
             'quality_certificate_pdf_url' => $qualityCertificate ? route('qualitycertificates.getPDF', ['id' => $qualityCertificate->id]) : null,
         ];
 
+        $controlMaterial = $sampleEntry->collectionProduct?->product?->is_control_material ? $sampleEntry->collectionProduct->product : null;
+
         return Inertia::render('VAPSamples/Show', [
+            // A sample of a control material is a quality control sample: its approved results feed these charts.
+            'qualityControl' => $controlMaterial ? [
+                'material' => $controlMaterial->name,
+                'charts' => ControlChart::query()
+                    ->where('lab_id', $sampleEntry->lab_id)
+                    ->where('control_product_id', $controlMaterial->id)
+                    ->where('status', 'active')
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->map(fn (ControlChart $chart): array => ['name' => $chart->name, 'url' => route('control-charts.show', $chart)])
+                    ->all(),
+            ] : null,
             'sample' => [
                 'id' => $sampleEntry->id,
                 'name' => $sampleEntry->name,

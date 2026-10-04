@@ -28,7 +28,10 @@
         ['label' => 'Método', 'value' => $chart->method],
         ['label' => 'Matriz', 'value' => $chart->matrix],
         ['label' => 'Unidade', 'value' => $chart->unit],
-        ['label' => 'Material de controlo', 'value' => $chart->control_material],
+        ['label' => 'Material de controlo', 'value' => $chart->control_material ?: $chart->controlProduct?->name],
+        ['label' => 'Origem dos pontos', 'value' => \App\Services\ControlChartFeed::feedsFromResults($chart)
+            ? 'Resultados aprovados das amostras de '.($chart->controlProduct?->name ?? 'controlo').' e valores registados à mão'
+            : 'Valores registados à mão', 'wide' => true],
         ['label' => 'Lote do material', 'value' => $chart->material_lot],
     ]);
 

@@ -17,6 +17,7 @@ const props = defineProps({
   analyses: { type: Array, default: () => [] },
   linkedSampleIds: { type: Array, default: () => [] },
   workflowSummary: { type: Object, default: () => ({}) },
+  qualityControl: { type: Object, default: null },
 })
 const { hasPermission } = usePermission()
 const canEdit = computed(() => hasPermission('edit_samples'))
@@ -104,6 +105,7 @@ function submitQcDecision() {
       <template #badges>
         <StatusChip :tone="statusTone">{{ sampleStatusLabels[sample.status] || sample.status }}</StatusChip>
         <StatusChip v-if="isInternalQcSample" :tone="gateTone">{{ releaseGate.label || 'Aguardar avaliação' }}</StatusChip>
+        <StatusChip v-if="qualityControl" tone="run">Amostra de controlo da qualidade</StatusChip>
       </template>
       <template #lede>{{ sample.customer?.name || 'Cliente por associar' }} — {{ sample.name }}. {{ sample.lab?.name || 'Laboratório por associar' }} · recepção {{ sampleDate(sample.received_at) }}.</template>
       <template #actions>
@@ -112,6 +114,15 @@ function submitQcDecision() {
         <Link v-if="canDiscard" :href="route('vap_samples.index', { discard: sample.id })" class="ds-button ds-button-quiet">Registar descarte</Link>
       </template>
     </PageHeader>
+
+    <p v-if="qualityControl" class="mb-6 text-sm text-[var(--pl-muted)]">
+      Amostra de {{ qualityControl.material }}, material de controlo interno.
+      <template v-if="qualityControl.charts.length">
+        Os resultados aprovados entram em:
+        <template v-for="(chart, index) in qualityControl.charts" :key="chart.url"><Link :href="chart.url" class="text-[var(--pl-fg)] underline underline-offset-2">{{ chart.name }}</Link>{{ index < qualityControl.charts.length - 1 ? ', ' : '.' }}</template>
+      </template>
+      <template v-else>Nenhuma carta de controlo activa usa este material.</template>
+    </p>
 
     <Journey class="mb-10" :steps="journey" />
 

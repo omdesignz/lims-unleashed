@@ -145,6 +145,15 @@ function formatMoney(value) {
           <textarea id="product-description" v-model="form.description" rows="4" class="ds-field min-h-28 resize-y"></textarea>
           <p v-if="form.errors.description" class="ds-field-error mt-2">{{ form.errors.description }}</p>
         </div>
+
+        <div class="overflow-hidden rounded-lg border border-[var(--ds-border)] sm:col-span-2">
+          <ToggleField
+            id="product-control-material"
+            v-model="form.is_control_material"
+            label="Material de controlo interno"
+            description="Material de referência ou amostra de controlo do laboratório. As suas amostras são amostras de controlo da qualidade e os resultados aprovados alimentam as cartas de controlo deste material."
+          />
+        </div>
       </div>
     </section>
 

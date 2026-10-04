@@ -17,6 +17,7 @@ const form = useForm({
   matrix_id: null,
   charge_tax: true,
   withhold_tax: false,
+  is_control_material: false,
 });
 
 function submit() {

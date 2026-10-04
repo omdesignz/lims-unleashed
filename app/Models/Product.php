@@ -29,6 +29,7 @@ class Product extends Model
         'fixed_price',
         'tax_id',
         'tax_percentage',
+        'is_control_material',
     ];
 
     protected $table = 'products';
@@ -45,6 +46,7 @@ class Product extends Model
     protected $casts = [
         'charge_tax' => 'boolean',
         'withhold_tax' => 'boolean',
+        'is_control_material' => 'boolean',
     ];
 
     /**

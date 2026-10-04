@@ -6,8 +6,8 @@ import PlanoChart from '@/Components/plano/PlanoChart.vue'
 import StatusChip from '@/Components/plano/StatusChip.vue'
 import SlideOver from '@/Components/slide-over.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { Head, router, useForm } from '@inertiajs/vue3'
-import { Calculator as CalculatorIcon, FileDown as DocumentArrowDownIcon, SquarePen as PencilIcon } from '@lucide/vue'
+import { Head, Link, router, useForm } from '@inertiajs/vue3'
+import { Calculator as CalculatorIcon, FileDown as DocumentArrowDownIcon, SquarePen as PencilIcon, RefreshCw as ArrowPathIcon } from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 defineOptions({ layout: Layout })
@@ -18,6 +18,7 @@ const props = defineProps({
   points: { type: Array, default: () => [] },
   statistics: { type: Object, required: true },
   limitHistory: { type: Array, default: () => [] },
+  controlSamples: { type: Array, default: () => [] },
   rules: { type: Object, default: () => ({}) },
   minimumPointsForLimits: { type: Number, default: 10 },
   recommendedPointsForLimits: { type: Number, default: 20 },
@@ -106,6 +107,7 @@ const editing = ref(false)
 const chartForm = useForm({
   name: props.chart.name,
   parameter_id: props.chart.parameter_id,
+  control_product_id: props.chart.control_product_id,
   method: props.chart.method ?? '',
   matrix: props.chart.matrix ?? '',
   control_material: props.chart.control_material ?? '',
@@ -133,6 +135,11 @@ function setStatus(status) {
 const computeForm = useForm({ limits_basis: '' })
 function computeLimits() {
   computeForm.post(route('control-charts.limits', props.chart.id), { preserveScroll: true })
+}
+
+const feedForm = useForm({})
+function feedResults() {
+  feedForm.post(route('control-charts.feed', props.chart.id), { preserveScroll: true })
 }
 
 function destroyChart() {
@@ -235,6 +242,33 @@ function destroyChart() {
       </aside>
     </section>
 
+    <section class="pl-panel">
+      <header class="pl-panel-head flex-wrap gap-3">
+        <h2 class="pl-k">Amostras de controlo</h2>
+        <button v-if="canEdit && chart.feeds_from_results" type="button" class="ds-button ds-button-secondary" :disabled="feedForm.processing" @click="feedResults">
+          <ArrowPathIcon class="h-4 w-4" aria-hidden="true" />
+          Trazer resultados aprovados
+        </button>
+      </header>
+      <div v-if="chart.feeds_from_results" class="p-4">
+        <p class="text-sm text-[var(--pl-muted)]">
+          Cada amostra de <strong class="text-[var(--pl-fg)]">{{ chart.control_product }}</strong> recebida neste laboratório é uma amostra de controlo.
+          Quando o resultado de <strong class="text-[var(--pl-fg)]">{{ chart.parameter }}</strong> é aprovado{{ chart.is_range ? ' na análise e na contra-análise' : '' }}, entra na carta como ponto.
+        </p>
+        <ul v-if="controlSamples.length" class="mt-3 divide-y divide-[var(--pl-line)] border-y border-[var(--pl-line)] text-sm">
+          <li v-for="sample in controlSamples" :key="sample.id" class="flex items-center justify-between gap-3 py-2">
+            <Link :href="sample.url" class="pl-num hover:text-[var(--pl-accent-text)]">{{ sample.code }}</Link>
+            <span class="text-xs text-[var(--pl-muted)]">{{ sample.received_at || 'Por receber' }}</span>
+            <StatusChip :tone="sample.points ? 'ok' : 'neutral'">{{ sample.points ? `${sample.points} na carta` : 'Sem resultado aprovado' }}</StatusChip>
+          </li>
+        </ul>
+        <p v-else class="mt-3 text-sm text-[var(--pl-muted)]">Ainda não foram recebidas amostras deste material.</p>
+      </div>
+      <p v-else class="p-4 text-sm text-[var(--pl-muted)]">
+        Os pontos são registados à mão. Para os receber dos resultados, indique em «Editar» o parâmetro e um material marcado no catálogo de produtos como material de controlo interno.
+      </p>
+    </section>
+
     <section v-if="canEdit" class="pl-panel">
       <header class="pl-panel-head"><h2 class="pl-k">Registar valor de controlo</h2></header>
       <form class="grid gap-4 p-4 md:grid-cols-[10rem_repeat(2,minmax(0,1fr))_minmax(0,1.4fr)_auto] md:items-end" @submit.prevent="recordPoint">
@@ -291,7 +325,11 @@ function destroyChart() {
             <tr v-for="point in [...points].reverse()" :key="point.id" :class="{ 'opacity-60': point.excluded }">
               <td class="pl-num px-4 py-2 text-right">{{ point.sequence }}</td>
               <td class="px-4 py-2">{{ point.measured_at }}<span v-if="point.recorded_by" class="block text-xs text-[var(--pl-muted)]">{{ point.recorded_by }}</span></td>
-              <td class="px-4 py-2">{{ point.run_reference || '—' }}</td>
+              <td class="px-4 py-2">
+                <Link v-if="point.sample_entry_url" :href="point.sample_entry_url" class="underline decoration-[var(--pl-line-strong)] underline-offset-2 hover:text-[var(--pl-accent-text)]">{{ point.run_reference || point.sample_entry_code }}</Link>
+                <template v-else>{{ point.run_reference || '—' }}</template>
+                <span class="block text-xs text-[var(--pl-muted)]">{{ point.from_result ? 'Resultado aprovado' : 'Registo manual' }}</span>
+              </td>
               <td v-if="chart.is_range" class="pl-num px-4 py-2 text-right">{{ number(point.replicate_a) }} / {{ number(point.replicate_b) }}</td>
               <td class="pl-num px-4 py-2 text-right font-bold" :class="{ 'line-through': point.excluded }">{{ number(point.value) }}</td>
               <td class="px-4 py-2">

@@ -24,6 +24,7 @@ const form = useForm({
   matrix_id: product.matrix_id ? { value: product.matrix_id, label: product.matrix || `Matriz ${product.matrix_id}` } : null,
   charge_tax: Boolean(product.charge_tax),
   withhold_tax: Boolean(product.withhold_tax),
+  is_control_material: Boolean(product.is_control_material),
 });
 
 function submit() {

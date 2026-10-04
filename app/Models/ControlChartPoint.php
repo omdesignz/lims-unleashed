@@ -29,6 +29,9 @@ class ControlChartPoint extends Model
         'corrective_action_at',
         'corrective_action_by_id',
         'recorded_by_id',
+        'result_id',
+        'paired_result_id',
+        'sample_entry_id',
     ];
 
     protected function casts(): array
@@ -46,6 +49,12 @@ class ControlChartPoint extends Model
     public function chart(): BelongsTo
     {
         return $this->belongsTo(ControlChart::class, 'control_chart_id');
+    }
+
+    /** The quality control sample whose approved result this point is. */
+    public function sampleEntry(): BelongsTo
+    {
+        return $this->belongsTo(VAPSampleEntry::class, 'sample_entry_id');
     }
 
     public function recordedBy(): BelongsTo

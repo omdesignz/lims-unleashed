@@ -26,6 +26,7 @@ const form = useForm({
   name: '',
   chart_type: 'mean',
   parameter_id: null,
+  control_product_id: null,
   method: '',
   matrix: '',
   control_material: '',

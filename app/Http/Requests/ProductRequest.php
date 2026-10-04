@@ -36,6 +36,7 @@ class ProductRequest extends FormRequest
             'fixed_price' => ['required', 'numeric', 'min:0'],
             'charge_tax' => ['required', 'boolean'],
             'withhold_tax' => ['required', 'boolean'],
+            'is_control_material' => ['sometimes', 'boolean'],
             'tax_id' => [
                 Rule::requiredIf($this->boolean('charge_tax')),
                 'nullable',

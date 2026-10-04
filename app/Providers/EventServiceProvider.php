@@ -14,6 +14,7 @@ use App\Events\InventoryOrderUpdatedEvent;
 use App\Events\OrderDeliveredEvent;
 use App\Events\ReagentConsumed;
 use App\Events\StockUpdated;
+use App\Listeners\FeedControlCharts;
 use App\Listeners\GenerateAnalysisReportDocument;
 use App\Listeners\PublishValidatedResultIntegrations;
 use App\Listeners\SendOperationalEventNotification;
@@ -43,10 +44,10 @@ class EventServiceProvider extends ServiceProvider
         ],
         AnalysisResultsInserted::class => [SendOperationalEventNotification::class],
         AnalysisResultsVerified::class => [SendOperationalEventNotification::class],
-        AnalysisResultsApproved::class => [SendOperationalEventNotification::class],
+        AnalysisResultsApproved::class => [SendOperationalEventNotification::class, FeedControlCharts::class],
         CounterAnalysisResultsInserted::class => [SendOperationalEventNotification::class],
         CounterAnalysisResultsVerified::class => [SendOperationalEventNotification::class],
-        CounterAnalysisResultsApproved::class => [SendOperationalEventNotification::class],
+        CounterAnalysisResultsApproved::class => [SendOperationalEventNotification::class, FeedControlCharts::class],
         CollectionProcessed::class => [SendOperationalEventNotification::class],
         InventoryOrderUpdatedEvent::class => [SendOperationalEventNotification::class],
         OrderDeliveredEvent::class => [SendOperationalEventNotification::class],

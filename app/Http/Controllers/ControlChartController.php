@@ -5,10 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ControlChartRequest;
 use App\Models\ControlChart;
 use App\Models\ControlChartPoint;
+use App\Models\Product;
+use App\Models\VAPSampleEntry;
+use App\Services\ControlChartFeed;
 use App\Services\SampleLaboratoryAccess;
 use App\Support\ControlChartDocument;
 use App\Support\ControlChartEvaluation;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -27,7 +31,10 @@ use Spatie\Activitylog\Models\Activity;
  */
 class ControlChartController extends Controller
 {
-    public function __construct(private readonly SampleLaboratoryAccess $laboratoryAccess) {}
+    public function __construct(
+        private readonly SampleLaboratoryAccess $laboratoryAccess,
+        private readonly ControlChartFeed $feed,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -39,7 +46,7 @@ class ControlChartController extends Controller
         $status = $filters['status'] ?? 'active';
 
         $charts = $this->labCharts()
-            ->with(['parameter:id,name,code', 'points'])
+            ->with(['parameter:id,name,code', 'controlProduct:id,name', 'points'])
             ->where('status', $status)
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query->where(fn (Builder $inner) => $inner
                 ->where('name', 'ilike', "%{$search}%")
@@ -77,9 +84,16 @@ class ControlChartController extends Controller
             'created_by_id' => $request->user()->id,
         ]);
 
+        $imported = $this->feed->feed($chart);
+
         return to_route('control-charts.show', $chart)->with('toast', [
             'title' => 'Carta de controlo criada',
-            'message' => $chart->limits() ? 'Registe os valores de controlo à medida que são obtidos.' : 'Defina os limites, ou calcule-os quando tiver pelo menos '.ControlChartEvaluation::MINIMUM_POINTS_FOR_LIMITS.' pontos.',
+            'message' => match (true) {
+                $imported > 0 => $imported.' resultados aprovados das amostras de controlo foram trazidos para a carta.',
+                ControlChartFeed::feedsFromResults($chart) => 'Os resultados aprovados das amostras de controlo entram na carta automaticamente.',
+                $chart->limits() !== null => 'Registe os valores de controlo à medida que são obtidos.',
+                default => 'Defina os limites, ou calcule-os quando tiver pelo menos '.ControlChartEvaluation::MINIMUM_POINTS_FOR_LIMITS.' pontos.',
+            },
         ]);
     }
 
@@ -87,7 +101,7 @@ class ControlChartController extends Controller
     {
         $this->authorizeAbility('view');
         $this->assertOwns($chart);
-        $chart->load(['parameter:id,name,code', 'points.recordedBy:id,name', 'points.correctiveActionBy:id,name', 'limitsSetBy:id,name']);
+        $chart->load(['parameter:id,name,code', 'controlProduct:id,name', 'points.recordedBy:id,name', 'points.correctiveActionBy:id,name', 'points.sampleEntry:id,code', 'limitsSetBy:id,name']);
         $document = new ControlChartDocument($chart);
 
         return Inertia::render('ControlCharts/Show', [
@@ -95,6 +109,8 @@ class ControlChartController extends Controller
                 ...$this->summary($chart),
                 'chart_type' => $chart->chart_type,
                 'parameter_id' => $chart->parameter ? ['value' => $chart->parameter->id, 'label' => trim($chart->parameter->code.' · '.$chart->parameter->name, ' ·')] : null,
+                'control_product_id' => $chart->controlProduct ? ['value' => $chart->controlProduct->id, 'label' => $chart->controlProduct->name] : null,
+                'feeds_from_results' => ControlChartFeed::feedsFromResults($chart),
                 'matrix' => $chart->matrix,
                 'material_lot' => $chart->material_lot,
                 'centre_line' => $chart->centre_line,
@@ -112,6 +128,7 @@ class ControlChartController extends Controller
             'points' => $document->points(),
             'statistics' => $document->statistics(),
             'limitHistory' => $this->limitHistory($chart),
+            'controlSamples' => $this->controlSamples($chart),
             'rules' => ControlChartEvaluation::RULES,
             'minimumPointsForLimits' => ControlChartEvaluation::MINIMUM_POINTS_FOR_LIMITS,
             'recommendedPointsForLimits' => ControlChartEvaluation::RECOMMENDED_POINTS_FOR_LIMITS,
@@ -137,7 +154,44 @@ class ControlChartController extends Controller
             $chart->save();
         });
 
-        return back()->with('toast', ['title' => 'Carta de controlo actualizada', 'message' => 'As alterações aos limites ficam no histórico da carta.']);
+        $imported = $this->feed->feed($chart->fresh());
+
+        return back()->with('toast', ['title' => 'Carta de controlo actualizada', 'message' => $imported > 0
+            ? $imported.' resultados aprovados das amostras de controlo foram trazidos para a carta.'
+            : 'As alterações aos limites ficam no histórico da carta.']);
+    }
+
+    /**
+     * Brings any approved result of the chart's quality control samples that
+     * is not yet on it. Approval does this on its own; this repeats it.
+     */
+    public function feedResults(ControlChart $chart): RedirectResponse
+    {
+        $this->authorizeAbility('edit');
+        $this->assertOwns($chart);
+        abort_unless(ControlChartFeed::feedsFromResults($chart), 409, 'A carta não tem parâmetro e material de controlo definidos.');
+
+        $imported = $this->feed->feed($chart);
+
+        return back()->with('toast', ['title' => 'Resultados das amostras de controlo', 'message' => $imported > 0
+            ? $imported.' novos pontos a partir de resultados aprovados.'
+            : 'Não há resultados aprovados novos para esta carta.']);
+    }
+
+    /**
+     * Catalogue products marked as control material, for choosing a chart's.
+     */
+    public function materials(Request $request): JsonResponse
+    {
+        $this->authorizeAbility('view');
+        $search = trim((string) $request->query('q', ''));
+
+        return response()->json(Product::query()
+            ->where('is_control_material', true)
+            ->when($search !== '', fn (Builder $query) => $query->where('name', 'ilike', "%{$search}%"))
+            ->orderBy('name')
+            ->limit(30)
+            ->get(['id', 'name']));
     }
 
     /**
@@ -265,7 +319,7 @@ class ControlChartController extends Controller
     {
         $this->authorizeAbility('view');
         $this->assertOwns($chart);
-        $chart->load(['parameter:id,name,code', 'points.recordedBy:id,name', 'points.correctiveActionBy:id,name', 'limitsSetBy:id,name', 'lab:id,name']);
+        $chart->load(['parameter:id,name,code', 'controlProduct:id,name', 'points.recordedBy:id,name', 'points.correctiveActionBy:id,name', 'points.sampleEntry:id,code', 'limitsSetBy:id,name', 'lab:id,name']);
 
         return (new ControlChartDocument($chart))->download();
     }
@@ -287,7 +341,8 @@ class ControlChartController extends Controller
             'is_range' => $chart->isRange(),
             'parameter' => $chart->parameter ? trim(($chart->parameter->code ? $chart->parameter->code.' · ' : '').$chart->parameter->name) : null,
             'method' => $chart->method,
-            'control_material' => $chart->control_material,
+            'control_material' => $chart->control_material ?: $chart->controlProduct?->name,
+            'control_product' => $chart->controlProduct?->name,
             'unit' => $chart->unit,
             'has_limits' => $chart->limits() !== null,
             'point_count' => $included->count(),
@@ -314,6 +369,37 @@ class ControlChartController extends Controller
             'limits_set_at' => $set ? now() : null,
             'limits_set_by_id' => $set ? $request->user()->id : null,
         ];
+    }
+
+    /**
+     * The latest quality control samples of the chart's control material in
+     * this laboratory, with how many of their results are on the chart.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function controlSamples(ControlChart $chart): array
+    {
+        if (! $chart->control_product_id) {
+            return [];
+        }
+
+        $plotted = $chart->points->whereNotNull('sample_entry_id')->countBy('sample_entry_id');
+
+        return VAPSampleEntry::query()
+            ->where('lab_id', $chart->lab_id)
+            ->whereHas('collectionProduct', fn (Builder $query) => $query->where('product_id', $chart->control_product_id))
+            ->latest('received_at')
+            ->latest('id')
+            ->limit(10)
+            ->get(['id', 'code', 'status', 'received_at'])
+            ->map(fn (VAPSampleEntry $entry): array => [
+                'id' => $entry->id,
+                'code' => $entry->code,
+                'received_at' => $entry->received_at?->format('d/m/Y'),
+                'points' => (int) ($plotted[$entry->id] ?? 0),
+                'url' => route('vap_samples.show', $entry->id),
+            ])
+            ->all();
     }
 
     /**

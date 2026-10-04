@@ -40,6 +40,7 @@ class ControlChart extends Model
         'name',
         'chart_type',
         'parameter_id',
+        'control_product_id',
         'method',
         'matrix',
         'control_material',
@@ -70,7 +71,7 @@ class ControlChart extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'chart_type', 'parameter_id', 'method', 'control_material', 'material_lot', 'unit',
+            ->logOnly(['name', 'chart_type', 'parameter_id', 'control_product_id', 'method', 'control_material', 'material_lot', 'unit',
                 'centre_line', 'standard_deviation', 'limits_source', 'limits_basis', 'limits_point_count', 'status'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
@@ -85,6 +86,12 @@ class ControlChart extends Model
     public function parameter(): BelongsTo
     {
         return $this->belongsTo(Parameter::class)->withTrashed();
+    }
+
+    /** The control material whose samples feed this chart. */
+    public function controlProduct(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'control_product_id')->withTrashed();
     }
 
     public function limitsSetBy(): BelongsTo

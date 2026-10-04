@@ -16,6 +16,10 @@ const props = defineProps({
 
 const isRange = computed(() => props.form.chart_type === 'range')
 
+function loadMaterials(query, setOptions) {
+  return loadSelectOptions('/control-charts/materials', query, setOptions, (item) => ({ value: item.id, label: item.name }))
+}
+
 function loadParameters(query, setOptions) {
   return loadSelectOptions('/parameters/getParameter', query, setOptions, (item) => ({
     value: item.id,
@@ -59,6 +63,15 @@ function loadParameters(query, setOptions) {
         <label class="ds-field-label">Parâmetro</label>
         <Combobox v-model="form.parameter_id" :load-options="loadParameters" placeholder="Opcional" />
         <p v-if="form.errors.parameter_id" class="ds-field-error">{{ form.errors.parameter_id }}</p>
+      </div>
+      <div class="ds-field-group md:col-span-2">
+        <label class="ds-field-label">Amostras de controlo (material do catálogo)</label>
+        <Combobox v-model="form.control_product_id" :load-options="loadMaterials" placeholder="Opcional" />
+        <p class="ds-field-hint">
+          Com um parâmetro e um material marcado como «Material de controlo interno» no catálogo de produtos, os resultados aprovados
+          {{ isRange ? 'em duplicado (análise e contra-análise)' : '' }} das amostras desse material entram na carta sozinhos.
+        </p>
+        <p v-if="form.errors.control_product_id" class="ds-field-error">{{ form.errors.control_product_id }}</p>
       </div>
       <div class="ds-field-group">
         <label class="ds-field-label" for="control-chart-method">Método</label>

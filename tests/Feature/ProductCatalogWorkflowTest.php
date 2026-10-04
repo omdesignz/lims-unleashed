@@ -94,6 +94,32 @@ class ProductCatalogWorkflowTest extends TestCase
                 ->where('record.data.0.tax_status', 'Isento'));
     }
 
+    public function test_a_product_can_be_marked_as_internal_control_material(): void
+    {
+        $admin = $this->verifiedAdmin();
+        $matrix = Matrix::query()->create(['description' => 'Control material matrix']);
+        $exemption = TaxExemption::query()->create(['code' => 'TEST-QC', 'reason' => 'Internal material']);
+        $payload = [
+            'name' => 'MRC '.Str::uuid(),
+            'price' => 0,
+            'fixed_price' => 0,
+            'tax_percentage' => 0,
+            'matrix_id' => ['value' => $matrix->id, 'label' => $matrix->description],
+            'exemption_id' => ['value' => $exemption->id, 'label' => $exemption->code],
+            'charge_tax' => false,
+            'withhold_tax' => false,
+        ];
+
+        $this->actingAs($admin)->post(route('products.store'), $payload)->assertSessionHasNoErrors();
+        $product = Product::query()->where('name', $payload['name'])->firstOrFail();
+        $this->assertFalse($product->is_control_material, 'a product is not a control material unless marked');
+
+        $this->actingAs($admin)->put(route('products.update', $product), [...$payload, 'is_control_material' => true])->assertSessionHasNoErrors();
+        $this->assertTrue($product->fresh()->is_control_material);
+        $this->actingAs($admin)->get(route('products.edit', $product))
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('record.data.is_control_material', true));
+    }
+
     public function test_product_rejects_unknown_tax_and_exemption_references(): void
     {
         $admin = $this->verifiedAdmin();

@@ -26,6 +26,8 @@ class ControlChartRequest extends FormRequest
             // The type decides what a point is; it is fixed once the chart exists.
             'chart_type' => $creating ? ['required', Rule::in(ControlChartEvaluation::TYPES)] : ['prohibited'],
             'parameter_id' => ['nullable', 'integer', 'exists:parameters,id'],
+            // Only a product marked as control material: its samples are quality control samples.
+            'control_product_id' => ['nullable', 'integer', Rule::exists('products', 'id')->where('is_control_material', true)->whereNull('deleted_at')],
             'method' => ['nullable', 'string', 'max:160'],
             'matrix' => ['nullable', 'string', 'max:160'],
             'control_material' => ['nullable', 'string', 'max:160'],
@@ -57,11 +59,13 @@ class ControlChartRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $parameter = $this->input('parameter_id');
+        $product = $this->input('control_product_id');
         $decimal = fn (mixed $value): mixed => is_string($value) ? (trim($value) === '' ? null : str_replace(',', '.', trim($value))) : $value;
 
         // Only what was sent: a partial update (e.g. archiving) must not clear the limits.
         $this->merge(collect([
             'parameter_id' => is_array($parameter) ? ($parameter['value'] ?? null) : $parameter,
+            'control_product_id' => is_array($product) ? ($product['value'] ?? null) : $product,
             'centre_line' => $decimal($this->input('centre_line')),
             'standard_deviation' => $decimal($this->input('standard_deviation')),
         ])->filter(fn (mixed $value, string $key): bool => $this->has($key))->all());
@@ -76,6 +80,7 @@ class ControlChartRequest extends FormRequest
             'name' => 'nome',
             'chart_type' => 'tipo de carta',
             'parameter_id' => 'parâmetro',
+            'control_product_id' => 'material de controlo do catálogo',
             'method' => 'método',
             'matrix' => 'matriz',
             'control_material' => 'material de controlo',
