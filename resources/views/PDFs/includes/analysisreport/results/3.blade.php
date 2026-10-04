@@ -1,1 +1,0 @@
-<small style="font-size: 9pt; text-align:center; font-family: sans;">{!! getDetectedOrUndetected($result->value) !!}</small>

@@ -1,1 +1,0 @@
-<small>{!! $result->value !!}</small>

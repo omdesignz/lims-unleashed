@@ -52,10 +52,7 @@ const sideNavSource = readFileSync(new URL('../../resources/js/Shared/Navigation
 const appSidebarSource = readFileSync(new URL('../../resources/js/Shared/Navigation/app-sidebar.vue', import.meta.url), 'utf8')
 const areaBarSource = readFileSync(new URL('../../resources/js/Shared/Navigation/area-bar.vue', import.meta.url), 'utf8')
 const premiumDocumentStyleSource = readFileSync(new URL('../../resources/views/PDFs/partials/premium-document-style.blade.php', import.meta.url), 'utf8')
-const documentLetterheadSource = readFileSync(new URL('../../resources/views/PDFs/partials/document-letterhead.blade.php', import.meta.url), 'utf8')
-const documentBrandLogoSource = readFileSync(new URL('../../resources/views/PDFs/partials/brand-logo.blade.php', import.meta.url), 'utf8')
-const legacyAnalysisReportSource = readFileSync(new URL('../../resources/views/PDFs/analysisreport.blade.php', import.meta.url), 'utf8')
-const legacyAnalysisReportNewModelSource = readFileSync(new URL('../../resources/views/PDFs/analysisreport_new_model.blade.php', import.meta.url), 'utf8')
+const controlledDocumentSource = readFileSync(new URL('../../app/Support/ControlledDocument.php', import.meta.url), 'utf8')
 const legacySharedLayoutSource = readFileSync(new URL('../../resources/js/Shared/Layout.vue', import.meta.url), 'utf8')
 const navItemSource = readFileSync(new URL('../../resources/js/Shared/Navigation/nav-item.vue', import.meta.url), 'utf8')
 const mainMenuSource = readFileSync(new URL('../../resources/js/Shared/Navigation/main-menu.vue', import.meta.url), 'utf8')
@@ -3200,18 +3197,22 @@ test('white-label fallbacks remain neutral across the application and generated 
   assert.doesNotMatch(appBladeSource, /sncqa_logo/)
   assert.doesNotMatch(appBootstrapSource, /Gestlab V3/)
   assert.doesNotMatch(portalLayoutSource, /sncqa_logo/)
-  assert.doesNotMatch(documentBrandLogoSource, /sncqa_logo/)
-  assert.match(documentBrandLogoSource, /brandLogoInitials/)
+  // Documents print the configured logo or none: never a bundled mark or made-up initials.
+  assert.doesNotMatch(controlledDocumentSource, /sncqa_logo|brandLogoInitials/)
+  assert.match(controlledDocumentSource, /public static function laboratoryLogoHtml\(GeneralSettings \$settings\): string/)
 
   assert.match(premiumDocumentStyleSource, /app_primary_color/)
   assert.match(premiumDocumentStyleSource, /app_secondary_color/)
   assert.match(premiumDocumentStyleSource, /app_accent_color/)
-  assert.match(documentLetterheadSource, /app_client_lab_name/)
-  assert.match(documentLetterheadSource, /PDFs\.partials\.brand-logo/)
-
-  assert.doesNotMatch(legacyAnalysisReportSource, /result_id == 4 \|\| 3/)
-  assert.doesNotMatch(legacyAnalysisReportNewModelSource, /result_id == 4 \|\| 3/)
-  assert.doesNotMatch(legacyAnalysisReportNewModelSource, /sncqa|ao_crest|governo_novo|LABORATÓRIO CENTRAL/)
-  assert.match(legacyAnalysisReportNewModelSource, /PDFs\.partials\.document-letterhead/)
-  assert.match(legacyAnalysisReportSource, /in_array\(\(int\) \$model->collection->result_id, \[3, 4\], true\)/)
+  // The earlier per-document PDF views, with their own letterheads and logos, are gone:
+  // every document is drawn by the controlled-document system.
+  for (const path of [
+    'PDFs/analysisreport.blade.php', 'PDFs/analysisreport_new_model.blade.php', 'PDFs/includes/analysisreport/',
+    'PDFs/invoice.blade.php', 'PDFs/quote.blade.php', 'PDFs/receipt.blade.php', 'PDFs/creditnote.blade.php',
+    'PDFs/proposal.blade.php', 'PDFs/export_certificate.blade.php', 'PDFs/import_certificate.blade.php',
+    'PDFs/partials/document-letterhead.blade.php', 'PDFs/partials/brand-logo.blade.php', 'proposals/pdf.blade.php',
+  ]) {
+    assert.equal(existsSync(new URL(`../../resources/views/${path}`, import.meta.url)), false, path)
+  }
+  assert.equal(existsSync(new URL('../../resources/views/PDFs/partials/controlled-layout.blade.php', import.meta.url)), true)
 })

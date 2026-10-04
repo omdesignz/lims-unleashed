@@ -1,1 +1,0 @@
-<small> < {!! $result->extra_data->inserted_result !!} </small>

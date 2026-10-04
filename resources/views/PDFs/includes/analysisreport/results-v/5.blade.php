@@ -1,1 +1,0 @@
-<small>{!! $result->extra_data->inserted_result !!} x 10<sup>{!! $result->extra_data->exponent !!}</sup></small>

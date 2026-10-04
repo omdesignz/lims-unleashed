@@ -199,17 +199,9 @@ class ReportStudioPdfBuilder
             'issue_date' => now()->format('d/m/Y'),
         ];
 
-        $bodyHtml = data_get($layout, 'body_html');
         $placeholderValues = $this->executivePlaceholderValues($payload);
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
-
-        if (! filled($bodyHtml)) {
-            $bodyHtml = View::make('PDFs.studios.executive-summary-body', [
-                'payload' => $payload,
-            ])->render();
-        } else {
-            $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
-        }
+        $bodyHtml = $this->renderTemplateHtml((string) data_get($layout, 'body_html'), $placeholderValues);
 
         return [
             'view' => 'PDFs.studios.document',
@@ -351,16 +343,7 @@ class ReportStudioPdfBuilder
         );
         $surfaceContext = $this->buildSurfaceContext($headerContext, $proposalPlaceholderValues, $settings);
 
-        $bodyTemplate = data_get($layout, 'body_html');
-        $bodyHtml = filled($bodyTemplate)
-            ? $this->renderTemplateHtml((string) $bodyTemplate, $proposalPlaceholderValues)
-            : View::make('PDFs.studios.proposal-body', [
-                'proposal' => $proposal,
-                'parsedContent' => $parsedContent,
-                'settings' => $settings,
-                'proposalAuthenticity' => $proposalPlaceholderValues['{proposal_authenticity}'] ?? '',
-                'proposalAcceptanceEvidence' => $proposalPlaceholderValues['{proposal_acceptance_evidence}'] ?? '',
-            ])->render();
+        $bodyHtml = $this->renderTemplateHtml((string) data_get($layout, 'body_html'), $proposalPlaceholderValues);
 
         return [
             'view' => 'PDFs.studios.document',

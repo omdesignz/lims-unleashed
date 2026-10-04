@@ -1,1 +1,0 @@
-<small style="font-size: 9pt; text-align:center; font-family: sans;">{!! getScientific($result->extra_data->inserted_result, 2) !!}</sup></small>
