@@ -66,5 +66,6 @@ test('observation-only form and persistent-layout pages compile with accessible 
   assert.match(source, /:disabled="form.processing \|\| !form.isDirty"/)
   assert.match(source, /maxlength="5000"/)
   assert.match(source, /Apenas as observações/)
+  assert.match(source, /<h1 class="[^"]*\[overflow-wrap:anywhere\]/)
   assert.doesNotMatch(source, /v-motion|transition-all|animate-/)
 })

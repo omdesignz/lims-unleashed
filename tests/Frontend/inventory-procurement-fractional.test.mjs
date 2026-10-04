@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { compileTemplate, parse } from '@vue/compiler-sfc';
+import { compileScript, compileTemplate, parse } from '@vue/compiler-sfc';
 import { runInNewContext } from 'node:vm';
 
 const componentPaths = [
@@ -42,7 +42,11 @@ test('procurement summaries count lines without adding unlike units', () => {
 
 function receiptHarness(price = 0) {
   const source = readFileSync(new URL(componentPaths[3], import.meta.url), 'utf8');
-  const body = source.slice(source.indexOf('function submitReceipt()'), source.indexOf('\nonMounted(', source.indexOf('function submitReceipt()')));
+  const { descriptor } = parse(source);
+  const script = compileScript(descriptor, { id: 'receipt-harness' });
+  const declaration = script.scriptSetupAst.find(node => node.type === 'FunctionDeclaration' && node.id.name === 'submitReceipt');
+  assert.ok(declaration, 'Receipt submission function exists');
+  const body = descriptor.scriptSetup.content.slice(declaration.start, declaration.end);
   const ref = value => ({ value });
   const calls = [];
   const context = {

@@ -1,344 +1,235 @@
 <template>
-  <form class="min-w-0 space-y-6 overflow-x-clip" @submit.prevent="submit">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Procurement fluxo de trabalho</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot" :class="statusDotClass(form.status)" />
-              {{ formatStatus(form.status) }}
-            </span>
-            <span class="ds-chip">
-              <span class="lims-status-dot lims-status-dot-instrument" />
-              {{ mode === 'create' ? 'Novo pedido' : 'Revisão controlada' }}
-            </span>
+  <form class="pl-page" data-template="form" @submit.prevent="submit">
+    <PageHeader :crumbs="crumbs" :title="pageTitle" :lede="pageDescription">
+      <template #badges><StatusChip :tone="statusTone(form.status)">{{ formatStatus(form.status) }}</StatusChip></template>
+    </PageHeader>
+
+    <section class="pl-form-section">
+      <header>
+        <h2 class="pl-d3">Fornecedor e estado</h2>
+        <p>Fornecedor avaliado, data, referência e estado de aprovação do pedido.</p>
+      </header>
+      <div class="pl-form-grid">
+        <div class="ds-field-group">
+          <comboboxEnhanced
+            v-model="selectedSupplierOption"
+            title-label="Fornecedor"
+            :disable-input="!canEditSupplier"
+            :has-error="Boolean(form.errors.supplier_id)"
+            :options="supplierOptions"
+            placeholder="Pesquisar fornecedor"
+          />
+          <p v-if="form.errors.supplier_id" class="ds-field-error" role="alert">{{ form.errors.supplier_id }}</p>
+        </div>
+
+        <DateTimePicker
+          id="orderDate"
+          v-model="form.date"
+          type="date"
+          label="Data do pedido"
+          :max="maxDate"
+          class="ds-field"
+          :error="form.errors.date"
+          required
+        />
+
+        <BaseInput
+          id="reference"
+          v-model="form.reference"
+          type="text"
+          label="Número de referência"
+          class="ds-field"
+          placeholder="Ex.: PC-2026-001"
+          :error="form.errors.reference"
+        />
+
+        <div class="ds-field-group">
+          <comboboxEnhanced
+            v-model="selectedStatusOption"
+            title-label="Estado"
+            :disable-input="!canEditStatus"
+            :has-error="Boolean(form.errors.status)"
+            :options="statusOptions"
+            placeholder="Seleccionar estado"
+          />
+          <p v-if="form.errors.status" class="ds-field-error" role="alert">{{ form.errors.status }}</p>
+        </div>
+
+        <div class="ds-field-group pl-span-2">
+          <label for="observations" class="ds-field-label">Observações</label>
+          <textarea
+            id="observations"
+            v-model="form.obs"
+            rows="3"
+            class="ds-field"
+            placeholder="Instruções especiais, condições de entrega ou notas internas…"
+            :aria-invalid="Boolean(form.errors.obs)"
+            :aria-describedby="form.errors.obs ? 'observations-error' : undefined"
+          />
+          <p v-if="form.errors.obs" id="observations-error" class="ds-field-error" role="alert">{{ form.errors.obs }}</p>
+        </div>
+
+        <div v-if="selectedSupplierAssessment" class="pl-banner pl-span-2 text-sm" :class="supplierAssessmentBannerClass">
+          <div class="grid gap-1">
+            <span class="pl-k">Avaliação activa do fornecedor</span>
+            <span>{{ supplierAssessmentStatus }} · {{ supplierAssessmentRisk }} · Score {{ selectedSupplierAssessment.total_score }}/100 · Revisão {{ supplierAssessmentReviewLabel }}</span>
           </div>
-          <h1 class="ds-heading mt-3 text-2xl">{{ pageTitle }}</h1>
-          <p class="ds-copy mt-2 text-sm">{{ pageDescription }}</p>
         </div>
-
-        <button type="button" class="ds-button ds-button-secondary shrink-0" @click="goBack">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Voltar
-        </button>
+        <div v-else-if="form.supplier_id" class="pl-banner pl-banner-warn pl-span-2 text-sm">
+          <div class="grid gap-1">
+            <span class="pl-k">Fornecedor sem avaliação formal registada</span>
+            <span>Confirme a aprovação do fornecedor antes de avançar o pedido.</span>
+          </div>
+        </div>
       </div>
-
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] md:grid-cols-3 xl:grid-cols-6 xl:divide-y-0">
-        <div v-for="metric in summaryCards" :key="metric.label" class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
-            <span class="lims-status-dot" :class="metric.dotClass" />
-            {{ metric.label }}
-          </dt>
-          <dd class="mt-2 text-xl font-bold" :class="metric.valueClass">{{ metric.value }}</dd>
-          <p class="mt-1 truncate text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ metric.caption }}</p>
-        </div>
-      </dl>
     </section>
 
-    <section class="grid gap-4 xl:grid-cols-[1fr_22rem]">
-      <div class="space-y-4">
-        <article class="ds-command-surface overflow-hidden">
-          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <div class="flex items-start gap-3">
-              <ClipboardDocumentListIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
-              <div>
-                <h2 class="ds-heading text-base">Dados do pedido</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Fornecedor, datas, referência e estado de aprovação.</p>
-              </div>
-            </div>
-          </div>
+    <section class="pl-form-section">
+      <header>
+        <h2 class="pl-d3">Linhas do pedido</h2>
+        <p>Item, quantidade (até quatro casas decimais), preço unitário, armazém de destino e data prevista. Linhas já recebidas não podem ser removidas nem descer abaixo do recebido.</p>
+      </header>
+      <div class="grid min-w-0 gap-5">
+        <div v-if="form.order_items.length === 0" class="ds-empty-state grid justify-items-start gap-2 p-6">
+          <span class="pl-k">Nenhuma linha adicionada</span>
+          <p class="text-sm text-[var(--pl-muted)]">Adicione itens para criar ou actualizar o pedido de compra.</p>
+        </div>
 
-          <div class="grid gap-5 p-5 lg:grid-cols-2">
-            <div>
-              <label class="ds-field-label">Fornecedor <span class="text-rose-600">*</span></label>
-              <comboboxEnhanced
-                v-model="selectedSupplierOption"
-                :disabled="!canEditSupplier"
-                :has-error="form.errors.supplier_id"
-                :options="supplierOptions"
-                placeholder="Pesquisar fornecedor"
-              />
-              <p v-if="form.errors.supplier_id" class="ds-field-error mt-1">{{ form.errors.supplier_id }}</p>
-            </div>
-
-            <div>
-              <label for="orderDate" class="ds-field-label">Data do pedido <span class="text-rose-600">*</span></label>
-              <DateTimePicker
-                id="orderDate"
-                v-model="form.date"
-                type="date"
-                :max="maxDate"
-                class="ds-field"
-                :aria-invalid="Boolean(form.errors.date)"
-                required />
-              <p v-if="form.errors.date" class="ds-field-error mt-1">{{ form.errors.date }}</p>
-            </div>
-
-            <div>
-              <label for="reference" class="ds-field-label">Número de referência</label>
-              <BaseInput
-                id="reference"
-                v-model="form.reference"
-                type="text"
-                class="ds-field"
-                placeholder="Ex.: PC-2026-001"
-                :aria-invalid="Boolean(form.errors.reference)"
-              />
-              <p v-if="form.errors.reference" class="ds-field-error mt-1">{{ form.errors.reference }}</p>
-            </div>
-
-            <div>
-              <label class="ds-field-label">Estado</label>
-              <comboboxEnhanced
-                v-model="selectedStatusOption"
-                :disabled="!canEditStatus"
-                :has-error="form.errors.status"
-                :options="statusOptions"
-                placeholder="Seleccionar estado"
-              />
-              <p v-if="form.errors.status" class="ds-field-error mt-1">{{ form.errors.status }}</p>
-            </div>
-
-            <div class="lg:col-span-2">
-              <label for="observations" class="ds-field-label">Observações</label>
-              <textarea
-                id="observations"
-                v-model="form.obs"
-                rows="3"
-                class="ds-field"
-                placeholder="Instruções especiais, condições de entrega ou notas internas..."
-                :aria-invalid="Boolean(form.errors.obs)"
-              />
-              <p v-if="form.errors.obs" class="ds-field-error mt-1">{{ form.errors.obs }}</p>
-            </div>
-          </div>
-
-          <div v-if="selectedSupplierAssessment || form.supplier_id" class="border-t border-[color:var(--ds-border)] px-5 py-4">
-            <div v-if="selectedSupplierAssessment" class="ds-card border-l-4 p-4" :class="supplierAssessmentBorderClass">
-              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p class="text-sm font-bold text-[color:var(--ds-text)]">Avaliação activa do fornecedor</p>
-                  <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
-                    Score {{ selectedSupplierAssessment.total_score }}/100 · Revisão {{ supplierAssessmentReviewLabel }}
-                  </p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <span class="ds-chip">
-                    <span class="lims-status-dot" :class="supplierStatusDotClass(selectedSupplierAssessment.status)" />
-                    {{ supplierAssessmentStatus }}
-                  </span>
-                  <span class="ds-chip">
-                    <span class="lims-status-dot" :class="supplierRiskDotClass(selectedSupplierAssessment.risk_level)" />
-                    {{ supplierAssessmentRisk }}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="ds-card border-l-4 border-l-[color:var(--lims-hold)] p-4">
-              <p class="text-sm font-bold text-[color:var(--ds-text)]">Fornecedor sem avaliação formal registada</p>
-              <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Confirme a aprovação do fornecedor antes de avançar o pedido.</p>
-            </div>
-          </div>
-        </article>
-
-        <article class="ds-panel overflow-hidden">
-          <div class="ds-table-summary px-5 py-4">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div class="flex items-start gap-3">
-                <CubeIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
-                <div>
-                  <h2 class="ds-heading text-base">Linhas do pedido</h2>
-                  <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Itens, quantidades, preços, destino e data prevista.</p>
-                </div>
-              </div>
-              <button v-if="canEditItems" type="button" class="ds-button ds-button-primary" @click="addOrderItem">
-                <PlusCircleIcon class="h-4 w-4" />
-                Adicionar item
+        <article v-for="(item, index) in form.order_items" :key="item.id || index" class="pl-panel" :aria-labelledby="`order-line-title-${index}`">
+          <div class="pl-panel-head">
+            <h3 :id="`order-line-title-${index}`" class="pl-k min-w-0 truncate">Linha {{ index + 1 }} · {{ getSelectedItemDetails(item.item_id)?.name || 'item por seleccionar' }}</h3>
+            <div class="flex items-center gap-3">
+              <span class="pl-num text-sm">{{ formatCurrency(lineTotal(item)) }}</span>
+              <button
+                v-if="canEditItems && Number(item.received_qty || 0) === 0"
+                type="button"
+                class="ds-table-action ds-table-action-danger"
+                :aria-label="`Remover linha ${index + 1}`"
+                @click="removeOrderItem(index)"
+              >
+                <TrashIcon class="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           </div>
 
-          <div v-if="form.order_items.length === 0" class="p-5">
-            <div class="ds-empty-state p-6 text-center">
-              <ShoppingBagIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
-              <h3 class="mt-3 text-sm font-bold text-[color:var(--ds-text)]">Nenhum item adicionado</h3>
-              <p class="mt-1 text-sm text-[color:var(--ds-text-soft)]">Adicione itens para criar ou actualizar o pedido de compra.</p>
-              <button v-if="canEditItems" type="button" class="ds-button ds-button-primary mt-4" @click="addOrderItem">
-                <PlusCircleIcon class="h-4 w-4" />
-                Adicionar primeiro item
-              </button>
+          <div class="pl-form-grid p-4">
+            <div class="ds-field-group pl-span-2">
+              <comboboxEnhanced
+                v-model="item.item_obj"
+                title-label="Item"
+                :disable-input="!canEditItems || Number(item.received_qty || 0) > 0"
+                :has-error="Boolean(itemErrors[index]?.item_id)"
+                :options="itemOptions"
+                placeholder="Pesquisar item"
+                @update:modelValue="onItemChange(index)"
+              />
+              <p v-if="itemErrors[index]?.item_id" class="ds-field-error" role="alert">{{ itemErrors[index].item_id }}</p>
+              <p v-if="Number(item.received_qty || 0) > 0" class="text-[12.5px] text-[var(--pl-muted)]">
+                Recebido: <span class="pl-num">{{ formatQuantity(item.received_qty) }}</span>
+              </p>
             </div>
-          </div>
 
-          <div v-else class="grid gap-3 p-5">
-            <div v-for="(item, index) in form.order_items" :key="item.id || index" class="ds-card p-4">
-              <div class="flex flex-col gap-4 xl:flex-row xl:items-start">
-                <div class="grid min-w-0 flex-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
-                  <div class="xl:col-span-2">
-                    <label class="ds-field-label">Item <span class="text-rose-600">*</span></label>
-                    <comboboxEnhanced
-                      v-model="item.item_obj"
-                      :disabled="!canEditItems || Number(item.received_qty || 0) > 0"
-                      :has-error="itemErrors[index]?.item_id"
-                      :options="itemOptions"
-                      placeholder="Pesquisar item"
-                      @update:modelValue="onItemChange(index)"
-                    />
-                    <p v-if="itemErrors[index]?.item_id" class="ds-field-error mt-1">{{ itemErrors[index].item_id }}</p>
-                    <p v-if="Number(item.received_qty || 0) > 0" class="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                      Recebido: {{ formatQuantity(item.received_qty) }}
-                    </p>
-                  </div>
+            <BaseInput
+              :id="`order-line-qty-${index}`"
+              v-model="item.qty"
+              type="number"
+              label="Quantidade"
+              :min="Math.max(0.0001, Number(item.received_qty || 0))"
+              step="0.0001"
+              class="ds-field"
+              :disabled="!canEditItems"
+              placeholder="1"
+              :error="itemErrors[index]?.qty"
+              required
+              @input="validateItemQuantity(index)"
+            />
 
-                  <div>
-                    <label class="ds-field-label">Quantidade <span class="text-rose-600">*</span></label>
-                    <BaseInput
-                      v-model="item.qty"
-                      type="number"
-                      :min="Math.max(0.0001, Number(item.received_qty || 0))"
-                      step="0.0001"
-                      class="ds-field"
-                      :disabled="!canEditItems"
-                      placeholder="1"
-                      @input="validateItemQuantity(index)"
-                    />
-                    <p v-if="itemErrors[index]?.qty" class="ds-field-error mt-1">{{ itemErrors[index].qty }}</p>
-                  </div>
+            <BaseInput
+              :id="`order-line-price-${index}`"
+              v-model.number="item.unit_price"
+              type="number"
+              label="Preço unitário"
+              min="0"
+              step="0.01"
+              class="ds-field"
+              :disabled="!canEditItems"
+              placeholder="0.00"
+              :error="itemErrors[index]?.unit_price"
+              required
+            />
 
-                  <div>
-                    <label class="ds-field-label">Preço un. <span class="text-rose-600">*</span></label>
-                    <BaseInput
-                      v-model.number="item.unit_price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      class="ds-field"
-                      :disabled="!canEditItems"
-                      placeholder="0.00"
-                    />
-                    <p v-if="itemErrors[index]?.unit_price" class="ds-field-error mt-1">{{ itemErrors[index].unit_price }}</p>
-                  </div>
-
-                  <div>
-                    <label class="ds-field-label">Armazém <span class="text-rose-600">*</span></label>
-                    <comboboxEnhanced
-                      v-model="item.warehouse_obj"
-                      :disabled="!canEditItems"
-                      :has-error="itemErrors[index]?.warehouse_id"
-                      :options="warehouseOptions"
-                      placeholder="Pesquisar armazém"
-                      @update:modelValue="onWarehouseChange(index)"
-                    />
-                    <p v-if="itemErrors[index]?.warehouse_id" class="ds-field-error mt-1">{{ itemErrors[index].warehouse_id }}</p>
-                  </div>
-
-                  <div>
-                    <label class="ds-field-label">Data prevista</label>
-                    <DateTimePicker
-                      v-model="item.expected_date"
-                      type="date"
-                      :min="form.date || minDate"
-                      class="ds-field"
-                      :disabled="!canEditItems" />
-                    <p v-if="itemErrors[index]?.expected_date" class="ds-field-error mt-1">{{ itemErrors[index].expected_date }}</p>
-                  </div>
-                </div>
-
-                <div class="flex shrink-0 items-start justify-between gap-3 border-t border-[color:var(--ds-border)] pt-3 xl:w-40 xl:flex-col xl:border-l xl:border-t-0 xl:pl-4 xl:pt-0">
-                  <div>
-                    <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Total</p>
-                    <p class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ formatCurrency(lineTotal(item)) }}</p>
-                  </div>
-                  <button
-                    v-if="canEditItems && Number(item.received_qty || 0) === 0"
-                    type="button"
-                    class="ds-icon-button"
-                    title="Remover item"
-                    @click="removeOrderItem(index)"
-                  >
-                    <TrashIcon class="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              <div v-if="getSelectedItemDetails(item.item_id)" class="mt-4 grid gap-2 border-t border-[color:var(--ds-border)] pt-3 text-xs text-[color:var(--ds-text-soft)] md:grid-cols-4">
-                <div class="flex items-center gap-1">
-                  <TagIcon class="h-3 w-3" />
-                  <span>Código: {{ getSelectedItemDetails(item.item_id).internal_code || getSelectedItemDetails(item.item_id).code || '-' }}</span>
-                </div>
-                <div class="flex items-center gap-1">
-                  <RectangleStackIcon class="h-3 w-3" />
-                  <span>Categoria: {{ getSelectedItemDetails(item.item_id).category?.name || 'Sem categoria' }}</span>
-                </div>
-                <div class="flex items-center gap-1">
-                  <CubeIcon class="h-3 w-3" />
-                  <span>Unidade: {{ getSelectedItemDetails(item.item_id).unit?.code || 'Sem unidade' }}</span>
-                </div>
-                <div class="flex items-center gap-1">
-                  <BuildingStorefrontIcon class="h-3 w-3" />
-                  <span>Existências: {{ getCurrentStock(item.item_id, item.warehouse_id) }}</span>
-                </div>
-              </div>
+            <div class="ds-field-group">
+              <comboboxEnhanced
+                v-model="item.warehouse_obj"
+                title-label="Armazém"
+                :disable-input="!canEditItems"
+                :has-error="Boolean(itemErrors[index]?.warehouse_id)"
+                :options="warehouseOptions"
+                placeholder="Pesquisar armazém"
+                @update:modelValue="onWarehouseChange(index)"
+              />
+              <p v-if="itemErrors[index]?.warehouse_id" class="ds-field-error" role="alert">{{ itemErrors[index].warehouse_id }}</p>
             </div>
+
+            <DateTimePicker
+              :id="`order-line-expected-${index}`"
+              v-model="item.expected_date"
+              type="date"
+              label="Data prevista"
+              :min="form.date || minDate"
+              class="ds-field"
+              :disabled="!canEditItems"
+              :error="itemErrors[index]?.expected_date"
+            />
+
+            <p v-if="getSelectedItemDetails(item.item_id)" class="pl-span-2 text-[12.5px] text-[var(--pl-muted)]">
+              Código <span class="pl-num">{{ getSelectedItemDetails(item.item_id).internal_code || getSelectedItemDetails(item.item_id).code || '—' }}</span>
+              · {{ getSelectedItemDetails(item.item_id).category?.name || 'Sem categoria' }}
+              · unidade {{ getSelectedItemDetails(item.item_id).unit?.code || 'por definir' }}
+              · existências no armazém <span class="pl-num">{{ getCurrentStock(item.item_id, item.warehouse_id) }}</span>
+            </p>
           </div>
         </article>
+
+        <div v-if="canEditItems">
+          <button type="button" class="ds-button ds-button-secondary" @click="addOrderItem">
+            <PlusIcon class="h-4 w-4" aria-hidden="true" />
+            {{ form.order_items.length ? 'Adicionar item' : 'Adicionar primeiro item' }}
+          </button>
+        </div>
+
+        <dl class="pl-panel pl-facts pl-facts-2">
+          <div v-for="fact in orderTotals" :key="fact.label" class="pl-fact"><dt>{{ fact.label }}</dt><dd class="pl-num">{{ fact.value }}</dd></div>
+        </dl>
       </div>
-
-      <aside class="space-y-4">
-        <article class="ds-panel overflow-hidden">
-          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading text-base">Resumo do pedido</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Validação operacional antes de gravar.</p>
-          </div>
-          <div class="grid gap-3 p-5">
-            <div v-for="item in sidebarSummary" :key="item.label" class="ds-card p-4">
-              <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ item.label }}</p>
-              <p class="mt-2 text-lg font-bold text-[color:var(--ds-text)]">{{ item.value }}</p>
-              <p v-if="item.caption" class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ item.caption }}</p>
-            </div>
-          </div>
-        </article>
-
-        <article class="ds-command-surface p-5">
-          <h2 class="ds-heading text-base">Acções</h2>
-          <div class="mt-4 grid gap-2">
-            <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing || !isFormValid">
-              <CheckCircleIcon class="h-4 w-4" />
-              {{ submitLabel }}
-            </button>
-            <button v-if="mode === 'create'" type="button" class="ds-button ds-button-secondary w-full" :disabled="form.processing" @click="saveAsDraft">
-              Guardar como rascunho
-            </button>
-            <button type="button" class="ds-button ds-button-secondary w-full" @click="goBack">
-              Cancelar
-            </button>
-          </div>
-          <p v-if="!isFormValid" class="mt-3 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-            Seleccione fornecedor, data e pelo menos uma linha válida para gravar.
-          </p>
-        </article>
-      </aside>
     </section>
+
+    <NextStepBar>
+      <template v-if="isFormValid">{{ formatQuantity(form.order_items.length) }} {{ form.order_items.length === 1 ? 'linha' : 'linhas' }} · {{ formatCurrency(totalAmount) }} a {{ selectedSupplier?.name || 'fornecedor' }}. {{ mode === 'create' ? 'Gravar cria o pedido no estado escolhido.' : 'Gravar actualiza o pedido.' }}</template>
+      <template v-else>Seleccione fornecedor, data e pelo menos uma linha válida para gravar.</template>
+      <template #actions>
+        <button type="button" class="ds-button ds-button-quiet" @click="goBack">Cancelar</button>
+        <button v-if="mode === 'create'" type="button" class="ds-button ds-button-quiet" :disabled="form.processing" @click="saveAsDraft">Guardar como rascunho</button>
+        <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !isFormValid">{{ submitLabel }}</button>
+      </template>
+    </NextStepBar>
   </form>
 </template>
 
 <script setup>
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import NextStepBar from '@/Components/plano/NextStepBar.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import { router, useForm } from '@inertiajs/vue3'
-import {
-  ArrowLeft as ArrowLeftIcon,
-  Store as BuildingStorefrontIcon,
-  CircleCheck as CheckCircleIcon,
-  ClipboardList as ClipboardDocumentListIcon,
-  Box as CubeIcon,
-  CirclePlus as PlusCircleIcon,
-  Layers as RectangleStackIcon,
-  ShoppingBag as ShoppingBagIcon,
-  Tag as TagIcon,
-  Trash2 as TrashIcon,
-} from '@lucide/vue'
+import { Plus as PlusIcon, Trash2 as TrashIcon } from '@lucide/vue'
 import { computed, onMounted, ref, watch } from 'vue'
+
+/**
+ * The purchase order form shared by Orders/Create and Orders/Edit (Plano form). Lines
+ * already received stay locked: their item cannot change, they cannot be removed and
+ * their quantity cannot drop below what was received.
+ */
 
 const props = defineProps({
   mode: {
@@ -404,9 +295,16 @@ const pageDescription = computed(() => (
     ? 'Registe pedidos de compra com fornecedor avaliado, itens de inventário, destino de armazém e datas previstas de recepção.'
     : 'Actualize fornecedor, estado, itens e armazéns de destino preservando bloqueios de linhas já recebidas.'
 ))
+const crumbs = computed(() => [
+  { title: 'Inventário' },
+  { title: 'Pedidos de compra', url: route('vap-inventory.orders.index') },
+  ...(props.mode === 'edit'
+    ? [{ title: `Pedido #${props.order?.seq || props.order?.id}`, url: route('vap-inventory.orders.show', props.order.id) }, { title: 'Modificar' }]
+    : [{ title: 'Novo' }]),
+])
 const submitLabel = computed(() => {
   if (form.processing) {
-    return 'Processando...'
+    return 'A gravar…'
   }
 
   return props.mode === 'create' ? 'Criar pedido' : 'Actualizar pedido'
@@ -420,7 +318,7 @@ const supplierOptions = computed(() => props.suppliers.map((supplier) => ({
 const statusOptions = [
   { value: 'PENDING', label: 'Pendente' },
   { value: 'APPROVED', label: 'Aprovado' },
-  { value: 'ORDERED', label: 'Pedido' },
+  { value: 'ORDERED', label: 'Encomendado' },
   { value: 'CANCELLED', label: 'Cancelado' },
 ]
 
@@ -467,22 +365,22 @@ const supplierAssessmentReviewLabel = computed(() => {
   return formatDate(selectedSupplierAssessment.value.next_review_at)
 })
 
-const supplierAssessmentBorderClass = computed(() => {
+const supplierAssessmentBannerClass = computed(() => {
   const assessment = selectedSupplierAssessment.value
 
   if (!assessment) {
-    return 'border-l-[color:var(--lims-hold)]'
+    return 'pl-banner-warn'
   }
 
   if (['rejected', 'suspended'].includes(assessment.status) || assessment.risk_level === 'critical') {
-    return 'border-l-[color:var(--lims-critical)]'
+    return 'pl-banner-bad'
   }
 
   if (assessment.status === 'conditional' || assessment.risk_level === 'high') {
-    return 'border-l-[color:var(--lims-hold)]'
+    return 'pl-banner-warn'
   }
 
-  return 'border-l-[color:var(--lims-release)]'
+  return 'pl-banner-ok'
 })
 
 const canEditSupplier = computed(() => props.mode === 'create' || ['PENDING', 'APPROVED'].includes(normalizeStatus(props.order?.status)))
@@ -508,72 +406,11 @@ const uniqueWarehouses = computed(() => {
   return new Set(warehouseIds).size
 })
 
-const summaryCards = computed(() => [
-  {
-    label: 'Linhas',
-    value: formatQuantity(form.order_items.length),
-    caption: 'Itens no pedido',
-    dotClass: 'lims-status-dot-instrument',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Quantidades',
-    value: `${form.order_items.filter((item) => isValidQuantity(item.qty)).length}/${form.order_items.length}`,
-    caption: 'Linhas com quantidade válida',
-    dotClass: 'lims-status-dot-hold',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Valor',
-    value: formatCurrency(totalAmount.value),
-    caption: 'Total estimado',
-    dotClass: 'lims-status-dot-release',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Armazéns',
-    value: formatQuantity(uniqueWarehouses.value),
-    caption: 'Destinos únicos',
-    dotClass: 'lims-status-dot-instrument',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Previsão',
-    value: earliestExpectedDate.value ? formatDate(earliestExpectedDate.value) : '-',
-    caption: 'Primeira entrega',
-    dotClass: earliestExpectedDate.value ? 'lims-status-dot-release' : 'lims-status-dot-hold',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-  {
-    label: 'Fornecedor',
-    value: selectedSupplier.value ? 'Seleccionado' : 'Pendente',
-    caption: selectedSupplier.value?.name || 'Sem fornecedor',
-    dotClass: selectedSupplier.value ? 'lims-status-dot-release' : 'lims-status-dot-hold',
-    valueClass: 'text-[color:var(--ds-text)]',
-  },
-])
-
-const sidebarSummary = computed(() => [
-  {
-    label: 'Fornecedor',
-    value: selectedSupplier.value?.name || 'Sem fornecedor',
-    caption: selectedSupplier.value?.currency ? `Moeda ${selectedSupplier.value.currency}` : null,
-  },
-  {
-    label: 'Data do pedido',
-    value: formatDate(form.date),
-    caption: `Estado: ${formatStatus(form.status)}`,
-  },
-  {
-    label: 'Referência',
-    value: form.reference || 'Auto-gerada',
-    caption: earliestExpectedDate.value ? `Primeira previsão ${formatDate(earliestExpectedDate.value)}` : 'Sem previsão de entrega',
-  },
-  {
-    label: 'Valor estimado',
-    value: formatCurrency(totalAmount.value),
-    caption: `${formatQuantity(form.order_items.length)} linha(s) de compra`,
-  },
+const orderTotals = computed(() => [
+  { label: 'Linhas com quantidade válida', value: `${form.order_items.filter((item) => isValidQuantity(item.qty)).length}/${form.order_items.length}` },
+  { label: 'Valor estimado', value: formatCurrency(totalAmount.value) },
+  { label: 'Armazéns de destino', value: formatQuantity(uniqueWarehouses.value) },
+  { label: 'Primeira entrega', value: earliestExpectedDate.value ? formatDate(earliestExpectedDate.value) : '—' },
 ])
 
 const isFormValid = computed(() => (
@@ -612,7 +449,7 @@ function formatStatus(status) {
   const statusMap = {
     PENDING: 'Pendente',
     APPROVED: 'Aprovado',
-    ORDERED: 'Pedido',
+    ORDERED: 'Encomendado',
     PARTIALLY_RECEIVED: 'Recebido parcialmente',
     RECEIVED: 'Recebido',
     CANCELLED: 'Cancelado',
@@ -621,39 +458,15 @@ function formatStatus(status) {
   return statusMap[normalizeStatus(status)] || status || 'Sem estado'
 }
 
-function statusDotClass(status) {
-  const classMap = {
-    PENDING: 'lims-status-dot-hold',
-    APPROVED: 'lims-status-dot-instrument',
-    ORDERED: 'lims-status-dot-instrument',
-    PARTIALLY_RECEIVED: 'lims-status-dot-hold',
-    RECEIVED: 'lims-status-dot-release',
-    CANCELLED: 'lims-status-dot-critical',
-  }
-
-  return classMap[normalizeStatus(status)] || 'lims-status-dot-instrument'
-}
-
-function supplierStatusDotClass(status) {
-  const map = {
-    approved: 'lims-status-dot-release',
-    conditional: 'lims-status-dot-hold',
-    suspended: 'lims-status-dot-critical',
-    rejected: 'lims-status-dot-critical',
-  }
-
-  return map[status] || 'lims-status-dot-hold'
-}
-
-function supplierRiskDotClass(risk) {
-  const map = {
-    low: 'lims-status-dot-release',
-    medium: 'lims-status-dot-instrument',
-    high: 'lims-status-dot-hold',
-    critical: 'lims-status-dot-critical',
-  }
-
-  return map[risk] || 'lims-status-dot-hold'
+function statusTone(status) {
+  return {
+    PENDING: 'wait',
+    APPROVED: 'ok',
+    ORDERED: 'run',
+    PARTIALLY_RECEIVED: 'run',
+    RECEIVED: 'done',
+    CANCELLED: 'bad',
+  }[normalizeStatus(status)] || 'neutral'
 }
 
 function formatCurrency(value) {

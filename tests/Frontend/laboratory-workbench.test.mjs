@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import test from 'node:test'
 import { buildBrandingCssVariables, contrastingText } from '../../resources/js/Utils/brandingPalette.js'
 
@@ -26,10 +26,13 @@ test('branding changes action colours but never semantic status colours', () => 
   assert.equal(variables['--color-danger-500'], undefined)
 })
 
-test('collapsed navigation retains accessible names and expanded state', () => {
-  assert.match(read('Shared/Layouts/Layout.vue'), /:aria-expanded="desktopSidebarOpen"/)
-  assert.match(read('Shared/Navigation/app-sidebar.vue'), /:title="area\.label"/)
-  assert.match(read('Shared/Navigation/app-sidebar.vue'), /:aria-label="area\.label"/)
+test('collapsed navigation retains accessible names and current position', () => {
+  const areaBar = read('Shared/Navigation/area-bar.vue')
+  assert.match(areaBar, /aria-controls="area-column" aria-label="Abrir menu da área"/)
+  assert.match(areaBar, /<nav class="pl-areas" aria-label="Áreas">/)
+  assert.match(areaBar, /:aria-current="area\.key === props\.activeAreaKey \? 'page' : undefined"/)
+  assert.match(read('Shared/Layouts/Layout.vue'), /<aside id="area-column" class="pl-side" :aria-label=/)
+  assert.match(read('Shared/Navigation/side-nav.vue'), /:aria-expanded="isOpen\(section\)"/)
 })
 
 test('workbench and network use actual paginated records and explicit empty states', () => {
@@ -63,25 +66,25 @@ test('sample intake leaves automatic numbering to the server', () => {
   assert.doesNotMatch(page, /form\.code\s*=\s*`SMP-/)
 })
 
-test('approved workbench geometry is a production design contract', () => {
-  const css = readFileSync(new URL('../../resources/css/laboratory-workbench.css', import.meta.url), 'utf8')
-  assert.match(css, /\.workbench-page \.lab-metrics\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\);gap:0\.75rem/)
-  assert.match(css, /\.workbench-page \.lab-overview-grid\{display:grid;grid-template-columns:minmax\(0,1fr\) 21rem;gap:0\.75rem/)
-  assert.match(css, /\.workbench-page \.lab-detail-rail\{border:1px solid var\(--ds-card-border\)/)
-  assert.match(css, /--lab-panel: var\(--ds-panel\)/)
-  assert.match(css, /scale:\.96/)
+test('approved Plano Today geometry is a production design contract', () => {
+  const css = readFileSync(new URL('../../resources/css/app.css', import.meta.url), 'utf8')
+  assert.equal(existsSync(new URL('../../resources/css/laboratory-workbench.css', import.meta.url)), false)
+  assert.match(css, /\.pl-band \{\n  display: flex;\n  height: 150px;/)
+  assert.match(css, /\.pl-hero \{[\s\S]*?margin: -78px 36px 0;/)
+  assert.match(css, /\.pl-work \{ display: grid; grid-template-columns: repeat\(4, minmax\(0, 1fr\)\); border: 1px solid var\(--pl-line\); \}/)
+  assert.match(css, /\.pl-today-grid \{ display: grid; grid-template-columns: minmax\(0, 1\.5fr\) minmax\(0, 1fr\);/)
   assert.doesNotMatch(css, /#lab-workbench|DM Sans|Manrope|fonts\.googleapis\.com|light-dark\(/)
-  assert.match(css, /prefers-reduced-motion:reduce/)
+  assert.match(css, /prefers-reduced-motion: reduce/)
   assert.match(css, /focus-visible/)
 })
 
-test('overview preserves the approved editorial composition without mock data', () => {
+test('Today follows the Plano composition without mock data', () => {
   const page = read('Pages/LaboratoryWorkbench.vue')
-  for (const element of ['lab-page-head', 'lab-metrics', 'lab-overview-grid', 'lab-panel', 'lab-queue', 'lab-overview-rail']) {
+  for (const element of ['pl-band', 'pl-hero', 'pl-work', 'pl-job', 'pl-today-grid', 'pl-hbar', 'pl-filter']) {
     assert.ok(page.includes(element), element)
   }
-  assert.match(page, /O laboratório, em foco\./)
-  assert.doesNotMatch(page, /ds-card|grid-cols-4|AM-26-0148/)
-  assert.doesNotMatch(page, /px-4 py-7|lg:px-10/)
-  assert.match(read('Pages/LabNetwork/Index.vue'), /lab-network-cards/)
+  assert.match(page, /const lede = computed/)
+  assert.match(page, /props\.metrics\.waiting/)
+  assert.doesNotMatch(page, /ds-card|grid-cols-4|AM-26-0148|<svg/)
+  assert.match(read('Pages/LabNetwork/Index.vue'), /pl-network-cards/)
 })

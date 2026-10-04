@@ -6,7 +6,7 @@
           <BeakerIcon class="h-5 w-5 text-rose-700 dark:text-rose-300" />
           Registrar Consumo de Reagentes
         </h3>
-        <button type="button" @click="close" class="ds-icon-button">
+        <button type="button" @click="close" class="ds-icon-button" aria-label="Fechar">
           <XMarkIcon class="h-5 w-5" />
         </button>
       </div>
@@ -310,7 +310,7 @@ import {
   X as XMarkIcon,
   TriangleAlert as ExclamationTriangleIcon,
 } from '@lucide/vue'
-import Modal from '@/Components/Modal.vue'
+import Modal from '@/Components/modal.vue'
 
 const props = defineProps({
   show: Boolean,

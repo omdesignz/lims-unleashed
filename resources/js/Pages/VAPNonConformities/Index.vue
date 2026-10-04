@@ -354,7 +354,7 @@ import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
 import { useFileDownload } from '@/Composables/useFileDownload'
 import { useRecordArchive } from '@/Composables/useRecordArchive'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import {
   Download as ArrowDownTrayIcon,

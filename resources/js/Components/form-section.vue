@@ -14,7 +14,7 @@
         <slot name="form" />
       </div>
 
-      <div v-if="hasActions" class="flex items-center justify-end gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-3 sm:px-6">
+      <div v-if="hasActions" class="flex items-center justify-end gap-3 border-t border-[var(--pl-line)] px-5 py-3.5 sm:px-6">
         <slot name="actions" />
       </div>
     </form>

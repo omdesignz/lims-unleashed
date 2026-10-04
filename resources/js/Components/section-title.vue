@@ -1,7 +1,7 @@
 <template>
   <div class="flex justify-between gap-4 lg:col-span-1">
     <div>
-      <h3 class="ds-heading text-base">
+      <h3 class="pl-d3">
         <slot name="title" />
       </h3>
 

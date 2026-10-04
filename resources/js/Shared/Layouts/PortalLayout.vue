@@ -1,19 +1,19 @@
 <template>
   <div class="lims-app-shell ds-app-canvas" :style="brandingCssVariables" :data-theme-preset="themePreset">
     <Head :title="pageTitle" />
-    <header class="sticky top-0 z-40 bg-[var(--ds-canvas)]">
-      <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
+    <header class="sticky top-0 z-40 border-b border-[var(--pl-line)] bg-[var(--pl-bg)]">
+      <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6 lg:px-8">
         <div class="flex min-w-0 items-center gap-2 sm:gap-3">
           <button type="button" class="ds-icon-button lg:hidden" :aria-label="labels.navigation" @click="sidebarOpen = true">
             <Bars3Icon class="h-5 w-5" aria-hidden="true" />
           </button>
-          <Link :href="route('portal.home')" class="flex min-w-0 items-center gap-3 rounded-lg">
-            <img v-if="brandLogoUrl" class="h-8 w-auto max-w-16 object-contain sm:max-w-40" :src="brandLogoUrl" :alt="brandAppName">
-            <BrandMark v-else :width="52" :data-initials="brandInitials" />
-            <span class="hidden h-5 w-px bg-[var(--ds-border-strong)] sm:block" aria-hidden="true" />
+          <Link :href="route('portal.home')" class="flex items-center gap-3">
+            <img v-if="brandLogoUrl" class="h-6 w-auto max-w-16 object-contain sm:max-w-40" :src="brandLogoUrl" :alt="brandAppName">
+            <BrandMark v-else :width="48" :data-initials="brandInitials" />
+            <span class="hidden h-5 w-px bg-[var(--pl-line)] sm:block" aria-hidden="true" />
             <span class="sr-only sm:not-sr-only">
-              <span class="block text-[0.9375rem] font-semibold leading-tight tracking-tight text-[var(--ds-text)]">{{ brandAppName }}</span>
-              <span class="block text-xs leading-tight text-[var(--ds-text-soft)]">{{ labels.portalArea }}</span>
+              <span class="block text-[15px] font-bold leading-tight tracking-[-0.02em] text-[var(--pl-fg)]">{{ brandAppName }}</span>
+              <span class="pl-k pl-faint mt-1 block">{{ labels.portalArea }}</span>
             </span>
           </Link>
         </div>
@@ -34,7 +34,7 @@
                 @click="switchLanguage(language.value)"
               >
                 <span class="flex-1">{{ language.label }}</span>
-                <span v-if="language.value === page.props?.language" class="h-1.5 w-1.5 rounded-full bg-[var(--vap-blue)]" aria-hidden="true" />
+                <span v-if="language.value === page.props?.language" class="h-1.5 w-1.5 bg-[var(--pl-accent-text)]" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -45,8 +45,8 @@
 
           <div class="relative">
             <button type="button" class="ds-button ds-button-secondary gap-2.5 py-1 pl-1 pr-2.5" :aria-expanded="profileMenuOpen" @click="profileMenuOpen = !profileMenuOpen">
-              <span class="app-avatar h-7 w-7">{{ portalAccount.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
-              <span class="hidden max-w-40 truncate md:block">{{ portalAccount.name || labels.customer }}</span>
+              <span class="pl-avatar h-7 w-7">{{ portalAccount?.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
+              <span class="hidden max-w-40 truncate md:block">{{ portalAccount?.name || labels.customer }}</span>
               <ChevronDownIcon class="h-4 w-4 text-[var(--ds-text-soft)]" aria-hidden="true" />
             </button>
 
@@ -85,7 +85,7 @@
               <XMarkIcon class="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
-          <nav class="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
+          <nav class="grid flex-1 content-start gap-0.5 overflow-y-auto py-2">
             <Link
               v-for="item in navigation"
               :key="item.href"
@@ -95,7 +95,6 @@
               :aria-current="isActive(item) ? 'page' : undefined"
               @click="sidebarOpen = false"
             >
-              <component :is="item.icon" class="h-[1.125rem] w-[1.125rem] shrink-0" aria-hidden="true" />
               {{ labels[item.key] }}
             </Link>
           </nav>
@@ -103,18 +102,18 @@
       </div>
     </Dialog>
 
-    <div class="mx-auto flex max-w-7xl gap-6 px-4 pb-10 pt-2 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-7xl gap-9 px-4 pb-16 pt-9 sm:px-6 lg:px-8">
       <aside class="hidden w-60 shrink-0 lg:block">
         <div class="sticky top-20">
           <div class="flex items-center gap-2.5 px-2.5 pb-3">
-            <span class="app-avatar">{{ portalAccount.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
+            <span class="pl-avatar">{{ portalAccount?.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
             <span class="min-w-0">
               <span class="block truncate text-[0.8125rem] font-medium leading-tight text-[var(--ds-text)]">{{ portalAccount.name || labels.customer }}</span>
               <span class="block truncate text-xs leading-tight text-[var(--ds-text-soft)]">{{ portalAccount.customer || portalAccount.email }}</span>
             </span>
           </div>
 
-          <nav class="space-y-0.5" :aria-label="labels.navigation">
+          <nav class="grid gap-0.5 border-y border-[var(--pl-line)] py-2" :aria-label="labels.navigation">
             <Link
               v-for="item in navigation"
               :key="item.href"
@@ -123,7 +122,6 @@
               :class="isActive(item) ? 'ds-nav-item-active' : ''"
               :aria-current="isActive(item) ? 'page' : undefined"
             >
-              <component :is="item.icon" class="h-[1.125rem] w-[1.125rem] shrink-0" aria-hidden="true" />
               {{ labels[item.key] }}
             </Link>
           </nav>
@@ -144,7 +142,6 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue'
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
 import ToastList from '@/Components/toast-list.vue'
 import { loadLanguageAsync } from 'laravel-vue-i18n'
-import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
 import BrandMark from '@/Components/brand/BrandMark.vue'
 import {
   Archive as ArchiveBoxIcon,
@@ -222,7 +219,6 @@ const dictionary = {
 
 const labels = computed(() => dictionary[page.props?.language] ?? dictionary.pt)
 const settings = computed(() => page.props?.settings ?? {})
-const brandingCssVariables = computed(() => buildBrandingCssVariables(settings.value))
 const themePreset = computed(() => settings.value.theme_preset || settings.value.app_theme_preset || 'corporate')
 const brandLogoUrl = computed(() => settings.value.logo_url || settings.value.app_logo_url || null)
 const brandAppName = computed(() => settings.value.app_name || 'Espaço laboratorial')

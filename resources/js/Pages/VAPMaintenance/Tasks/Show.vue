@@ -443,7 +443,7 @@ import {
   Clock as ClockIcon,
   ArrowRight as ArrowRightIcon,
 } from '@lucide/vue'
-import Modal from '@/Components/Modal.vue'
+import Modal from '@/Components/modal.vue'
 
 const props = defineProps({
   can: { type: Object, default: () => ({}) },

@@ -497,8 +497,11 @@ class LimsSmokeTest extends TestCase
     public function test_verified_admin_can_open_iso_17025_audit_and_record_pages(): void
     {
         $user = $this->verifiedAdmin();
+        $accession = CollectionProduct::query()->create([]);
+        VAPSampleEntry::factory()->create(['lab_id' => $this->lab->id, 'collection_product_id' => $accession->id]);
         $certificate = QualityCertificate::query()->create([
             'user_id' => $user->id,
+            'collection_id' => $accession->id,
             'code' => 'QC-SMOKE-'.fake()->unique()->numerify('######'),
         ]);
         $occurrence = Occurrence::query()->create([
@@ -669,12 +672,12 @@ class LimsSmokeTest extends TestCase
 
         $sampleIndex = $this->actingAs($user)->get(route('vap_samples.index'));
         $sampleIndex->assertOk();
-        $this->assertSame('Entrada de amostra', data_get($sampleIndex->viewData('page'), 'props.breadcrumbs.0.title'));
+        $this->assertSame('Amostras', data_get($sampleIndex->viewData('page'), 'props.breadcrumbs.0.title'));
         $this->assertTrue(data_get($sampleIndex->viewData('page'), 'props.breadcrumbs.0.current'));
 
         $sampleShow = $this->actingAs($user)->get(route('vap_samples.show', $sampleEntry));
         $sampleShow->assertOk();
-        $this->assertSame('Entrada de amostra', data_get($sampleShow->viewData('page'), 'props.breadcrumbs.0.title'));
+        $this->assertSame('Amostras', data_get($sampleShow->viewData('page'), 'props.breadcrumbs.0.title'));
         $this->assertSame('Detalhes', data_get($sampleShow->viewData('page'), 'props.breadcrumbs.1.title'));
         $this->assertTrue(data_get($sampleShow->viewData('page'), 'props.breadcrumbs.1.current'));
 

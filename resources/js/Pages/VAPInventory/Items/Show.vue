@@ -1,465 +1,253 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Item controlado</span>
-            <span :class="getStatusClasses(item.status)">{{ item.status?.name || 'Estado por definir' }}</span>
-          </div>
-          <h1 class="ds-heading mt-3 flex items-center gap-3 text-2xl">
-            <CubeIcon class="h-7 w-7 text-primary-700 dark:text-primary-300" />
-            {{ item.name }}
-          </h1>
-          <p class="ds-copy mt-2 text-sm">
-            {{ item.description || 'Sem descrição disponível.' }}
-          </p>
-          <div class="mt-3 flex flex-wrap gap-x-5 gap-y-2 font-mono text-xs font-semibold text-[color:var(--ds-text-soft)]">
-            <span>Código: {{ item.code || 'N/A' }}</span>
-            <span>Interno: {{ item.internal_code || 'N/A' }}</span>
-            <span v-if="item.barcode">Barcode: {{ item.barcode }}</span>
-          </div>
-        </div>
+  <div class="pl-page" data-template="dossier">
+    <PageHeader
+      :crumbs="[{ title: 'Inventário' }, { title: 'Itens', url: route('vap-inventory.items.index') }, { title: item.name }]"
+      :title="item.name"
+      :lede="lede"
+    >
+      <template #badges>
+        <StatusChip :tone="statusTone(item.status)">{{ item.status?.name || 'Estado por definir' }}</StatusChip>
+        <StatusChip v-if="isReagent && item.reagent_expiry_date" :tone="expiryTone(item)">{{ getExpiryStatusText(item) }}</StatusChip>
+        <StatusChip v-if="item.metrology_status && item.metrology_status !== 'not_required'" :tone="metrologyTone(item.metrology_status)">Metrologia: {{ getMetrologyStatusText(item.metrology_status).toLowerCase() }}</StatusChip>
+      </template>
+      <template #actions>
+        <Link v-if="nextStep.action !== 'order'" :href="route('vap-inventory.orders.create', { item_id: item.id })" class="ds-button ds-button-quiet">Criar pedido</Link>
+        <Link v-if="canEdit" :href="route('vap-inventory.items.edit', item.id)" class="ds-button ds-button-secondary">Modificar</Link>
+      </template>
+    </PageHeader>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-secondary">
-            <ArrowLeftIcon class="h-4 w-4" />
-            Itens
-          </Link>
-          <Link v-if="canEdit" :href="route('vap-inventory.items.edit', item.id)" class="ds-button ds-button-primary">
-            <PencilSquareIcon class="h-4 w-4" />
-            Modificar
-          </Link>
-        </div>
-      </div>
+    <div class="pl-dossier-grid">
+      <div class="min-w-0">
+        <TabGroup>
+          <TabList class="pl-tabs mb-6" aria-label="Registo do item">
+            <Tab v-slot="{ selected }" as="template"><button type="button" class="pl-tab" :aria-selected="selected">Existências<span class="pl-num">{{ inventory.length }}</span></button></Tab>
+            <Tab v-slot="{ selected }" as="template"><button type="button" class="pl-tab" :aria-selected="selected">Movimentos<span class="pl-num">{{ recentTransactions.length }}</span></button></Tab>
+            <Tab v-slot="{ selected }" as="template"><button type="button" class="pl-tab" :aria-selected="selected">Actividade<span class="pl-num">{{ recentActivity.length }}</span></button></Tab>
+            <Tab v-slot="{ selected }" as="template"><button type="button" class="pl-tab" :aria-selected="selected">Documentos<span class="pl-num">{{ documents.length }}</span></button></Tab>
+          </TabList>
 
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Existências total</dt>
-          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ totalStock || 0 }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ item.unit?.code || 'unidades' }}</p>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Armazéns</dt>
-          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ inventory.length }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">localizações activas</p>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Reabastecimento</dt>
-          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ item.reorder_qty || 0 }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ item.unit?.code || 'unidades' }}</p>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Actividade recente</dt>
-          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ recentTransactions.length }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">transacções</p>
-        </div>
-      </dl>
-    </section>
-
-    <section class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-      <article class="ds-card p-5">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p class="ds-kicker">Disponibilidade</p>
-            <h2 class="ds-heading mt-2 text-base">Distribuição de existências</h2>
-            <p class="ds-copy mt-1 text-xs">Saldo disponível por armazém.</p>
-          </div>
-          <span class="ds-chip">{{ stockDistributionTotal }} monitorizadas</span>
-        </div>
-        <apexchart class="mt-3" type="bar" height="260" :options="stockDistributionChartOptions" :series="stockDistributionChartSeries" />
-      </article>
-
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-        <article class="ds-card p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="ds-kicker">Movimento</p>
-              <h2 class="ds-heading mt-2 text-base">Mix operacional</h2>
-            </div>
-            <span class="ds-chip">{{ activityMixTotal }} registos</span>
-          </div>
-          <apexchart class="mt-2" type="donut" height="205" :options="activityMixChartOptions" :series="activityMixChartSeries" />
-        </article>
-
-        <article class="ds-card p-5">
-          <div>
-            <p class="ds-kicker">Conformidade</p>
-            <h2 class="ds-heading mt-2 text-base">Pulso técnico</h2>
-            <p class="ds-copy mt-1 text-xs">Caducidade, criticidade e prontidão.</p>
-          </div>
-          <apexchart class="mt-2" type="bar" height="185" :options="compliancePulseChartOptions" :series="compliancePulseChartSeries" />
-        </article>
-      </div>
-    </section>
-
-    <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-      <div class="space-y-4">
-        <section class="ds-panel overflow-hidden">
-          <div class="flex items-center gap-2 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-4">
-            <InformationCircleIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
-            <div>
-              <h2 class="ds-heading text-base">Dossier do item</h2>
-              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Classificação, identificação e condições técnicas.</p>
-            </div>
-          </div>
-
-          <div class="divide-y divide-[color:var(--ds-border)]">
-            <section class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
-              <div>
-                <h3 class="ds-heading text-sm">Classificação</h3>
-                <p class="ds-copy mt-1 text-xs">Propriedade, fornecimento e operação corrente.</p>
-              </div>
-              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div v-for="field in overviewFields" :key="field.label">
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
-                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
+          <TabPanels>
+            <TabPanel>
+              <section class="pl-panel" aria-labelledby="item-stock-title">
+                <div class="pl-panel-head">
+                  <h2 id="item-stock-title" class="pl-k">Existências por armazém</h2>
+                  <div class="flex flex-wrap items-center gap-1">
+                    <button type="button" class="ds-table-action" @click="adjustStockModal = true">Ajustar</button>
+                    <button type="button" class="ds-table-action" @click="transferStockModal = true">Transferir</button>
+                    <button v-if="hasPermission('add_reagent_consumption') && (item.is_reagent || isReagent)" type="button" class="ds-table-action" @click="consumeReagentModal = true">Registar consumo</button>
+                  </div>
                 </div>
-              </dl>
-            </section>
 
-            <section class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
-              <div>
-                <h3 class="ds-heading text-sm">Identificação</h3>
-                <p class="ds-copy mt-1 text-xs">Códigos, fabricante e rastreabilidade física.</p>
-              </div>
-              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div v-for="field in identificationFields" :key="field.label">
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
-                  <dd class="mt-1 break-words text-sm font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
+                <DataTable v-if="inventory.length">
+                  <thead>
+                    <tr>
+                      <th scope="col">Armazém</th>
+                      <th scope="col" class="text-right">Disponível</th>
+                      <th scope="col" class="text-right">Mínimo</th>
+                      <th scope="col" class="text-right">Reposição</th>
+                      <th scope="col">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="inv in inventory" :key="inv?.id">
+                      <td>
+                        <span class="font-medium">{{ inv?.warehouse?.name || 'Armazém' }}</span>
+                        <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ inv?.warehouse?.location?.name || 'Sem localização' }}<template v-if="inv?.warehouse?.is_refrigerated"> · refrigerado</template></span>
+                      </td>
+                      <td class="text-right"><span class="pl-num font-medium">{{ inv.qty_available }}</span> <span class="text-[12.5px] text-[var(--pl-muted)]">{{ unitCode }}</span></td>
+                      <td class="pl-num text-right">{{ inv.min_stock_level }}</td>
+                      <td class="pl-num text-right">{{ inv.reorder_point }}</td>
+                      <td><StatusChip :tone="stockTone(inv)">{{ stockStatusLabels[stockStatus(inv)] }}</StatusChip></td>
+                    </tr>
+                  </tbody>
+                </DataTable>
+                <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+                  <span class="pl-k">Sem existências neste laboratório</span>
+                  <p class="text-sm text-[var(--pl-muted)]">Este item ainda não está associado a um armazém. A entrada faz-se por pedido de compra ou ajuste de existências.</p>
                 </div>
-              </dl>
-            </section>
+              </section>
+            </TabPanel>
 
-            <section class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
-              <div>
-                <h3 class="ds-heading text-sm">Custos e controlo</h3>
-                <p class="ds-copy mt-1 text-xs">Valores de compra e requisitos de conservação.</p>
-              </div>
-              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Custo padrão</dt>
-                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ item.standard_cost || 'N/A' }}</dd>
+            <TabPanel>
+              <section class="pl-panel" aria-labelledby="item-movements-title">
+                <div class="pl-panel-head">
+                  <h2 id="item-movements-title" class="pl-k">Movimentos recentes</h2>
+                  <span class="pl-k pl-faint">Últimos {{ recentTransactions.length }}</span>
                 </div>
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Último preço</dt>
-                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ item.last_purchase_price || 'N/A' }}</dd>
+                <DataTable v-if="recentTransactions.length">
+                  <thead>
+                    <tr>
+                      <th scope="col">Data</th>
+                      <th scope="col">Tipo</th>
+                      <th scope="col" class="text-right">Quantidade</th>
+                      <th scope="col">Armazém</th>
+                      <th scope="col">Utilizador</th>
+                      <th scope="col">Motivo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="transaction in recentTransactions" :key="transaction.id">
+                      <td class="pl-num whitespace-nowrap">{{ formatDateTime(transaction.created_at) }}</td>
+                      <td><StatusChip :tone="transactionTone(transaction)">{{ transaction.type?.name || 'Movimento' }}</StatusChip></td>
+                      <td class="pl-num whitespace-nowrap text-right font-medium" :class="transaction.is_addition ? 'text-[var(--pl-ok)]' : 'text-[var(--pl-bad)]'">
+                        {{ transaction.is_addition ? '+' : '−' }}{{ transaction.qty }}
+                      </td>
+                      <td>{{ transaction.warehouse?.name || '—' }}</td>
+                      <td>{{ transaction.user?.name || '—' }}</td>
+                      <td class="min-w-60">{{ transaction.reason || 'Sem motivo registado' }}</td>
+                    </tr>
+                  </tbody>
+                </DataTable>
+                <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+                  <span class="pl-k">Sem movimentos</span>
+                  <p class="text-sm text-[var(--pl-muted)]">Entradas, ajustes, consumos e transferências deste item aparecem aqui.</p>
                 </div>
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Documentação de segurança</dt>
-                  <dd class="mt-1">
-                    <span :class="['ds-chip', item.has_safety_documentation ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200' : 'border-zinc-300 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200']">
-                      {{ item.has_safety_documentation ? 'Disponível' : 'Não disponível' }}
+              </section>
+            </TabPanel>
+
+            <TabPanel>
+              <section class="pl-panel" aria-labelledby="item-activity-title">
+                <div class="pl-panel-head">
+                  <h2 id="item-activity-title" class="pl-k">Actividade recente</h2>
+                  <span class="pl-k pl-faint">Movimentos, consumos e transferências</span>
+                </div>
+                <template v-if="recentActivity.length">
+                  <div v-for="activity in recentActivity" :key="activity.type + '-' + activity.id" class="pl-row">
+                    <span class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                      <StatusChip :tone="activity.reversed ? 'neutral' : 'run'">{{ activityLabels[activity.type] || 'Registo' }}</StatusChip>
+                      <span class="min-w-0">{{ activity.description }}</span>
                     </span>
-                  </dd>
+                    <span class="pl-num text-[12.5px] text-[var(--pl-muted)]">{{ formatTimeAgo(activity.timestamp) }}</span>
+                  </div>
+                </template>
+                <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+                  <span class="pl-k">Sem actividade recente</span>
+                  <p class="text-sm text-[var(--pl-muted)]">Os consumos e transferências deste item aparecem aqui.</p>
                 </div>
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Refrigeração</dt>
-                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ item.refrigerated ? 'Obrigatória' : 'Não aplicável' }}</dd>
-                </div>
-              </dl>
-            </section>
+              </section>
+            </TabPanel>
 
-            <section v-if="hasTechnicalSpecs" class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
-              <div>
-                <h3 class="ds-heading text-sm">Especificações técnicas</h3>
-                <p class="ds-copy mt-1 text-xs">Capacidade, software e rastreabilidade metrológica.</p>
-              </div>
-              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div v-for="field in technicalSpecFields" :key="field.label">
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
-                  <dd class="mt-1 break-words text-sm font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
+            <TabPanel>
+              <section class="pl-panel" aria-labelledby="item-documents-title">
+                <div class="pl-panel-head">
+                  <h2 id="item-documents-title" class="pl-k">Documentos</h2>
+                  <span class="pl-k pl-faint">{{ documents.length }} {{ documents.length === 1 ? 'ficheiro' : 'ficheiros' }}</span>
                 </div>
-              </dl>
-            </section>
 
-            <section v-if="isReagent" class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
-              <div>
-                <h3 class="ds-heading text-sm">Reagente e validade</h3>
-                <p class="ds-copy mt-1 text-xs">Lote, abertura e janela de utilização.</p>
-              </div>
-              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Data de validade</dt>
-                  <dd class="mt-1 text-sm font-bold" :class="getExpiryDateColor(item)">{{ formatDate(item.reagent_expiry_date) || 'N/A' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Data de abertura</dt>
-                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ formatDate(item.reagent_open_date) || 'Não aberto' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Dias para caducidade</dt>
-                  <dd class="mt-1 text-sm font-bold" :class="getDaysColor(daysToExpiry)">{{ Number(daysToExpiry || 0).toFixed(0) }}</dd>
-                </div>
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Estado de validade</dt>
-                  <dd class="mt-1"><span :class="getExpiryStatusClasses(item)">{{ getExpiryStatusText(item) }}</span></dd>
-                </div>
-              </dl>
-            </section>
+                <p v-if="documentMessage" :role="documentFailed ? 'alert' : 'status'" class="border-b border-[var(--pl-line)] px-4 py-3 text-sm" :class="{ 'text-[var(--pl-bad)]': documentFailed }">{{ documentMessage }}</p>
 
-            <section v-if="item.next_calibration_date" class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
-              <div>
-                <h3 class="ds-heading text-sm">Calibração e metrologia</h3>
-                <p class="ds-copy mt-1 text-xs">Prontidão técnica e próxima revisão.</p>
-              </div>
-              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Última calibração</dt>
-                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ formatDate(item.last_calibration_date) || 'Nunca' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Próxima calibração</dt>
-                  <dd class="mt-1 text-sm font-bold" :class="getCalibrationDateColor(item)">{{ formatDate(item.next_calibration_date) }}</dd>
-                </div>
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Estado de calibração</dt>
-                  <dd class="mt-1"><span :class="getCalibrationStatusClasses(item)">{{ getCalibrationStatusText(item) }}</span></dd>
-                </div>
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Estado metrológico</dt>
-                  <dd class="mt-1"><span :class="getMetrologyStatusClasses(item.metrology_status)">{{ getMetrologyStatusText(item.metrology_status) }}</span></dd>
-                </div>
-                <div v-if="item.metrology_review_due_at">
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Próxima revisão</dt>
-                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ formatDate(item.metrology_review_due_at) }}</dd>
-                </div>
-                <div v-if="item.metrology_notes" class="sm:col-span-2 lg:col-span-3">
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Notas metrológicas</dt>
-                  <dd class="mt-1 text-sm font-semibold leading-6 text-[color:var(--ds-text-muted)]">{{ item.metrology_notes }}</dd>
-                </div>
-              </dl>
-            </section>
-          </div>
-        </section>
-
-        <section class="ds-table-shell">
-          <div class="ds-table-summary px-5 py-4">
-            <div>
-              <h2 class="ds-heading text-base">Existências por armazém</h2>
-              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ inventory.length }} localizações com registo.</p>
-            </div>
-            <BuildingLibraryIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
-          </div>
-
-          <div v-if="inventory.length === 0" class="p-5">
-            <div class="ds-empty-state px-5 py-10 text-center">
-              <BuildingLibraryIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
-              <h3 class="ds-heading mt-3 text-sm">Sem existências disponível</h3>
-              <p class="ds-copy mt-1 text-xs">Este item ainda não está associado a um armazém.</p>
-            </div>
-          </div>
-
-          <div v-else class="overflow-x-auto">
-            <DataTable class="min-w-full align-middle">
-              <thead class="ds-table-head">
-                <tr>
-                  <th class="ds-table-heading px-5 py-3 text-left">Armazém</th>
-                  <th class="ds-table-heading px-5 py-3 text-left">Disponível</th>
-                  <th class="ds-table-heading px-5 py-3 text-left">Mínimo</th>
-                  <th class="ds-table-heading px-5 py-3 text-left">Reabastecimento</th>
-                  <th class="ds-table-heading px-5 py-3 text-left">Estado</th>
-                  <th class="ds-table-heading px-5 py-3 text-right">Acções</th>
-                </tr>
-              </thead>
-              <tbody class="ds-table-body divide-y divide-[color:var(--ds-border)]">
-                <tr v-for="inv in inventory" :key="inv?.id" class="ds-table-row">
-                  <td class="px-5 py-3">
-                    <span class="block text-sm font-bold text-[color:var(--ds-text)]">{{ inv?.warehouse?.name || 'Armazém' }}</span>
-                    <span class="mt-0.5 block text-xs text-[color:var(--ds-text-soft)]">{{ inv?.warehouse?.location?.name || 'Sem localização' }}</span>
-                    <span v-if="inv?.warehouse?.is_refrigerated" class="ds-chip mt-2 border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-400/30 dark:bg-blue-500/10 dark:text-blue-200">Refrigerado</span>
-                  </td>
-                  <td class="px-5 py-3">
-                    <span class="block text-xl font-bold text-[color:var(--ds-text)]">{{ inv.qty_available }}</span>
-                    <span class="text-xs text-[color:var(--ds-text-soft)]">{{ item.unit?.code || 'unidades' }}</span>
-                  </td>
-                  <td class="ds-table-cell px-5 py-3">{{ inv.min_stock_level }}</td>
-                  <td class="ds-table-cell px-5 py-3">{{ inv.reorder_point }}</td>
-                  <td class="px-5 py-3"><span :class="getStockStatusClasses(inv)">{{ inv.stock_status_label }}</span></td>
-                  <td class="px-5 py-3">
-                    <div class="flex items-center justify-end gap-1">
-                      <button type="button" class="ds-table-action" @click="adjustStock(inv)">
-                        <ArrowsUpDownIcon class="h-4 w-4" />
-                        Ajustar
-                      </button>
-                      <button type="button" class="ds-table-action" @click="transferStock(inv)">
-                        <ArrowsRightLeftIcon class="h-4 w-4" />
-                        Transferir
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </DataTable>
-          </div>
-        </section>
-
-        <section class="ds-table-shell">
-          <div class="ds-table-summary px-5 py-4">
-            <div>
-              <h2 class="ds-heading text-base">Transacções recentes</h2>
-              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ recentTransactions.length }} movimentos registados.</p>
-            </div>
-            <ClockIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
-          </div>
-
-          <div v-if="recentTransactions.length === 0" class="p-5">
-            <div class="ds-empty-state px-5 py-10 text-center">
-              <ClockIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
-              <h3 class="ds-heading mt-3 text-sm">Sem transacções recentes</h3>
-              <p class="ds-copy mt-1 text-xs">Os movimentos deste item aparecerão aqui.</p>
-            </div>
-          </div>
-
-          <div v-else class="overflow-x-auto">
-            <DataTable class="min-w-full align-middle">
-              <thead class="ds-table-head">
-                <tr>
-                  <th class="ds-table-heading px-5 py-3 text-left">Data</th>
-                  <th class="ds-table-heading px-5 py-3 text-left">Tipo</th>
-                  <th class="ds-table-heading px-5 py-3 text-left">Quantidade</th>
-                  <th class="ds-table-heading px-5 py-3 text-left">Armazém</th>
-                  <th class="ds-table-heading px-5 py-3 text-left">Utilizador</th>
-                  <th class="ds-table-heading px-5 py-3 text-left">Motivo</th>
-                </tr>
-              </thead>
-              <tbody class="ds-table-body divide-y divide-[color:var(--ds-border)]">
-                <tr v-for="transaction in recentTransactions" :key="transaction.id" class="ds-table-row">
-                  <td class="ds-table-cell whitespace-nowrap px-5 py-3">{{ formatDateTime(transaction.created_at) }}</td>
-                  <td class="px-5 py-3"><span :class="getTransactionTypeClasses(transaction)">{{ transaction.type?.name || 'Movimento' }}</span></td>
-                  <td class="px-5 py-3">
-                    <span :class="transaction.is_addition ? 'font-bold text-emerald-700 dark:text-emerald-300' : 'font-bold text-rose-700 dark:text-rose-300'">
-                      {{ transaction.is_addition ? '+' : '-' }}{{ transaction.qty }}
+                <template v-if="documents.length">
+                  <div v-for="document in documents" :key="document.id || document.name" class="pl-row">
+                    <span class="min-w-0">
+                      <span class="block truncate font-medium">{{ document.name }}<span v-if="document.archived" class="text-[12.5px] font-normal text-[var(--pl-muted)]"> · Arquivado</span></span>
+                      <span class="pl-num block text-[12.5px] text-[var(--pl-muted)]">{{ (document.extension || document.name.split('.').pop() || 'ficheiro').toUpperCase() }} · {{ readableFileSize(document.size) }}</span>
                     </span>
-                  </td>
-                  <td class="ds-table-cell px-5 py-3">{{ transaction.warehouse?.name || 'N/A' }}</td>
-                  <td class="ds-table-cell px-5 py-3">{{ transaction.user?.name || 'N/A' }}</td>
-                  <td class="ds-table-cell min-w-60 px-5 py-3">{{ transaction.reason || 'Sem motivo registado' }}</td>
-                </tr>
-              </tbody>
-            </DataTable>
-          </div>
-        </section>
-
-        <section class="ds-panel overflow-hidden">
-          <div class="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
-            <div>
-              <h2 class="ds-heading text-base">Documentos</h2>
-              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ documents.length }} ficheiros associados.</p>
-            </div>
-            <DocumentTextIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
-          </div>
-
-          <p v-if="documentMessage" :role="documentFailed ? 'alert' : 'status'" class="px-5 py-3 text-sm">{{ documentMessage }}</p>
-
-          <div v-if="documents.length === 0" class="p-5">
-            <div class="ds-empty-state px-5 py-10 text-center">
-              <DocumentTextIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
-              <h3 class="ds-heading mt-3 text-sm">Nenhum documento associado</h3>
-              <p class="ds-copy mt-1 text-xs">Adicione certificados, fichas de segurança ou evidência técnica no editor do item.</p>
-            </div>
-          </div>
-
-          <div v-else class="divide-y divide-[color:var(--ds-border)]">
-            <article v-for="document in documents" :key="document.id || document.name" class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div class="flex min-w-0 items-center gap-3">
-                <div class="flex h-9 w-9 shrink-0 items-center justify-center border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)]">
-                  <DocumentTextIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+                    <span class="flex items-center gap-1">
+                      <button type="button" class="ds-table-action" title="Descarregar" @click="downloadAttachment(document)">
+                        <CloudArrowDownIcon class="h-4 w-4" aria-hidden="true" />
+                        Descarregar
+                      </button>
+                      <button v-if="canEdit && !document.archived" type="button" class="ds-table-action" title="Arquivar documento" :disabled="documentProcessing" @click="deleteAttachment(item.id, document.id)">
+                        <ArchiveBoxIcon class="h-4 w-4" aria-hidden="true" />
+                        Arquivar
+                      </button>
+                      <button v-if="canEdit && document.archived" type="button" class="ds-table-action" :disabled="documentProcessing" @click="restoreAttachment(document.id)">
+                        <ArrowUturnLeftIcon class="h-4 w-4" aria-hidden="true" />
+                        Restaurar
+                      </button>
+                    </span>
+                  </div>
+                </template>
+                <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+                  <span class="pl-k">Nenhum documento associado</span>
+                  <p class="text-sm text-[var(--pl-muted)]">Adicione certificados, fichas de segurança ou evidência técnica ao modificar o item.</p>
                 </div>
-                <div class="min-w-0">
-                  <h3 class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ document.name }} <span v-if="document.archived" class="text-xs font-normal">· Arquivado</span></h3>
-                  <p class="mt-0.5 text-xs text-[color:var(--ds-text-soft)]">{{ (document.extension || document.name.split('.').pop() || 'ficheiro').toUpperCase() }} · {{ readableFileSize(document.size) }}</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-1">
-                <button type="button" class="ds-table-action" title="Descarregar" @click="downloadAttachment(document)">
-                  <CloudArrowDownIcon class="h-4 w-4" />
-                  Descarregar
-                </button>
-                <button v-if="canEdit && !document.archived" type="button" class="ds-table-action" title="Arquivar documento" :disabled="documentProcessing" @click="deleteAttachment(item.id, document.id)">
-                  <ArchiveBoxIcon class="h-4 w-4" />
-                  Arquivar
-                </button>
-                <button v-if="canEdit && document.archived" type="button" class="ds-table-action" :disabled="documentProcessing" @click="restoreAttachment(document.id)">
-                  <ArrowUturnLeftIcon class="h-4 w-4" />
-                  Restaurar
-                </button>
-              </div>
-            </article>
-          </div>
-        </section>
+              </section>
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
       </div>
 
-      <aside class="space-y-4">
-        <section class="ds-command-surface p-5">
-          <p class="ds-kicker">Comandos de existências</p>
-          <h2 class="ds-heading mt-2 text-base">Acções rápidas</h2>
-          <div class="mt-4 grid gap-2">
-            <button type="button" class="ds-button ds-button-primary w-full" @click="adjustStockModal = true">
-              <ArrowsUpDownIcon class="h-4 w-4" />
-              Ajustar existências
-            </button>
-            <button type="button" class="ds-button ds-button-secondary w-full" @click="transferStockModal = true">
-              <ArrowsRightLeftIcon class="h-4 w-4" />
-              Transferir existências
-            </button>
-            <button v-if="hasPermission('add_reagent_consumption') && (item.is_reagent || isReagent)" type="button" class="ds-button ds-button-secondary w-full" @click="consumeReagentModal = true">
-              <BeakerIcon class="h-4 w-4" />
-              Registar consumo
-            </button>
-            <button v-if="item.next_calibration_date" type="button" class="ds-button ds-button-secondary w-full" @click="recordCalibrationModal = true">
-              <WrenchScrewdriverIcon class="h-4 w-4" />
-              Registar calibração
-            </button>
-            <Link :href="route('vap-inventory.orders.create', { item_id: item.id })" class="ds-button ds-button-secondary w-full">
-              <ShoppingCartIcon class="h-4 w-4" />
-              Criar pedido
-            </Link>
+      <aside class="grid min-w-0 content-start gap-7">
+        <section class="pl-panel" aria-labelledby="item-identity-title">
+          <div class="pl-panel-head">
+            <h2 id="item-identity-title" class="pl-k">Identificação</h2>
+            <span class="pl-k pl-faint">{{ item.code || 'Sem código' }}</span>
+          </div>
+          <dl class="pl-facts">
+            <div v-for="field in overviewFields" :key="field.label" class="pl-fact"><dt>{{ field.label }}</dt><dd>{{ field.value }}</dd></div>
+            <div v-for="field in identificationFields" :key="field.label" class="pl-fact"><dt>{{ field.label }}</dt><dd class="pl-num">{{ field.value }}</dd></div>
+          </dl>
+          <div v-if="item.description" class="grid gap-2 border-t border-[var(--pl-line)] p-4">
+            <h3 class="pl-k pl-muted">Descrição</h3>
+            <p class="text-sm">{{ item.description }}</p>
           </div>
         </section>
 
-        <section class="ds-card p-5">
-          <div class="flex items-center gap-2">
-            <ChartBarIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
-            <h2 class="ds-heading text-base">Estado operacional</h2>
-          </div>
-          <dl class="mt-4 divide-y divide-[color:var(--ds-border)]">
-            <div class="flex items-center justify-between gap-3 py-3">
-              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Item</dt>
-              <dd><span :class="getStatusClasses(item.status)">{{ item.status?.name || 'N/A' }}</span></dd>
-            </div>
-            <div v-if="isReagent" class="flex items-center justify-between gap-3 py-3">
-              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Validade</dt>
-              <dd><span :class="getExpiryStatusClasses(item)">{{ getExpiryStatusText(item) }}</span></dd>
-            </div>
-            <div v-if="item.next_calibration_date" class="flex items-center justify-between gap-3 py-3">
-              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Calibração</dt>
-              <dd><span :class="getCalibrationStatusClasses(item)">{{ getCalibrationStatusText(item) }}</span></dd>
-            </div>
-            <div v-if="item.metrology_status" class="flex items-center justify-between gap-3 py-3">
-              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Metrologia</dt>
-              <dd><span :class="getMetrologyStatusClasses(item.metrology_status)">{{ getMetrologyStatusText(item.metrology_status) }}</span></dd>
-            </div>
+        <section class="pl-panel" aria-labelledby="item-control-title">
+          <div class="pl-panel-head"><h2 id="item-control-title" class="pl-k">Custos e conservação</h2></div>
+          <dl class="pl-facts">
+            <div class="pl-fact"><dt>Custo padrão</dt><dd class="pl-num">{{ item.standard_cost || '—' }}</dd></div>
+            <div class="pl-fact"><dt>Último preço</dt><dd class="pl-num">{{ item.last_purchase_price || '—' }}</dd></div>
+            <div class="pl-fact"><dt>Reposição</dt><dd class="pl-num">{{ item.reorder_qty || 0 }} {{ unitCode }}</dd></div>
+            <div class="pl-fact"><dt>Segurança</dt><dd><StatusChip :tone="item.has_safety_documentation ? 'ok' : 'neutral'">{{ item.has_safety_documentation ? 'Ficha disponível' : 'Sem ficha' }}</StatusChip></dd></div>
+            <div class="pl-fact"><dt>Refrigeração</dt><dd>{{ item.refrigerated ? 'Obrigatória' : 'Não aplicável' }}</dd></div>
           </dl>
         </section>
 
-        <section class="ds-card p-5">
-          <h2 class="ds-heading text-base">Actividade recente</h2>
-          <div v-if="recentActivity.length" class="mt-4 space-y-4">
-            <article v-for="activity in recentActivity" :key="activity.type + '-' + activity.id" class="flex items-start gap-3">
-              <span :class="['mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', getActivityColor(activity.type)]">
-                <component :is="getActivityIcon(activity.type)" class="h-4 w-4 text-white" />
-              </span>
-              <div class="min-w-0">
-                <p class="text-sm font-semibold leading-5 text-[color:var(--ds-text)]">{{ activity.description }}</p>
-                <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ formatTimeAgo(activity.timestamp) }}</p>
-              </div>
-            </article>
+        <section v-if="hasTechnicalSpecs" class="pl-panel" aria-labelledby="item-specs-title">
+          <div class="pl-panel-head"><h2 id="item-specs-title" class="pl-k">Especificações técnicas</h2></div>
+          <dl class="pl-facts">
+            <div v-for="field in technicalSpecFields" :key="field.label" class="pl-fact"><dt>{{ field.label }}</dt><dd>{{ field.value }}</dd></div>
+          </dl>
+        </section>
+
+        <section v-if="isReagent" class="pl-panel" aria-labelledby="item-expiry-title">
+          <div class="pl-panel-head">
+            <h2 id="item-expiry-title" class="pl-k">Reagente e validade</h2>
+            <StatusChip :tone="expiryTone(item)">{{ getExpiryStatusText(item) }}</StatusChip>
           </div>
-          <div v-else class="ds-empty-state mt-4 px-4 py-6 text-center text-xs font-semibold text-[color:var(--ds-text-soft)]">Sem actividade recente.</div>
+          <dl class="pl-facts">
+            <div class="pl-fact"><dt>Validade</dt><dd class="pl-num">{{ formatDate(item.reagent_expiry_date) || '—' }}</dd></div>
+            <div class="pl-fact"><dt>Abertura</dt><dd class="pl-num">{{ formatDate(item.reagent_open_date) || 'Não aberto' }}</dd></div>
+            <div class="pl-fact"><dt>Dias para caducidade</dt><dd class="pl-num">{{ Number(daysToExpiry || 0).toFixed(0) }}</dd></div>
+          </dl>
+        </section>
+
+        <section v-if="item.next_calibration_date" class="pl-panel" aria-labelledby="item-calibration-title">
+          <div class="pl-panel-head">
+            <h2 id="item-calibration-title" class="pl-k">Calibração e metrologia</h2>
+            <StatusChip :tone="calibrationTone(item)">{{ getCalibrationStatusText(item) }}</StatusChip>
+          </div>
+          <dl class="pl-facts">
+            <div class="pl-fact"><dt>Última calibração</dt><dd class="pl-num">{{ formatDate(item.last_calibration_date) || 'Nunca' }}</dd></div>
+            <div class="pl-fact"><dt>Próxima calibração</dt><dd class="pl-num">{{ formatDate(item.next_calibration_date) }}</dd></div>
+            <div class="pl-fact"><dt>Estado metrológico</dt><dd><StatusChip :tone="metrologyTone(item.metrology_status)">{{ getMetrologyStatusText(item.metrology_status) }}</StatusChip></dd></div>
+            <div v-if="item.metrology_review_due_at" class="pl-fact"><dt>Próxima revisão</dt><dd class="pl-num">{{ formatDate(item.metrology_review_due_at) }}</dd></div>
+          </dl>
+          <div v-if="item.metrology_notes" class="grid gap-2 border-t border-[var(--pl-line)] p-4">
+            <h3 class="pl-k pl-muted">Notas metrológicas</h3>
+            <p class="text-sm">{{ item.metrology_notes }}</p>
+          </div>
+          <button type="button" class="pl-row w-full border-t border-[var(--pl-line)] text-left hover:bg-[var(--pl-layer)]" @click="recordCalibrationModal = true">
+            <span>Registar calibração</span><ArrowRightIcon class="h-4 w-4" aria-hidden="true" />
+          </button>
         </section>
       </aside>
-    </section>
+    </div>
+
+    <NextStepBar>
+      {{ nextStep.text }}
+      <template #actions>
+        <button v-if="nextStep.action === 'calibration'" type="button" class="ds-button ds-button-primary" @click="recordCalibrationModal = true">Registar calibração</button>
+        <Link v-else-if="nextStep.action === 'order'" :href="route('vap-inventory.orders.create', { item_id: item.id })" class="ds-button ds-button-primary">Criar pedido</Link>
+        <button v-else-if="nextStep.action === 'consume'" type="button" class="ds-button ds-button-primary" @click="consumeReagentModal = true">Registar consumo</button>
+        <template v-else>
+          <button type="button" class="ds-button ds-button-quiet" @click="transferStockModal = true">Transferir</button>
+          <button type="button" class="ds-button ds-button-primary" @click="adjustStockModal = true">Ajustar existências</button>
+        </template>
+      </template>
+    </NextStepBar>
 
     <AdjustStockModal
       :show="adjustStockModal"
@@ -496,33 +284,31 @@
   </div>
 </template>
 <script setup>
-import { useRecordArchive } from '@/composables/useRecordArchive'
-import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
-import { Link, useForm } from '@inertiajs/vue3'
+import { useRecordArchive } from '@/Composables/useRecordArchive'
+import { ref, computed } from 'vue'
+import { Link } from '@inertiajs/vue3'
+import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
 import {
-  Box as CubeIcon,
-  SquarePen as PencilSquareIcon,
-  ArrowLeft as ArrowLeftIcon,
-  Info as InformationCircleIcon,
-  Landmark as BuildingLibraryIcon,
-  Clock as ClockIcon,
-  ChartColumn as ChartBarIcon,
-  ArrowUpDown as ArrowsUpDownIcon,
-  ArrowLeftRight as ArrowsRightLeftIcon,
-  FlaskConical as BeakerIcon,
-  Wrench as WrenchScrewdriverIcon,
-  ShoppingCart as ShoppingCartIcon,
-  FileText as DocumentTextIcon,
+  ArrowRight as ArrowRightIcon,
   Archive as ArchiveBoxIcon,
   Undo2 as ArrowUturnLeftIcon,
   CloudDownload as CloudArrowDownIcon,
 } from '@lucide/vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import NextStepBar from '@/Components/plano/NextStepBar.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import AdjustStockModal from '@/Components/vap-inventory/AdjustStockModal.vue'
 import TransferStockModal from '@/Components/vap-inventory/TransferStockModal.vue'
 import ConsumeReagentModal from '@/Components/vap-inventory/ConsumeReagentModal.vue'
 import RecordCalibrationModal from '@/Components/vap-inventory/RecordCalibrationModal.vue'
 import { usePermission } from '@/Composables/usePermissions'
 
+/**
+ * Inventory item dossier (Plano). Facts sit in the aside; stock by warehouse,
+ * movements, activity and documents are the working tabs. The next-step bar
+ * points at the one thing the item needs now: calibration, replenishment,
+ * consumption or a stock adjustment.
+ */
 const { hasPermission } = usePermission()
 
 const props = defineProps({
@@ -539,7 +325,10 @@ const props = defineProps({
   daysToExpiry: Number,
   needsCalibration: Boolean,
   calibrationStatus: String,
+  metrologyStatus: String,
+  isMetrologicallyReady: Boolean,
   documents: Array,
+  /** Still sent by the controller; the dossier no longer draws charts. */
   charts: {
     type: Object,
     default: () => ({})
@@ -558,20 +347,8 @@ const adjustStockModal = ref(false)
 const transferStockModal = ref(false)
 const consumeReagentModal = ref(false)
 const recordCalibrationModal = ref(false)
-const isDarkMode = ref(false)
-let themeObserver
 
-const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
-const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
-
-const syncDarkMode = () => {
-  if (typeof document === 'undefined') {
-    return
-  }
-
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
+const unitCode = computed(() => props.item.unit?.code || 'unidades')
 
 const hasTechnicalSpecs = computed(() => {
   return props.item.resolution || props.item.precision || props.item.range ||
@@ -580,20 +357,20 @@ const hasTechnicalSpecs = computed(() => {
 })
 
 const overviewFields = computed(() => [
-  { label: 'Categoria', value: props.item.category?.name || 'N/A' },
-  { label: 'Tipo', value: props.item.type?.name || 'N/A' },
-  { label: 'Unidade', value: props.item.unit?.code || 'N/A' },
-  { label: 'Fornecedor', value: props.item.supplier?.name || 'N/A' },
-  { label: 'Marca', value: props.item.brand || 'N/A' },
-  { label: 'Modelo', value: props.item.model || 'N/A' },
+  { label: 'Categoria', value: props.item.category?.name || '—' },
+  { label: 'Tipo', value: props.item.type?.name || '—' },
+  { label: 'Unidade', value: props.item.unit?.code || '—' },
+  { label: 'Fornecedor', value: props.item.supplier?.name || '—' },
+  { label: 'Marca', value: props.item.brand || '—' },
+  { label: 'Modelo', value: props.item.model || '—' },
 ])
 
 const identificationFields = computed(() => [
-  { label: 'Código principal', value: props.item.code || 'N/A' },
-  { label: 'Código interno', value: props.item.internal_code || 'N/A' },
-  { label: 'Código de barras', value: props.item.barcode || 'N/A' },
-  isEquipment.value ? { label: 'Número de série', value: props.item.serial_number || 'N/A' } : null,
-  isReagent.value ? { label: 'Lote', value: props.item.lot || 'N/A' } : null,
+  { label: 'Código principal', value: props.item.code || '—' },
+  { label: 'Código interno', value: props.item.internal_code || '—' },
+  { label: 'Código de barras', value: props.item.barcode || '—' },
+  isEquipment.value ? { label: 'Número de série', value: props.item.serial_number || '—' } : null,
+  isReagent.value ? { label: 'Lote', value: props.item.lot || '—' } : null,
 ].filter(Boolean))
 
 const technicalSpecFields = computed(() => [
@@ -613,148 +390,60 @@ const technicalSpecFields = computed(() => [
     : null,
 ].filter(Boolean))
 
-const statusChipClasses = {
-  neutral: 'ds-chip border-zinc-300 bg-zinc-50 text-zinc-800 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200',
-  success: 'ds-chip border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200',
-  danger: 'ds-chip border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200',
-  warning: 'ds-chip border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200',
-  info: 'ds-chip border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-400/30 dark:bg-blue-500/10 dark:text-blue-200',
+const plural = (count, singular, pluralForm) => `${count} ${count === 1 ? singular : pluralForm}`
+
+const replenishmentPositions = computed(() => (props.inventory ?? [])
+  .filter(position => ['out_of_stock', 'critical_stock', 'low_stock'].includes(stockStatus(position))))
+
+const lede = computed(() => {
+  const stock = `${props.totalStock || 0} ${unitCode.value} em ${plural(props.inventory?.length ?? 0, 'armazém', 'armazéns')}`
+  const replenish = replenishmentPositions.value.length
+    ? `, ${replenishmentPositions.value.length} no ponto de reposição ou abaixo`
+    : ''
+
+  return `${stock}${replenish}. ${props.item.category?.name || 'Sem categoria'}${props.item.internal_code ? ` · ${props.item.internal_code}` : ''}.`
+})
+
+/** The single next action for this item, in order of urgency. */
+const nextStep = computed(() => {
+  const nextCalibration = props.item.next_calibration_date
+
+  if (nextCalibration && calibrationFacts.value.overdue) {
+    return { action: 'calibration', text: `Calibração em atraso desde ${formatDate(nextCalibration)}. Não use o equipamento em ensaios até registar a calibração.` }
+  }
+
+  if (nextCalibration && calibrationFacts.value.days !== null && calibrationFacts.value.days <= 30) {
+    return { action: 'calibration', text: `Calibração prevista para ${formatDate(nextCalibration)}. Registe-a quando o certificado for emitido.` }
+  }
+
+  if (isReagent.value && expiryFacts.value.expired) {
+    return { action: 'order', text: 'Reagente fora de validade: não o use em ensaios e abra um pedido de reposição.' }
+  }
+
+  if (replenishmentPositions.value.length) {
+    return { action: 'order', text: `${plural(replenishmentPositions.value.length, 'armazém está', 'armazéns estão')} no ponto de reposição ou abaixo. Abra um pedido de compra.` }
+  }
+
+  if (!props.inventory?.length) {
+    return { action: 'order', text: 'Sem existências neste laboratório. Abra um pedido de compra para receber o item.' }
+  }
+
+  if (hasPermission('add_reagent_consumption') && (props.item.is_reagent || isReagent.value)) {
+    return { action: 'consume', text: `${props.totalStock || 0} ${unitCode.value} disponíveis. Registe cada consumo para manter o saldo e a rastreabilidade do lote.` }
+  }
+
+  return { action: 'adjust', text: `Existências acima do ponto de reposição. Ajuste ou transfira quando houver movimento físico.` }
+})
+
+const activityLabels = {
+  transaction: 'Movimento',
+  consumption: 'Consumo',
+  transfer: 'Transferência',
 }
-
-const stockDistributionChartSeries = computed(() => [
-  {
-    name: 'Existências',
-    data: props.charts?.stock_distribution?.series || []
-  }
-])
-
-const stockDistributionTotal = computed(() =>
-  (props.charts?.stock_distribution?.series || []).reduce((sum, value) => sum + Number(value || 0), 0)
-)
-
-const activityMixChartSeries = computed(() => props.charts?.activity_mix?.series || [])
-
-const activityMixTotal = computed(() =>
-  activityMixChartSeries.value.reduce((sum, value) => sum + Number(value || 0), 0)
-)
-
-const compliancePulseChartSeries = computed(() => [
-  {
-    name: 'Indicador',
-    data: props.charts?.compliance_pulse?.series || []
-  }
-])
-
-const stockDistributionChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  plotOptions: {
-    bar: {
-      borderRadius: 8,
-      distributed: true,
-      columnWidth: '48%'
-    }
-  },
-  colors: ['#061f46', '#087cf0', '#0f766e', '#e0902b', '#7c5ce0'],
-  dataLabels: { enabled: false },
-  xaxis: {
-    categories: props.charts?.stock_distribution?.labels || [],
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } }
-  },
-  yaxis: {
-    labels: {
-      formatter: (value) => Number(value || 0).toLocaleString('pt-AO', { maximumFractionDigits: 4 }),
-      style: { colors: chartTextColor.value },
-    }
-  },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-  },
-  legend: { show: false }
-}))
-
-const activityMixChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  labels: props.charts?.activity_mix?.labels || [],
-  colors: ['#087cf0', '#e0902b', '#14a3a8', '#e5484d'],
-  dataLabels: {
-    enabled: true,
-    formatter: (value) => `${Math.round(value)}%`
-  },
-  legend: {
-    position: 'bottom',
-    labels: {
-      colors: chartTextColor.value,
-    },
-  },
-  stroke: {
-    colors: [isDarkMode.value ? '#020617' : '#ffffff']
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-  },
-}))
-
-const compliancePulseChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  plotOptions: {
-    bar: {
-      borderRadius: 8,
-      distributed: true,
-      columnWidth: '52%'
-    }
-  },
-  colors: ['#0f766e', '#e5484d', '#e0902b', '#087cf0'],
-  dataLabels: { enabled: false },
-  xaxis: {
-    categories: props.charts?.compliance_pulse?.labels || [],
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } }
-  },
-  yaxis: {
-    labels: {
-      formatter: (value) => Number(value || 0).toFixed(0),
-      style: { colors: chartTextColor.value },
-    }
-  },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-  },
-  legend: { show: false }
-}))
 
 const recentActivity = computed(() => {
   const activities = []
-  
-  // Add recent transactions
+
   props.recentTransactions.slice(0, 5).forEach(transaction => {
     activities.push({
       id: transaction.id,
@@ -763,18 +452,17 @@ const recentActivity = computed(() => {
       timestamp: transaction.created_at,
     })
   })
-  
-  // Add recent consumptions
+
   props.recentConsumptions.slice(0, 3).forEach(consumption => {
     activities.push({
       id: consumption.id,
       type: 'consumption',
+      reversed: Boolean(consumption.reversal),
       description: consumption.reversal ? `Consumo revertido: ${consumption.quantity_used} unidades` : `Consumiu: ${consumption.quantity_used} unidades`,
       timestamp: consumption.used_at,
     })
   })
-  
-  // Add recent transfers
+
   props.recentTransfers.slice(0, 3).forEach(transfer => {
     activities.push({
       id: transfer.id,
@@ -783,14 +471,13 @@ const recentActivity = computed(() => {
       timestamp: transfer.created_at,
     })
   })
-  
-  // Sort by timestamp
+
   return activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8)
 })
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return new Date(dateString).toLocaleDateString('pt-PT', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
@@ -799,9 +486,9 @@ const formatDate = (dateString) => {
 
 const formatDateTime = (dateString) => {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return new Date(dateString).toLocaleString('pt-PT', {
+    day: '2-digit',
     month: 'short',
-    day: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
   })
@@ -814,93 +501,84 @@ const { processing: documentProcessing, message: documentMessage, failed: docume
 
 const formatTimeAgo = (timestamp) => {
   const seconds = Math.floor((new Date() - new Date(timestamp)) / 1000)
-  
+
   if (seconds < 60) return 'agora'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m atrás`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h atrás`
-  return `${Math.floor(seconds / 86400)}d atrás`
+  if (seconds < 3600) return `há ${Math.floor(seconds / 60)} min`
+  if (seconds < 86400) return `há ${Math.floor(seconds / 3600)} h`
+  return `há ${Math.floor(seconds / 86400)} d`
 }
 
-const getStatusClasses = (status) => {
-  if (!status) return statusChipClasses.neutral
-  
+const statusTone = (status) => {
+  if (!status) return 'neutral'
+
   const statusName = status.name.toLowerCase()
-  if (statusName.includes('active') || statusName.includes('activo')) {
-    return statusChipClasses.success
-  } else if (statusName.includes('inactive') || statusName.includes('inactivo') || statusName.includes('out')) {
-    return statusChipClasses.danger
+  if (statusName.includes('inactive') || statusName.includes('inactivo') || statusName.includes('out')) {
+    return 'bad'
+  } else if (statusName.includes('active') || statusName.includes('activo')) {
+    return 'ok'
   } else if (statusName.includes('maintenance') || statusName.includes('calibration')) {
-    return statusChipClasses.warning
-  } else {
-    return statusChipClasses.neutral
+    return 'wait'
   }
+
+  return 'neutral'
 }
 
-const getExpiryDateColor = (item) => {
-  if (item.is_expired) return 'text-red-900 dark:text-red-200'
-  if (item.days_to_expiry <= 30) return 'text-orange-900 dark:text-orange-200'
-  if (item.days_to_expiry <= 60) return 'text-yellow-900 dark:text-amber-200'
-  return 'text-green-900 dark:text-emerald-200'
+/** Whole calendar days from today to a date-only value; null when absent. */
+const daysUntil = (value) => {
+  if (!value) return null
+  const target = new Date(`${String(value).slice(0, 10)}T00:00:00`)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  return Math.round((target - today) / 86400000)
 }
 
-const getDaysColor = (days) => {
-  if (days <= 0) return 'text-red-900 dark:text-red-200'
-  if (days <= 30) return 'text-orange-900 dark:text-orange-200'
-  if (days <= 60) return 'text-yellow-900 dark:text-amber-200'
-  return 'text-green-900 dark:text-emerald-200'
+// The item payload does not carry the model's expiry/calibration accessors; the
+// controller sends them as separate props, and calibration days derive from the date.
+const expiryFacts = computed(() => ({
+  expired: Boolean(props.isExpired),
+  days: props.daysToExpiry ?? daysUntil(props.item.reagent_expiry_date),
+}))
+const calibrationFacts = computed(() => ({
+  overdue: Boolean(props.needsCalibration),
+  days: daysUntil(props.item.next_calibration_date),
+}))
+
+const expiryTone = () => {
+  const { expired, days } = expiryFacts.value
+  if (expired || (days !== null && days <= 30)) return 'bad'
+  if (days !== null && days <= 60) return 'wait'
+  return 'ok'
 }
 
-const getExpiryStatusClasses = (item) => {
-  if (item.is_expired) {
-    return statusChipClasses.danger
-  } else if (item.days_to_expiry <= 30) {
-    return statusChipClasses.danger
-  } else if (item.days_to_expiry <= 60) {
-    return statusChipClasses.warning
-  } else {
-    return statusChipClasses.success
-  }
+const getExpiryStatusText = () => {
+  const { expired, days } = expiryFacts.value
+  if (expired) return 'Expirado'
+  if (days !== null && days <= 30) return 'Expira em breve'
+  if (days !== null && days <= 60) return 'Prestes a expirar'
+  return 'Dentro da validade'
 }
 
-const getExpiryStatusText = (item) => {
-  if (item.is_expired) return 'Expirado'
-  if (item.days_to_expiry <= 30) return 'Expirando em Breve'
-  if (item.days_to_expiry <= 60) return 'Preste a Expirar'
-  return 'Bom'
+const calibrationTone = () => {
+  const { overdue, days } = calibrationFacts.value
+  if (overdue || (days !== null && days <= 30)) return 'bad'
+  if (days !== null && days <= 90) return 'wait'
+  return 'ok'
 }
 
-const getCalibrationDateColor = (item) => {
-  if (item.needs_calibration) return 'text-red-900 dark:text-red-200'
-  if (item.days_to_calibration <= 30) return 'text-orange-900 dark:text-orange-200'
-  if (item.days_to_calibration <= 90) return 'text-yellow-900 dark:text-amber-200'
-  return 'text-green-900 dark:text-emerald-200'
+const getCalibrationStatusText = () => {
+  const { overdue, days } = calibrationFacts.value
+  if (overdue) return 'Atrasada'
+  if (days !== null && days <= 30) return 'A vencer em breve'
+  if (days !== null && days <= 90) return 'Em breve'
+  return 'Agendada'
 }
 
-const getCalibrationStatusClasses = (item) => {
-  if (item.needs_calibration) {
-    return statusChipClasses.danger
-  } else if (item.days_to_calibration <= 30) {
-    return statusChipClasses.danger
-  } else if (item.days_to_calibration <= 90) {
-    return statusChipClasses.warning
-  } else {
-    return statusChipClasses.success
-  }
-}
-
-const getCalibrationStatusText = (item) => {
-  if (item.needs_calibration) return 'Atrasado'
-  if (item.days_to_calibration <= 30) return 'A vencer em breve'
-  if (item.days_to_calibration <= 90) return 'Em breve'
-  return 'Agendado'
-}
-
-const getMetrologyStatusClasses = (status) => {
-  if (status === 'hold') return statusChipClasses.danger
-  if (status === 'incomplete') return statusChipClasses.danger
-  if (status === 'review_due') return statusChipClasses.warning
-  if (status === 'validated') return statusChipClasses.success
-  return statusChipClasses.neutral
+const metrologyTone = (status) => {
+  if (status === 'hold' || status === 'incomplete') return 'bad'
+  if (status === 'review_due') return 'wait'
+  if (status === 'validated') return 'ok'
+  return 'neutral'
 }
 
 const getMetrologyStatusText = (status) => {
@@ -911,83 +589,63 @@ const getMetrologyStatusText = (status) => {
   return 'Não aplicável'
 }
 
-const getStockStatusClasses = (inventory) => {
-  const status = inventory.stock_status
-  if (status === 'out_of_stock') {
-    return statusChipClasses.danger
-  } else if (status === 'critical_stock') {
-    return statusChipClasses.danger
-  } else if (status === 'low_stock') {
-    return statusChipClasses.warning
-  } else {
-    return statusChipClasses.success
-  }
+/**
+ * Same thresholds as the Inventory model's stock_status accessor, which the
+ * payload does not carry: none, at or below the minimum, at or below the
+ * reorder point, available.
+ */
+const stockStatus = (inventory) => {
+  const available = Number(inventory.qty_available ?? 0)
+  if (available <= 0) return 'out_of_stock'
+  if (available <= Number(inventory.min_stock_level ?? 0)) return 'critical_stock'
+  if (available <= Number(inventory.reorder_point ?? 0)) return 'low_stock'
+  return 'in_stock'
 }
 
-const getTransactionTypeClasses = (transaction) => {
+const stockStatusLabels = {
+  out_of_stock: 'Sem existências',
+  critical_stock: 'Crítico',
+  low_stock: 'Existências baixas',
+  in_stock: 'Disponível',
+}
+
+const stockTone = (inventory) => {
+  const status = stockStatus(inventory)
+  if (status === 'out_of_stock' || status === 'critical_stock') return 'bad'
+  if (status === 'low_stock') return 'wait'
+  return 'ok'
+}
+
+const transactionTone = (transaction) => {
   const type = transaction.type?.code
   if (type === 'stock_in' || type === 'stock_adjustment_add' || type === 'consumption_reversal') {
-    return statusChipClasses.success
+    return 'ok'
   } else if (type === 'stock_out' || type === 'consumption') {
-    return statusChipClasses.danger
+    return 'bad'
   } else if (type === 'stock_transfer') {
-    return statusChipClasses.info
-  } else {
-    return statusChipClasses.neutral
+    return 'run'
   }
-}
 
-const getActivityColor = (type) => {
-  const colors = {
-    transaction: 'bg-blue-900',
-    consumption: 'bg-red-900',
-    transfer: 'bg-green-900',
-    calibration: 'bg-indigo-900 dark:bg-indigo-500',
-  }
-  return colors[type] || 'bg-zinc-700 dark:bg-zinc-600'
-}
-
-const getActivityIcon = (type) => {
-  const icons = {
-    transaction: ArrowsUpDownIcon,
-    consumption: BeakerIcon,
-    transfer: ArrowsRightLeftIcon,
-    calibration: WrenchScrewdriverIcon,
-  }
-  return icons[type] || ClockIcon
-}
-
-const adjustStock = (inventory) => {
-  // Implementation for adjusting stock for specific inventory
-  adjustStockModal.value = true
-}
-
-const transferStock = (inventory) => {
-  // Implementation for transferring stock from specific inventory
-  transferStockModal.value = true
+  return 'neutral'
 }
 
 const handleStockAdjusted = () => {
   adjustStockModal.value = false
-  // Reload data
   window.location.reload()
 }
 
 const handleTransferCreated = () => {
   transferStockModal.value = false
-  // Reload data
   window.location.reload()
 }
 
 const handleConsumptionRecorded = () => {
   consumeReagentModal.value = false
-  // Reload data
   window.location.reload()
 }
 
 const handleCalibrationRecorded = () => {
   recordCalibrationModal.value = false
-  // Reload data
   window.location.reload()
 }
 
@@ -1014,17 +672,4 @@ function restoreAttachment(id) {
 function downloadAttachment(file) {
     window.location.assign(route('vap-inventory.items.attachments.download-single', { model_id: file.id }));
 }
-
-onMounted(() => {
-  syncDarkMode()
-
-  if (typeof MutationObserver !== 'undefined') {
-    themeObserver = new MutationObserver(syncDarkMode)
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  }
-})
-
-onBeforeUnmount(() => {
-  themeObserver?.disconnect()
-})
 </script>

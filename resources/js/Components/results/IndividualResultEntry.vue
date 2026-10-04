@@ -1,5 +1,5 @@
 <script setup>
-import Modal from "@/Components/Modal.vue";
+import Modal from "@/Components/modal.vue";
 import { ResultsDataService } from "@/Services/ResultsDataService.js";
 import { computed, ref, watch } from "vue";
 import {

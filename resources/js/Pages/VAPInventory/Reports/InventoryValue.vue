@@ -1,228 +1,130 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-        <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Controlo de inventário</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot lims-status-dot-instrument"></span>
-              Valorização estimada
-            </span>
-          </div>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <BanknotesIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Valor do inventário</h1>
-              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Acompanhe a concentração financeira por item, categoria e armazém para apoiar controlo e reconciliação.
-              </p>
-            </div>
-          </div>
-        </div>
+  <div class="pl-page" data-template="page">
+    <PageHeader
+      :crumbs="[{ title: 'Inventário', url: route('vap-inventory.items.index') }, { title: 'Relatórios' }, { title: 'Valor' }]"
+      title="Valor do inventário"
+      :lede="lede"
+    >
+      <template #actions>
+        <InventoryReportExportButton report-type="inventory_value" :filters="filters" />
+      </template>
+    </PageHeader>
 
-        <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
-          <InventoryReportExportButton report-type="inventory_value" :filters="filters" />
-          <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-primary">
-            <ArrowLeftIcon class="h-4 w-4" />
-            Voltar ao inventário
-          </Link>
-        </div>
-      </div>
-
-      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <article v-for="card in summaryCards" :key="card.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
-              <p class="mt-3 truncate text-2xl font-black text-[var(--ds-text)]">{{ card.value }}</p>
-            </div>
-            <component :is="card.icon" :class="['h-5 w-5 shrink-0', card.tone]" />
-          </div>
-          <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="ds-command-surface p-5 sm:p-6">
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <BaseSelect v-model="filters.category_id" label="Categoria">
+    <form class="pl-filter" role="search" aria-label="Filtrar posições valorizadas" @submit.prevent>
+      <label for="inventory-value-search" class="pl-filter-prompt">Filtro://</label>
+      <BaseInput id="inventory-value-search" v-model="filters.search" type="search" data-bare class="pl-filter-input" maxlength="100" placeholder="nome ou código do item" />
+      <div class="w-52">
+        <BaseSelect v-model="filters.category_id" aria-label="Categoria">
           <option value="">Todas as categorias</option>
           <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
         </BaseSelect>
-
-        <BaseSelect v-model="filters.warehouse_id" label="Armazém">
+      </div>
+      <div class="w-52">
+        <BaseSelect v-model="filters.warehouse_id" aria-label="Armazém">
           <option value="">Todos os armazéns</option>
           <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
         </BaseSelect>
-
-        <BaseInput v-model="filters.search" label="Pesquisar item" placeholder="Nome ou código">
-          <template #leading><MagnifyingGlassIcon class="h-4 w-4" /></template>
-        </BaseInput>
-
-        <BaseSelect v-model="filters.sort_direction" label="Ordenação por quantidade">
+      </div>
+      <div class="w-44">
+        <BaseSelect v-model="filters.sort_direction" aria-label="Ordenação por quantidade">
           <option value="desc">Maior primeiro</option>
           <option value="asc">Menor primeiro</option>
         </BaseSelect>
       </div>
+      <span v-if="loading" class="pl-k pl-faint" role="status">A actualizar…</span>
+      <button v-if="hasActiveFilters" type="button" class="ds-chip" @click="clearFilters">
+        Limpar filtros
+        <XMarkIcon class="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    </form>
 
-      <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div>
-          <p class="text-sm font-bold text-[var(--ds-text)]">{{ inventory.total || inventoryRows.length }} posições de existências valorizadas</p>
-          <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
-            <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
-          </div>
-          <p v-else class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">A mostrar todo o inventário com quantidade disponível.</p>
-        </div>
-        <button type="button" class="ds-button ds-button-secondary" :disabled="!hasActiveFilters" @click="clearFilters">
-          <FunnelIcon class="h-4 w-4" />
-          Limpar filtros
-        </button>
+    <dl class="pl-panel pl-facts pl-facts-2 mb-8" aria-label="Resumo da valorização">
+      <div v-for="card in summaryCards" :key="card.label" class="pl-fact">
+        <dt>{{ card.label }}</dt>
+        <dd>
+          <span class="pl-num font-medium">{{ card.value }}</span>
+          <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ card.detail }}</span>
+        </dd>
       </div>
-    </section>
+    </dl>
 
-    <section class="ds-command-surface overflow-hidden">
-      <div class="ds-table-summary px-5 py-4">
-        <div>
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Concentração financeira</p>
-          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Distribuição do valor estimado</h2>
+    <div class="mb-8 grid gap-6 xl:grid-cols-2">
+      <section class="pl-panel min-w-0 xl:row-span-2" aria-labelledby="value-category-chart">
+        <div class="pl-panel-head">
+          <h2 id="value-category-chart" class="pl-k">Valor por categoria</h2>
+          <span class="pl-k pl-faint">{{ categoryValueTotal }} categorias</span>
         </div>
-        <span class="ds-chip">Base: custo padrão ou último preço de compra</span>
-      </div>
-
-      <div class="grid divide-y divide-[var(--ds-border)] xl:grid-cols-[1.15fr_0.85fr] xl:divide-x xl:divide-y-0">
-        <article class="min-w-0 p-5">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Valor por categoria</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Famílias com maior capital estimado em existências.</p>
-            </div>
-            <span class="text-xl font-black text-[var(--ds-text)]">{{ categoryValueTotal }}</span>
-          </div>
-          <div class="mt-4 min-h-72">
-            <apexchart type="bar" height="288" :options="categoryValueChartOptions" :series="categoryValueChartSeries" />
-          </div>
-        </article>
-
-        <div class="grid divide-y divide-[var(--ds-border)]">
-          <article class="min-w-0 p-5">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <h3 class="text-sm font-black text-[var(--ds-text)]">Exposição por armazém</h3>
-                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Distribuição do valor entre locais activos.</p>
-              </div>
-              <span class="ds-chip">{{ warehouseValueTotal }} locais</span>
-            </div>
-            <div class="mt-4 min-h-64">
-              <apexchart type="donut" height="256" :options="warehouseValueChartOptions" :series="warehouseValueChartSeries" />
-            </div>
-          </article>
-
-          <article class="min-w-0 p-5">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <h3 class="text-sm font-black text-[var(--ds-text)]">Itens de maior valor</h3>
-                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Posições que mais pesam no saldo estimado.</p>
-              </div>
-              <ArrowTrendingUpIcon class="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
-            </div>
-            <div class="mt-4 min-h-56">
-              <apexchart type="bar" height="224" :options="topItemValueChartOptions" :series="topItemValueChartSeries" />
-            </div>
-          </article>
+        <div class="min-h-72 p-4">
+          <apexchart type="bar" height="288" :options="categoryValueChartOptions" :series="categoryValueChartSeries" />
         </div>
-      </div>
-    </section>
-
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
-      <section class="ds-table-shell">
-        <div class="ds-table-summary px-5 py-4">
-          <div>
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Livro de valorização</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Posições de inventário</h2>
-          </div>
-          <span class="ds-chip">{{ inventory.total || inventoryRows.length }} registos</span>
+      </section>
+      <section class="pl-panel min-w-0" aria-labelledby="value-warehouse-chart">
+        <div class="pl-panel-head">
+          <h2 id="value-warehouse-chart" class="pl-k">Exposição por armazém</h2>
+          <span class="pl-k pl-faint">{{ warehouseValueTotal }} locais</span>
         </div>
-
-        <div v-if="loading" class="ds-empty-state m-5 p-8 text-center">
-          <span class="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-[var(--ds-border)] border-t-[rgb(var(--primary-700-rgb))]"></span>
-          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A actualizar o relatório...</p>
+        <div class="min-h-64 p-4">
+          <apexchart type="donut" height="256" :options="warehouseValueChartOptions" :series="warehouseValueChartSeries" />
         </div>
-
-        <div v-else-if="inventoryRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
-          <article v-for="position in inventoryRows" :key="`mobile-${position.id}`" class="space-y-4 p-5">
-            <div class="flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <p class="font-mono text-xs font-bold text-[var(--ds-text-soft)]">{{ position.item?.code || 'Sem código' }}</p>
-                <h3 class="mt-1 text-base font-black text-[var(--ds-text)]">{{ position.item?.name || 'Item sem identificação' }}</h3>
-                <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ position.warehouse?.name || 'Sem armazém' }}</p>
-              </div>
-              <span class="ds-chip shrink-0">{{ position.qty_available }} {{ position.item?.unit?.code || 'sem unidade' }}</span>
-            </div>
-            <dl class="grid grid-cols-2 gap-3">
-              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor unitário</dt>
-                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ unitCost(position) === null ? 'Não definido' : formatCurrency(unitCost(position)) }}</dd>
-              </div>
-              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor da posição</dt>
-                <dd class="mt-2 text-sm font-black text-emerald-700 dark:text-emerald-300">{{ positionValue(position) }}</dd>
-              </div>
-            </dl>
-            <Link :href="route('vap-inventory.items.show', position.item_id)" class="ds-table-action">
-              <EyeIcon class="h-4 w-4" />
-              Abrir item
-            </Link>
-          </article>
+      </section>
+      <section class="pl-panel min-w-0" aria-labelledby="value-top-chart">
+        <div class="pl-panel-head">
+          <h2 id="value-top-chart" class="pl-k">Itens de maior valor</h2>
         </div>
-
-        <div v-else-if="!loading" class="ds-empty-state m-5 p-8 text-center">
-          <BanknotesIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-          <h3 class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem posições valorizadas</h3>
-          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Ajuste os filtros ou confirme a existência de existências disponível.</p>
+        <div class="min-h-56 p-4">
+          <apexchart type="bar" height="224" :options="topItemValueChartOptions" :series="topItemValueChartSeries" />
         </div>
+      </section>
+    </div>
 
-        <div v-if="!loading && inventoryRows.length" class="hidden overflow-x-auto lg:block">
-          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
-            <thead class="bg-[var(--ds-panel-subtle)]">
-              <tr>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Item</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Categoria</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Quantidade</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor estimado</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Acção</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
-              <tr v-for="position in inventoryRows" :key="position.id" class="transition-colors hover:bg-[var(--ds-panel-subtle)]">
-                <td class="px-5 py-4 align-top">
-                  <p class="font-black text-[var(--ds-text)]">{{ position.item?.name || 'Item sem identificação' }}</p>
-                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ position.item?.code || 'Sem código' }}</p>
-                </td>
-                <td class="px-5 py-4 align-top font-semibold text-[var(--ds-text-muted)]">{{ position.item?.category?.name || 'Sem categoria' }}</td>
-                <td class="px-5 py-4 align-top">
-                  <p class="font-bold text-[var(--ds-text)]">{{ position.warehouse?.name || 'N/D' }}</p>
-                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ position.warehouse?.location?.name || 'Sem localização' }}</p>
-                </td>
-                <td class="px-5 py-4 text-right align-top font-mono font-black tabular-nums text-[var(--ds-text)]">{{ position.qty_available }} {{ position.item?.unit?.code || 'sem unidade' }}</td>
-                <td class="px-5 py-4 text-right align-top">
-                  <p class="font-black tabular-nums text-emerald-700 dark:text-emerald-300">{{ positionValue(position) }}</p>
-                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ unitCost(position) === null ? 'Custo não definido' : `${formatCurrency(unitCost(position))} / ${position.item?.unit?.code || 'unidade'}` }}</p>
-                </td>
-                <td class="px-5 py-4 text-right align-top">
-                  <Link :href="route('vap-inventory.items.show', position.item_id)" class="ds-icon-button ml-auto" title="Abrir item">
-                    <EyeIcon class="h-4 w-4" />
-                    <span class="sr-only">Abrir item</span>
-                  </Link>
-                </td>
-              </tr>
-            </tbody>
-          </DataTable>
+    <div class="mb-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <section class="pl-panel min-w-0" aria-labelledby="value-positions" :aria-busy="loading">
+        <div class="pl-panel-head">
+          <h2 id="value-positions" class="pl-k">Posições de inventário</h2>
+          <span class="pl-k pl-faint">{{ inventory.total || inventoryRows.length }} registos</span>
         </div>
-
+        <div v-if="loading" class="ds-empty-state m-4 grid justify-items-start gap-2 p-6" role="status">
+          <span class="pl-k">A actualizar o relatório…</span>
+        </div>
+        <DataTable v-else-if="inventoryRows.length">
+          <thead>
+            <tr>
+              <th scope="col">Item</th>
+              <th scope="col">Categoria</th>
+              <th scope="col">Armazém</th>
+              <th scope="col" class="text-right">Quantidade</th>
+              <th scope="col" class="text-right">Valor estimado</th>
+              <th scope="col"><span class="sr-only">Acções</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="position in inventoryRows" :key="position.id">
+              <td>
+                <Link :href="route('vap-inventory.items.show', position.item_id)" class="font-medium hover:text-[var(--pl-accent-text)]">{{ position.item?.name || 'Item sem identificação' }}</Link>
+                <span class="pl-num block text-[12px] text-[var(--pl-muted)]">{{ position.item?.code || 'Sem código' }}</span>
+              </td>
+              <td>{{ position.item?.category?.name || 'Sem categoria' }}</td>
+              <td>
+                {{ position.warehouse?.name || 'N/D' }}
+                <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ position.warehouse?.location?.name || 'Sem localização' }}</span>
+              </td>
+              <td class="pl-num text-right">{{ position.qty_available }} {{ position.item?.unit?.code || 'sem unidade' }}</td>
+              <td class="text-right">
+                <span class="pl-num block font-medium">{{ positionValue(position) }}</span>
+                <span class="block text-[12px] text-[var(--pl-muted)]">{{ unitCost(position) === null ? 'Custo não definido' : `${formatCurrency(unitCost(position))} / ${position.item?.unit?.code || 'unidade'}` }}</span>
+              </td>
+              <td class="text-right">
+                <Link :href="route('vap-inventory.items.show', position.item_id)" class="ds-table-action" :aria-label="`Abrir item ${position.item?.name || position.item_id}`">
+                  <EyeIcon class="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </td>
+            </tr>
+          </tbody>
+        </DataTable>
+        <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+          <span class="pl-k">Sem posições valorizadas</span>
+          <p class="text-sm text-[var(--pl-muted)]">Ajuste os filtros ou confirme que há existências disponíveis.</p>
+        </div>
         <Pagination
           v-if="inventoryRows.length"
           :links="inventory.links"
@@ -234,116 +136,102 @@
         />
       </section>
 
-      <aside class="space-y-6">
-        <section class="ds-panel p-5">
-          <div class="flex items-start gap-3">
-            <InformationCircleIcon class="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" />
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Base de cálculo</p>
-              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Estimativa técnica</h2>
-              <p class="mt-2 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">
-                O valor estimado usa o custo padrão de cada item ou, na sua ausência, o último preço de compra. Itens sem custo registado contribuem com zero; confirme-os antes do fecho contabilístico.
-              </p>
-            </div>
+      <aside class="grid content-start gap-6">
+        <section class="pl-panel" aria-labelledby="value-basis">
+          <div class="pl-panel-head">
+            <h2 id="value-basis" class="pl-k">Base de cálculo</h2>
           </div>
+          <p class="px-4 py-3 text-[13px] leading-6 text-[var(--pl-muted)]">
+            O valor estimado usa o custo padrão de cada item ou, na sua ausência, o último preço de compra. Itens sem custo registado contribuem com zero; confirme-os antes do fecho contabilístico.
+          </p>
         </section>
 
-        <section class="ds-panel overflow-hidden">
-          <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Maior exposição</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Categorias</h2>
+        <section class="pl-panel" aria-labelledby="value-top-categories">
+          <div class="pl-panel-head">
+            <h2 id="value-top-categories" class="pl-k">Categorias com maior exposição</h2>
           </div>
-          <ol v-if="summaryByCategory.length" class="divide-y divide-[var(--ds-border)]">
-            <li v-for="(category, index) in summaryByCategory.slice(0, 6)" :key="category.category_name || index" class="flex items-center gap-3 px-5 py-3">
-              <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-xs font-black text-[var(--ds-text-soft)]">{{ index + 1 }}</span>
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-black text-[var(--ds-text)]">{{ category.category_name || 'Sem categoria' }}</p>
-                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ category.unique_items }} itens</p>
-              </div>
-              <span class="shrink-0 text-xs font-black tabular-nums text-[var(--ds-text)]">{{ formatCurrency(category.total_value) }}</span>
+          <ol v-if="summaryByCategory.length">
+            <li v-for="(category, index) in summaryByCategory.slice(0, 6)" :key="category.category_name || index" class="pl-row">
+              <span class="flex min-w-0 items-center gap-3">
+                <span class="pl-num pl-faint w-5 shrink-0 text-[12px]">{{ String(index + 1).padStart(2, '0') }}</span>
+                <span class="min-w-0">
+                  <span class="block truncate font-medium">{{ category.category_name || 'Sem categoria' }}</span>
+                  <span class="block text-[12.5px] text-[var(--pl-muted)]">{{ category.unique_items }} itens</span>
+                </span>
+              </span>
+              <span class="pl-num text-[12.5px]">{{ formatCurrency(category.total_value) }}</span>
             </li>
           </ol>
-          <div v-else class="ds-empty-state m-4 p-4 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem dados por categoria.</div>
+          <p v-else class="px-4 py-3 text-sm text-[var(--pl-muted)]">Sem dados por categoria.</p>
         </section>
 
-        <section class="ds-panel overflow-hidden">
-          <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Top posições</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Itens de maior valor</h2>
+        <section class="pl-panel" aria-labelledby="value-top-items">
+          <div class="pl-panel-head">
+            <h2 id="value-top-items" class="pl-k">Posições de maior valor</h2>
           </div>
-          <ol v-if="topValuableItems.length" class="divide-y divide-[var(--ds-border)]">
-            <li v-for="item in topValuableItems.slice(0, 6)" :key="item.item_id" class="px-5 py-3">
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-black text-[var(--ds-text)]">{{ item.item?.name || `Item #${item.item_id}` }}</p>
-                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ item.item?.code || 'Sem código' }}</p>
-                </div>
-                <span class="shrink-0 text-xs font-black tabular-nums text-emerald-700 dark:text-emerald-300">{{ formatCurrency(item.total_value) }}</span>
-              </div>
+          <ol v-if="topValuableItems.length">
+            <li v-for="item in topValuableItems.slice(0, 6)" :key="item.item_id" class="pl-row">
+              <span class="min-w-0">
+                <span class="block truncate font-medium">{{ item.item?.name || `Item #${item.item_id}` }}</span>
+                <span class="pl-num block text-[12px] text-[var(--pl-muted)]">{{ item.item?.code || 'Sem código' }}</span>
+              </span>
+              <span class="pl-num text-[12.5px]">{{ formatCurrency(item.total_value) }}</span>
             </li>
           </ol>
-          <div v-else class="ds-empty-state m-4 p-4 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem posições valorizadas.</div>
+          <p v-else class="px-4 py-3 text-sm text-[var(--pl-muted)]">Sem posições valorizadas.</p>
         </section>
       </aside>
     </div>
 
-    <section class="grid gap-6 xl:grid-cols-2">
-      <div class="ds-table-shell">
-        <div class="ds-table-summary px-5 py-4">
-          <div>
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Reconciliação</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Resumo por categoria</h2>
-          </div>
-          <RectangleStackIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
+    <div class="grid gap-6 xl:grid-cols-2">
+      <section class="pl-panel min-w-0" aria-labelledby="value-by-category">
+        <div class="pl-panel-head">
+          <h2 id="value-by-category" class="pl-k">Resumo por categoria</h2>
+          <span class="pl-k pl-faint">Reconciliação</span>
         </div>
-        <div class="overflow-x-auto">
-          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
-            <thead class="bg-[var(--ds-panel-subtle)]">
-              <tr>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Categoria</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Itens</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
-              <tr v-for="category in summaryByCategory" :key="category.category_name" class="hover:bg-[var(--ds-panel-subtle)]">
-                <td class="px-5 py-3 font-black text-[var(--ds-text)]">{{ category.category_name || 'Sem categoria' }}</td>
-                <td class="px-5 py-3 text-right font-semibold tabular-nums text-[var(--ds-text-muted)]">{{ category.unique_items }}</td>
-                <td class="px-5 py-3 text-right font-black tabular-nums text-[var(--ds-text)]">{{ formatCurrency(category.total_value) }}</td>
-              </tr>
-            </tbody>
-          </DataTable>
-        </div>
-      </div>
+        <DataTable v-if="summaryByCategory.length">
+          <thead>
+            <tr>
+              <th scope="col">Categoria</th>
+              <th scope="col" class="text-right">Itens</th>
+              <th scope="col" class="text-right">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="category in summaryByCategory" :key="category.category_name">
+              <td class="font-medium">{{ category.category_name || 'Sem categoria' }}</td>
+              <td class="pl-num text-right">{{ category.unique_items }}</td>
+              <td class="pl-num text-right">{{ formatCurrency(category.total_value) }}</td>
+            </tr>
+          </tbody>
+        </DataTable>
+        <p v-else class="px-4 py-3 text-sm text-[var(--pl-muted)]">Sem dados por categoria.</p>
+      </section>
 
-      <div class="ds-table-shell">
-        <div class="ds-table-summary px-5 py-4">
-          <div>
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Reconciliação</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Resumo por armazém</h2>
-          </div>
-          <BuildingStorefrontIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
+      <section class="pl-panel min-w-0" aria-labelledby="value-by-warehouse">
+        <div class="pl-panel-head">
+          <h2 id="value-by-warehouse" class="pl-k">Resumo por armazém</h2>
+          <span class="pl-k pl-faint">Reconciliação</span>
         </div>
-        <div class="overflow-x-auto">
-          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
-            <thead class="bg-[var(--ds-panel-subtle)]">
-              <tr>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Itens</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
-              <tr v-for="warehouse in summaryByWarehouse" :key="warehouse.warehouse_name" class="hover:bg-[var(--ds-panel-subtle)]">
-                <td class="px-5 py-3 font-black text-[var(--ds-text)]">{{ warehouse.warehouse_name || 'Sem armazém' }}</td>
-                <td class="px-5 py-3 text-right font-semibold tabular-nums text-[var(--ds-text-muted)]">{{ warehouse.unique_items }}</td>
-                <td class="px-5 py-3 text-right font-black tabular-nums text-[var(--ds-text)]">{{ formatCurrency(warehouse.total_value) }}</td>
-              </tr>
-            </tbody>
-          </DataTable>
-        </div>
-      </div>
-    </section>
+        <DataTable v-if="summaryByWarehouse.length">
+          <thead>
+            <tr>
+              <th scope="col">Armazém</th>
+              <th scope="col" class="text-right">Itens</th>
+              <th scope="col" class="text-right">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="warehouse in summaryByWarehouse" :key="warehouse.warehouse_name">
+              <td class="font-medium">{{ warehouse.warehouse_name || 'Sem armazém' }}</td>
+              <td class="pl-num text-right">{{ warehouse.unique_items }}</td>
+              <td class="pl-num text-right">{{ formatCurrency(warehouse.total_value) }}</td>
+            </tr>
+          </tbody>
+        </DataTable>
+        <p v-else class="px-4 py-3 text-sm text-[var(--pl-muted)]">Sem dados por armazém.</p>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -353,22 +241,10 @@ import { Link, router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
-import {
-  ArrowLeft as ArrowLeftIcon,
-  TrendingUp as ArrowTrendingUpIcon,
-  Banknote as BanknotesIcon,
-  Store as BuildingStorefrontIcon,
-  Calculator as CalculatorIcon,
-  Box as CubeIcon,
-  Eye as EyeIcon,
-  Funnel as FunnelIcon,
-  Info as InformationCircleIcon,
-  Search as MagnifyingGlassIcon,
-  Layers as RectangleStackIcon,
-  Trophy as TrophyIcon,
-} from '@lucide/vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import { Eye as EyeIcon, X as XMarkIcon } from '@lucide/vue'
 
 const props = defineProps({
   inventory: { type: Object, default: () => ({ data: [] }) },
@@ -404,31 +280,29 @@ const summaryCards = computed(() => [
     label: 'Valor estimado',
     value: formatCurrency(props.stats?.total_value),
     detail: 'Saldo financeiro de referência',
-    icon: BanknotesIcon,
-    tone: 'text-emerald-700 dark:text-emerald-300',
   },
   {
     label: 'Itens únicos',
     value: props.stats?.unique_items || 0,
     detail: 'Referências com existências',
-    icon: CubeIcon,
-    tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
   },
   {
     label: 'Valor médio',
     value: formatCurrency(props.stats?.avg_item_value),
     detail: 'Por referência única',
-    icon: CalculatorIcon,
-    tone: 'text-violet-700 dark:text-violet-300',
   },
   {
     label: 'Maior categoria',
     value: props.stats?.highest_value_category?.category_name || 'Sem dados',
     detail: formatCurrency(props.stats?.highest_value_category?.total_value),
-    icon: TrophyIcon,
-    tone: 'text-amber-700 dark:text-amber-300',
   },
 ])
+
+const lede = computed(() => {
+  const positions = Number(props.inventory?.total ?? inventoryRows.value.length)
+
+  return `${formatCurrency(props.stats?.total_value)} estimados em ${positions} ${positions === 1 ? 'posição' : 'posições'} de existências, pelo custo padrão ou pelo último preço de compra.`
+})
 
 const activeFilterPills = computed(() => {
   const pills = []
@@ -452,7 +326,7 @@ const categoryValueChartOptions = computed(() => ({
   colors: ['#0f766e'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 4, horizontal: true } },
+  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
   xaxis: {
     categories: props.charts?.category_value_breakdown?.labels || [],
     axisBorder: { color: chartGridColor.value },
@@ -483,7 +357,7 @@ const topItemValueChartOptions = computed(() => ({
   colors: ['#1d4ed8'],
   dataLabels: { enabled: false },
   grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 4, columnWidth: '48%' } },
+  plotOptions: { bar: { borderRadius: 0, columnWidth: '48%' } },
   xaxis: {
     categories: props.charts?.top_item_value?.labels || [],
     labels: { rotate: -25, trim: true, style: { colors: chartTextColor.value } },

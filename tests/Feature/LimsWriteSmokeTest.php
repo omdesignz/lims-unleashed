@@ -60,10 +60,12 @@ use App\Models\Warehouse;
 use App\Models\Worksheet;
 use App\Notifications\OperationalNotification;
 use App\Settings\GeneralSettings;
+use App\Support\AnalysisReportService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -230,6 +232,16 @@ class LimsWriteSmokeTest extends TestCase
         }
 
         return ['sample' => $sample, 'result' => $results[0], 'results' => $results];
+    }
+
+    private function workflowCertificate(User $user, bool $approved = false): QualityCertificate
+    {
+        $result = $this->resultWorkflowFixture($user, verified: $approved)['result'];
+        if ($approved) {
+            $result->forceFill(['approved_by_id' => $user->id, 'approved_by' => $user->name, 'approved_date' => now(), 'approved_value' => '1.5'])->save();
+        }
+
+        return app(AnalysisReportService::class)->ensureForCollectionProduct($result->code->collection, $user->id);
     }
 
     private function completedSampleFixture(User $user): VAPSampleEntry
@@ -650,15 +662,12 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertNotEmpty(data_get($sample->client_submitted_info, 'required_parameters'));
 
         $this->actingAs($user)
-            ->get(route('vap_samples.index'))
+            ->get(route('vap_samples.index', ['edit' => $sample->id]))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('VAPSamples/Index')
-                ->has('charts.intake_trend.categories', 7)
-                ->has('charts.intake_trend.series', 1)
-                ->where('charts.lifecycle_status.labels.0', 'Por iniciar')
-                ->where('charts.retention_pressure.labels.2', 'Retenção vencida')
-                ->where('samples.0.client_submitted_info.conditioning_status', data_get($sample->client_submitted_info, 'conditioning_status'))
+                ->missing('charts')
+                ->where('editingSample.client_submitted_info.conditioning_status', data_get($sample->client_submitted_info, 'conditioning_status'))
             );
     }
 
@@ -2354,92 +2363,32 @@ class LimsWriteSmokeTest extends TestCase
         );
     }
 
-    public function test_verified_admin_can_create_and_update_quality_certificate(): void
+    public function test_verified_admin_can_annotate_a_workflow_certificate_but_not_change_its_identity(): void
     {
         $user = $this->verifiedAdmin();
-        $customer = Customer::query()->firstOrFail();
-        $warehouse = Warehouse::query()->firstOrFail();
-        $labCode = $this->resultWorkflowFixture($user)['result']->code;
-
-        $storePayload = [
-            'customer_id' => ['value' => $customer->id],
-            'warehouse_id' => ['value' => $warehouse->id],
-            'cl_id' => ['value' => $labCode->id],
-            'invoice_id' => null,
-            'obs' => 'Smoke certificate create',
-            'status' => true,
-        ];
+        $certificate = $this->workflowCertificate($user);
+        $identity = $certificate->only(['customer_id', 'warehouse_id', 'cl_id', 'collection_id', 'code']);
 
         $this->actingAs($user)
-            ->post(route('qualitycertificates.store'), $storePayload)
-            ->assertRedirect();
+            ->put(route('qualitycertificates.update', $certificate), [
+                'customer_id' => ['value' => Customer::query()->create(['name' => 'Other customer'])->id],
+                'cl_id' => ['value' => null],
+                'obs' => 'Smoke certificate updated',
+                'status' => false,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
 
-        $certificate = QualityCertificate::query()
-            ->where('customer_id', $customer->id)
-            ->where('cl_id', $labCode->id)
-            ->where('warehouse_id', $warehouse->id)
-            ->where('obs', 'Smoke certificate create')
-            ->latest('id')
-            ->first();
-
-        $this->assertNotNull($certificate, 'Expected the smoke-created quality certificate to exist.');
-
-        $this->assertDatabaseHas('quality_certificates', [
-            'id' => $certificate->id,
-            'customer_id' => $customer->id,
-            'cl_id' => $labCode->id,
-            'warehouse_id' => $warehouse->id,
-            'obs' => 'Smoke certificate create',
-            'status' => 1,
-        ]);
-
-        $updatePayload = [
-            'customer_id' => ['value' => $customer->id],
-            'warehouse_id' => ['value' => $warehouse->id],
-            'cl_id' => ['value' => $labCode->id],
-            'invoice_id' => null,
-            'obs' => 'Smoke certificate updated',
-            'status' => false,
-        ];
-
-        $this->actingAs($user)
-            ->put(route('qualitycertificates.update', $certificate), $updatePayload)
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('quality_certificates', [
-            'id' => $certificate->id,
-            'obs' => 'Smoke certificate updated',
-            'status' => 0,
-        ]);
+        $certificate->refresh();
+        $this->assertSame('Smoke certificate updated', $certificate->obs);
+        $this->assertSame($identity, $certificate->only(array_keys($identity)));
+        $this->assertFalse(Route::has('qualitycertificates.store'), 'Certificates must only come from approved workflow results.');
     }
 
     public function test_verified_admin_can_approve_quality_certificate_with_signature(): void
     {
         $user = $this->verifiedAdmin();
-        $customer = Customer::query()->firstOrFail();
-        $warehouse = Warehouse::query()->firstOrFail();
-        $labCode = $this->resultWorkflowFixture($user)['result']->code;
-
-        $this->actingAs($user)
-            ->post(route('qualitycertificates.store'), [
-                'customer_id' => ['value' => $customer->id],
-                'warehouse_id' => ['value' => $warehouse->id],
-                'cl_id' => ['value' => $labCode->id],
-                'invoice_id' => null,
-                'obs' => 'Smoke certificate approval target',
-                'status' => true,
-            ])
-            ->assertRedirect();
-
-        $certificate = QualityCertificate::query()
-            ->where('customer_id', $customer->id)
-            ->where('cl_id', $labCode->id)
-            ->where('warehouse_id', $warehouse->id)
-            ->where('obs', 'Smoke certificate approval target')
-            ->latest('id')
-            ->first();
-
-        $this->assertNotNull($certificate, 'Expected the approval target certificate to exist.');
+        $certificate = $this->workflowCertificate($user, approved: true);
 
         $this->actingAs($user)
             ->post(route('qualitycertificates.approve', $certificate), [
@@ -2456,6 +2405,11 @@ class LimsWriteSmokeTest extends TestCase
             $certificate->getFirstMedia('validation_signature'),
             'Expected approval to persist the validator signature media.'
         );
+
+        $this->actingAs($user)
+            ->put(route('qualitycertificates.update', $certificate), ['obs' => 'Late change'])
+            ->assertSessionHasErrors('obs');
+        $this->assertNotSame('Late change', $certificate->fresh()->obs);
     }
 
     public function test_verified_admin_can_create_update_and_adjust_inventory(): void
@@ -2715,30 +2669,8 @@ class LimsWriteSmokeTest extends TestCase
     public function test_verified_admin_can_create_and_export_iso_revision_history(): void
     {
         $user = $this->verifiedAdmin();
-        $customer = Customer::query()->firstOrFail();
-        $warehouse = Warehouse::query()->firstOrFail();
-        $labCode = $this->resultWorkflowFixture($user)['result']->code;
-
-        $this->actingAs($user)
-            ->post(route('qualitycertificates.store'), [
-                'customer_id' => ['value' => $customer->id],
-                'warehouse_id' => ['value' => $warehouse->id],
-                'cl_id' => ['value' => $labCode->id],
-                'invoice_id' => null,
-                'obs' => 'ISO revision smoke target',
-                'status' => true,
-            ])
-            ->assertRedirect();
-
-        $certificate = QualityCertificate::query()
-            ->where('customer_id', $customer->id)
-            ->where('cl_id', $labCode->id)
-            ->where('warehouse_id', $warehouse->id)
-            ->where('obs', 'ISO revision smoke target')
-            ->latest('id')
-            ->first();
-
-        $this->assertNotNull($certificate, 'Expected the ISO revision smoke target certificate to exist.');
+        $certificate = $this->workflowCertificate($user);
+        $certificate->forceFill(['obs' => 'ISO revision smoke target'])->save();
 
         $this->actingAs($user)
             ->post(route('qualitycertificates.iso-revisions.store', $certificate), [

@@ -1,71 +1,60 @@
 <template>
-  <article class="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-    <div class="flex items-start justify-between gap-3">
+  <article class="pl-panel">
+    <div class="flex items-start justify-between gap-3 p-4">
       <div class="min-w-0">
-        <span class="inline-flex max-w-full items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-          {{ task.file.name }}
-        </span>
-        <p class="mt-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
+        <p class="pl-k pl-faint truncate">{{ task.file.name }}</p>
+        <p class="mt-2 font-medium">
           {{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.' + task.type) }}
         </p>
-        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p class="mt-1 text-[12.5px] text-[var(--pl-muted)]">
           {{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.assigned_to') }} {{ task.assignee.name }}
         </p>
       </div>
 
-      <BaseSelect
-        :value="task.status"
-        class="rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-        @change="handleStatusChange"
-      >
-        <option value="pending">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.pending') }}</option>
-        <option value="in_progress">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.in_progress') }}</option>
-        <option value="completed">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.completed') }}</option>
-        <option value="rejected">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.rejected') }}</option>
-      </BaseSelect>
+      <div class="w-44 shrink-0">
+        <BaseSelect :model-value="task.status" aria-label="Estado da tarefa" @change="handleStatusChange">
+          <option value="pending">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.pending') }}</option>
+          <option value="in_progress">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.in_progress') }}</option>
+          <option value="completed">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.completed') }}</option>
+          <option value="rejected">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.rejected') }}</option>
+        </BaseSelect>
+      </div>
     </div>
 
-    <dl class="mt-4 grid gap-3 sm:grid-cols-3">
-      <div class="rounded-2xl bg-slate-50 px-3 py-3 dark:bg-slate-800/70">
-        <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.created_at') }}</dt>
-        <dd class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{{ formatDate(task.createdAt) }}</dd>
+    <dl class="pl-facts border-t border-[var(--pl-line)]">
+      <div class="pl-fact">
+        <dt>{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.created_at') }}</dt>
+        <dd class="pl-num">{{ formatDate(task.createdAt) }}</dd>
       </div>
-      <div class="rounded-2xl bg-slate-50 px-3 py-3 dark:bg-slate-800/70">
-        <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.due_date') }}</dt>
-        <dd class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{{ formatDate(task.dueDate) || $t('gestlab.general.labels.vap_filemanager.no_due_date') }}</dd>
+      <div class="pl-fact">
+        <dt>{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.due_date') }}</dt>
+        <dd class="pl-num">{{ formatDate(task.dueDate) || $t('gestlab.general.labels.vap_filemanager.no_due_date') }}</dd>
       </div>
-      <div class="rounded-2xl bg-slate-50 px-3 py-3 dark:bg-slate-800/70">
-        <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.completed') }}</dt>
-        <dd class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{{ formatDate(task.completedAt) || 'Em curso' }}</dd>
+      <div class="pl-fact">
+        <dt>{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.completed') }}</dt>
+        <dd class="pl-num">{{ formatDate(task.completedAt) || 'Em curso' }}</dd>
       </div>
     </dl>
 
-    <div v-if="task.comments.length > 0" class="mt-4 space-y-2">
-      <div
-        v-for="(comment, index) in task.comments"
-        :key="index"
-        class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-800/70"
-      >
-        <p class="font-semibold text-slate-800 dark:text-slate-100">{{ comment.creator.name }}</p>
-        <p class="mt-1 leading-6 text-slate-600 dark:text-slate-300">{{ comment.comment }}</p>
-      </div>
-    </div>
+    <ul v-if="task.comments.length > 0" class="border-t border-[var(--pl-line)]" aria-label="Comentários">
+      <li v-for="(comment, index) in task.comments" :key="index" class="border-b border-[var(--pl-line)] px-4 py-3 text-sm last:border-b-0">
+        <p class="font-medium">{{ comment.creator.name }}</p>
+        <p class="mt-1 leading-6 text-[var(--pl-muted)]">{{ comment.comment }}</p>
+      </li>
+    </ul>
 
-    <div class="mt-4 flex gap-2">
+    <form class="flex gap-2 border-t border-[var(--pl-line)] p-4" @submit.prevent="addComment">
       <BaseInput
-        type="text"
         v-model="newComment"
+        type="text"
+        class="ds-field flex-1"
+        :aria-label="$t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.add_comment_placeholder')"
         :placeholder="$t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.add_comment_placeholder')"
-        class="flex-1 rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
-        @keyup.enter="addComment"
       />
-      <button
-        class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
-        @click="addComment"
-      >
+      <button type="submit" class="ds-button ds-button-secondary">
         {{ $t('gestlab.general.labels.vap_filemanager.buttons.add_comment') }}
       </button>
-    </div>
+    </form>
   </article>
 </template>
 

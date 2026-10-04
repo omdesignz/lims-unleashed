@@ -84,20 +84,26 @@ class VAPInventoryOrderController extends Controller
         }
 
         // Apply sorting
-        $sortBy = $request->filled('sort_by') ? $request->sort_by : 'created_at';
-        $sortDirection = $request->filled('sort_direction') ? $request->sort_direction : 'desc';
+        $sortBy = in_array($request->input('sort_by'), ['created_at', 'date', 'reference'], true) ? $request->input('sort_by') : 'created_at';
+        $sortDirection = $request->input('sort_direction') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sortBy, $sortDirection);
 
         // Get stats for the dashboard
         $stats = [
             'total_orders' => InventoryOrder::forLaboratory($labId)->count(),
-            'pending_orders' => InventoryOrder::forLaboratory($labId)->where('status', 'pending')->count(),
+            'pending_orders' => InventoryOrder::forLaboratory($labId)->whereRaw('upper(status) = ?', ['PENDING'])->count(),
             'orders_today' => InventoryOrder::forLaboratory($labId)->whereDate('date', today())->count(),
-            'total_value' => InventoryOrder::forLaboratory($labId)->where('status', '!=', 'cancelled')
+            'total_value' => InventoryOrder::forLaboratory($labId)->whereRaw('upper(status) <> ?', ['CANCELLED'])
                 ->sum('total_amount'),
-            'open_items' => InventoryOrderDetail::whereIn('status', ['pending', 'ordered', 'partially_received'])
+            'open_items' => InventoryOrderDetail::query()->whereRaw('upper(status) in (?, ?, ?)', ['PENDING', 'ORDERED', 'PARTIALLY_RECEIVED'])
                 ->where('lab_id', $labId)
                 ->count(),
+            'by_status' => InventoryOrder::forLaboratory($labId)
+                ->toBase()
+                ->selectRaw('upper(status) as status_key, count(*) as aggregate')
+                ->groupByRaw('upper(status)')
+                ->pluck('aggregate', 'status_key')
+                ->map(fn ($count): int => (int) $count),
         ];
 
         $orders = $query->paginate(15)->withQueryString();

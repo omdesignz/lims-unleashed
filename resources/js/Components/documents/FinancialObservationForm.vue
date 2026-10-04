@@ -43,7 +43,7 @@ function submit() {
     <Head :title="`${config.title} · Observações`" />
     <header class="flex flex-col gap-2">
       <p class="ds-kicker">{{ ['quote', 'import_certificate', 'export_certificate'].includes(kind) ? 'Documento facturado' : 'Documento financeiro emitido' }}</p>
-      <h1 class="ds-heading text-2xl">{{ config.title }} · {{ source.document_no || source.cert_no || source.quote_no || `#${source.id}` }}</h1>
+      <h1 class="ds-heading text-2xl [overflow-wrap:anywhere]">{{ config.title }} · {{ source.document_no || source.cert_no || source.quote_no || `#${source.id}` }}</h1>
       <p class="ds-copy">Cliente, local, valores, impostos, linhas e identificação emitida estão bloqueados. Apenas as observações podem ser corrigidas aqui.</p>
     </header>
     <div class="ds-field-group">

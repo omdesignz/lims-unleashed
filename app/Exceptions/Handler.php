@@ -2,13 +2,16 @@
 
 namespace App\Exceptions;
 
+use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 use Psr\Log\LogLevel;
 use Throwable;
+use Tighten\Ziggy\Ziggy;
 
 class Handler extends ExceptionHandler
 {
@@ -63,6 +66,8 @@ class Handler extends ExceptionHandler
         //  dd($e->getMessage());
 
         if ($this->shouldRenderCustomErrorPage() && in_array($response->status(), [400, 401, 403, 404, 405, 429, 500, 503])) {
+            $this->shareInertiaPropsWhenMiddlewareDidNotRun($request);
+
             return inertia()->render('Error', [
                 'status' => $response->status(),
                 'message' => $e->getMessage(),
@@ -81,6 +86,31 @@ class Handler extends ExceptionHandler
         }
 
         return $response;
+    }
+
+    /**
+     * Exceptions raised before the Inertia middleware (route-model binding, CSRF,
+     * session) would otherwise render the error page without routes, user and
+     * settings, and the page cannot draw. Without a session only the routes are
+     * shared, because the other shared props read the session.
+     */
+    protected function shareInertiaPropsWhenMiddlewareDidNotRun(Request $request): void
+    {
+        if (array_key_exists('ziggy', Inertia::getShared())) {
+            return;
+        }
+
+        if (! $request->hasSession()) {
+            Inertia::share('ziggy', fn (): array => [...(new Ziggy)->toArray(), 'location' => $request->url()]);
+
+            return;
+        }
+
+        try {
+            Inertia::share(app(HandleInertiaRequests::class)->share($request));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     protected function unauthenticated($request, AuthenticationException $exception)

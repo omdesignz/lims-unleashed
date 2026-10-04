@@ -104,6 +104,12 @@ class VAPInventoryNeedController extends Controller
                     ->whereNull('inventory_order_id')
                     ->whereDate('needed_by_date', '<', now()->toDateString())
                     ->count(),
+                'by_status' => InventoryNeed::forLaboratory($labId)
+                    ->toBase()
+                    ->selectRaw('status, count(*) as aggregate')
+                    ->groupBy('status')
+                    ->pluck('aggregate', 'status')
+                    ->map(fn ($count): int => (int) $count),
             ],
             'procurementQueue' => $procurementQueue,
             'charts' => [

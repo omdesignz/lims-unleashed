@@ -45,10 +45,10 @@ const close = () => {
 
       <div class="fixed inset-0 overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
-          <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full p-3 sm:p-6 lg:p-8">
+          <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full">
             <TransitionChild
               as="template"
-              enter="transition-[translate,opacity] ease-out duration-300"
+              enter="transition-[translate,opacity] ease-[cubic-bezier(0.32,0.72,0,1)] duration-[220ms]"
               enter-from="translate-x-full opacity-0 motion-reduce:translate-x-0"
               enter-to="translate-x-0"
               leave="transition-[translate,opacity] ease-out duration-200"
@@ -56,15 +56,13 @@ const close = () => {
               leave-to="translate-x-full opacity-0 motion-reduce:translate-x-0"
             >
               <DialogPanel class="pointer-events-auto w-screen max-w-4xl">
-                <div class="ds-slideover-panel flex h-full flex-col overflow-hidden">
+                <div class="ds-slideover-panel flex h-full flex-col overflow-hidden border-y-0 border-r-0">
+                  <div class="pl-strip">Painel lateral</div>
                   <!-- Header -->
                   <div class="ds-slideover-header relative flex-shrink-0 border-b px-6 py-5">
                     <div class="flex items-start justify-between gap-x-3">
                       <div class="min-w-0 space-y-1">
-                        <p class="ds-kicker">
-                          Painel contextual
-                        </p>
-                        <DialogTitle class="ds-heading truncate text-lg leading-6">
+                        <DialogTitle class="pl-d3 truncate">
                           {{ title }}
                         </DialogTitle>
                         <p v-if="description" class="ds-copy text-sm">

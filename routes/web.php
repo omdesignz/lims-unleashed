@@ -1268,13 +1268,11 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     // Quality Certificates
     Route::controller(QualityCertificateController::class)->group(function () {
         Route::get('qualitycertificates', 'index')->name('qualitycertificates.index');
-        Route::get('qualitycertificates/create', 'create')->name('qualitycertificates.create');
-        Route::post('qualitycertificates', 'store')->name('qualitycertificates.store');
         Route::get('qualitycertificates/{certificate}/edit', 'edit')->name('qualitycertificates.edit');
         Route::put('qualitycertificates/{certificate}', 'update')->name('qualitycertificates.update');
         Route::get('qualitycertificates/{certificate}/show', 'show')->name('qualitycertificates.show');
-        Route::get('qualitycertificates/destroy', 'destroy')->name('qualitycertificates.destroy');
-        Route::get('qualitycertificates/restore', 'restore')->name('qualitycertificates.restore');
+        Route::delete('qualitycertificates/destroy', 'destroy')->name('qualitycertificates.destroy');
+        Route::patch('qualitycertificates/restore', 'restore')->name('qualitycertificates.restore');
         Route::get('qualitycertificates/getQualityCertificate', 'getQualityCertificate')->name('qualitycertificates.getQualityCertificate');
         Route::get('qualitycertificates/getPDF', 'getPDF')->name('qualitycertificates.getPDF');
 

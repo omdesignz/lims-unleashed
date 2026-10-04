@@ -6,7 +6,7 @@ import InsertResultComponent from "@/Components/results/InsertResultComponent.vu
 import VerifyResultComponent from "@/Components/results/VerifyResultComponent.vue";
 import { ResultsDataService } from "@/Services/ResultsDataService.js";
 import { computed, onMounted, ref } from "vue";
-import { Link, useForm } from "@inertiajs/vue3";
+import { Link, useForm, usePage } from "@inertiajs/vue3";
 import {
   ExternalLink as ArrowTopRightOnSquareIcon,
   FlaskConical as BeakerIcon,
@@ -301,6 +301,30 @@ const executionControlCards = computed(() => [
 
 onMounted(loadResultParameters);
 
+const page = usePage();
+const reviewConflict = ref("");
+
+/**
+ * Four-eyes review: whoever inserted a result cannot verify it, and neither the
+ * inserter nor the verifier can approve it. Say so before any typing.
+ */
+function detectReviewConflict(rows) {
+  const userId = Number(page.props.auth?.user?.id ?? 0);
+  if (!userId || !Array.isArray(rows)) {
+    return "";
+  }
+
+  const authored = (field) => rows.some((row) => Number(row?.[field] ?? 0) === userId);
+  if (props.action === "verify" && authored("inserted_by_id")) {
+    return "Inseriu resultados desta análise. A verificação tem de ser feita por outra pessoa.";
+  }
+  if (props.action === "approve" && (authored("inserted_by_id") || authored("verified_by_id"))) {
+    return "Inseriu ou verificou resultados desta análise. A aprovação tem de ser feita por outra pessoa.";
+  }
+
+  return "";
+}
+
 async function loadResultParameters() {
   if (!CurrentComponent.value) {
     resultsLoadError.value = "";
@@ -342,6 +366,7 @@ async function loadResultParameters() {
     }
 
     const payload = await response.json();
+    reviewConflict.value = detectReviewConflict(payload);
     form.results = ResultsDataService.normalizeResults(payload);
 
     if (hasCalculatedParameters.value) {
@@ -566,6 +591,16 @@ defineExpose({
               {{ Array.isArray(error) ? error.join(", ") : error }}
             </li>
           </ul>
+        </div>
+      </div>
+    </section>
+
+    <section v-if="reviewConflict" class="lims-status-strip p-4" role="status">
+      <div class="flex items-start gap-3">
+        <ExclamationTriangleIcon class="h-5 w-5 shrink-0 text-[var(--lims-critical)]" />
+        <div>
+          <h2 class="ds-heading text-sm">Revisão independente</h2>
+          <p class="ds-copy mt-1 text-xs">{{ reviewConflict }}</p>
         </div>
       </div>
     </section>

@@ -25,11 +25,11 @@ class LaboratoryWorkflowController extends Controller
             ->with($dossierService->relations())
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
-                    $query->where('proposal_no', 'like', "%{$search}%")
-                        ->orWhere('service_location', 'like', "%{$search}%")
+                    $query->where('proposal_no', 'ilike', "%{$search}%")
+                        ->orWhere('service_location', 'ilike', "%{$search}%")
                         ->orWhereHas('customer', fn ($customerQuery) => $customerQuery
-                            ->where('name', 'like', "%{$search}%")
-                            ->orWhere('code', 'like', "%{$search}%"));
+                            ->where('name', 'ilike', "%{$search}%")
+                            ->orWhere('code', 'ilike', "%{$search}%"));
                 });
             })
             ->latest('updated_at')

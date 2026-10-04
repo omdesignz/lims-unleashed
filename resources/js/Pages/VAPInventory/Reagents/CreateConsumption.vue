@@ -1,261 +1,19 @@
-<template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Controlo de reagentes</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot lims-status-dot-hold" />
-              Saída controlada
-            </span>
-          </div>
-          <h1 class="ds-heading mt-3 text-2xl">Registrar consumo de reagente</h1>
-          <p class="ds-copy mt-2 text-sm">
-            Registe a saída com existências disponível, armazém, responsável, data e observações para preservar rastreabilidade operacional.
-          </p>
-        </div>
-
-        <button type="button" class="ds-button ds-button-secondary shrink-0" @click="goBack">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Voltar
-        </button>
-      </div>
-
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] md:grid-cols-4 md:divide-y-0">
-        <div v-for="metric in workspaceMetrics" :key="metric.label" class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
-            <span class="lims-status-dot" :class="metric.dotClass" />
-            {{ metric.label }}
-          </dt>
-          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ metric.value }}</dd>
-          <p class="mt-1 truncate text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ metric.caption }}</p>
-        </div>
-      </dl>
-    </section>
-
-    <form class="space-y-6" @submit.prevent="submit">
-      <section class="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <article class="ds-panel overflow-hidden">
-          <div class="ds-table-summary px-5 py-4">
-            <div class="flex items-start gap-3">
-              <BeakerIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
-              <div>
-                <h2 class="ds-heading text-base">Detalhes do consumo</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Seleccione material, origem de existências, quantidade e responsável técnico.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid gap-4 p-5 md:grid-cols-2">
-            <BaseSelect
-              v-model="form.reagent_id"
-              label="Reagente"
-              :error="form.errors.reagent_id"
-              required
-              @change="onReagentChange"
-            >
-              <option value="">Seleccione um reagente</option>
-              <option v-for="reagent in reagents" :key="reagent.id" :value="reagent.id">
-                {{ reagent.name }} ({{ reagent.code }})
-                <template v-if="reagent.total_stock !== undefined">
-                  · Existências total: {{ formatQuantity(reagent.total_stock) }}
-                </template>
-              </option>
-            </BaseSelect>
-
-            <BaseSelect
-              v-model="form.warehouse_id"
-              label="Armazém"
-              :error="form.errors.warehouse_id"
-              :disabled="!form.reagent_id"
-              required
-              @change="onWarehouseChange"
-            >
-              <option value="">Seleccione um armazém</option>
-              <option v-for="warehouse in availableWarehouses" :key="warehouse.id" :value="warehouse.id">
-                {{ warehouse.name }}
-                <template v-if="warehouse.available_stock !== undefined">
-                  · Disponível: {{ formatQuantity(warehouse.available_stock) }}
-                </template>
-              </option>
-            </BaseSelect>
-
-            <div class="md:col-span-2">
-              <div class="grid gap-4 md:grid-cols-[1fr_auto]">
-                <BaseInput
-                  v-model="form.quantity_used"
-                  type="number"
-                  label="Quantidade usada"
-                  :min="0.0001"
-                  :max="maxQuantity"
-                  :step="0.0001"
-                  :error="form.errors.quantity_used"
-                  placeholder="Digite a quantidade"
-                  required
-                />
-                <div class="flex items-end">
-                  <span class="ds-chip min-h-10">
-                    <span class="lims-status-dot" :class="currentStock >= Number(form.quantity_used || 0) ? 'lims-status-dot-release' : 'lims-status-dot-critical'" />
-                    Máx: {{ formatQuantity(maxQuantity) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <BaseInput
-              v-model="form.used_by"
-              type="text"
-              label="Usado por"
-              :error="form.errors.used_by"
-              placeholder="Nome da pessoa que usou o reagente"
-              required
-            />
-
-            <BaseInput
-              v-model="form.date"
-              type="date"
-              label="Data"
-              :max="maxDate"
-              :error="form.errors.date"
-              required
-            />
-
-            <BaseTextarea
-              v-model="form.remarks"
-              class="md:col-span-2"
-              rows="3"
-              label="Observações"
-              :error="form.errors.remarks"
-              placeholder="Observação adicional sobre o consumo, ensaio, lote ou desvio"
-            />
-          </div>
-        </article>
-
-        <aside class="space-y-4">
-          <article class="ds-panel overflow-hidden">
-            <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-              <h2 class="ds-heading text-base">Validação de existências</h2>
-              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Confirme disponibilidade antes de submeter.</p>
-            </div>
-
-            <div class="grid gap-3 p-5">
-              <div v-for="item in stockReview" :key="item.label" class="ds-card p-4">
-                <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ item.label }}</p>
-                <p class="mt-2 text-xl font-bold" :class="item.valueClass">{{ item.value }}</p>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ item.caption }}</p>
-              </div>
-            </div>
-          </article>
-
-          <article v-if="selectedReagent" class="ds-panel overflow-hidden">
-            <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-              <h2 class="ds-heading text-base">Reagente seleccionado</h2>
-              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Identificação e validade do material.</p>
-            </div>
-
-            <dl class="divide-y divide-[color:var(--ds-border)]">
-              <div v-for="field in reagentFields" :key="field.label" class="flex items-start justify-between gap-4 px-5 py-3 text-sm">
-                <dt class="font-semibold text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
-                <dd class="text-right font-bold" :class="field.valueClass">{{ field.value }}</dd>
-              </div>
-            </dl>
-          </article>
-        </aside>
-      </section>
-
-      <section v-if="currentStock < Number(form.quantity_used || 0) || isReagentExpired" class="grid gap-3 md:grid-cols-2">
-        <article v-if="currentStock < Number(form.quantity_used || 0)" class="ds-card border-l-4 border-rose-500 p-4">
-          <div class="flex items-start gap-3">
-            <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 text-rose-700 dark:text-rose-300" />
-            <div>
-              <h3 class="text-sm font-bold text-[color:var(--ds-text)]">Existências insuficiente</h3>
-              <p class="mt-1 text-sm text-[color:var(--ds-text-soft)]">
-                Disponível: {{ formatQuantity(currentStock) }} · Requisitado: {{ formatQuantity(form.quantity_used) }}.
-              </p>
-            </div>
-          </div>
-        </article>
-
-        <article v-if="isReagentExpired" class="ds-card border-l-4 border-amber-500 p-4">
-          <div class="flex items-start gap-3">
-            <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 text-amber-700 dark:text-amber-300" />
-            <div>
-              <h3 class="text-sm font-bold text-[color:var(--ds-text)]">Reagente vencido</h3>
-              <p class="mt-1 text-sm text-[color:var(--ds-text-soft)]">
-                Validade: {{ formatDate(selectedReagent.reagent_expiry_date) }}. Documente a decisão técnica antes de continuar.
-              </p>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <section class="ds-command-surface p-5">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p class="text-sm font-semibold text-[color:var(--ds-text-soft)]">
-            <span v-if="form.reagent_id && form.warehouse_id">
-              Saída a partir de <span class="font-bold text-[color:var(--ds-text)]">{{ getWarehouseName(form.warehouse_id) }}</span>.
-            </span>
-            <span v-else>Seleccione reagente e armazém para validar existências.</span>
-          </p>
-
-          <div class="flex flex-col gap-2 sm:flex-row">
-            <button type="button" class="ds-button ds-button-secondary" @click="goBack">
-              Cancelar
-            </button>
-            <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !isFormValid">
-              <CheckCircleIcon v-if="!form.processing" class="h-4 w-4" />
-              <ArrowPathIcon v-else class="h-4 w-4 animate-spin" />
-              {{ form.processing ? 'A processar...' : 'Registrar consumo' }}
-            </button>
-          </div>
-        </div>
-      </section>
-    </form>
-
-    <confirm-dialog
-      v-if="showSubmitConfirmation"
-      title="Registrar consumo de reagente"
-      description="Confirme a saída controlada antes de abater existências do armazém seleccionado."
-      confirm="Registrar consumo"
-      cancel="Rever dados"
-      variant="warning"
-      @confirmed="confirmSubmit"
-      @canceled="showSubmitConfirmation = false"
-    >
-      <div class="mt-4 grid gap-3 text-left sm:grid-cols-3">
-        <div class="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] p-3">
-          <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Reagente</p>
-          <p class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ selectedReagent?.name || 'N/A' }}</p>
-        </div>
-        <div class="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] p-3">
-          <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">A consumir</p>
-          <p class="mt-1 text-sm font-bold text-rose-700 dark:text-rose-300">{{ formatQuantity(form.quantity_used) }}</p>
-        </div>
-        <div class="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] p-3">
-          <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Restante</p>
-          <p class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ formatQuantity(remainingAfterConsumption) }}</p>
-        </div>
-      </div>
-    </confirm-dialog>
-  </div>
-</template>
-
 <script setup>
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import NextStepBar from '@/Components/plano/NextStepBar.vue'
 import { router, useForm } from '@inertiajs/vue3'
-import {
-  ArrowLeft as ArrowLeftIcon,
-  RefreshCw as ArrowPathIcon,
-  FlaskConical as BeakerIcon,
-  CircleCheck as CheckCircleIcon,
-  TriangleAlert as ExclamationTriangleIcon,
-} from '@lucide/vue'
+import { TriangleAlert as ExclamationTriangleIcon } from '@lucide/vue'
 import { computed, ref } from 'vue'
 
+/**
+ * New reagent consumption (Plano form). The quantity is taken from one warehouse
+ * that holds the reagent; the technician defaults to the signed-in operator and
+ * the submission is confirmed before stock is written off.
+ */
 const props = defineProps({
   reagents: {
     type: Array,
@@ -290,6 +48,7 @@ const form = useForm({
 
 const showSubmitConfirmation = ref(false)
 const maxDate = new Date().toISOString().split('T')[0]
+const registerUrl = route('vap-inventory.reagents.consumption.index')
 
 const selectedReagent = computed(() => {
   return props.reagents.find((reagent) => reagent.id == form.reagent_id)
@@ -362,70 +121,30 @@ const isFormValid = computed(() => {
   )
 })
 
-const workspaceMetrics = computed(() => [
-  {
-    label: 'Reagentes',
-    value: formatQuantity(props.reagents.length),
-    caption: 'Activos para consumo',
-    dotClass: 'lims-status-dot-instrument',
-  },
-  {
-    label: 'Armazéns',
-    value: formatQuantity(props.warehouses.length),
-    caption: 'Com existências operacional',
-    dotClass: 'lims-status-dot-release',
-  },
-  {
-    label: 'Disponível',
-    value: formatQuantity(currentStock.value),
-    caption: 'No armazém seleccionado',
-    dotClass: currentStock.value > 0 ? 'lims-status-dot-release' : 'lims-status-dot-critical',
-  },
-  {
-    label: 'Restante',
-    value: formatQuantity(remainingAfterConsumption.value),
-    caption: 'Após submissão',
-    dotClass: remainingAfterConsumption.value > 0 ? 'lims-status-dot-release' : 'lims-status-dot-hold',
-  },
-])
+const exceedsStock = computed(() => Boolean(form.warehouse_id) && currentStock.value < Number(form.quantity_used || 0))
 
-const stockReview = computed(() => [
-  {
-    label: 'Existências actual',
-    value: formatQuantity(currentStock.value),
-    caption: 'Quantidade disponível no armazém',
-    valueClass: currentStock.value > 0 ? 'text-[color:var(--ds-text)]' : 'text-rose-700 dark:text-rose-300',
-  },
-  {
-    label: 'A consumir',
-    value: formatQuantity(form.quantity_used),
-    caption: 'Quantidade que será abatida',
-    valueClass: 'text-rose-700 dark:text-rose-300',
-  },
-  {
-    label: 'Restante',
-    value: formatQuantity(remainingAfterConsumption.value),
-    caption: 'Saldo estimado após consumo',
-    valueClass: remainingAfterConsumption.value > 0 ? 'text-[color:var(--ds-text)]' : 'text-amber-700 dark:text-amber-300',
-  },
-])
-
-const reagentFields = computed(() => {
+const reagentHint = computed(() => {
   if (!selectedReagent.value) {
-    return []
+    return 'Só reagentes activos com existências no laboratório.'
   }
 
   return [
-    ['Nome', selectedReagent.value.name],
-    ['Código', selectedReagent.value.code],
-    ['Categoria', selectedReagent.value.category?.name || 'N/A'],
-    ['Unidade', selectedReagent.value.unit?.code || 'N/A'],
-    [
-      'Validade',
-      selectedReagent.value.reagent_expiry_date ? formatDate(selectedReagent.value.reagent_expiry_date) : 'N/A',
-      isReagentExpired.value ? 'text-rose-700 dark:text-rose-300' : 'text-[color:var(--ds-text)]',
-    ],
-  ].map(([label, value, valueClass = 'text-[color:var(--ds-text)]']) => ({ label, value, valueClass }))
+    selectedReagent.value.category?.name,
+    selectedReagent.value.unit?.code,
+    selectedReagent.value.reagent_expiry_date ? `Validade ${formatDate(selectedReagent.value.reagent_expiry_date)}` : 'Sem validade registada',
+  ].filter(Boolean).join(' · ')
+})
+
+const nextStep = computed(() => {
+  if (!form.reagent_id || !form.warehouse_id) {
+    return 'Seleccione reagente e armazém para validar as existências.'
+  }
+
+  if (exceedsStock.value) {
+    return `Só há ${formatQuantity(currentStock.value)} em ${getWarehouseName(form.warehouse_id)}. Reduza a quantidade.`
+  }
+
+  return `Saída de ${formatQuantity(form.quantity_used)} a partir de ${getWarehouseName(form.warehouse_id)}; ficam ${formatQuantity(remainingAfterConsumption.value)}.`
 })
 
 function formatQuantity(value) {
@@ -496,3 +215,142 @@ function goBack() {
   router.visit(props.backUrl || route('dashboard'))
 }
 </script>
+
+<template>
+  <form class="pl-page" data-template="form" @submit.prevent="submit">
+    <PageHeader
+      :crumbs="[{ title: 'Inventário' }, { title: 'Consumo de reagentes', url: backUrl === registerUrl ? registerUrl : undefined }, { title: 'Novo' }]"
+      title="Registar consumo de reagente"
+      lede="Registe a saída a partir de um armazém com existências, com responsável, data e observações. A saída é confirmada antes de abater as existências."
+    />
+
+    <section class="pl-form-section">
+      <header>
+        <h2 class="pl-d3">Reagente e origem</h2>
+        <p>O armazém lista apenas posições com saldo do reagente. A quantidade aceita até quatro casas decimais.</p>
+      </header>
+      <div class="pl-form-grid">
+        <BaseSelect
+          v-model="form.reagent_id"
+          label="Reagente"
+          :error="form.errors.reagent_id"
+          :hint="reagentHint"
+          required
+          @change="onReagentChange"
+        >
+          <option value="">Seleccione um reagente</option>
+          <option v-for="reagent in reagents" :key="reagent.id" :value="reagent.id">
+            {{ reagent.name }} ({{ reagent.code }})
+            <template v-if="reagent.total_stock !== undefined">
+              · Existências totais: {{ formatQuantity(reagent.total_stock) }}
+            </template>
+          </option>
+        </BaseSelect>
+
+        <BaseSelect
+          v-model="form.warehouse_id"
+          label="Armazém"
+          :error="form.errors.warehouse_id"
+          :disabled="!form.reagent_id"
+          required
+          @change="onWarehouseChange"
+        >
+          <option value="">Seleccione um armazém</option>
+          <option v-for="warehouse in availableWarehouses" :key="warehouse.id" :value="warehouse.id">
+            {{ warehouse.name }}
+            <template v-if="warehouse.available_stock !== undefined">
+              · Disponível: {{ formatQuantity(warehouse.available_stock) }}
+            </template>
+          </option>
+        </BaseSelect>
+
+        <BaseInput
+          v-model="form.quantity_used"
+          type="number"
+          label="Quantidade usada"
+          :min="0.0001"
+          :max="maxQuantity"
+          :step="0.0001"
+          :error="form.errors.quantity_used"
+          :hint="`Máximo: ${formatQuantity(maxQuantity)} · restam ${formatQuantity(remainingAfterConsumption)} após a saída`"
+          placeholder="Digite a quantidade"
+          required
+        />
+
+        <div v-if="exceedsStock || isReagentExpired" class="grid content-start gap-3">
+          <p v-if="exceedsStock" class="pl-banner pl-banner-bad text-sm" role="alert">
+            <ExclamationTriangleIcon aria-hidden="true" />
+            <span>Existências insuficientes. Disponível: {{ formatQuantity(currentStock) }} · requisitado: {{ formatQuantity(form.quantity_used) }}.</span>
+          </p>
+          <p v-if="isReagentExpired" class="pl-banner pl-banner-warn text-sm">
+            <ExclamationTriangleIcon aria-hidden="true" />
+            <span>Reagente vencido em {{ formatDate(selectedReagent.reagent_expiry_date) }}. Documente a decisão técnica antes de continuar.</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pl-form-section">
+      <header>
+        <h2 class="pl-d3">Responsável e data</h2>
+        <p>Por omissão, o responsável é o operador com sessão iniciada. A data não pode ser futura.</p>
+      </header>
+      <div class="pl-form-grid">
+        <BaseInput
+          v-model="form.used_by"
+          type="text"
+          label="Usado por"
+          :error="form.errors.used_by"
+          placeholder="Nome da pessoa que usou o reagente"
+          required
+        />
+
+        <BaseInput
+          v-model="form.date"
+          type="date"
+          label="Data"
+          :max="maxDate"
+          :error="form.errors.date"
+          required
+        />
+
+        <div class="pl-span-2">
+          <BaseTextarea
+            v-model="form.remarks"
+            rows="3"
+            label="Observações"
+            :error="form.errors.remarks"
+            placeholder="Observação adicional sobre o consumo, ensaio, lote ou desvio"
+          />
+        </div>
+      </div>
+    </section>
+
+    <NextStepBar>
+      {{ nextStep }}
+      <template #actions>
+        <button type="button" class="ds-button ds-button-quiet" @click="goBack">Cancelar</button>
+        <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !isFormValid">
+          {{ form.processing ? 'A processar…' : 'Registar consumo' }}
+        </button>
+      </template>
+    </NextStepBar>
+
+    <confirm-dialog
+      v-if="showSubmitConfirmation"
+      title="Registar consumo de reagente"
+      description="Confirme a saída controlada antes de abater existências do armazém seleccionado."
+      confirm="Registar consumo"
+      cancel="Rever dados"
+      variant="warning"
+      @confirmed="confirmSubmit"
+      @canceled="showSubmitConfirmation = false"
+    >
+      <dl class="pl-panel pl-facts mt-4 text-left">
+        <div class="pl-fact"><dt>Reagente</dt><dd>{{ selectedReagent?.name || 'N/A' }}</dd></div>
+        <div class="pl-fact"><dt>A consumir</dt><dd class="pl-num">{{ formatQuantity(form.quantity_used) }}</dd></div>
+        <div class="pl-fact"><dt>Restante</dt><dd class="pl-num">{{ formatQuantity(remainingAfterConsumption) }}</dd></div>
+      </dl>
+    </confirm-dialog>
+  </form>
+</template>

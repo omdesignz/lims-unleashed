@@ -216,9 +216,9 @@ test('stock movement presents server-classified receipts and reversals as inboun
   for (const name of ['transactionTypeTone', 'quantityTone']) {
     const source = page.match(new RegExp(`function ${name}\\(transaction\\) \\{[\\s\\S]*?\\n\\}`))[0]
     const tone = new Function(`${source}; return ${name}`)()
-    assert.match(tone({ is_addition: true }), /emerald/)
-    assert.match(tone({ is_deduction: true }), /rose/)
-    assert.doesNotMatch(tone({ type: null }), /emerald|rose/)
+    assert.equal(tone({ is_addition: true }), name === 'transactionTypeTone' ? 'ok' : 'text-[var(--pl-ok)]')
+    assert.equal(tone({ is_deduction: true }), name === 'transactionTypeTone' ? 'bad' : 'text-[var(--pl-bad)]')
+    assert.equal(tone({ type: null }), name === 'transactionTypeTone' ? 'neutral' : '')
   }
 })
 

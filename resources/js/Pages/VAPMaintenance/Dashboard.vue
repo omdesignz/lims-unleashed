@@ -370,7 +370,7 @@ import {
   Download as ArrowDownTrayIcon,
   ChartColumn as ChartBarIcon,
 } from '@lucide/vue'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 import { debounce } from 'lodash'
 import simpleChart from '@/Components/apex-chart/simple-chart.vue'
 

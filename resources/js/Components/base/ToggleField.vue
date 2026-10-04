@@ -36,7 +36,7 @@ defineEmits(["update:modelValue"]);
       @change="$emit('update:modelValue', $event.target.checked)"
     />
     <span
-      class="relative h-6 w-10 shrink-0 rounded-full bg-[var(--ds-border-strong)] transition peer-checked:bg-[rgb(var(--primary-700-rgb))] peer-focus-visible:ring-4 peer-focus-visible:ring-[var(--ds-focus)] peer-disabled:cursor-not-allowed peer-disabled:opacity-50 before:absolute before:left-1 before:top-1 before:h-4 before:w-4 before:rounded-full before:bg-[var(--ds-panel-raised)] before:shadow before:transition-transform before:content-[''] peer-checked:before:translate-x-4 dark:peer-checked:bg-[rgb(var(--primary-400-rgb))]"
+      class="pl-switch relative h-5 w-9 shrink-0 border border-[var(--pl-muted)] transition-colors peer-checked:border-[var(--pl-accent)] peer-checked:bg-[var(--pl-accent)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--pl-accent-text)] peer-disabled:cursor-not-allowed peer-disabled:opacity-50 before:absolute before:left-[2px] before:top-[2px] before:h-3.5 before:w-3.5 before:bg-[var(--pl-muted)] before:transition-transform before:content-[''] peer-checked:before:translate-x-4 peer-checked:before:bg-[var(--pl-accent-ink)]"
       aria-hidden="true"
     />
     <span class="min-w-0">

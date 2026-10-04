@@ -58,11 +58,12 @@ for (const path of paths.slice(2, 4)) {
 
 test('catalogue controls honor server capabilities and retain the explicit kind filter', () => {
   const source = read(paths[4])
-  assert.equal((source.match(/v-if="canExport && localFilters.archive_state !== 'archived'"/g) || []).length, 2)
-  assert.equal((source.match(/v-if="item.can_edit"/g) || []).length, 2)
-  assert.equal((source.match(/v-if="item.can_delete"/g) || []).length, 2)
+  assert.equal((source.match(/v-if="canExport && localFilters.archive_state !== 'archived'"/g) || []).length, 1)
+  assert.equal((source.match(/v-if="item.can_edit"/g) || []).length, 1)
+  assert.equal((source.match(/v-if="item.can_delete"/g) || []).length, 1)
   assert.match(source, /inventory_type: props.filters.inventory_type \|\| ''/)
-  assert.match(source, /!action.requiresCreate \|\| props.canCreate/)
+  assert.match(source, /<Link v-if="canCreate" :href="createItemUrl"/)
+  assert.match(source, /<Link v-if="canCreate && localFilters.archive_state !== 'archived'" :href="createItemUrl"/)
   assert.match(source, /Exportar XLSX/)
 })
 
@@ -73,5 +74,19 @@ test('detail classification and new-item links retain explicit kind, including a
   const index = read(paths[4])
   assert.match(index, /localFilters.inventory_type \? \{ inventory_type: localFilters.inventory_type \} : \{\}/)
   assert.equal((index.match(/:href="createItemUrl"/g) || []).length, 2)
-  assert.match(index, /href: createItemUrl.value/)
+})
+
+test('catalogue title and path follow the navigation category or explicit kind', () => {
+  const source = read(paths[4])
+  const constant = name => new Function(`return (${source.match(new RegExp(`const ${name} = (\\{[^\\n]+\\})`))[1]})`)()
+  const body = source.match(/const scopeTitle = computed\(\(\) => \{([\s\S]*?)\n\}\)/)[1]
+  const scopeTitle = filters => new Function('props', 'navigationCategoryTitles', 'inventoryTypeTitles', body)(
+    { filters, categories: [{ id: 7, name: 'Vidraria' }] }, constant('navigationCategoryTitles'), constant('inventoryTypeTitles'))
+  assert.equal(scopeTitle({ category_id: '1' }), 'Equipamentos')
+  assert.equal(scopeTitle({ category_id: 2 }), 'Reagentes e consumíveis')
+  assert.equal(scopeTitle({ category_id: 7 }), 'Vidraria')
+  assert.equal(scopeTitle({ inventory_type: 'equipment' }), 'Equipamentos')
+  assert.equal(scopeTitle({}), '')
+  assert.match(source, /<PageHeader :crumbs="crumbs" :title="listTitle" :lede="lede">/)
+  assert.match(source, /\{ title: 'Itens', url: route\('vap-inventory\.items\.index'\) \}, \{ title: scopeTitle\.value \}/)
 })

@@ -41,6 +41,9 @@ class LaboratoryResultMutationTest extends TestCase
 
     private Models\User $operator;
 
+    /** The colleague who inserted and verified seeded results, so the operator can review them. */
+    private Models\User $colleague;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -49,6 +52,7 @@ class LaboratoryResultMutationTest extends TestCase
         $this->lab = Models\VAPLab::factory()->create();
         $this->peerLab = Models\VAPLab::factory()->create();
         $this->operator = Models\User::factory()->create(['is_active' => true]);
+        $this->colleague = Models\User::factory()->create(['is_active' => true]);
         foreach (['insert_results', 'verify_results', 'approve_results', 'view_results', 'add_counter_analysis'] as $permission) {
             $this->operator->givePermissionTo(Models\Permission::findOrCreate($permission, 'web'));
         }
@@ -884,6 +888,7 @@ class LaboratoryResultMutationTest extends TestCase
         [$root, $product, $entry] = $this->fixture($this->lab, $counter);
         $verifyClass = $counter ? Jobs\VerifyCounterAnalysisResults::class : Jobs\VerifyAnalysisResults::class;
         $this->job($verifyClass, $root, $this->rows($root, 'verify'))->handle(app(ProcessLaboratoryResults::class));
+        Models\Result::query()->where('sample_id', $root->sample_id)->update(['verified_by_id' => $this->colleague->id]);
         $rows = $this->rows($root, 'approve');
         $record = match ($target) {
             'root' => $root, 'product' => $product, 'entry' => $entry
@@ -1278,8 +1283,9 @@ class LaboratoryResultMutationTest extends TestCase
                 'extra_data' => ['display_format' => 'scientific', 'provenance' => 'Forged provenance']];
             if ($stage !== 'analyze') {
                 $result = Models\Result::query()->firstOrCreate(['sample_id' => $root->sample_id, 'parameter_id' => $parameter->id], array_replace($row,
-                    ['inserted_value' => '1.25', 'inserted_by' => 'Original technician', 'inserted_date' => now()->subDays(2),
+                    ['inserted_value' => '1.25', 'inserted_by_id' => $this->colleague->id, 'inserted_by' => 'Original technician', 'inserted_date' => now()->subDays(2),
                         'verified_value' => $stage === 'approve' ? '1.5' : null, 'verified_by' => $stage === 'approve' ? 'Original verifier' : null,
+                        'verified_by_id' => $stage === 'approve' ? $this->colleague->id : null,
                         'verified_date' => $stage === 'approve' ? now()->subDay() : null, 'approved_value' => null, 'approved_date' => null,
                         'extra_data' => ['provenance' => 'Original provenance', 'display_format' => 'scientific'],
                         'resultable_id' => $root->id, 'resultable_type' => $root->getMorphClass()]));

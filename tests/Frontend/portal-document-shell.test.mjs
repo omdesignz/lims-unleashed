@@ -34,7 +34,7 @@ test('portal account chrome unwraps resources and provides route-specific docume
 })
 
 test('compact portal header retains accessible branding without forcing mobile overflow', () => {
-  assert.match(layout, /gap-2 px-4 py-3 sm:gap-4/)
+  assert.match(layout, /h-16[^"\n]*gap-2 px-4 sm:gap-4/)
   assert.match(layout, /max-w-16 object-contain sm:max-w-40/)
   assert.match(layout, /class="sr-only sm:not-sr-only"/)
   assert.match(layout, /flex min-w-0 items-center gap-2 sm:gap-3/)

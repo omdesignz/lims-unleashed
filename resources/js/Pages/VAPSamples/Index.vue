@@ -1,98 +1,25 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <p class="ds-kicker">Ciclo de amostras</p>
-          <h1 class="ds-heading mt-2 text-2xl">
-            {{ $page.props.title || 'Gestão de Amostras VAP' }}
-          </h1>
-          <p class="ds-copy mt-2 text-sm">
-            {{ activeTab === 'entry'
-              ? 'Recepção, validação de condicionamento, âmbito analítico e encaminhamento para o laboratório.'
-              : 'Destruição controlada, método de eliminação e evidência rastreável para auditoria.' }}
-          </p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="ds-chip">
-            <span class="lims-status-dot lims-status-dot-instrument" />
-            {{ stats.total_samples || 0 }} amostras
-          </span>
-          <button type="button" class="ds-button ds-button-secondary" @click="refreshData">
-            <ArrowPathIcon class="h-4 w-4" />
-            Actualizar
-          </button>
-        </div>
+  <div class="pl-page min-w-0 space-y-6" data-template="form">
+    <PageHeader
+      :crumbs="[{ title: 'Amostras', url: route('vap_samples.queue') }, { title: activeTab === 'entry' ? 'Recepção' : 'Descarte' }]"
+      :title="editingSample?.id ? `Corrigir ${editingSample.code || 'amostra'}` : (activeTab === 'entry' ? 'Receber amostra' : 'Descarte de amostras')"
+      :lede="editingSample?.id
+        ? 'Identidade e âmbito emitidos ficam fixos. Corrija apenas os metadados de recepção e colheita; a alteração fica no histórico.'
+        : activeTab === 'entry'
+          ? 'Registe a amostra com cliente, produto e âmbito. O código, a acessão e as análises são criados no registo.'
+          : 'Destruição controlada, método de eliminação e evidência rastreável para auditoria.'"
+    >
+      <template #actions>
+        <Link :href="route('vap_samples.queue')" class="ds-button ds-button-quiet">Fila de amostras</Link>
+      </template>
+      <div class="pl-tabs mt-6" role="tablist" aria-label="Área de amostras">
+        <button type="button" role="tab" class="pl-tab" :aria-selected="activeTab === 'entry'" @click="activeTab = 'entry'">Recepção</button>
+        <button type="button" role="tab" class="pl-tab" :aria-selected="activeTab === 'discard'" @click="activeTab = 'discard'">Descarte<span class="pl-num">{{ discardableSamples.length }}</span></button>
       </div>
-
-      <div class="flex items-center gap-1 overflow-x-auto border-b border-[color:var(--ds-border)] px-4 sm:px-6" role="tablist" aria-label="Área de gestão de amostras">
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="activeTab === 'entry'"
-          :class="[
-            '-mb-px inline-flex min-h-12 items-center gap-2 border-b-2 px-3 text-sm font-bold transition-colors',
-            activeTab === 'entry'
-              ? 'border-primary-600 text-primary-800 dark:border-primary-300 dark:text-primary-200'
-              : 'border-transparent text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]'
-          ]"
-          @click="activeTab = 'entry'"
-        >
-          <BeakerIcon class="h-5 w-5" />
-          Entrada e triagem
-        </button>
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="activeTab === 'discard'"
-          :class="[
-            '-mb-px inline-flex min-h-12 items-center gap-2 border-b-2 px-3 text-sm font-bold transition-colors',
-            activeTab === 'discard'
-              ? 'border-rose-600 text-rose-700 dark:border-rose-400 dark:text-rose-200'
-              : 'border-transparent text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]'
-          ]"
-          @click="activeTab = 'discard'"
-        >
-          <ArchiveBoxXMarkIcon class="h-5 w-5" />
-          Descarte
-        </button>
-      </div>
-
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
-        <div class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
-            <span class="lims-status-dot lims-status-dot-hold" />
-            Por iniciar
-          </dt>
-          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ stats.pending_analysis || 0 }}</dd>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
-            <span class="lims-status-dot lims-status-dot-instrument" />
-            Em progresso
-          </dt>
-          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ stats.in_progress || 0 }}</dd>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
-            <span class="lims-status-dot lims-status-dot-release" />
-            Completadas
-          </dt>
-          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ stats.completed_analysis || 0 }}</dd>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
-            <span class="lims-status-dot lims-status-dot-critical" />
-            Descartadas
-          </dt>
-          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ stats.total_discarded || 0 }}</dd>
-        </div>
-      </dl>
-    </section>
+    </PageHeader>
 
     <template v-if="activeTab === 'entry'">
-      <section class="ds-command-surface overflow-hidden">
+      <section v-if="!editingSample?.id" class="ds-command-surface overflow-hidden">
         <div class="grid lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div class="p-5 lg:p-6">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -154,172 +81,6 @@
               </div>
             </dl>
           </aside>
-        </div>
-      </section>
-
-      <section class="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
-        <article class="ds-card p-5">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p class="ds-kicker">Carga de trabalho</p>
-              <h2 class="ds-heading mt-2 text-base">Ritmo de recepção</h2>
-              <p class="ds-copy mt-1 text-xs">Volume dos últimos sete dias.</p>
-            </div>
-            <div class="text-right">
-              <p class="text-2xl font-bold text-[color:var(--ds-text)]">{{ intakeTrendTotal }}</p>
-              <p class="text-xs font-semibold text-[color:var(--ds-text-soft)]">na janela</p>
-            </div>
-          </div>
-          <apexchart class="mt-3" type="area" height="250" :options="intakeTrendChartOptions" :series="intakeTrendChartSeries" />
-        </article>
-
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-          <article class="ds-card p-5">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <p class="ds-kicker">Carteira</p>
-                <h2 class="ds-heading mt-2 text-base">Estado do fluxo</h2>
-              </div>
-              <span class="ds-chip">{{ lifecycleStatusTotal }} amostras</span>
-            </div>
-            <apexchart class="mt-2" type="donut" height="210" :options="lifecycleStatusChartOptions" :series="lifecycleStatusChartSeries" />
-          </article>
-
-          <article class="ds-card p-5">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <p class="ds-kicker">Retenção</p>
-                <h2 class="ds-heading mt-2 text-base">Pressão operacional</h2>
-              </div>
-              <span class="ds-chip border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200">
-                {{ retentionPressureAlertCount }} em atenção
-              </span>
-            </div>
-            <apexchart class="mt-2" type="bar" height="190" :options="retentionPressureChartOptions" :series="retentionPressureChartSeries" />
-          </article>
-        </div>
-      </section>
-
-      <section class="ds-table-shell">
-        <div class="ds-table-summary flex-col items-stretch px-5 py-4 lg:flex-row lg:items-center">
-          <div>
-            <h2 class="ds-heading text-base">Registo de amostras</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-              {{ filteredSampleResults.length }} de {{ samples.length }} registos correspondem aos filtros.
-            </p>
-          </div>
-          <div class="flex flex-col gap-2 sm:flex-row">
-            <div class="min-w-0 sm:w-72">
-              <label class="sr-only" for="sample-search">Pesquisar amostras</label>
-              <BaseInput
-                id="sample-search"
-                v-model="searchQuery"
-                type="search"
-                class="ds-field"
-                placeholder="Código, amostra, cliente, lote..."
-              />
-            </div>
-            <div class="sm:w-48">
-              <label class="sr-only" for="sample-status">Filtrar por estado</label>
-              <BaseSelect id="sample-status" v-model="statusFilter" class="ds-field">
-                <option value="">Todos os estados</option>
-                <option value="POR_INICIAR">Por iniciar</option>
-                <option value="EN_PROGRESO">Em progresso</option>
-                <option value="COMPLETADO">Completado</option>
-                <option value="CANCELADO">Cancelado</option>
-                <option value="EN_PAUSA">Em pausa</option>
-              </BaseSelect>
-            </div>
-            <button type="button" class="ds-button ds-button-secondary" @click="exportData">
-              <ArrowDownTrayIcon class="h-4 w-4" />
-              Exportar
-            </button>
-          </div>
-        </div>
-
-        <div v-if="filteredSamples.length === 0" class="p-5">
-          <div class="ds-empty-state px-5 py-10 text-center">
-            <BeakerIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
-            <h3 class="ds-heading mt-3 text-sm">Nenhuma amostra encontrada</h3>
-            <p class="ds-copy mt-1 text-xs">
-              {{ searchQuery || statusFilter ? 'Ajuste os filtros ou limpe a pesquisa.' : 'Inicie uma entrada para criar o primeiro registo.' }}
-            </p>
-          </div>
-        </div>
-
-        <div v-else class="overflow-x-auto">
-          <DataTable class="min-w-full align-middle">
-            <thead class="ds-table-head">
-              <tr>
-                <th class="ds-table-heading px-5 py-3 text-left">Amostra</th>
-                <th class="ds-table-heading px-5 py-3 text-left">Cliente / produto</th>
-                <th class="ds-table-heading px-5 py-3 text-left">Lote / origem</th>
-                <th class="ds-table-heading px-5 py-3 text-left">Estado</th>
-                <th class="ds-table-heading px-5 py-3 text-left">Recepção</th>
-                <th class="ds-table-heading px-5 py-3 text-right">Acções</th>
-              </tr>
-            </thead>
-            <tbody class="ds-table-body divide-y divide-[color:var(--ds-border)]">
-              <tr v-for="sample in filteredSamples" :key="sample.id" class="ds-table-row">
-                <td class="px-5 py-3">
-                  <button type="button" class="text-left" @click="viewSample(sample.id)">
-                    <span class="block text-sm font-bold text-[color:var(--ds-text)]">{{ sample.name }}</span>
-                    <span class="mt-0.5 block font-mono text-xs text-[color:var(--ds-text-soft)]">{{ sample.code }}</span>
-                  </button>
-                </td>
-                <td class="ds-table-cell px-5 py-3">
-                  <span class="block text-[color:var(--ds-text)]">{{ sample.customer?.name || 'Cliente por confirmar' }}</span>
-                  <span class="mt-0.5 block text-xs text-[color:var(--ds-text-soft)]">{{ selectedSampleProductName(sample) }}</span>
-                </td>
-                <td class="ds-table-cell px-5 py-3">
-                  <span class="block">{{ sample.client_submitted_info?.lot || 'Sem lote' }}</span>
-                  <span class="mt-0.5 block text-xs text-[color:var(--ds-text-soft)]">
-                    {{ sample.client_submitted_info?.origin || sample.client_submitted_info?.sampling_plan_ref || 'Origem por confirmar' }}
-                  </span>
-                </td>
-                <td class="px-5 py-3">
-                  <span :class="sampleStatusBadgeClass(sample.status)">{{ getStatusLabel(sample.status) }}</span>
-                </td>
-                <td class="ds-table-cell whitespace-nowrap px-5 py-3">{{ formatDate(sample.received_at) }}</td>
-                <td class="px-5 py-3">
-                  <div class="flex items-center justify-end gap-1">
-                    <button type="button" class="ds-table-action" title="Visualizar" @click="viewSample(sample.id)">
-                      <EyeIcon class="h-4 w-4" />
-                      <span class="sr-only">Visualizar</span>
-                    </button>
-                    <button type="button" class="ds-table-action" title="Editar" @click="editSample(sample)">
-                      <PencilSquareIcon class="h-4 w-4" />
-                      <span class="sr-only">Editar</span>
-                    </button>
-                    <button type="button" class="ds-table-action" title="Gerar PDF de entrada" @click="generateEntryPdf(sample.id)">
-                      <DocumentArrowDownIcon class="h-4 w-4" />
-                      <span class="sr-only">Gerar PDF</span>
-                    </button>
-                    <button
-                      v-if="sample.status === 'COMPLETADO' || sample.status === 'CANCELADO'"
-                      type="button"
-                      class="ds-table-action ds-table-action-danger"
-                      title="Preparar descarte"
-                      @click="prepareForDiscard(sample)"
-                    >
-                      <TrashIcon class="h-4 w-4" />
-                      <span class="sr-only">Descartar</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </DataTable>
-        </div>
-
-        <div v-if="samples.length > 0" class="flex flex-col gap-3 border-t border-[color:var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p class="text-xs font-semibold text-[color:var(--ds-text-soft)]">
-            Página {{ currentPage }} de {{ totalPages }} · {{ filteredSampleResults.length }} resultados
-          </p>
-          <div class="flex items-center gap-2">
-            <button type="button" class="ds-button ds-button-secondary" :disabled="currentPage === 1" @click="currentPage--">Anterior</button>
-            <button type="button" class="ds-button ds-button-secondary" :disabled="currentPage === totalPages" @click="currentPage++">Próxima</button>
-          </div>
         </div>
       </section>
 
@@ -699,7 +460,7 @@
         </form>
       </section>
 
-      <section class="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)]">
+      <section v-if="manualBatchMode || manualSampleQueue.length" class="grid gap-4">
         <article v-if="manualBatchMode || manualSampleQueue.length" class="ds-panel overflow-hidden">
           <div class="flex items-start justify-between gap-4 border-b border-[color:var(--ds-border)] px-5 py-4">
             <div>
@@ -737,36 +498,6 @@
           </div>
         </article>
 
-        <aside class="ds-command-surface p-5">
-          <p class="ds-kicker">Atalhos operacionais</p>
-          <h2 class="ds-heading mt-2 text-base">Acções rápidas</h2>
-          <div class="mt-4 grid gap-2">
-            <button type="button" class="ds-button ds-button-primary w-full" @click="newSample">
-              <PlusCircleIcon class="h-4 w-4" />
-              Nova amostra
-            </button>
-            <button type="button" class="ds-button ds-button-secondary w-full" @click="startManualBatch">
-              <QueueListIcon class="h-4 w-4" />
-              Abrir fila manual
-            </button>
-            <button type="button" class="ds-button ds-button-secondary w-full" @click="newInternalQcSample('microbiology')">CQ microbiologia</button>
-            <button type="button" class="ds-button ds-button-secondary w-full" @click="newInternalQcSample('chemistry')">CQ química</button>
-          </div>
-          <dl class="mt-5 divide-y divide-[color:var(--ds-border)] border-t border-[color:var(--ds-border)]">
-            <div class="flex items-center justify-between gap-3 py-3">
-              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Hoje</dt>
-              <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ stats.today_samples || 0 }}</dd>
-            </div>
-            <div class="flex items-center justify-between gap-3 py-3">
-              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Esta semana</dt>
-              <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ stats.week_samples || 0 }}</dd>
-            </div>
-            <div class="flex items-center justify-between gap-3 py-3">
-              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">CQ interno</dt>
-              <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ stats.internal_qc_samples || 0 }}</dd>
-            </div>
-          </dl>
-        </aside>
       </section>
     </template>
 
@@ -1005,18 +736,17 @@
   </div>
 </template>
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { router, useForm, usePage } from '@inertiajs/vue3'
+import { computed, onMounted, ref, watch } from 'vue'
+import { Link, router, useForm, usePage } from '@inertiajs/vue3'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { sampleEntryPayload, sampleTimestampInput } from '@/Utils/sampleEntryForm'
 import {
-  FlaskConical as BeakerIcon,
   Tag as TagIcon,
   QrCode as QrCodeIcon,
   Building as BuildingOfficeIcon,
   Rows3 as QueueListIcon,
   ClipboardList as ClipboardDocumentListIcon,
   CircleCheck as CheckCircleIcon,
-  RefreshCw as ArrowPathIcon,
   Trash2 as TrashIcon,
   ArchiveX as ArchiveBoxXMarkIcon,
   Info as InformationCircleIcon,
@@ -1025,8 +755,6 @@ import {
   CloudUpload as CloudArrowUpIcon,
   Scale as ScaleIcon,
   CirclePlus as PlusCircleIcon,
-  Eye as EyeIcon,
-  SquarePen as PencilSquareIcon,
   FileDown as DocumentArrowDownIcon,
 } from '@lucide/vue'
 
@@ -1042,17 +770,11 @@ const isIssuedIntake = computed(() => Boolean(editingSample.value?.id && editing
 const manualBatchMode = ref(false)
 const manualSampleQueue = ref([])
 const showDiscardForm = ref(false)
-const searchQuery = ref('')
-const statusFilter = ref('')
 const discardMethodFilter = ref('')
-const currentPage = ref(1)
 const importFileInput = ref(null)
-const itemsPerPage = 10
 
 // Dados do controlador
 const stats = computed(() => page.props.stats || {})
-const charts = computed(() => page.props.charts || {})
-const samples = computed(() => page.props.samples || [])
 const discardableSamples = computed(() => page.props.discardableSamples || [])
 const recentDiscards = computed(() => page.props.recentDiscards || [])
 const customers = computed(() => page.props.customers || [])
@@ -1066,27 +788,6 @@ const departments = computed(() => page.props.departments || [])
 const warehouses = computed(() => page.props.warehouses || [])
 const packagingCategories = computed(() => page.props.packagingCategories || [])
 const internalQualityControlPath = computed(() => page.props.internalQualityControlPath || {})
-
-const intakeTrendChartSeries = computed(() => charts.value.intake_trend?.series || [])
-const intakeTrendTotal = computed(() => intakeTrendChartSeries.value.reduce(
-  (total, series) => total + (series?.data || []).reduce((sum, value) => sum + value, 0),
-  0,
-))
-
-const lifecycleStatusChartSeries = computed(() => charts.value.lifecycle_status?.series || [])
-const lifecycleStatusTotal = computed(() => lifecycleStatusChartSeries.value.reduce((sum, value) => sum + value, 0))
-
-const retentionPressureChartSeries = computed(() => [
-  {
-    name: 'Amostras',
-    data: charts.value.retention_pressure?.series || [],
-  },
-])
-const retentionPressureAlertCount = computed(() => {
-  const series = charts.value.retention_pressure?.series || []
-
-  return (series[1] || 0) + (series[2] || 0)
-})
 
 const sampleEntryCommandCards = computed(() => [
   {
@@ -1121,173 +822,6 @@ const technicalIdentityFields = [
   { key: 'production_date', label: 'Produção', type: 'date' },
   { key: 'expiry_date', label: 'Validade', type: 'date' },
 ]
-
-const isDarkMode = ref(false)
-let themeObserver = null
-
-const syncDarkMode = () => {
-  if (typeof document === 'undefined') {
-    return
-  }
-
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
-
-onMounted(() => {
-  syncDarkMode()
-
-  if (typeof MutationObserver !== 'undefined') {
-    themeObserver = new MutationObserver(syncDarkMode)
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  }
-})
-
-onUnmounted(() => {
-  themeObserver?.disconnect()
-})
-
-const chartThemeOptions = computed(() => ({
-  theme: {
-    mode: isDarkMode.value ? 'dark' : 'light',
-  },
-  chart: {
-    background: 'transparent',
-    foreColor: isDarkMode.value ? '#d7dbe0' : '#6b7482',
-  },
-  grid: {
-    borderColor: isDarkMode.value ? '#1e293b' : '#eef0f3',
-    strokeDashArray: 4,
-  },
-  tooltip: {
-    theme: isDarkMode.value ? 'dark' : 'light',
-  },
-}))
-
-const intakeTrendChartOptions = computed(() => ({
-  ...chartThemeOptions.value,
-  chart: {
-    ...chartThemeOptions.value.chart,
-    toolbar: { show: false },
-    zoom: { enabled: false },
-    fontFamily: 'inherit',
-  },
-  colors: ['#0f766e'],
-  dataLabels: { enabled: false },
-  stroke: {
-    curve: 'smooth',
-    width: 3,
-  },
-  fill: {
-    type: 'gradient',
-    gradient: {
-      shadeIntensity: 1,
-      opacityFrom: 0.28,
-      opacityTo: 0.04,
-      stops: [0, 95, 100],
-    },
-  },
-  grid: {
-    ...chartThemeOptions.value.grid,
-  },
-  xaxis: {
-    categories: charts.value.intake_trend?.categories || [],
-    axisBorder: { show: false },
-    axisTicks: { show: false },
-    labels: {
-      style: { colors: isDarkMode.value ? '#98a1ae' : '#6b7482' },
-    },
-  },
-  yaxis: {
-    min: 0,
-    forceNiceScale: true,
-    labels: {
-      style: { colors: isDarkMode.value ? '#98a1ae' : '#6b7482' },
-    },
-  },
-  tooltip: {
-    ...chartThemeOptions.value.tooltip,
-    y: {
-      formatter: (value) => `${value} amostra${value === 1 ? '' : 's'}`,
-    },
-  },
-  legend: { show: false },
-}))
-
-const lifecycleStatusChartOptions = computed(() => ({
-  ...chartThemeOptions.value,
-  chart: {
-    ...chartThemeOptions.value.chart,
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-  },
-  labels: charts.value.lifecycle_status?.labels || [],
-  colors: ['#e0902b', '#0f766e', '#6b7482', '#22a45d', '#e5484d'],
-  stroke: {
-    colors: [isDarkMode.value ? '#061f46' : '#ffffff'],
-  },
-  legend: {
-    position: 'bottom',
-    labels: { colors: isDarkMode.value ? '#d7dbe0' : '#334155' },
-  },
-  tooltip: chartThemeOptions.value.tooltip,
-  dataLabels: {
-    enabled: true,
-    formatter: (value) => `${Math.round(value)}%`,
-  },
-  plotOptions: {
-    pie: {
-      donut: {
-        size: '68%',
-        labels: {
-          show: true,
-          total: {
-            show: true,
-            label: 'Amostras',
-            formatter: () => `${lifecycleStatusTotal.value}`,
-          },
-        },
-      },
-    },
-  },
-}))
-
-const retentionPressureChartOptions = computed(() => ({
-  ...chartThemeOptions.value,
-  chart: {
-    ...chartThemeOptions.value.chart,
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-  },
-  colors: ['#0f766e'],
-  dataLabels: { enabled: false },
-  grid: {
-    ...chartThemeOptions.value.grid,
-  },
-  xaxis: {
-    categories: charts.value.retention_pressure?.labels || [],
-    axisBorder: { show: false },
-    axisTicks: { show: false },
-    labels: {
-      style: { colors: isDarkMode.value ? '#98a1ae' : '#6b7482' },
-    },
-  },
-  yaxis: {
-    min: 0,
-    forceNiceScale: true,
-    labels: {
-      style: { colors: isDarkMode.value ? '#98a1ae' : '#6b7482' },
-    },
-  },
-  plotOptions: {
-    bar: {
-      borderRadius: 10,
-      columnWidth: '48%',
-      distributed: true,
-    },
-  },
-  colors: ['#0f766e', '#e0902b', '#e5484d', '#334155'],
-  legend: { show: false },
-}))
 
 function defaultClientSubmittedInfo(overrides = {}) {
   return {
@@ -1386,36 +920,6 @@ const isDiscardFormValid = computed(() => {
          discardForm.qty
 })
 
-const filteredSampleResults = computed(() => {
-  let filtered = samples.value
-  
-  // Filtrar por busca
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(sample => 
-      sample.name.toLowerCase().includes(query) ||
-      sample.code.toLowerCase().includes(query) ||
-      (sample.customer?.name && sample.customer.name.toLowerCase().includes(query)) ||
-      (sample.client_submitted_info?.product_name && sample.client_submitted_info.product_name.toLowerCase().includes(query)) ||
-      (sample.client_submitted_info?.lot && sample.client_submitted_info.lot.toLowerCase().includes(query)) ||
-      (sample.client_submitted_info?.origin && sample.client_submitted_info.origin.toLowerCase().includes(query))
-    )
-  }
-  
-  // Filtrar por status
-  if (statusFilter.value) {
-    filtered = filtered.filter(sample => sample.status === statusFilter.value)
-  }
-  
-  return filtered
-})
-
-const filteredSamples = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredSampleResults.value.slice(start, end)
-})
-
 const filteredDiscards = computed(() => {
   let filtered = recentDiscards.value
   
@@ -1425,10 +929,6 @@ const filteredDiscards = computed(() => {
   }
   
   return filtered
-})
-
-const totalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredSampleResults.value.length / itemsPerPage))
 })
 
 const selectedProduct = computed(() => products.value.find((product) => product.id === Number(form.client_submitted_info?.product_id)) || null)
@@ -1654,6 +1154,17 @@ onMounted(() => {
   if (workflowProposal && page.props.entryWorkflowDefaults?.open_form) {
     prefillFromAcceptedProposal(workflowProposal)
   }
+
+  // Corrections and discards open from the sample dossier with the sample already chosen.
+  if (page.props.editingSample) {
+    editSample(page.props.editingSample)
+  }
+
+  const discardId = Number(new URLSearchParams(window.location.search).get('discard'))
+  const discardTarget = discardId ? discardableSamples.value.find((sample) => sample.id === discardId) : null
+  if (discardTarget) {
+    prepareForDiscard(discardTarget)
+  }
 })
 
 const startManualBatch = () => {
@@ -1775,9 +1286,6 @@ const editSample = (sample) => {
   }
 }
 
-const viewSample = (sampleId) => {
-  router.visit(route('vap_samples.show', sampleId))
-}
 
 const prepareForDiscard = (sample) => {
   activeTab.value = 'discard'
@@ -1877,9 +1385,6 @@ const onSampleSelect = () => {
   }
 }
 
-const exportData = () => {
-  window.open(route('vap_samples.samples.export'), '_blank')
-}
 
 const downloadImportTemplate = () => {
   window.open(route('vap_samples.samples.import-template'), '_blank')
@@ -1914,9 +1419,6 @@ const exportDiscards = () => {
   window.open(route('vap_samples.discards.export'), '_blank')
 }
 
-const refreshData = () => {
-  router.reload({ preserveScroll: true })
-}
 
 const generateEntryPdf = (sampleId) => {
   window.open(route('vap_samples.samples.pdf', sampleId), '_blank')
@@ -1928,14 +1430,7 @@ const generateDiscardPdf = (discardId) => {
 
 // Observadores
 watch(() => activeTab.value, () => {
-  currentPage.value = 1
-  searchQuery.value = ''
-  statusFilter.value = ''
   discardMethodFilter.value = ''
-})
-
-watch([searchQuery, statusFilter], () => {
-  currentPage.value = 1
 })
 
 watch(() => form.client_submitted_info?.request_origin, (origin) => {
@@ -2016,19 +1511,5 @@ watch(() => discardForm, () => {
 .sample-profile-select {
   background-image: none;
   padding-right: 0.85rem;
-}
-
-:deep(.apexcharts-tooltip),
-:deep(.apexcharts-menu) {
-  border-radius: 0.5rem !important;
-  border-color: rgb(203 213 225 / 0.9) !important;
-  box-shadow: 0 12px 28px rgb(15 23 42 / 0.14) !important;
-}
-
-:global(.dark) :deep(.apexcharts-tooltip),
-:global(.dark) :deep(.apexcharts-menu) {
-  border-color: rgb(51 65 85 / 0.9) !important;
-  background: #0f172a !important;
-  color: #e2e8f0 !important;
 }
 </style>

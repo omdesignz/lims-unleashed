@@ -164,3 +164,17 @@ test('completed workflow submission cannot dispatch a write even if triggered di
   submit({ processing: false, transform: () => { wrote = true; } }, { value: null });
   assert.equal(wrote, false);
 });
+
+test('results workflow warns reviewers who authored an earlier stage', () => {
+  const body = workflow.match(/function detectReviewConflict\(rows\) \{([\s\S]*?)\n\}\n/)[1];
+  const detect = (action, userId, rows) => new Function('page', 'props', 'rows', body)({ props: { auth: { user: { id: userId } } } }, { action }, rows);
+  const rows = [{ inserted_by_id: 4, verified_by_id: 5 }];
+
+  assert.match(detect('verify', 4, rows), /verificação tem de ser feita por outra pessoa/);
+  assert.equal(detect('verify', 5, rows), '');
+  assert.match(detect('approve', 4, rows), /aprovação tem de ser feita por outra pessoa/);
+  assert.match(detect('approve', 5, rows), /aprovação tem de ser feita por outra pessoa/);
+  assert.equal(detect('approve', 6, rows), '');
+  assert.equal(detect('analyze', 4, rows), '');
+  assert.match(workflow, /<section v-if="reviewConflict"/);
+});

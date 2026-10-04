@@ -402,7 +402,7 @@ import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import ModuleHero from '@/Components/base/ModuleHero.vue'
-import Pagination from '@/Components/Pagination.vue'
+import Pagination from '@/Components/pagination.vue'
 
 const props = defineProps({
   labels: {
