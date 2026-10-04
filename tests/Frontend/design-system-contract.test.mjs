@@ -257,7 +257,6 @@ const multipleComboboxSource = readFileSync(new URL('../../resources/js/Componen
 const tableMultipleComboboxSource = readFileSync(new URL('../../resources/js/Components/vap-table/combobox-multiple.vue', import.meta.url), 'utf8')
 const breadcrumbsSource = readFileSync(new URL('../../resources/js/Components/breadcrumbs.vue', import.meta.url), 'utf8')
 const datePickerSource = readFileSync(new URL('../../resources/js/Components/date-picker-enhanced.vue', import.meta.url), 'utf8')
-const chartWrapperSource = readFileSync(new URL('../../resources/js/Components/apex-chart/ChartWrapper.vue', import.meta.url), 'utf8')
 const inventoryAnalyticsSource = readFileSync(new URL('../../resources/js/Components/charts/inventory-analytics.vue', import.meta.url), 'utf8')
 const vapInventoryAnalyticsIndexSource = readFileSync(new URL('../../resources/js/Pages/VAPInventory/Analytics/Index.vue', import.meta.url), 'utf8')
 const vapInventoryItemsIndexSource = readFileSync(new URL('../../resources/js/Pages/VAPInventory/Items/Index.vue', import.meta.url), 'utf8')
@@ -673,7 +672,9 @@ test('high-frequency data controls use the shared visual language', () => {
 })
 
 test('analytics charts share product surfaces and tolerate partial API payloads', () => {
-  assert.match(chartWrapperSource, /class="ds-card overflow-hidden p-3"/)
+  // PlanoChart replaced the ApexCharts wrappers; they are gone, not kept beside it.
+  assert.equal(existsSync(new URL('../../resources/js/Components/apex-chart/', import.meta.url)), false)
+  assert.equal(existsSync(new URL('../../resources/js/Components/charts/inventory-dashboard.vue', import.meta.url)), false)
   // Plano: one filter row, one metrics strip of facts, charts and lists in plain panels.
   assert.match(inventoryAnalyticsSource, /<form class="pl-filter" role="search"/)
   assert.match(inventoryAnalyticsSource, /<dl class="pl-panel pl-facts pl-facts-2"/)

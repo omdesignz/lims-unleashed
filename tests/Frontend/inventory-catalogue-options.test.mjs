@@ -9,7 +9,7 @@ import { createInventoryCatalogueLoader } from '../../resources/js/Composables/u
 const paths = [
   'Inventory/Index.vue', 'InventoryOrders/Create.vue', 'InventoryOrders/Edit.vue',
   'InventoryDeliveries/InventoryDeliveryForm.vue', 'VAPMaintenance/Tasks/Create.vue',
-  'VAPMaintenance/Tasks/Show.vue', 'VAPMaintenance/Tasks/Index.vue', 'ReagentConsumption/Dashboard.vue',
+  'VAPMaintenance/Tasks/Show.vue', 'VAPMaintenance/Tasks/Index.vue',
 ]
 const read = path => readFileSync(new URL(`../../resources/js/Pages/${path}`, import.meta.url), 'utf8')
 
@@ -35,7 +35,6 @@ test('canonical maintenance uses server-owned equipment choices while procuremen
   for (const path of paths.filter(path => path.startsWith('InventoryOrders/') || path === 'Inventory/Index.vue')) {
     assert.match(read(path), /const loadItems = useInventoryCatalogueOptions\(\)/)
   }
-  assert.match(read('ReagentConsumption/Dashboard.vue'), /useInventoryCatalogueOptions\(\{ reagentsOnly: true \}\)/)
 })
 
 test('standalone JSON loading uses Inertia v3 and disposes on scope exit', () => {
