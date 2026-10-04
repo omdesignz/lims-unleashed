@@ -305,17 +305,44 @@ HTML;
             filled($settings->app_client_contact ?: $settings->app_contact) ? 'Tel. '.($settings->app_client_contact ?: $settings->app_contact) : null,
             $settings->app_client_email ?: $settings->app_email,
         ]);
-        $province = filled($settings->app_client_lab_province) && ! str_contains((string) $settings->app_client_address, (string) $settings->app_client_lab_province)
+        $address = self::laboratoryAddress($settings);
+        $province = filled($settings->app_client_lab_province) && ! str_contains((string) $address, (string) $settings->app_client_lab_province)
             ? $settings->app_client_lab_province
             : null;
         $lines = array_filter([
             self::legalEntity($settings),
-            implode(', ', array_filter([$settings->app_client_address, $province])),
+            implode(', ', array_filter([$address, $province])),
             implode(' · ', $contacts),
             filled($settings->app_client_nif ?: $settings->app_nif) ? 'NIF '.($settings->app_client_nif ?: $settings->app_nif) : null,
         ]);
 
         return implode('<br>', array_map(fn (string $line): string => e($line), $lines));
+    }
+
+    /** Where the laboratory works; the organisation's address when the laboratory has none of its own. */
+    public static function laboratoryAddress(GeneralSettings $settings): ?string
+    {
+        $address = trim((string) ($settings->app_client_lab_address ?: $settings->app_client_address));
+
+        return $address === '' ? null : $address;
+    }
+
+    /**
+     * The laboratory's accreditation as a report states it ("Acreditado por
+     * IPAC, certificado n.º L0001"), or null when no certificate number is
+     * configured: without it the laboratory makes no claim of accreditation.
+     */
+    public static function accreditation(GeneralSettings $settings): ?string
+    {
+        $number = trim((string) $settings->app_client_lab_accreditation_number);
+
+        if ($number === '') {
+            return null;
+        }
+
+        $body = trim((string) $settings->app_client_lab_accreditation_body);
+
+        return 'Acreditado'.($body !== '' ? ' por '.$body : '').', certificado n.º '.$number;
     }
 
     public static function laboratoryName(GeneralSettings $settings): string

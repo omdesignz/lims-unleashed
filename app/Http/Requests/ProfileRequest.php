@@ -59,6 +59,9 @@ class ProfileRequest extends FormRequest
             'parameters.*.formula_id' => 'nullable|exists:formulas,id',
             'parameters.*.optimal_analysis_time' => 'nullable',
             'parameters.*.ref_val_origin' => 'nullable',
+            'parameters.*.accredited' => 'boolean',
+            'parameters.*.subcontractor' => 'nullable|string|max:255',
+            'parameters.*.uncertainty_coverage_factor' => 'nullable|numeric|min:1|max:10',
         ];
     }
 
@@ -86,6 +89,9 @@ class ProfileRequest extends FormRequest
             'parameters.*.category_id' => trans('gestlab.general.labels.profiles.category_id'),
             'parameters.*.optimal_analysis_time' => trans('gestlab.general.labels.profiles.optimal_analysis_time'),
             'parameters.*.ref_val_origin' => trans('gestlab.general.labels.profiles.ref_val_origin'),
+            'parameters.*.accredited' => 'ensaio acreditado',
+            'parameters.*.subcontractor' => 'laboratório subcontratado',
+            'parameters.*.uncertainty_coverage_factor' => 'factor de expansão (k)',
         ];
     }
 
@@ -133,6 +139,9 @@ class ProfileRequest extends FormRequest
                     'extra_data' => $this->encodeJsonValue(data_get($item, 'extra_data')),
                     'optimal_analysis_time' => data_get($item, 'optimal_analysis_time'),
                     'ref_val_origin' => data_get($item, 'ref_val_origin'),
+                    'accredited' => (bool) filter_var(data_get($item, 'accredited', false), FILTER_VALIDATE_BOOL),
+                    'subcontractor' => filled(data_get($item, 'subcontractor')) ? trim((string) data_get($item, 'subcontractor')) : null,
+                    'uncertainty_coverage_factor' => filled(data_get($item, 'uncertainty_coverage_factor')) ? str_replace(',', '.', (string) data_get($item, 'uncertainty_coverage_factor')) : null,
                 ];
             })->all() : $parameters,
         ]);

@@ -2,13 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Pivot;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ParameterProfile extends Pivot
 {
@@ -44,18 +41,21 @@ class ParameterProfile extends Pivot
         'standard_id',
         'extra_data',
         'optimal_analysis_time',
-        'ref_val_origin'
-
+        'ref_val_origin',
+        'accredited',
+        'subcontractor',
+        'uncertainty_coverage_factor',
     ];
 
     protected $table = 'parameter_profile';
-    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
+    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     protected function casts(): array
     {
         return [
             // 'count' => 'boolean',
+            'accredited' => 'boolean',
             // 'extra_data' => AsCollection::class,
         ];
     }
@@ -68,7 +68,6 @@ class ParameterProfile extends Pivot
     //     );
     // }
 
-
     /**
      * Parameter
      *
@@ -78,7 +77,6 @@ class ParameterProfile extends Pivot
     {
         return $this->belongsTo(Parameter::class, 'parameter_id')->withDefault();
     }
-
 
     /**
      * Profile
@@ -120,7 +118,6 @@ class ParameterProfile extends Pivot
         return $this->belongsTo(Unit::class, 'unit_id')->withDefault();
     }
 
-
     /**
      * Protocol
      *
@@ -131,7 +128,6 @@ class ParameterProfile extends Pivot
         return $this->belongsTo(Protocol::class, 'protocol_id')->withDefault();
     }
 
-
     /**
      * Standard
      *
@@ -141,7 +137,6 @@ class ParameterProfile extends Pivot
     {
         return $this->belongsTo(Standard::class, 'standard_id')->withDefault();
     }
-
 
     /**
      * Normative Work Procedure

@@ -109,6 +109,26 @@ class ControlledDocumentTest extends TestCase
         $this->assertSame('', ControlledDocument::verificationCodeHtml('  '));
     }
 
+    public function test_the_letterhead_gives_the_laboratorys_own_address_before_the_organisations(): void
+    {
+        $settings = clone app(GeneralSettings::class);
+        $settings->app_client_address = 'Sede: Avenida Central, 1';
+        $settings->app_client_lab_address = 'Laboratório: Rua da Bancada, 7';
+        $settings->app_client_lab_province = 'Luanda';
+        $settings->app_client_lab_accreditation_number = 'L0123';
+
+        $identity = ControlledDocument::laboratoryIdentityHtml($settings);
+        $this->assertStringContainsString('Laboratório: Rua da Bancada, 7, Luanda', $identity);
+        $this->assertStringNotContainsString('Avenida Central', $identity);
+        // The accreditation is stated by the test report, not on every document.
+        $this->assertStringNotContainsString('L0123', $identity);
+
+        $settings->app_client_lab_address = null;
+        $this->assertSame('Sede: Avenida Central, 1', ControlledDocument::laboratoryAddress($settings));
+        $settings->app_client_address = '  ';
+        $this->assertNull(ControlledDocument::laboratoryAddress($settings));
+    }
+
     public function test_only_small_local_images_are_embedded(): void
     {
         $directory = sys_get_temp_dir().'/controlled-document-'.bin2hex(random_bytes(6));

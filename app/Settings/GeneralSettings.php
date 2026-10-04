@@ -84,6 +84,12 @@ class GeneralSettings extends Settings
 
     public ?string $app_client_lab_slogan;
 
+    public ?string $app_client_lab_address;
+
+    public ?string $app_client_lab_accreditation_body;
+
+    public ?string $app_client_lab_accreditation_number;
+
     public ?string $app_bank_name;
 
     public ?string $app_bank_account_name;

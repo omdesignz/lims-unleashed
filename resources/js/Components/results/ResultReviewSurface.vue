@@ -135,6 +135,7 @@ function initializeReview() {
     result[valueField.value] ??= result[sourceField.value] ?? "";
     result[decisionField.value] ??= "pending";
     result.uncertainty_value ??= null;
+    result.method_deviation ??= null;
   });
 
   isLoading.value = false;
@@ -196,6 +197,7 @@ function openEdit(result) {
     minRef: result.min_ref_value ?? "",
     maxRef: result.max_ref_value ?? "",
     notes: result[notesField.value] ?? "",
+    deviation: result.method_deviation ?? "",
   };
 }
 
@@ -222,6 +224,7 @@ function saveEdit(resultId) {
   result[valueField.value] = values.value;
   result.uncertainty_value = values.uncertainty === "" ? null : values.uncertainty;
   result[notesField.value] = values.notes || null;
+  result.method_deviation = values.deviation?.trim() ? values.deviation.trim() : null;
 
   if (isApproval.value) {
     result.min_ref_value = values.minRef === "" ? null : values.minRef;
@@ -435,7 +438,7 @@ function submitReview() {
                 <p class="ds-heading mt-2 text-sm">{{ displayValue(result) }}</p>
               </div>
               <div class="bg-[var(--ds-panel-raised)] p-3">
-                <p class="ds-table-heading">Incerteza</p>
+                <p class="ds-table-heading">Incerteza<template v-if="result.uncertainty_coverage_factor"> (k = {{ result.uncertainty_coverage_factor }})</template></p>
                 <p class="ds-heading mt-2 text-sm">{{ result.uncertainty_value || "N/A" }}</p>
               </div>
               <div class="bg-[var(--ds-panel-raised)] p-3">
@@ -445,8 +448,14 @@ function submitReview() {
                 </p>
               </div>
             </div>
+            <p
+              v-if="!isEditing(result) && result.method_deviation"
+              class="mt-2 text-xs font-semibold text-[var(--ds-text-muted)]"
+            >
+              Desvio ao método: {{ result.method_deviation }}
+            </p>
 
-            <div v-else class="ds-command-surface mt-4 overflow-hidden">
+            <div v-if="isEditing(result)" class="ds-command-surface mt-4 overflow-hidden">
               <div class="grid gap-4 p-4 md:grid-cols-2">
                 <div class="ds-field-group md:col-span-2">
                   <label class="ds-field-label">Valor revisto</label>
@@ -523,6 +532,17 @@ function submitReview() {
                     :value="editedValues[getResultUniqueId(result)]?.notes"
                     class="ds-field mt-2 min-h-20"
                     @input="handleInputChange(getResultUniqueId(result), 'notes', $event.target.value)"
+                  />
+                </div>
+
+                <div class="ds-field-group md:col-span-2">
+                  <label class="ds-field-label">Desvio ao método</label>
+                  <BaseInput
+                    :value="editedValues[getResultUniqueId(result)]?.deviation"
+                    class="ds-field mt-2"
+                    maxlength="2000"
+                    placeholder="Só quando houve adição, desvio ou exclusão ao método"
+                    @input="handleInputChange(getResultUniqueId(result), 'deviation', $event.target.value)"
                   />
                 </div>
               </div>

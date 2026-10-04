@@ -18,14 +18,23 @@ use Throwable;
  *
  * - customer (7.8.2.1 e), item and its condition (g), sampling (k, 7.8.5),
  *   dates of receipt, performance and issue (h, i, j);
- * - results with units (m), method (f), measurement uncertainty (7.8.3.1 c),
- *   limits and a statement of conformity with its decision rule (7.8.6);
+ * - results with units (m), method (f), measurement uncertainty and its
+ *   coverage factor (7.8.3.1 c), limits and a statement of conformity with its
+ *   decision rule (7.8.6); additions, deviations or exclusions from the method
+ *   (n); tests outside the accreditation scope and tests performed by an
+ *   external provider, identified (p, 6.6);
  * - the statements that travel with the results (l, 7.8.2.2), who authorised
  *   the report (o), the amendment it carries (7.8.8) and a marked end (d).
  */
 class TestReportContent
 {
     public const TITLE = 'Relatório de Ensaio';
+
+    /** Marks a test outside the laboratory's accreditation scope. */
+    private const OUTSIDE_SCOPE_FLAG = '*';
+
+    /** Marks a test performed by an external provider. */
+    private const SUBCONTRACTED_FLAG = 's';
 
     /** Marks information the customer supplied (7.8.2.2). */
     private const CUSTOMER_FLAG = 'c';
@@ -93,10 +102,10 @@ class TestReportContent
                 ['label' => 'Emissão do relatório', 'value' => $today->format('d/m/Y')],
             ],
             'results' => [
-                ['group' => 'Físico-química', 'parameter' => 'Humidade', 'method' => 'ISO 712', 'value' => '13,2', 'unit' => '%', 'uncertainty' => '0,4', 'minimum' => null, 'maximum' => '14,5', 'origin' => 'Especificação do cliente'],
-                ['group' => 'Físico-química', 'parameter' => 'Cinzas', 'method' => 'ISO 2171', 'value' => '0,62', 'unit' => '%', 'uncertainty' => '0,03', 'minimum' => null, 'maximum' => '0,65', 'origin' => 'Especificação do cliente'],
-                ['group' => 'Microbiologia', 'parameter' => 'Bolores e leveduras', 'method' => 'ISO 21527-2', 'value' => '1,2 × 10^2', 'unit' => 'UFC/g', 'uncertainty' => null, 'minimum' => null, 'maximum' => null, 'origin' => null],
-                ['group' => 'Microbiologia', 'parameter' => 'Salmonella spp.', 'method' => 'ISO 6579-1', 'value' => 'Não detectada', 'unit' => 'em 25 g', 'uncertainty' => null, 'minimum' => null, 'maximum' => null, 'origin' => null],
+                ['group' => 'Físico-química', 'parameter' => 'Humidade', 'method' => 'ISO 712', 'value' => '13,2', 'unit' => '%', 'uncertainty' => '0,4', 'coverage_factor' => '2.00', 'minimum' => null, 'maximum' => '14,5', 'origin' => 'Especificação do cliente', 'accredited' => true, 'subcontractor' => null, 'deviation' => null],
+                ['group' => 'Físico-química', 'parameter' => 'Cinzas', 'method' => 'ISO 2171', 'value' => '0,62', 'unit' => '%', 'uncertainty' => '0,03', 'coverage_factor' => '2.00', 'minimum' => null, 'maximum' => '0,65', 'origin' => 'Especificação do cliente', 'accredited' => false, 'subcontractor' => null, 'deviation' => 'Incineração a 900 °C em vez de 550 °C, por indicação do cliente.'],
+                ['group' => 'Microbiologia', 'parameter' => 'Bolores e leveduras', 'method' => 'ISO 21527-2', 'value' => '1,2 × 10^2', 'unit' => 'UFC/g', 'uncertainty' => null, 'coverage_factor' => null, 'minimum' => null, 'maximum' => null, 'origin' => null, 'accredited' => true, 'subcontractor' => null, 'deviation' => null],
+                ['group' => 'Microbiologia', 'parameter' => 'Salmonella spp.', 'method' => 'ISO 6579-1', 'value' => 'Não detectada', 'unit' => 'em 25 g', 'uncertainty' => null, 'coverage_factor' => null, 'minimum' => null, 'maximum' => null, 'origin' => null, 'accredited' => false, 'subcontractor' => 'Laboratório externo de referência', 'deviation' => null],
             ],
             'decision_rule' => null,
             'observations' => null,
@@ -113,6 +122,10 @@ class TestReportContent
         $results = collect($report['results']);
         $assessments = $results->map(fn (array $result): ?bool => $this->conforms($result));
         $hasCustomerInformation = collect($report['item'])->contains(fn (array $row): bool => filled($row['value'] ?? null) && ($row['flag'] ?? null) === self::CUSTOMER_FLAG);
+        $accreditation = ControlledDocument::accreditation($settings);
+        // Accreditation is marked only when the laboratory has a certificate and
+        // at least one test in this report is within its scope (IPAC OGC002).
+        $markScope = $accreditation !== null && $results->contains(fn (array $result): bool => $this->withinScope($result));
         $section = 0;
 
         $notices = '';
@@ -134,14 +147,16 @@ class TestReportContent
         $samplingGrid = ControlledDocument::keyValueGrid($report['sampling']['rows']);
         $sampling = $samplingGrid === '' ? '' : ControlledDocument::section(++$section, 'Amostragem', $samplingGrid);
         $dates = ControlledDocument::section(++$section, 'Datas', ControlledDocument::keyValueGrid($report['dates']));
-        $resultsTable = $this->resultsTable($results, $assessments);
-        $resultsSection = ControlledDocument::section(++$section, 'Resultados', $resultsTable.$this->resultNotes($results, $assessments));
+        $resultsTable = $this->resultsTable($results, $assessments, $markScope);
+        $resultsSection = ControlledDocument::section(++$section, 'Resultados', $resultsTable.$this->resultNotes($results, $assessments, $markScope));
+        $deviations = $this->deviations($results);
+        $deviationsSection = $deviations === '' ? '' : ControlledDocument::section(++$section, 'Desvios ao método', $deviations);
         $conformity = $this->conformityStatement($assessments, $results, $report['decision_rule']);
         $conformitySection = $conformity === '' ? '' : ControlledDocument::section(++$section, 'Declaração de conformidade', '<p class="doc-text">'.$conformity.'</p>');
         $observations = filled($report['observations'])
             ? ControlledDocument::section(++$section, 'Observações', '<p class="doc-text">'.nl2br(e((string) $report['observations']), false).'</p>')
             : '';
-        $statements = $this->statements($report['sampling']['by_laboratory'], $hasCustomerInformation);
+        $statements = $this->statements($report['sampling']['by_laboratory'], $hasCustomerInformation, $markScope ? $this->accreditationStatement($accreditation, $results) : null);
         $statementsSection = ControlledDocument::section(++$section, 'Declarações', ControlledDocument::statements($statements), keepTogether: true);
         $authorisation = ControlledDocument::section(++$section, 'Autorização', $report['authorised']
             ? ControlledDocument::authorisation([$report['authoriser']])
@@ -157,16 +172,14 @@ class TestReportContent
             '{item_block}' => $item,
             '{sampling_block}' => $sampling,
             '{dates_block}' => $dates,
-            '{results_block}' => $resultsSection,
+            '{results_block}' => $resultsSection.$deviationsSection,
             '{results_table}' => $resultsTable,
             '{conformity_block}' => $conformitySection,
             '{observations_block}' => $observations,
             '{statements_block}' => $statementsSection,
             '{authorisation_block}' => $authorisation,
             '{end_of_report}' => $end,
-            '{uncertainty_statement}' => $results->contains(fn (array $result): bool => filled($result['uncertainty']))
-                ? 'A incerteza indicada é a incerteza de medição associada a cada resultado, expressa na unidade do resultado.'
-                : '',
+            '{uncertainty_statement}' => $this->uncertaintyNote($results) ?? '',
             '{decision_rule}' => $conformity === '' ? '' : 'Regra de decisão: '.($report['decision_rule'] ?: self::SIMPLE_ACCEPTANCE_RULE).'.',
             '{conclusion}' => strip_tags($conformity),
         ];
@@ -251,9 +264,13 @@ class TestReportContent
                 'value' => $this->resultValue($result),
                 'unit' => $result->unit_label ?: $result->unit?->name,
                 'uncertainty' => $result->uncertainty_value ?: data_get($result->calculation_metadata, 'uncertainty'),
+                'coverage_factor' => $result->uncertainty_coverage_factor,
                 'minimum' => $result->min_ref_value,
                 'maximum' => $result->max_ref_value,
                 'origin' => $result->ref_val_origin,
+                'accredited' => $result->accredited,
+                'subcontractor' => $result->subcontractor,
+                'deviation' => $result->method_deviation,
             ])->all(),
             'decision_rule' => data_get($clientInformation, 'decision_rule'),
             'observations' => $certificate->obs,
@@ -271,13 +288,14 @@ class TestReportContent
      * @param  Collection<int, array<string, mixed>>  $results
      * @param  Collection<int, ?bool>  $assessments
      */
-    private function resultsTable(Collection $results, Collection $assessments): string
+    private function resultsTable(Collection $results, Collection $assessments, bool $markScope): string
     {
         if ($results->isEmpty()) {
             return '<p class="doc-text">Sem resultados registados.</p>';
         }
 
         $showUncertainty = $results->contains(fn (array $result): bool => filled($result['uncertainty']));
+        $commonFactor = $this->commonCoverageFactor($results);
         $showLimits = $results->contains(fn (array $result): bool => filled($result['minimum']) || filled($result['maximum']));
         $showAssessment = $assessments->contains(fn (?bool $assessment): bool => $assessment !== null);
         $grouped = $results->pluck('group')->filter()->unique()->count() > 1;
@@ -299,11 +317,11 @@ class TestReportContent
 
             $assessment = $assessments[$index];
             $body .= '<tr>'
-                .'<td>'.e((string) $result['parameter']).'</td>'
+                .'<td>'.e((string) $result['parameter']).$this->flags($result, $markScope).'</td>'
                 .'<td>'.e((string) ($result['method'] ?: ControlledDocument::NOT_RECORDED)).'</td>'
                 .'<td class="doc-num doc-result-value">'.$this->valueHtml($result['value']).'</td>'
                 .'<td>'.e((string) ($result['unit'] ?: ControlledDocument::NOT_RECORDED)).'</td>'
-                .($showUncertainty ? '<td class="doc-num">'.e($this->uncertainty($result['uncertainty'])).'</td>' : '')
+                .($showUncertainty ? '<td class="doc-num">'.e($this->uncertainty($result['uncertainty'], $commonFactor === null ? ($result['coverage_factor'] ?? null) : null)).'</td>' : '')
                 .($showLimits ? '<td class="doc-num">'.e($this->limits($result)).'</td>' : '')
                 .($showAssessment ? '<td'.($assessment === false ? ' class="doc-nonconforming"' : '').'>'.e(match ($assessment) {
                     true => 'Conforme',
@@ -320,12 +338,24 @@ class TestReportContent
      * @param  Collection<int, array<string, mixed>>  $results
      * @param  Collection<int, ?bool>  $assessments
      */
-    private function resultNotes(Collection $results, Collection $assessments): string
+    private function resultNotes(Collection $results, Collection $assessments, bool $markScope): string
     {
         $notes = [];
 
-        if ($results->contains(fn (array $result): bool => filled($result['uncertainty']))) {
-            $notes[] = 'Incerteza: incerteza de medição associada ao resultado, na unidade do resultado.';
+        if (($uncertainty = $this->uncertaintyNote($results)) !== null) {
+            $notes[] = $uncertainty;
+        }
+
+        if ($markScope && $results->contains(fn (array $result): bool => ! $this->withinScope($result) && blank($result['subcontractor'] ?? null))) {
+            $notes[] = self::OUTSIDE_SCOPE_FLAG.' Ensaio não incluído no âmbito da acreditação.';
+        }
+
+        $subcontracted = $results->filter(fn (array $result): bool => filled($result['subcontractor'] ?? null));
+        if ($subcontracted->isNotEmpty()) {
+            $providers = $subcontracted->pluck('subcontractor')->map(fn (mixed $name): string => trim((string) $name))->unique()->values();
+            $notes[] = '('.self::SUBCONTRACTED_FLAG.') '.($providers->count() === 1
+                ? 'Ensaio realizado por laboratório subcontratado: '.$providers->first().'.'
+                : 'Ensaio realizado por laboratório subcontratado: '.$subcontracted->map(fn (array $result): string => $result['parameter'].', '.trim((string) $result['subcontractor']))->implode('; ').'.');
         }
 
         $origins = $results->pluck('origin')->filter()->unique()->values();
@@ -371,9 +401,10 @@ class TestReportContent
     /**
      * @return array<int, string>
      */
-    private function statements(?bool $sampledByLaboratory, bool $hasCustomerInformation): array
+    private function statements(?bool $sampledByLaboratory, bool $hasCustomerInformation, ?string $accreditationStatement = null): array
     {
         return array_values(array_filter([
+            $accreditationStatement,
             $sampledByLaboratory === false
                 ? 'Os resultados referem-se exclusivamente ao item ensaiado, tal como recebido pelo laboratório. A amostragem não foi da responsabilidade do laboratório.'
                 : 'Os resultados referem-se exclusivamente ao item ensaiado.',
@@ -456,7 +487,7 @@ class TestReportContent
         };
     }
 
-    private function uncertainty(mixed $value): string
+    private function uncertainty(mixed $value, mixed $coverageFactor = null): string
     {
         $text = trim((string) $value);
 
@@ -464,7 +495,115 @@ class TestReportContent
             return ControlledDocument::NOT_RECORDED;
         }
 
-        return $this->number($text) !== null ? '± '.$text : $text;
+        $factor = $this->coverageFactor($coverageFactor);
+
+        return ($this->number($text) !== null ? '± '.$text : $text).($factor !== null ? ' (k = '.$factor.')' : '');
+    }
+
+    /**
+     * What the uncertainty column means. Expanded uncertainty is named only
+     * with the coverage factor the laboratory recorded for the test.
+     *
+     * @param  Collection<int, array<string, mixed>>  $results
+     */
+    private function uncertaintyNote(Collection $results): ?string
+    {
+        $withUncertainty = $results->filter(fn (array $result): bool => filled($result['uncertainty']));
+
+        if ($withUncertainty->isEmpty()) {
+            return null;
+        }
+
+        $common = $this->commonCoverageFactor($results);
+
+        if ($common !== null) {
+            return 'Incerteza: incerteza expandida, obtida com o factor de expansão k = '.$common.', na unidade do resultado.';
+        }
+
+        return $withUncertainty->contains(fn (array $result): bool => $this->coverageFactor($result['coverage_factor'] ?? null) !== null)
+            ? 'Incerteza: incerteza de medição na unidade do resultado; quando indicado, k é o factor de expansão da incerteza expandida.'
+            : 'Incerteza: incerteza de medição associada ao resultado, na unidade do resultado.';
+    }
+
+    /**
+     * The coverage factor shared by every result that states an uncertainty,
+     * or null when they differ or any of them has none.
+     *
+     * @param  Collection<int, array<string, mixed>>  $results
+     */
+    private function commonCoverageFactor(Collection $results): ?string
+    {
+        $factors = $results->filter(fn (array $result): bool => filled($result['uncertainty']))
+            ->map(fn (array $result): ?string => $this->coverageFactor($result['coverage_factor'] ?? null));
+
+        return $factors->isNotEmpty() && ! $factors->contains(null) && $factors->unique()->count() === 1 ? $factors->first() : null;
+    }
+
+    /** "2.00" as "2", "1.96" as "1,96". */
+    private function coverageFactor(mixed $value): ?string
+    {
+        $number = $this->number($value);
+
+        if ($number === null || $number <= 0) {
+            return null;
+        }
+
+        return str_replace('.', ',', rtrim(rtrim(number_format($number, 2, '.', ''), '0'), '.'));
+    }
+
+    /**
+     * Whether a test lies within the laboratory's own accreditation scope. A
+     * subcontracted test never does, and a result recorded before the scope
+     * was kept (null) is not claimed.
+     *
+     * @param  array<string, mixed>  $result
+     */
+    private function withinScope(array $result): bool
+    {
+        return ($result['accredited'] ?? null) === true && blank($result['subcontractor'] ?? null);
+    }
+
+    /** @param  array<string, mixed>  $result */
+    private function flags(array $result, bool $markScope): string
+    {
+        if (filled($result['subcontractor'] ?? null)) {
+            return ' <sup>('.self::SUBCONTRACTED_FLAG.')</sup>';
+        }
+
+        return $markScope && ! $this->withinScope($result) ? ' <sup>'.self::OUTSIDE_SCOPE_FLAG.'</sup>' : '';
+    }
+
+    /**
+     * Additions, deviations or exclusions from the method (7.8.2.1 n), one line
+     * per test that has them. Empty when none was recorded.
+     *
+     * @param  Collection<int, array<string, mixed>>  $results
+     */
+    private function deviations(Collection $results): string
+    {
+        $rows = $results->filter(fn (array $result): bool => filled(trim((string) ($result['deviation'] ?? ''))))
+            ->map(fn (array $result): array => [
+                'label' => trim($result['parameter'].(filled($result['method']) ? ' ('.$result['method'].')' : '')),
+                'value' => trim((string) $result['deviation']),
+                'wide' => true,
+            ])->values()->all();
+
+        return $rows === [] ? '' : ControlledDocument::keyValueGrid($rows);
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $results
+     */
+    private function accreditationStatement(string $accreditation, Collection $results): string
+    {
+        $marks = array_values(array_filter([
+            $results->contains(fn (array $result): bool => ! $this->withinScope($result) && blank($result['subcontractor'] ?? null)) ? self::OUTSIDE_SCOPE_FLAG : null,
+            $results->contains(fn (array $result): bool => filled($result['subcontractor'] ?? null)) ? '('.self::SUBCONTRACTED_FLAG.')' : null,
+        ]));
+
+        return $accreditation.'. '.($marks === []
+            ? 'Todos os ensaios deste relatório estão incluídos no âmbito da acreditação.'
+            : 'Os ensaios assinalados com '.implode(' ou ', $marks).' não estão incluídos no âmbito da acreditação.');
     }
 
     private function method(mixed $result): ?string

@@ -33,6 +33,7 @@ const emit = defineEmits(["close", "saved", "open-calculation"]);
 const selectedParameterId = ref("");
 const resultValue = ref("");
 const uncertaintyValue = ref("");
+const methodDeviation = ref("");
 const notes = ref("");
 
 const actionText = computed(() => {
@@ -145,6 +146,7 @@ watch(
     if (!parameter) {
       resultValue.value = "";
       uncertaintyValue.value = "";
+      methodDeviation.value = "";
       notes.value = "";
       return;
     }
@@ -161,6 +163,7 @@ watch(
     }
 
     uncertaintyValue.value = parameter.uncertainty_value || "";
+    methodDeviation.value = parameter.method_deviation || "";
   },
   { immediate: true },
 );
@@ -225,6 +228,7 @@ function saveIndividualResult() {
       display_format: ResultsDataService.getDisplayFormat(parameter),
     },
     uncertainty_value: uncertaintyValue.value || null,
+    method_deviation: methodDeviation.value.trim() || null,
     insertion_method: "individual",
   };
 
@@ -356,7 +360,9 @@ function saveIndividualResult() {
 
           <div class="grid gap-4 sm:grid-cols-2">
             <div class="ds-field-group">
-              <label class="ds-field-label" for="individual-uncertainty">Incerteza</label>
+              <label class="ds-field-label" for="individual-uncertainty">
+                Incerteza<template v-if="selectedParameter.uncertainty_coverage_factor"> expandida (k = {{ selectedParameter.uncertainty_coverage_factor }})</template>
+              </label>
               <BaseInput
                 id="individual-uncertainty"
                 v-model="uncertaintyValue"
@@ -372,6 +378,16 @@ function saveIndividualResult() {
                 v-model="notes"
                 class="ds-field mt-2 min-h-20"
                 placeholder="Registe o contexto da medição."
+              />
+            </div>
+            <div class="ds-field-group sm:col-span-2">
+              <label class="ds-field-label" for="individual-deviation">Desvio ao método</label>
+              <BaseInput
+                id="individual-deviation"
+                v-model="methodDeviation"
+                class="ds-field mt-2"
+                maxlength="2000"
+                placeholder="Só quando houve adição, desvio ou exclusão ao método"
               />
             </div>
           </div>

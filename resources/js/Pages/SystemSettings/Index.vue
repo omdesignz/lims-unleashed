@@ -499,9 +499,12 @@ const organizationFields = [
   { key: 'app_client_contact', label: 'Contacto institucional' },
   { key: 'app_client_email', label: 'Correio electrónico institucional', type: 'email' },
   { key: 'app_client_lab_name', label: 'Nome do laboratório' },
+  { key: 'app_client_lab_address', label: 'Morada do laboratório' },
   { key: 'app_client_lab_province', label: 'Província' },
   { key: 'app_client_lab_director', label: 'Direcção técnica' },
   { key: 'app_client_lab_slogan', label: 'Slogan do laboratório' },
+  { key: 'app_client_lab_accreditation_body', label: 'Organismo de acreditação' },
+  { key: 'app_client_lab_accreditation_number', label: 'N.º do certificado de acreditação' },
 ]
 
 const bankingFields = [

@@ -51,6 +51,9 @@ class IssuedAnalyticalScope
             'parameters.*.profile_definitions.*.min_ref_value' => ['nullable', 'string'],
             'parameters.*.profile_definitions.*.max_ref_value' => ['nullable', 'string'],
             'parameters.*.profile_definitions.*.ref_val_origin' => ['nullable', 'string', 'max:255'],
+            'parameters.*.profile_definitions.*.accredited' => ['sometimes', 'boolean'],
+            'parameters.*.profile_definitions.*.subcontractor' => ['nullable', 'string', 'max:255'],
+            'parameters.*.profile_definitions.*.uncertainty_coverage_factor' => ['nullable', 'numeric'],
             'parameters.*.profile_definitions.*.dilutions' => ['nullable'],
         ]);
 
@@ -112,6 +115,9 @@ class IssuedAnalyticalScope
                 'min_ref_value' => $definition['min_ref_value'] ?? null,
                 'max_ref_value' => $definition['max_ref_value'] ?? null,
                 'ref_val_origin' => $definition['ref_val_origin'] ?? null,
+                'accredited' => $definition['accredited'] ?? null,
+                'subcontractor' => $definition['subcontractor'] ?? null,
+                'uncertainty_coverage_factor' => $definition['uncertainty_coverage_factor'] ?? null,
                 'dilutions' => $definition['dilutions'] ?? null,
             ]));
 

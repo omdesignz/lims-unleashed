@@ -33,11 +33,11 @@ class TestReportContentTest extends TestCase
      * @param  array<string, mixed>  $collectionAttributes
      * @param  array<string, mixed>  $entryAttributes
      */
-    private function certificate(array $certificateAttributes = [], array $collectionAttributes = [], array $entryAttributes = []): QualityCertificate
+    private function certificate(array $certificateAttributes = [], array $collectionAttributes = [], array $entryAttributes = [], string $municipality = 'Luanda'): QualityCertificate
     {
         $customer = Customer::create(['name' => 'Cliente de ensaio '.Str::uuid()]);
         $site = Warehouse::create(['name' => 'Instalação '.Str::uuid(), 'customer_id' => $customer->id, 'email' => Str::uuid().'@example.test',
-            'address' => 'Rua do Ensaio, 12', 'municipality' => 'Luanda', 'nif' => '5000000001']);
+            'address' => 'Rua do Ensaio, 12', 'municipality' => $municipality, 'nif' => '5000000001']);
         $collection = new CollectionProduct(['customer_id' => $customer->id, 'warehouse_id' => $site->id, ...$collectionAttributes]);
         $collection->saveQuietly();
         VAPSampleEntry::factory()->createQuietly(['customer_id' => $customer->id, 'warehouse_id' => $site->id,
@@ -68,9 +68,19 @@ class TestReportContentTest extends TestCase
     /**
      * @return array<string, string>
      */
-    private function content(QualityCertificate $certificate): array
+    private function content(QualityCertificate $certificate, ?GeneralSettings $settings = null): array
     {
-        return app(TestReportContent::class)->forCertificate($certificate->fresh(), app(GeneralSettings::class));
+        return app(TestReportContent::class)->forCertificate($certificate->fresh(), $settings ?? app(GeneralSettings::class));
+    }
+
+    /** The configured settings with the laboratory's accreditation, or without it. */
+    private function settings(?string $accreditationNumber = 'L0123', ?string $body = 'IPAC'): GeneralSettings
+    {
+        $settings = clone app(GeneralSettings::class);
+        $settings->app_client_lab_accreditation_number = $accreditationNumber;
+        $settings->app_client_lab_accreditation_body = $body;
+
+        return $settings;
     }
 
     public function test_an_authorised_report_carries_every_common_element_of_clause_7_8_2(): void
@@ -252,6 +262,112 @@ class TestReportContentTest extends TestCase
         $this->assertStringContainsString('Chumbo &lt;Pb&gt;', $content['{results_block}']);
         $this->assertStringContainsString('banda de guarda igual à incerteza expandida', $content['{conformity_block}']);
         $this->assertStringNotContainsString('aceitação simples', $content['{conformity_block}']);
+    }
+
+    public function test_tests_outside_the_accreditation_scope_and_subcontracted_tests_are_identified(): void
+    {
+        $certificate = $this->certificate(['validated_at' => now(), 'validated_by' => 'Ana Técnica']);
+        $this->analysisResult($certificate, ['parameter_label' => 'pH', 'approved_value' => '7.1', 'accredited' => true]);
+        $this->analysisResult($certificate, ['parameter_label' => 'Cor', 'approved_value' => '5', 'accredited' => false]);
+        $this->analysisResult($certificate, ['parameter_label' => 'Salmonella', 'approved_value' => 'Ausente', 'accredited' => true, 'subcontractor' => 'Lab <Externo>']);
+
+        $content = $this->content($certificate, $this->settings());
+
+        $this->assertStringContainsString('<td>pH</td>', $content['{results_block}']);
+        $this->assertStringContainsString('<td>Cor <sup>*</sup></td>', $content['{results_block}']);
+        // A subcontracted test is never within the laboratory's own scope, whatever its flag.
+        $this->assertStringContainsString('<td>Salmonella <sup>(s)</sup></td>', $content['{results_block}']);
+        $this->assertStringContainsString('* Ensaio não incluído no âmbito da acreditação.', $content['{results_block}']);
+        $this->assertStringContainsString('(s) Ensaio realizado por laboratório subcontratado: Lab &lt;Externo&gt;.', $content['{results_block}']);
+        $this->assertStringContainsString('Acreditado por IPAC, certificado n.º L0123. Os ensaios assinalados com * ou (s) não estão incluídos no âmbito da acreditação.', $content['{statements_block}']);
+    }
+
+    public function test_every_test_within_the_scope_is_stated_once(): void
+    {
+        $certificate = $this->certificate(['validated_at' => now(), 'validated_by' => 'Ana Técnica']);
+        $this->analysisResult($certificate, ['parameter_label' => 'pH', 'approved_value' => '7.1', 'accredited' => true]);
+
+        $content = $this->content($certificate, $this->settings(body: null));
+
+        $this->assertStringNotContainsString('<sup>', $content['{results_block}']);
+        $this->assertStringContainsString('Acreditado, certificado n.º L0123. Todos os ensaios deste relatório estão incluídos no âmbito da acreditação.', $content['{statements_block}']);
+    }
+
+    /**
+     * @return array<string, array{?string, ?bool}>
+     */
+    public static function unclaimedAccreditation(): array
+    {
+        return [
+            'laboratory without a certificate' => [null, true],
+            'no test within the scope' => ['L0123', false],
+            'results recorded before the scope was kept' => ['L0123', null],
+        ];
+    }
+
+    #[DataProvider('unclaimedAccreditation')]
+    public function test_a_report_claims_no_accreditation_it_cannot_show(?string $certificateNumber, ?bool $accredited): void
+    {
+        $certificate = $this->certificate(['validated_at' => now(), 'validated_by' => 'Ana Técnica']);
+        $this->analysisResult($certificate, ['parameter_label' => 'pH', 'approved_value' => '7.1', 'accredited' => $accredited]);
+        $this->analysisResult($certificate, ['parameter_label' => 'Cor', 'approved_value' => '5', 'subcontractor' => 'Lab Externo']);
+
+        $content = $this->content($certificate, $this->settings($certificateNumber));
+
+        $this->assertStringNotContainsString('<sup>*</sup>', $content['{results_block}']);
+        $this->assertStringNotContainsString('âmbito da acreditação', implode("\n", $content));
+        $this->assertStringNotContainsString('Acreditado', implode("\n", $content));
+        // Subcontracting is identified whether or not the laboratory is accredited.
+        $this->assertStringContainsString('<td>Cor <sup>(s)</sup></td>', $content['{results_block}']);
+    }
+
+    public function test_deviations_from_the_method_get_their_own_section_and_only_when_recorded(): void
+    {
+        $certificate = $this->certificate(['validated_at' => now(), 'validated_by' => 'Ana Técnica']);
+        $this->analysisResult($certificate, ['parameter_label' => 'Cinzas', 'standard_label' => 'ISO 2171', 'approved_value' => '0.6',
+            'method_deviation' => 'Incineração a 900 °C <por pedido>']);
+        $this->analysisResult($certificate, ['parameter_label' => 'pH', 'approved_value' => '7.1', 'method_deviation' => '   ']);
+
+        $content = $this->content($certificate);
+        preg_match_all('/<span class="doc-section-number">(\d+)\.<\/span>/', implode('', [$content['{customer_block}'], $content['{item_block}'],
+            $content['{sampling_block}'], $content['{dates_block}'], $content['{results_block}'], $content['{statements_block}']]), $numbers);
+
+        $this->assertStringContainsString('Desvios ao método', $content['{results_block}']);
+        $this->assertStringContainsString('Cinzas (ISO 2171)', $content['{results_block}']);
+        $this->assertStringContainsString('Incineração a 900 °C &lt;por pedido&gt;', $content['{results_block}']);
+        $this->assertStringNotContainsString('>pH</td><td class="doc-kv-value', $content['{results_block}']);
+        $this->assertSame(range(1, count($numbers[1])), array_map('intval', $numbers[1]));
+
+        $plain = $this->certificate(['validated_at' => now(), 'validated_by' => 'Ana Técnica'], municipality: 'Benguela');
+        $this->analysisResult($plain, ['parameter_label' => 'pH', 'approved_value' => '7.1']);
+        $this->assertStringNotContainsString('Desvios ao método', $this->content($plain)['{results_block}']);
+    }
+
+    public function test_the_coverage_factor_is_stated_once_when_shared_and_per_result_when_not(): void
+    {
+        $shared = $this->certificate(['validated_at' => now(), 'validated_by' => 'Ana Técnica']);
+        $this->analysisResult($shared, ['parameter_label' => 'pH', 'approved_value' => '7.1', 'uncertainty_value' => '0.2', 'uncertainty_coverage_factor' => 2]);
+        $this->analysisResult($shared, ['parameter_label' => 'Cor', 'approved_value' => '5', 'uncertainty_value' => '1', 'uncertainty_coverage_factor' => 2]);
+        $this->analysisResult($shared, ['parameter_label' => 'Odor', 'approved_value' => 'Inodoro', 'uncertainty_coverage_factor' => 1.96]);
+
+        $content = $this->content($shared);
+        $this->assertStringContainsString('Incerteza: incerteza expandida, obtida com o factor de expansão k = 2, na unidade do resultado.', $content['{results_block}']);
+        $this->assertStringContainsString('>± 0.2</td>', $content['{results_block}']);
+        $this->assertStringNotContainsString('(k =', $content['{results_block}']);
+        $this->assertStringContainsString('k = 2', $content['{uncertainty_statement}']);
+
+        $mixed = $this->certificate(['validated_at' => now(), 'validated_by' => 'Ana Técnica'], municipality: 'Benguela');
+        $this->analysisResult($mixed, ['parameter_label' => 'pH', 'approved_value' => '7.1', 'uncertainty_value' => '0.2', 'uncertainty_coverage_factor' => 1.96]);
+        $this->analysisResult($mixed, ['parameter_label' => 'Cor', 'approved_value' => '5', 'uncertainty_value' => '1']);
+
+        $content = $this->content($mixed);
+        $this->assertStringContainsString('>± 0.2 (k = 1,96)</td>', $content['{results_block}']);
+        $this->assertStringContainsString('>± 1</td>', $content['{results_block}']);
+        $this->assertStringContainsString('quando indicado, k é o factor de expansão da incerteza expandida', $content['{results_block}']);
+
+        $unknown = $this->certificate(['validated_at' => now(), 'validated_by' => 'Ana Técnica'], municipality: 'Huambo');
+        $this->analysisResult($unknown, ['parameter_label' => 'pH', 'approved_value' => '7.1', 'uncertainty_value' => '0.2']);
+        $this->assertStringNotContainsString('expandida', $this->content($unknown)['{results_block}']);
     }
 
     public function test_the_generated_report_resolves_every_placeholder_and_keeps_document_control_on_each_page(): void

@@ -318,7 +318,7 @@ function handleParameterSelect(selected) {
 
       <div class="ds-field-group lg:col-span-2">
         <label class="ds-field-label" :for="'item-' + index + '-uncertainty'">
-          Incerteza
+          Incerteza<template v-if="result.uncertainty_coverage_factor"> expandida (k = {{ result.uncertainty_coverage_factor }})</template>
         </label>
         <BaseInput
           :id="'item-' + index + '-uncertainty'"
@@ -327,6 +327,26 @@ function handleParameterSelect(selected) {
           :disabled="isReadOnly"
           inputmode="decimal"
         />
+      </div>
+
+      <div class="ds-field-group lg:col-span-2">
+        <label class="ds-field-label" :for="'item-' + index + '-deviation'">
+          Desvio ao método
+        </label>
+        <BaseInput
+          :id="'item-' + index + '-deviation'"
+          v-model="result.method_deviation"
+          class="ds-field mt-2"
+          :disabled="isReadOnly"
+          maxlength="2000"
+          placeholder="Só quando houve adição, desvio ou exclusão ao método"
+        />
+        <p
+          v-if="form.errors['results.' + index + '.method_deviation']"
+          class="ds-field-error"
+        >
+          {{ form.errors["results." + index + ".method_deviation"] }}
+        </p>
       </div>
     </div>
 

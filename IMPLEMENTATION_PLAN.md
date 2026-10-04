@@ -1369,7 +1369,19 @@ Basis: ISO/IEC 17025:2017 clause 7.8 (reporting of results) and the Portuguese a
 - **No filler text.** Label-as-value fallbacks ("Local do serviço", "País de origem", "Pessoal autorizado") and invented observations ("Factura emitida com base no documento comercial aprovado…") no longer print: an unrecorded value shows "—" or its line is left out. The real proposal's item and total tables use the shared table classes.
 - **Fixes found on the way.** The bench worksheet's barcode was EAN-only and failed on alphanumeric laboratory codes (now Code 128). Chrome left a blank band above the first-page header. Result methods read a column that does not exist (`standards.name`); the code and description are used.
 - **Tests.** `TestReportContentTest` (16 cases, clause by clause, including the appraisal rules and escaping) and `ControlledDocumentTest` (7). The preset, table-style, nonconformity and contracting-guide pins that described the old layouts were rewritten in `ReportStudioWorkflowTest`, `NonConformityReportingTest`, `PortalDocumentsDemoTest`, `report-studio-css` and `maintenance-reporting`. Every document was rendered with both renderers and inspected as an image, from the Studio previews and from development records.
-- **Not covered by data the application holds, so not printed:** the laboratory's address when it is not configured in the settings (7.8.2.1 b requires it), accreditation status per test and the marking of tests outside the scope or subcontracted (7.8.2.1 p), additions or deviations from the method (n), and the coverage factor of the uncertainty. These need fields and decisions before the report can state them.
+- **Fields added afterwards (same day)** for what the report could not state:
+  - **Laboratory address (7.8.2.1 b):** the setting is `app_client_lab_address`, for where the laboratory works. The letterhead of every controlled document uses it and falls back to the organisation's address.
+  - **Accreditation:** the settings are `app_client_lab_accreditation_body` and `app_client_lab_accreditation_number`.
+  - **Per test (7.8.2.1 p, 6.6):** the profile definition (`parameter_profile`) holds `accredited`, `subcontractor` and `uncertainty_coverage_factor`. They travel in the issued analytical scope and are copied onto the result when it is inserted, so a later catalogue change does not rewrite issued reports.
+  - **Deviation from the method (n):** analysts record it on the result (`results.method_deviation`) at insertion, verification or approval.
+  - **How the report states them:**
+    - The report marks tests outside the scope with `*` and subcontracted tests with `(s)`, naming the provider.
+    - The accreditation statement is printed only when a certificate number is configured and at least one test is within the scope.
+    - Results recorded before these fields (`accredited` null) are not claimed.
+    - Deviations get their own numbered section.
+    - The uncertainty is called expanded only with a recorded k: stated once when all results share it, in each cell otherwise.
+  - **Not printed on other documents:** the accreditation stays off the shared letterhead, so commercial documents make no claim.
+  - **Still open:** the fields are empty on this install. Fill the settings and mark each profile's tests before reports state them.
 - **Left as they were:** the user manual (a brochure, not a record), labels, and the unused earlier views (`PDFs/invoice`, `quote`, `receipt`, `creditnote`, `proposal`, `export_certificate`, `import_certificate`, `analysisreport*`, `includes/analysisreport/*`, `proposals/pdf`).
 
 ### Open items

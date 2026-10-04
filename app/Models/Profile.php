@@ -80,7 +80,7 @@ class Profile extends Model
      */
     public function parameters()
     {
-        return $this->belongsToMany(Parameter::class, 'parameter_profile')->withPivot('category_id', 'category_label', 'unit_id', 'unit_label', 'standard_id', 'standard_label', 'formula_id', 'formula_label', 'protocol_id', 'protocol_label', 'nwp_id', 'nwp_label', 'min_ref_value', 'max_ref_value', 'dilutions', 'extra_data', 'optimal_analysis_time', 'count', 'ref_val_origin')
+        return $this->belongsToMany(Parameter::class, 'parameter_profile')->withPivot('category_id', 'category_label', 'unit_id', 'unit_label', 'standard_id', 'standard_label', 'formula_id', 'formula_label', 'protocol_id', 'protocol_label', 'nwp_id', 'nwp_label', 'min_ref_value', 'max_ref_value', 'dilutions', 'extra_data', 'optimal_analysis_time', 'count', 'ref_val_origin', 'accredited', 'subcontractor', 'uncertainty_coverage_factor')
             ->using(ParameterProfile::class);
     }
 

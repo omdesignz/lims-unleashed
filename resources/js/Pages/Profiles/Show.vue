@@ -250,6 +250,18 @@ function isCounted(parameter) {
                   <dt class="ds-field-label">Fórmula</dt>
                   <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ displayValue(parameter.pivot?.formula_label) }}</dd>
                 </div>
+                <div>
+                  <dt class="ds-field-label">Acreditação</dt>
+                  <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ parameter.pivot?.accredited ? "Acreditado" : "Não acreditado" }}</dd>
+                </div>
+                <div>
+                  <dt class="ds-field-label">Subcontratado a</dt>
+                  <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ displayValue(parameter.pivot?.subcontractor) }}</dd>
+                </div>
+                <div>
+                  <dt class="ds-field-label">Factor de expansão (k)</dt>
+                  <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ displayValue(parameter.pivot?.uncertainty_coverage_factor) }}</dd>
+                </div>
               </dl>
 
               <div v-if="parameter.pivot?.dilutions" class="mt-4 rounded-lg bg-[var(--ds-panel-subtle)] px-4 py-3 ring-1 ring-[var(--ds-border)]">

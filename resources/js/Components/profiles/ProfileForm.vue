@@ -319,6 +319,20 @@ const loadFormulas = (query, setOptions) => loadSelectOptions("/formulas/getForm
             </div>
 
             <div class="lg:col-span-6 overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)]">
+              <ToggleField v-model="parameter.accredited" :id="`profile-parameter-accredited-${index}`" label="Ensaio acreditado" description="Incluído no âmbito de acreditação do laboratório. Não se aplica a ensaios subcontratados. O relatório de ensaio assinala os ensaios fora do âmbito." />
+            </div>
+            <div class="ds-field-group lg:col-span-3">
+              <label class="ds-field-label" :for="`profile-parameter-subcontractor-${index}`">Laboratório subcontratado</label>
+              <BaseInput :id="`profile-parameter-subcontractor-${index}`" v-model="parameter.subcontractor" class="ds-field" type="text" maxlength="255" placeholder="Vazio quando o ensaio é feito pelo laboratório" />
+              <p v-if="form.errors[`parameters.${index}.subcontractor`]" class="ds-field-error">{{ form.errors[`parameters.${index}.subcontractor`] }}</p>
+            </div>
+            <div class="ds-field-group lg:col-span-3">
+              <label class="ds-field-label" :for="`profile-parameter-coverage-${index}`">Factor de expansão da incerteza (k)</label>
+              <BaseInput :id="`profile-parameter-coverage-${index}`" v-model="parameter.uncertainty_coverage_factor" class="ds-field" type="number" step="0.01" min="1" max="10" placeholder="Ex.: 2" />
+              <p v-if="form.errors[`parameters.${index}.uncertainty_coverage_factor`]" class="ds-field-error">{{ form.errors[`parameters.${index}.uncertainty_coverage_factor`] }}</p>
+            </div>
+
+            <div class="lg:col-span-6 overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)]">
               <ToggleField v-model="parameter.count" :id="`profile-parameter-count-${index}`" label="Contabilizar no resultado do perfil" description="Inclui este ensaio nas verificacoes e no resultado consolidado do perfil." />
             </div>
           </div>

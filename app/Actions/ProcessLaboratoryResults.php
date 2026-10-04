@@ -266,16 +266,19 @@ class ProcessLaboratoryResults
             'analyze' => 'inserted', 'verify' => 'verified', 'approve' => 'approved'
         };
         $fields = match ($stage) {
-            'analyze' => ['inserted_value', 'insertion_notes', 'uncertainty_value', 'count', 'min_ref_value', 'max_ref_value', 'ref_val_origin',
+            'analyze' => ['inserted_value', 'insertion_notes', 'uncertainty_value', 'method_deviation', 'count', 'min_ref_value', 'max_ref_value', 'ref_val_origin',
                 'sumC', 'volume', 'n1', 'n2', 'dilution', 'd1', 'd2', 'cfu1', 'cfu2', 'is_calculated', 'is_override', 'calculation_metadata'],
-            'verify' => ['verified_value', 'verification_notes', 'verification_status', 'uncertainty_value'],
-            'approve' => ['approved_value', 'approval_notes', 'uncertainty_value'],
+            'verify' => ['verified_value', 'verification_notes', 'verification_status', 'uncertainty_value', 'method_deviation'],
+            'approve' => ['approved_value', 'approval_notes', 'uncertainty_value', 'method_deviation'],
         };
         $attributes = Arr::only($row, $fields);
         if ($stage === 'analyze') {
             $attributes['min_ref_value'] = $parameter->pivot->min_ref_value;
             $attributes['max_ref_value'] = $parameter->pivot->max_ref_value;
             $attributes['ref_val_origin'] = $parameter->pivot->ref_val_origin;
+            $attributes['accredited'] = $parameter->pivot->accredited;
+            $attributes['subcontractor'] = $parameter->pivot->subcontractor;
+            $attributes['uncertainty_coverage_factor'] = $parameter->pivot->uncertainty_coverage_factor;
         }
         $attributes[$prefix.'_by_id'] = $operator->id;
         $attributes[$prefix.'_by'] = $operator->name;

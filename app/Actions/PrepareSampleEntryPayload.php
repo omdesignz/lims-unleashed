@@ -329,6 +329,9 @@ class PrepareSampleEntryPayload
                     'min_ref_value' => $parameter->pivot?->min_ref_value,
                     'max_ref_value' => $parameter->pivot?->max_ref_value,
                     'ref_val_origin' => $parameter->pivot?->ref_val_origin,
+                    'accredited' => (bool) $parameter->pivot?->accredited,
+                    'subcontractor' => $parameter->pivot?->subcontractor,
+                    'uncertainty_coverage_factor' => $parameter->pivot?->uncertainty_coverage_factor,
                     'dilutions' => $parameter->pivot?->dilutions,
                 ];
             }))
@@ -368,6 +371,9 @@ class PrepareSampleEntryPayload
                         'min_ref_value' => $item['min_ref_value'],
                         'max_ref_value' => $item['max_ref_value'],
                         'ref_val_origin' => $item['ref_val_origin'],
+                        'accredited' => $item['accredited'],
+                        'subcontractor' => $item['subcontractor'],
+                        'uncertainty_coverage_factor' => $item['uncertainty_coverage_factor'],
                         'dilutions' => $item['dilutions'],
                     ])->values()->all(),
                 ];

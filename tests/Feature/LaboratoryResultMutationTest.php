@@ -113,6 +113,30 @@ class LaboratoryResultMutationTest extends TestCase
         $this->assertSame(data_get($issued[$first->id], 'profile_definitions.0.ref_val_origin'), $result->ref_val_origin);
     }
 
+    public function test_insert_copies_the_issued_reporting_definition_and_keeps_the_analysts_method_deviation(): void
+    {
+        [$root, , $entry] = $this->fixture($this->lab, definition: ['accredited' => true, 'subcontractor' => 'Laboratório externo', 'uncertainty_coverage_factor' => 2]);
+        $rows = $this->rows($root, 'analyze');
+        $rows[0]['method_deviation'] = 'Toma analítica de 5 g em vez de 10 g.';
+        // The report definition comes from the issued scope, not from the submitted row.
+        $rows[0]['accredited'] = false;
+        $rows[0]['subcontractor'] = null;
+        $rows[0]['uncertainty_coverage_factor'] = '9';
+        $first = $root->profile->parameters->first();
+        $root->profile->parameters()->updateExistingPivot($first->id, ['accredited' => false, 'subcontractor' => null, 'uncertainty_coverage_factor' => null]);
+
+        $this->job(Jobs\InsertAnalysisResults::class, $root, $rows)->handle(app(ProcessLaboratoryResults::class));
+
+        $issued = collect($entry->client_submitted_info['required_parameters'])->keyBy('id');
+        $this->assertTrue(data_get($issued[$first->id], 'profile_definitions.0.accredited'));
+        $result = Models\Result::query()->where('sample_id', $root->sample_id)->where('parameter_id', $first->id)->firstOrFail();
+        $this->assertTrue($result->accredited);
+        $this->assertSame('Laboratório externo', $result->subcontractor);
+        $this->assertSame('2.00', $result->uncertainty_coverage_factor);
+        $this->assertSame('Toma analítica de 5 g em vez de 10 g.', $result->method_deviation);
+        $this->assertNull(Models\Result::query()->where('sample_id', $root->sample_id)->where('parameter_id', '!=', $first->id)->value('method_deviation'));
+    }
+
     public function test_missing_issued_scope_fails_before_writing_result_evidence(): void
     {
         [$root, , $entry] = $this->fixture($this->lab);
@@ -1225,7 +1249,8 @@ class LaboratoryResultMutationTest extends TestCase
     }
 
     /** @return array{Models\Analysis|Models\CounterAnalysis,Models\CollectionProduct,Models\VAPSampleEntry} */
-    private function fixture(Models\VAPLab $lab, bool $counter = false, ?string $parameterLabel = null): array
+    /** @param array<string, mixed> $definition extra profile-definition (pivot) attributes for every parameter */
+    private function fixture(Models\VAPLab $lab, bool $counter = false, ?string $parameterLabel = null, array $definition = []): array
     {
         $customer = Models\Customer::query()->create(['name' => 'Result customer']);
         $matrix = Models\Matrix::query()->create(['code' => fake()->unique()->bothify('M-########')]);
@@ -1244,7 +1269,7 @@ class LaboratoryResultMutationTest extends TestCase
         $resultCategory = Models\ResultCategory::query()->create(['name' => fake()->unique()->bothify('Result category #######')]);
         for ($index = 0; $index < 2; $index++) {
             $parameter = Models\Parameter::query()->create(['name' => $parameterLabel ?? fake()->unique()->bothify('Parameter #######'), 'code' => fake()->unique()->bothify('PAR-#######'), 'active' => true]);
-            $profile->parameters()->attach($parameter->id, [...$refs, 'category_id' => $resultCategory->id, 'category_label' => $resultCategory->name]);
+            $profile->parameters()->attach($parameter->id, [...$refs, 'category_id' => $resultCategory->id, 'category_label' => $resultCategory->name, ...$definition]);
         }
         $matrix->profiles()->attach($profile);
         $payload = app(PrepareSampleEntryPayload::class)->execute([

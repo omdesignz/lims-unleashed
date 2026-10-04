@@ -158,6 +158,9 @@ class ProfileController extends Controller
                         'dilutions' => $item->pivot->dilutions,
                         'count' => $item->pivot->count,
                         'ref_val_origin' => $item->pivot->ref_val_origin,
+                        'accredited' => (bool) $item->pivot->accredited,
+                        'subcontractor' => $item->pivot->subcontractor,
+                        'uncertainty_coverage_factor' => $item->pivot->uncertainty_coverage_factor,
                         'unit_label' => $item->pivot->unit_label,
                         'unit_id' => [
                             'value' => $item->pivot->unit_id,

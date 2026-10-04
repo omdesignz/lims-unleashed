@@ -48,6 +48,24 @@ class ProfileConfigurationTest extends TestCase
         $this->put(route('profiles.update', $profile), $payload)->assertRedirect()->assertSessionHasNoErrors();
         $this->assertSame(0.0, $profile->fresh()->price_based_on_parameters);
         $this->assertSame('Updated procedure', $profile->fresh()->parameters->first()->pivot->ref_val_origin);
+        $this->assertFalse($profile->fresh()->parameters->first()->pivot->accredited);
+        $this->assertNull($profile->fresh()->parameters->first()->pivot->uncertainty_coverage_factor);
+
+        $payload['parameters'][0]['accredited'] = true;
+        $payload['parameters'][0]['subcontractor'] = '  Laboratório externo  ';
+        $payload['parameters'][0]['uncertainty_coverage_factor'] = '1,96';
+        $this->put(route('profiles.update', $profile), $payload)->assertRedirect()->assertSessionHasNoErrors();
+        $pivot = $profile->fresh()->parameters->first()->pivot;
+        $this->assertTrue($pivot->accredited);
+        $this->assertSame('Laboratório externo', $pivot->subcontractor);
+        $this->assertSame('1.96', $pivot->uncertainty_coverage_factor);
+        $this->get(route('profiles.edit', $profile))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('record.parameters.0.accredited', true)
+            ->where('record.parameters.0.subcontractor', 'Laboratório externo')
+            ->where('record.parameters.0.uncertainty_coverage_factor', '1.96'));
+
+        $payload['parameters'][0]['uncertainty_coverage_factor'] = '0.5';
+        $this->put(route('profiles.update', $profile), $payload)->assertSessionHasErrors('parameters.0.uncertainty_coverage_factor');
         $lookup = $this->getJson(route('profiles.getProfile', ['q' => $profile->code]))
             ->assertOk()->assertJsonCount(1)->assertJsonPath('0.total_parameter_count', 1);
         $this->assertSame(0.0, (float) $lookup->json('0.parameters_price'));

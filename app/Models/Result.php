@@ -74,6 +74,10 @@ class Result extends Model implements HasMedia
         'standard_label',
         'category_label',
         'uncertainty_value',
+        'uncertainty_coverage_factor',
+        'accredited',
+        'subcontractor',
+        'method_deviation',
         'sumC',
         'volume',
         'n1',
@@ -104,6 +108,7 @@ class Result extends Model implements HasMedia
         'calculation_metadata' => 'array',
         'is_calculated' => 'boolean',
         'is_override' => 'boolean',
+        'accredited' => 'boolean',
     ];
 
     /**

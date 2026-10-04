@@ -25,6 +25,7 @@ class GeneralSettingsResource extends JsonResource
             'app_public_key', 'app_nif', 'app_agt_valid_name', 'app_agt_validation_number',
             'app_client_name', 'app_client_nif', 'app_client_address', 'app_client_contact', 'app_client_email',
             'app_client_lab_name', 'app_client_lab_province', 'app_client_lab_director', 'app_client_lab_slogan',
+            'app_client_lab_address', 'app_client_lab_accreditation_body', 'app_client_lab_accreditation_number',
             'app_bank_name', 'app_bank_account_name', 'app_bank_account_number', 'app_bank_iban',
             'app_bank_swift', 'app_bank_details', 'app_document_keywords',
         ])->all();
