@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-wrap items-center gap-2">
-    <Listbox :model-value="filterId" as="div" class="relative min-w-48" @update:model-value="selectFilter">
+    <Listbox :model-value="filterId" as="div" class="relative min-w-44" :data-active="hasActiveFilter || undefined" @update:model-value="selectFilter">
       <ListboxButton class="ds-combobox-control group inline-flex w-full items-center justify-between gap-3 px-3.5 py-2 text-left text-sm font-semibold">
         <span class="inline-flex min-w-0 items-center gap-2">
-          <FunnelIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" />
+          <FunnelIcon class="h-4 w-4 shrink-0" :class="hasActiveFilter ? 'text-[var(--pl-accent-text)]' : 'text-[var(--pl-faint)]'" aria-hidden="true" />
           <span class="truncate">{{ $t(selectedFilterLabel) }}</span>
         </span>
 
@@ -38,29 +38,13 @@
       </TransitionRoot>
     </Listbox>
 
-    <div
-      v-if="hasActiveFilter"
-      class="inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--primary-200-rgb)/0.75)] bg-[rgb(var(--primary-50-rgb)/0.75)] px-3 py-1.5 text-xs dark:border-[rgb(var(--primary-300-rgb)/0.2)] dark:bg-[rgb(var(--primary-500-rgb)/0.12)]"
-    >
-      <span class="font-semibold text-[rgb(var(--primary-900-rgb))] dark:text-[rgb(var(--primary-100-rgb))]">
-        {{ $t(selectedFilterLabel) }}
-      </span>
-      <button
-        type="button"
-        class="rounded-full p-0.5 text-[rgb(var(--primary-700-rgb))] transition-colors duration-150 hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.24)] dark:text-[rgb(var(--primary-200-rgb))] dark:hover:text-[rgb(var(--primary-50-rgb))]"
-        :title="$t('gestlab.general.buttons.clear')"
-        @click="clearFilter"
-      >
-        <XMarkIcon class="h-3 w-3" />
-      </button>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, TransitionRoot } from '@headlessui/vue'
-import { Check as CheckIcon, ChevronsUpDown as ChevronUpDownIcon, Funnel as FunnelIcon, X as XMarkIcon } from '@lucide/vue'
+import { Check as CheckIcon, ChevronsUpDown as ChevronUpDownIcon, Funnel as FunnelIcon } from '@lucide/vue'
 
 const props = defineProps({
   filters: {
@@ -100,7 +84,4 @@ function selectFilter(value) {
   emit('execute', value)
 }
 
-function clearFilter() {
-  selectFilter(null)
-}
 </script>

@@ -205,21 +205,27 @@ test('all administrative notification pages compile with meaningful document tit
 test('horizontal notification navigation overrides sidebar widths and identifies the current page', async () => {
   const header = readFileSync(new URL('../../resources/js/Components/notifications/NotificationAdminHeader.vue', import.meta.url), 'utf8');
   const { descriptor } = parse(header);
-  assert.match(header, /class="ds-settings-tab w-auto! min-w-0! items-center!"/);
+  assert.match(header, /<nav class="pl-tabs mb-8" aria-label="Navegação de notificações">/);
+  assert.match(header, /class="pl-tab"/);
   assert.doesNotMatch(header, /route\(\)\.current/);
   const compiled = compileTemplate({ id: 'notification-header', source: descriptor.template.content, compilerOptions: { mode: 'function' } });
   assert.deepEqual(compiled.errors, []);
   const render = new Function('Vue', compiled.code)(Vue);
   const navigation = ['dashboard', 'index', 'create', 'templates', 'analytics'].map((name) => ({ label: name, route: name, icon: 'span' }));
+  const page = { url: '/templates?search=invoice' };
+  const route = (name) => `/${name}`;
+  // The component's own rule for the current tab, run against the stubbed page and router.
+  const isCurrent = new Function('page', 'route', `return ${header.match(/const isCurrent = (.*)/)[1]}`)(page, route);
   const app = Vue.createSSRApp({
-    setup: () => ({ title: 'Notifications', description: 'Lab', navigation, page: { url: '/templates?search=invoice' }, route: (name) => `/${name}` }), render,
+    setup: () => ({ title: 'Notifications', description: 'Lab', navigation, page, route, isCurrent }), render,
   });
   app.component('Link', { props: ['href'], render() { return Vue.h('a', { href: this.href }, this.$slots.default()); } });
   app.component('BellAlertIcon', { render: () => Vue.h('svg') });
+  app.component('PageHeader', { render() { return Vue.h('header', this.$slots.default?.()); } });
   const html = await renderToString(app);
   assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1);
   assert.match(html, /href="\/templates"[^>]*aria-current="page"/);
-  assert.equal((html.match(/class="ds-settings-tab w-auto!/g) ?? []).length, 5);
+  assert.equal((html.match(/class="pl-tab"/g) ?? []).length, 5);
 });
 
 test('template editor compiles and exposes empty search results without switching the selected draft', () => {

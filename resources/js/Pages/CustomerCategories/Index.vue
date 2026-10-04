@@ -1,7 +1,6 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { Tag as TagIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 
@@ -35,7 +34,7 @@ defineProps({
     code-label="Código"
     description-label="Descrição"
     :supports-name="true"
-    :icon="TagIcon"
+
     create-description="Adicione uma classificação reutilizável nas contas e nos relatórios comerciais."
     form-description="Use um nome claro e um código curto que possam ser reconhecidos em pesquisa e relatórios."
   />

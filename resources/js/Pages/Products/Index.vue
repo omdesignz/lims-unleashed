@@ -1,9 +1,10 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { Download as ArrowDownTrayIcon, FlaskConical as BeakerIcon, Box as CubeIcon, BadgePercent as ReceiptPercentIcon } from "@lucide/vue";
+import { Download as ArrowDownTrayIcon } from "@lucide/vue";
 import { Link, router } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
@@ -65,42 +66,19 @@ function confirmAction() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <CubeIcon class="h-5 w-5" aria-hidden="true" />
-          </span>
-          <div>
-            <p class="ds-kicker">Portefólio analítico</p>
-            <h1 class="ds-heading mt-1 text-2xl">Produtos laboratoriais</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Ofertas comerciais ligadas a matrizes, preços e regras fiscais para propostas, guias e facturação.</p>
-          </div>
-        </div>
-
-        <div class="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
-          <dl class="grid w-full grid-cols-3 overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] lg:min-w-[24rem]">
-            <div class="border-r border-[var(--ds-border)] px-4 py-3">
-            <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Produtos</dt>
-            <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ totalRecords }}</dd>
-            </div>
-            <div class="border-r border-[var(--ds-border)] px-4 py-3">
-            <dt class="flex items-center gap-1 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><BeakerIcon class="h-3.5 w-3.5" /> Matrizes</dt>
-            <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ matrixCount }}</dd>
-            </div>
-            <div class="px-4 py-3">
-            <dt class="flex items-center gap-1 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><ReceiptPercentIcon class="h-3.5 w-3.5" /> Tributados</dt>
-            <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ taxableRecords }}</dd>
-            </div>
-          </dl>
-          <Link v-if="hasPermission('export_products')" :href="route('exports.index', { dataset: 'products' })" class="ds-button ds-button-secondary">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar
-          </Link>
-        </div>
-      </div>
-    </section>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Produtos laboratoriais" lede="Ofertas comerciais ligadas a matrizes, preços e regras fiscais para propostas, guias e facturação.">
+      <template #actions>
+        <Link v-if="hasPermission('export_products')" :href="route('exports.index', { dataset: 'products' })" class="ds-button ds-button-secondary">
+          Exportar<ArrowDownTrayIcon aria-hidden="true" />
+        </Link>
+      </template>
+      <dl class="pl-cells mt-8">
+        <div class="pl-cell"><dt class="pl-k pl-muted">Produtos</dt><dd class="pl-cell-value">{{ totalRecords }}</dd></div>
+        <div class="pl-cell"><dt class="pl-k pl-muted">Matrizes</dt><dd class="pl-cell-value">{{ matrixCount }}</dd></div>
+        <div class="pl-cell"><dt class="pl-k pl-muted">Tributados</dt><dd class="pl-cell-value">{{ taxableRecords }}</dd></div>
+      </dl>
+    </PageHeader>
 
     <RecordsTable
       :record="record"

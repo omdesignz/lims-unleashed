@@ -1,12 +1,11 @@
 <script setup>
 import BaseInput from '@/Components/base/BaseInput.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { usePermission } from '@/Composables/usePermissions'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import {
-  ArrowLeft as ArrowLeftIcon,
   RefreshCw as ArrowPathIcon,
   FlaskConical as BeakerIcon,
-  Building2 as BuildingOffice2Icon,
   CircleCheck as CheckCircleIcon,
   Clock as ClockIcon,
   Settings as Cog6ToothIcon,
@@ -133,47 +132,26 @@ function statusClass(status) {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <nav aria-label="Breadcrumb">
-          <Link :href="route('warehouses.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
-            <ArrowLeftIcon class="h-4 w-4" />Locais operacionais
-          </Link>
-        </nav>
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Locais operacionais', url: route('warehouses.index') }, { title: site.name || site.code || 'Local operacional' }]" :title="site.name || site.code || 'Local operacional'" :lede="`${site.customer || 'Sem cliente associado'} · ${site.address || 'Morada por definir'}`">
+      <template #badges>
+          <span v-if="site.code" class="ds-chip font-mono">{{ site.code }}</span>
+          <span class="ds-chip" :class="site.status === 'active' ? 'text-emerald-700 dark:text-emerald-200' : 'text-rose-700 dark:text-rose-200'">{{ site.status === 'active' ? 'Activo' : 'Inactivo' }}</span>
+          <span class="ds-chip"><KeyIcon class="h-3.5 w-3.5" />{{ hasPassword ? 'Portal configurado' : 'Portal por configurar' }}</span>
+      </template>
+      <template #actions>
+        <Link v-if="site.customer_id && hasPermission('view_customers')" :href="route('customers.show', { customer: site.customer_id })" class="ds-button ds-button-secondary">Ver cliente</Link>
+        <Link v-if="hasPermission('edit_warehouses')" :href="route('warehouses.edit', { warehouse: site.id })" class="ds-button ds-button-primary"><PencilSquareIcon class="h-4 w-4" />Editar local</Link>
+      </template>
+    </PageHeader>
 
-        <div class="mt-5 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><BuildingOffice2Icon class="h-5 w-5" /></span>
-            <div class="min-w-0">
-              <p class="ds-kicker">Local #{{ site.id }}</p>
-              <h1 class="ds-heading mt-1 break-words text-2xl">{{ site.name || site.code || 'Local operacional' }}</h1>
-              <p class="ds-copy mt-1 break-words text-sm">{{ site.customer || 'Sem cliente associado' }} · {{ site.address || 'Morada por definir' }}</p>
-              <p class="ds-copy mt-2 max-w-3xl text-sm">Identidade partilhada; actividade laboratorial visível apenas para o laboratório activo.</p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span v-if="site.code" class="ds-chip font-mono">{{ site.code }}</span>
-                <span class="ds-chip" :class="site.status === 'active' ? 'text-emerald-700 dark:text-emerald-200' : 'text-rose-700 dark:text-rose-200'">{{ site.status === 'active' ? 'Activo' : 'Inactivo' }}</span>
-                <span class="ds-chip"><KeyIcon class="h-3.5 w-3.5" />{{ hasPassword ? 'Portal configurado' : 'Portal por configurar' }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap gap-2 lg:justify-end">
-            <Link v-if="site.customer_id && hasPermission('view_customers')" :href="route('customers.show', { customer: site.customer_id })" class="ds-button ds-button-secondary">Ver cliente</Link>
-            <Link v-if="hasPermission('edit_warehouses')" :href="route('warehouses.edit', { warehouse: site.id })" class="ds-button ds-button-primary"><PencilSquareIcon class="h-4 w-4" />Editar local</Link>
-          </div>
-        </div>
+    <dl class="pl-cells">
+      <div v-for="metric in metrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
       </div>
-
-      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-3">
-        <div v-for="metric in metrics" :key="metric.label" class="bg-[var(--ds-panel)] p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div><dt class="ds-field-label">{{ metric.label }}</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd><p class="ds-copy mt-1 text-xs">Deste laboratório</p></div>
-            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+    </dl>
+    <p class="text-[13px] text-[var(--pl-muted)]">Identidade partilhada; actividade laboratorial visível apenas para o laboratório activo.</p>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <main class="min-w-0 space-y-6">

@@ -1,7 +1,8 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import { ArrowLeft as ArrowLeftIcon, Check as CheckIcon, MessagesSquare as ChatBubbleLeftRightIcon, Paperclip as PaperClipIcon } from '@lucide/vue'
+import { Check as CheckIcon, Paperclip as PaperClipIcon } from '@lucide/vue'
 import { computed } from 'vue'
 
 defineOptions({ layout: Layout })
@@ -19,13 +20,8 @@ const submit = () => form.transform((data) => ({ ...data, _method: 'put' })).pos
 </script>
 
 <template>
-  <div class="space-y-5">
-    <section class="ds-panel overflow-hidden">
-      <header class="flex flex-col gap-4 border-b border-[var(--ds-border)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div class="flex items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><ChatBubbleLeftRightIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Comunicação interna</p><h1 class="ds-heading mt-1 text-xl sm:text-2xl">Rever mensagem</h1><p class="ds-copy mt-1 text-sm">Actualize o conteúdo ou substitua o conjunto de anexos.</p></div></div>
-        <Link :href="route('messages.index')" class="ds-button ds-button-secondary"><ArrowLeftIcon class="h-4 w-4" />Registo</Link>
-      </header>
-    </section>
+  <div class="pl-page space-y-5">
+    <PageHeader :trail="[{ title: 'Mensagens', url: route('messages.index') }, { title: 'Rever mensagem' }]" title="Rever mensagem" lede="Actualize o conteúdo ou substitua o conjunto de anexos." />
 
     <form class="grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]" @submit.prevent="submit">
       <section class="ds-panel overflow-hidden">

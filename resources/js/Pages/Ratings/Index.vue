@@ -1,25 +1,15 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div class="relative isolate p-6">
-        <div class="absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-r from-primary-600/15 via-sky-400/10 to-emerald-400/10 dark:from-primary-500/20 dark:via-sky-500/10 dark:to-emerald-500/10"></div>
-        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary-700 dark:text-primary-300">ISO 17025 · Melhoria contínua</p>
-        <div class="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-slate-950 dark:text-white">Avaliações de processos e serviços</h1>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Acompanhe a satisfação interna e de clientes para identificar oportunidades de melhoria, risco operacional e evidências de feedback.
-            </p>
-          </div>
-          <Link
-            :href="route('rating.create', { rateableType: 'service' })"
-            class="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700"
-          >
-            Avaliar serviço geral
-          </Link>
-        </div>
-      </div>
-    </section>
+  <div class="pl-page space-y-8" :class="commercialDocumentThemeClasses">
+    <PageHeader title="Avaliações de processos e serviços" lede="Acompanhe a satisfação interna e de clientes para identificar oportunidades de melhoria, risco operacional e evidências de feedback.">
+      <template #actions>
+        <Link
+          :href="route('rating.create', { rateableType: 'service' })"
+          class="ds-button ds-button-primary"
+        >
+          Avaliar serviço geral
+        </Link>
+      </template>
+    </PageHeader>
 
     <section v-if="canInvite" class="ds-card p-5">
       <h2 class="text-base font-bold text-[var(--ds-text)]">Convidar cliente a avaliar o serviço</h2>
@@ -45,41 +35,39 @@
       </div>
     </section>
 
-    <section class="grid grid-cols-1 gap-4 md:grid-cols-4">
-      <div v-for="metric in metrics" :key="metric.label" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ metric.label }}</p>
-        <p class="mt-2 text-3xl font-bold text-slate-950 dark:text-white">{{ metric.value }}</p>
+    <dl class="pl-cells">
+      <div v-for="metric in metrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
       </div>
+    </dl>
+
+    <section class="grid grid-cols-1 gap-6 xl:grid-cols-3" aria-label="Indicadores de feedback">
+      <article class="pl-panel min-w-0 xl:col-span-3">
+        <header class="pl-panel-head"><h2 class="pl-k">Avaliações por mês</h2><span class="pl-k pl-faint">Portal e interno</span></header>
+        <div class="p-4">
+          <PlanoChart kind="column" label="Avaliações registadas por mês" :categories="charts.monthly?.categories || []" :series="charts.monthly?.series || []" :height="240" />
+        </div>
+      </article>
+      <article class="pl-panel min-w-0">
+        <header class="pl-panel-head"><h2 class="pl-k">Processos avaliados</h2></header>
+        <div class="p-4">
+          <PlanoChart kind="bar" label="Avaliações por processo" :categories="charts.by_type?.labels || []" :series="[{ name: 'Avaliações', data: charts.by_type?.series || [] }]" :height="220" />
+        </div>
+      </article>
+      <article class="pl-panel min-w-0 xl:col-span-2">
+        <header class="pl-panel-head"><h2 class="pl-k">Distribuição de pontuações</h2><span class="pl-k pl-faint">1 a 5</span></header>
+        <div class="p-4">
+          <PlanoChart kind="column" label="Avaliações por pontuação" :categories="charts.score_distribution?.labels || []" :series="[{ name: 'Avaliações', data: charts.score_distribution?.series || [] }]" :height="220" />
+        </div>
+      </article>
     </section>
 
-    <section class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 xl:col-span-2">
-        <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Tendência de feedback</h2>
-        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Volume mensal de avaliações registadas.</p>
-        <ChartWrapper class="mt-4" type="area" height="300" :series="monthlySeries" :options="monthlyOptions" />
-      </div>
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Canal</h2>
-        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Origem interna ou portal do cliente.</p>
-        <ChartWrapper class="mt-4" type="donut" height="300" :series="channelSeries" :options="channelOptions" />
-      </div>
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Processos avaliados</h2>
-        <ChartWrapper class="mt-4" type="bar" height="280" :series="typeSeries" :options="typeOptions" />
-      </div>
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 xl:col-span-2">
-        <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Distribuição de pontuações</h2>
-        <ChartWrapper class="mt-4" type="bar" height="280" :series="scoreSeries" :options="scoreOptions" />
-      </div>
-    </section>
-
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-        <h2 class="text-base font-semibold text-slate-950 dark:text-white">Registos recentes</h2>
-      </div>
+    <section class="pl-panel" aria-labelledby="ratings-recent">
+      <header class="pl-panel-head"><h2 id="ratings-recent" class="pl-k">Registos recentes</h2></header>
       <div class="overflow-x-auto">
-        <DataTable class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-          <thead class="bg-slate-50 dark:bg-slate-950/60">
+        <DataTable>
+          <thead>
             <tr>
               <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tipo</th>
               <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Canal</th>
@@ -108,9 +96,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Link, useForm } from '@inertiajs/vue3'
-import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
 import Pagination from '@/Components/pagination.vue'
 
 const props = defineProps({
@@ -153,28 +142,6 @@ const metrics = computed(() => [
   { label: 'Interno', value: props.stats.internal },
   { label: 'Média', value: props.stats.average },
 ])
-
-const baseOptions = {
-  chart: { foreColor: '#6b7482' },
-  grid: { borderColor: '#eef0f3' },
-  tooltip: { theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light' },
-}
-
-const monthlySeries = computed(() => props.charts.monthly?.series || [])
-const monthlyOptions = computed(() => ({
-  ...baseOptions,
-  xaxis: { categories: props.charts.monthly?.categories || [] },
-  fill: { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.05 } },
-}))
-
-const channelSeries = computed(() => props.charts.by_channel?.series || [])
-const channelOptions = computed(() => ({ ...baseOptions, labels: props.charts.by_channel?.labels || [], legend: { position: 'bottom' } }))
-
-const typeSeries = computed(() => [{ name: 'Avaliações', data: props.charts.by_type?.series || [] }])
-const typeOptions = computed(() => ({ ...baseOptions, xaxis: { categories: props.charts.by_type?.labels || [] }, plotOptions: { bar: { borderRadius: 8 } } }))
-
-const scoreSeries = computed(() => [{ name: 'Pontuações', data: props.charts.score_distribution?.series || [] }])
-const scoreOptions = computed(() => ({ ...baseOptions, xaxis: { categories: props.charts.score_distribution?.labels || [] }, plotOptions: { bar: { borderRadius: 8, columnWidth: '45%' } } }))
 
 function averageRating(criteria) {
   const values = Object.values(criteria || {}).map((value) => Number(value)).filter(Boolean)

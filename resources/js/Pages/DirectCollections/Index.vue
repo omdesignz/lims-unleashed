@@ -1,5 +1,6 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import VapTable from "@/Components/vap-table/table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
@@ -165,46 +166,29 @@ function executeAction() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <BeakerIcon class="h-5 w-5" />
-          </span>
-          <div>
-            <p class="ds-kicker">Recepção e cadeia de custódia</p>
-            <h1 class="ds-heading mt-1 text-2xl">Colheitas directas</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Fila técnica de amostras recebidas directamente, com âmbito analítico, condicionamento e documentos operacionais.</p>
-          </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Colheitas directas" lede="Fila técnica de amostras recebidas directamente, com âmbito analítico, condicionamento e documentos operacionais.">
+      <template #actions>
+        <div class="inline-flex overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-1">
+          <button type="button" class="ds-button min-h-0 border-0 px-3 py-2 shadow-none" :class="activeCategory === 'pending' ? 'ds-button-primary' : 'ds-button-secondary'" @click="changeCategory('pending')">
+            <ClipboardDocumentListIcon class="h-4 w-4" /> Pendentes
+          </button>
+          <button type="button" class="ds-button min-h-0 border-0 px-3 py-2 shadow-none" :class="activeCategory === 'archived' ? 'ds-button-primary' : 'ds-button-secondary'" @click="changeCategory('archived')">
+            <ArchiveBoxIcon class="h-4 w-4" /> Processadas
+          </button>
         </div>
-        <div class="flex flex-wrap gap-3">
-          <div class="inline-flex overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-1">
-            <button type="button" class="ds-button min-h-0 border-0 px-3 py-2 shadow-none" :class="activeCategory === 'pending' ? 'ds-button-primary' : 'ds-button-secondary'" @click="changeCategory('pending')">
-              <ClipboardDocumentListIcon class="h-4 w-4" /> Pendentes
-            </button>
-            <button type="button" class="ds-button min-h-0 border-0 px-3 py-2 shadow-none" :class="activeCategory === 'archived' ? 'ds-button-primary' : 'ds-button-secondary'" @click="changeCategory('archived')">
-              <ArchiveBoxIcon class="h-4 w-4" /> Processadas
-            </button>
-          </div>
-          <Link :href="entrypoint.create_sample_url || route('vap_samples.index', { collection_type: 'direct' })" class="ds-button ds-button-primary">
-            <PlusIcon class="h-4 w-4" /> Nova entrada de amostra
-          </Link>
-        </div>
-      </div>
+        <Link :href="entrypoint.create_sample_url || route('vap_samples.index', { collection_type: 'direct' })" class="ds-button ds-button-primary">
+          <PlusIcon class="h-4 w-4" /> Nova entrada de amostra
+        </Link>
+      </template>
+    </PageHeader>
 
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div v-for="metric in metrics" :key="metric.name" class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-r xl:border-b-0 xl:last:border-r-0">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.name }}</dt>
-              <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}{{ metric.unit || "" }}</dd>
-            </div>
-            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div v-for="metric in metrics" :key="metric.name" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.name }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}{{ metric.unit || "" }}</dd>
+      </div>
+    </dl>
 
     <section class="ds-command-surface px-5 py-4 sm:px-6">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

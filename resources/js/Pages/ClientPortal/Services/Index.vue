@@ -1,5 +1,6 @@
 <script setup>
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import { Link } from "@inertiajs/vue3";
 import { ArrowRight as ArrowRightIcon, Banknote as BanknotesIcon, FlaskConical as BeakerIcon, FileText as DocumentTextIcon, ShieldAlert as ShieldExclamationIcon, Truck as TruckIcon, Wrench as WrenchScrewdriverIcon } from "@lucide/vue";
 
@@ -14,9 +15,7 @@ function serviceIcon(service) {
 
 <template>
   <div class="space-y-6">
-    <section class="ds-panel p-5 sm:p-6">
-      <div class="flex min-w-0 items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><WrenchScrewdriverIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Catálogo do portal</p><h1 class="ds-heading mt-1 text-2xl">Serviços disponíveis</h1><p class="ds-copy mt-1 max-w-3xl text-sm">Escolha o fluxo certo para garantir uma triagem rapida e toda a informação necessária.</p></div></div>
-    </section>
+    <PageHeader title="Serviços disponíveis" lede="Escolha o fluxo certo para garantir uma triagem rapida e toda a informação necessária." />
 
     <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <Link v-for="service in services" :key="service.type" :href="route('portal.requests.index', { request_type: service.type, new: 1, title: service.title })" class="ds-card group flex flex-col p-5 transition hover:border-[rgb(var(--primary-300-rgb))]">

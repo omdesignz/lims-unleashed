@@ -1,7 +1,6 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { MessagesSquare as ChatBubbleLeftRightIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 
@@ -35,7 +34,7 @@ defineProps({
     description-label="Descrição"
     :supports-name="true"
     :supports-code="false"
-    :icon="ChatBubbleLeftRightIcon"
+
     create-description="Adicione um tipo de pedido que possa ser seleccionado e encaminhado no portal."
     form-description="Use nomes orientados a serviço para facilitar a triagem e a leitura pelo cliente."
   />

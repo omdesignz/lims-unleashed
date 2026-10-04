@@ -12,7 +12,9 @@
 </template>
 
 <script setup>
-import { chartFontFamily, chartPalette, chartTokens } from '@/Support/charts'
+import { categoricalPalette, chartFontFamily, chartTokens } from '@/Support/charts'
+
+const chartPalette = categoricalPalette.light
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const ApexChart = defineAsyncComponent(async () => (await import('vue3-apexcharts')).default)

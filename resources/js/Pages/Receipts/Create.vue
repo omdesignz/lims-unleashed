@@ -1,5 +1,6 @@
 <script setup>
 import '../CommercialDocumentSurface.css';
+import PageHeader from '@/Components/plano/PageHeader.vue';
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { optionRows } from "@/Composables/useCommercialDocumentOptions";
@@ -11,8 +12,6 @@ import {
   Trash2 as TrashIcon,
   CirclePlus as PlusCircleIcon,
   ClipboardCheck as ClipboardDocumentCheckIcon,
-  ChevronUp as ChevronUpIcon,
-  ChevronDown as ChevronDownIcon,
   Euro as CurrencyEuroIcon,
   FileText as DocumentTextIcon,
   User as UserIcon,
@@ -283,29 +282,14 @@ const handleConfirmSubmit = () => {
 </script>
 
 <template>
-  <div class="commercial-document-page commercial-document-create min-w-0 space-y-5 overflow-x-clip pb-10" :class="commercialDocumentThemeClasses">
+  <div class="pl-page commercial-document-page commercial-document-create space-y-5" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
-    <header class="commercial-document-header px-0 pb-5 pt-1">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ClipboardDocumentCheckIcon class="h-7 w-7 text-blue-900" />
-            {{ $t('gestlab.general.labels.receipts.page_title') }}
-          </h1>
-          <p class="mt-2 text-gray-600">
-            {{ $t('gestlab.general.labels.receipts.page_create_description') }}
-            <span v-if="form.customer_id?.label" class="font-semibold text-blue-900">
-              {{ form.customer_id.label }}
-            </span>
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10">
-            {{ form.items.length }} {{ $t('gestlab.general.labels.receipts.items') }}
-          </span>
-        </div>
-      </div>
-    </header>
+    <PageHeader :trail="[{ title: 'Recibos', url: route('receipts.index') }, { title: 'Novo documento' }]" :title="$t('gestlab.general.labels.receipts.page_title')" :lede="$t('gestlab.general.labels.receipts.page_create_description')">
+      <template #badges>
+        <span v-if="form.customer_id?.label" class="ds-chip ds-chip-neutral">{{ form.customer_id.label }}</span>
+        <span class="ds-chip">{{ form.items.length }} {{ $t('gestlab.general.labels.receipts.items') }}</span>
+      </template>
+    </PageHeader>
 
     <!-- MAIN CONTENT SECTION -->
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,0.8fr)]">
@@ -592,12 +576,7 @@ const handleConfirmSubmit = () => {
             <button 
               @click="submit"
               :disabled="form.processing || !isFormValid"
-              :class="[
-                'ds-button w-full justify-center px-4 py-3',
-                form.processing || !isFormValid
-                  ? 'cursor-not-allowed bg-[var(--ds-border)] text-[var(--ds-muted)]'
-                  : 'ds-button-primary'
-              ]"
+              class="ds-button ds-button-primary w-full justify-center px-4 py-3"
             >
               <ClipboardDocumentCheckIcon class="h-5 w-5" />
               {{ form.processing ? $t('gestlab.general.buttons.processing') : $t('gestlab.general.buttons.submit') }}
@@ -717,12 +696,7 @@ const handleConfirmSubmit = () => {
           @click="submit"
           :disabled="!isFormValid"
           type="button"
-          :class="[
-            'ds-button px-4 py-2.5',
-            !isFormValid
-              ? 'cursor-not-allowed bg-[var(--ds-border)] text-[var(--ds-muted)]'
-              : 'ds-button-primary'
-          ]"
+          class="ds-button ds-button-primary px-4 py-2.5"
         >
           <ClipboardDocumentCheckIcon class="h-4 w-4" />
           {{ $t('gestlab.general.buttons.finalize') }}

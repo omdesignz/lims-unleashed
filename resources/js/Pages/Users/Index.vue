@@ -1,5 +1,6 @@
 <script setup>
 import ComboboxMultiple from "@/Components/combobox-multiple.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
@@ -197,25 +198,10 @@ function archiveRecord(action, ids) {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="pl-page space-y-6">
     <Head :title="$t('gestlab.general.labels.users.page_title')" />
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Competência e autorização</p>
-          <div class="mt-3 flex items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <UsersIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-2xl">{{ $t("gestlab.general.labels.users.page_title") }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Equipa, acessos e evidência de competência para executar, verificar e aprovar trabalho laboratorial.
-              </p>
-            </div>
-          </div>
-        </div>
-
+    <PageHeader :title="$t('gestlab.general.labels.users.page_title')" lede="Equipa, acessos e evidência de competência para executar, verificar e aprovar trabalho laboratorial.">
+      <template #actions>
         <button v-if="accountCapabilities.join" type="button" class="ds-button ds-button-secondary whitespace-nowrap" @click="membershipPanelOpen = true">
           <PlusIcon class="h-4 w-4" />
           Adicionar membro
@@ -229,42 +215,22 @@ function archiveRecord(action, ids) {
           <PlusIcon class="h-4 w-4" />
           Novo utilizador
         </button>
-      </div>
+      </template>
+    </PageHeader>
 
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-5">
-        <div
-          v-for="metric in metrics"
-          :key="metric.label"
-          class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(5)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
-        >
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-              <dd
-                class="mt-2 break-words text-xl font-bold"
-                :class="{
-                  'text-[var(--ds-text)]': metric.tone === 'neutral',
-                  'text-emerald-700 dark:text-emerald-300': metric.tone === 'good',
-                  'text-amber-700 dark:text-amber-300': metric.tone === 'warning',
-                  'text-rose-700 dark:text-rose-300': metric.tone === 'critical',
-                }"
-              >
-                {{ metric.value }}
-              </dd>
-              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
-            </div>
-            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-
-      <div class="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
-        <span class="ds-chip ds-chip-neutral">
-          {{ competenceSummary?.ready_for_renewal ?? 0 }} renovações prontas
-        </span>
-        <span>Os indicadores de competência refletem os registos visíveis nesta página.</span>
+    <dl class="pl-cells">
+      <div v-for="metric in metrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value" :class="{ 'text-[var(--ds-text)]': metric.tone === 'neutral', 'text-emerald-700 dark:text-emerald-300': metric.tone === 'good', 'text-amber-700 dark:text-amber-300': metric.tone === 'warning', 'text-rose-700 dark:text-rose-300': metric.tone === 'critical', }">{{ metric.value }}</dd>
       </div>
-    </section>
+    </dl>
+
+    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
+      <span class="ds-chip ds-chip-neutral">
+        {{ competenceSummary?.ready_for_renewal ?? 0 }} renovações prontas
+      </span>
+      <span>Os indicadores de competência refletem os registos visíveis nesta página.</span>
+    </div>
 
     <p v-if="mutationForm.hasErrors && !showActionConfirmation" role="alert" class="ds-field-error">{{ Object.values(mutationForm.errors)[0] }}</p>
     <RecordsTable

@@ -1,20 +1,13 @@
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel px-5 py-5 sm:px-6">
-      <p class="ds-kicker">Metrology</p>
-      <div class="mt-2 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 class="text-2xl font-semibold tracking-tight text-[var(--ds-text)] sm:text-3xl">Registo de fontes de incerteza</h1>
-          <p class="mt-3 max-w-3xl text-sm leading-6 text-[var(--ds-text-muted)]">
-            Documente fontes de incerteza associadas a equipamento, método, ambiente, amostragem, pessoal e materiais de referência.
-          </p>
-        </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Registo de fontes de incerteza" lede="Documente fontes de incerteza associadas a equipamento, método, ambiente, amostragem, pessoal e materiais de referência.">
+      <template #actions>
         <span class="lims-module-chip w-fit">
           <span class="lims-status-dot lims-status-dot-instrument" aria-hidden="true" />
           {{ sources.length }} fontes
         </span>
-      </div>
-    </section>
+      </template>
+    </PageHeader>
 
     <section class="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
       <form class="ds-card space-y-4 p-5" @submit.prevent="submit">
@@ -89,6 +82,7 @@
 
 <script setup>
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { router, useForm } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'

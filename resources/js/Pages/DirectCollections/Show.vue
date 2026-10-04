@@ -1,57 +1,47 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Rastreabilidade da colheita</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot" :class="statusDotClass" />
-              {{ getStatusLabel(data.sample_status || 'pending') }}
-            </span>
-          </div>
-          <h1 class="ds-heading mt-3 text-2xl">{{ collectionTitle }}</h1>
-          <p class="ds-copy mt-2 text-sm">
-            {{ collectionDescription }}
-            <span v-if="data.cl" class="font-mono font-bold text-[color:var(--ds-text)]">{{ data.cl }}</span>
-          </p>
-        </div>
+  <div class="pl-page space-y-6">
+    <PageHeader :title="collectionTitle">
+      <template #lede>{{ collectionDescription }} <span v-if="data.cl" class="font-mono font-bold text-[color:var(--ds-text)]">{{ data.cl }}</span></template>
+      <template #badges>
+        <span class="ds-chip">
+          <span class="lims-status-dot" :class="statusDotClass" />
+          {{ getStatusLabel(data.sample_status || 'pending') }}
+        </span>
+      </template>
+      <template #actions>
+        <Link :href="collectionEditUrl" class="ds-button ds-button-primary">
+          <PencilIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.direct_collections.edit') }}
+        </Link>
+        <button type="button" class="ds-button ds-button-secondary" @click="router.reload()">
+          <ArrowPathRoundedSquareIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.direct_collections.update_status') }}
+        </button>
+        <Link :href="collectionIndexUrl" class="ds-button ds-button-secondary">
+          <ArrowLeftIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.direct_collections.back') }}
+        </Link>
+      </template>
+    </PageHeader>
 
-        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Link :href="collectionEditUrl" class="ds-button ds-button-primary">
-            <PencilIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.direct_collections.edit') }}
-          </Link>
-          <button type="button" class="ds-button ds-button-secondary" @click="router.reload()">
-            <ArrowPathRoundedSquareIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.direct_collections.update_status') }}
-          </button>
-          <Link :href="collectionIndexUrl" class="ds-button ds-button-secondary">
-            <ArrowLeftIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.direct_collections.back') }}
-          </Link>
-        </div>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Código laboratorial</dt>
+        <dd class="pl-cell-text">{{ data.cl || 'N/D' }}</dd>
       </div>
-
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Código laboratorial</dt>
-          <dd class="mt-2 truncate font-mono text-sm font-bold text-[color:var(--ds-text)]">{{ data.cl || 'N/D' }}</dd>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Origem</dt>
-          <dd class="mt-2 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ sampleEntry ? 'Entrada de amostra' : 'Registo legado' }}</dd>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Quantidade recolhida</dt>
-          <dd class="mt-2 text-sm font-bold text-[color:var(--ds-text)]">{{ data.collected_qty || 0 }} / {{ data.qty || 0 }}</dd>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Conclusão</dt>
-          <dd class="mt-2 text-sm font-bold text-[color:var(--ds-text)]">{{ completionPercentage }}%</dd>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Origem</dt>
+        <dd class="pl-cell-text">{{ sampleEntry ? 'Entrada de amostra' : 'Registo legado' }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Quantidade recolhida</dt>
+        <dd class="pl-cell-text">{{ data.collected_qty || 0 }} / {{ data.qty || 0 }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Conclusão</dt>
+        <dd class="pl-cell-text">{{ completionPercentage }}%</dd>
+      </div>
+    </dl>
 
     <section class="ds-command-surface overflow-hidden">
       <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
@@ -342,6 +332,7 @@
 
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { usePermission } from '@/Composables/usePermissions'
 import { Link, router } from '@inertiajs/vue3'
 import { computed } from 'vue'

@@ -25,6 +25,7 @@ use App\Http\Controllers\CounterAnalysisController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CreditNoteController;
 use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\CustomChartController;
 use App\Http\Controllers\CustomerCategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerRequestCategoryController;
@@ -295,6 +296,14 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     });
 
     Route::get('/dashboard', LaboratoryWorkbenchController::class)->name('dashboard');
+    Route::controller(CustomChartController::class)->prefix('analytics')->name('analytics.')->group(function () {
+        Route::get('/', 'index')->name('board');
+        Route::get('/charts/preview', 'preview')->name('charts.preview');
+        Route::post('/charts', 'store')->name('charts.store');
+        Route::patch('/charts/order', 'reorder')->name('charts.reorder');
+        Route::put('/charts/{chart}', 'update')->whereNumber('chart')->name('charts.update');
+        Route::delete('/charts/{chart}', 'destroy')->whereNumber('chart')->name('charts.destroy');
+    });
     Route::get('/lab-networks/{network}', [LabNetworkController::class, 'index'])->name('lab-network.index');
     Route::get('/lab-networks/{network}/stock.csv', [LabNetworkController::class, 'export'])->name('lab-network.export');
     Route::post('/laboratory-context/{lab}', [LabNetworkController::class, 'switchLab'])->name('lab-context.switch');

@@ -19,8 +19,19 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="ds-icon-button"
+            :aria-pressed="isDark"
+            :aria-label="isDark ? labels.lightTheme : labels.darkTheme"
+            :title="`${isDark ? labels.lightTheme : labels.darkTheme} (⇧D)`"
+            @click="toggleTheme"
+          >
+            <SunIcon v-if="isDark" class="h-4 w-4" aria-hidden="true" /><MoonIcon v-else class="h-4 w-4" aria-hidden="true" />
+          </button>
+
           <div class="relative">
-            <button type="button" class="ds-button ds-button-ghost" :aria-expanded="languageMenuOpen" @click="languageMenuOpen = !languageMenuOpen">
+            <button type="button" class="ds-button ds-button-ghost" :aria-expanded="languageMenuOpen" @click="profileMenuOpen = false; languageMenuOpen = !languageMenuOpen">
               <span>{{ activeLanguageLabel }}</span>
               <ChevronDownIcon class="h-4 w-4 text-[var(--ds-text-soft)]" aria-hidden="true" />
             </button>
@@ -44,7 +55,7 @@
           </Link>
 
           <div class="relative">
-            <button type="button" class="ds-button ds-button-secondary gap-2.5 py-1 pl-1 pr-2.5" :aria-expanded="profileMenuOpen" @click="profileMenuOpen = !profileMenuOpen">
+            <button type="button" class="ds-button ds-button-secondary gap-2.5 py-1 pl-1 pr-2.5" :aria-expanded="profileMenuOpen" @click="languageMenuOpen = false; profileMenuOpen = !profileMenuOpen">
               <span class="pl-avatar h-7 w-7">{{ portalAccount?.name?.charAt(0)?.toUpperCase() || 'C' }}</span>
               <span class="hidden max-w-40 truncate md:block">{{ portalAccount?.name || labels.customer }}</span>
               <ChevronDownIcon class="h-4 w-4 text-[var(--ds-text-soft)]" aria-hidden="true" />
@@ -85,6 +96,9 @@
               <XMarkIcon class="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
+          <Link :href="route('portal.requests.index', { new: 1 })" class="ds-button ds-button-primary mx-4 mb-2 justify-between" @click="sidebarOpen = false">
+            {{ labels.newRequest }}<PlusIcon class="h-4 w-4" aria-hidden="true" />
+          </Link>
           <nav class="grid flex-1 content-start gap-0.5 overflow-y-auto py-2">
             <Link
               v-for="item in navigation"
@@ -102,7 +116,7 @@
       </div>
     </Dialog>
 
-    <div class="mx-auto flex max-w-7xl gap-9 px-4 pb-16 pt-9 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-7xl gap-9 px-4 pb-[calc(var(--bottombar-height)+3rem)] pt-9 sm:px-6 md:pb-16 lg:px-8">
       <aside class="hidden w-60 shrink-0 lg:block">
         <div class="sticky top-20">
           <div class="flex items-center gap-2.5 px-2.5 pb-3">
@@ -133,11 +147,30 @@
         <slot />
       </main>
     </div>
+
+    <!-- Phones: the customer's daily destinations along the foot, the rest in the menu. -->
+    <nav class="pl-bottom" :aria-label="labels.navigation">
+      <Link
+        v-for="item in phoneNavigation"
+        :key="item.key"
+        :href="item.href"
+        class="pl-bottom-item"
+        :aria-current="isActive(item) ? 'page' : undefined"
+      >
+        <component :is="item.icon" aria-hidden="true" />
+        <span>{{ labels[item.key] }}</span>
+      </Link>
+      <button type="button" class="pl-bottom-item" :aria-expanded="sidebarOpen" @click="sidebarOpen = true">
+        <Bars3Icon aria-hidden="true" />
+        <span>Menu</span>
+      </button>
+    </nav>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { isThemeShortcut, useTheme } from '@/Composables/useTheme'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue'
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
 import ToastList from '@/Components/toast-list.vue'
@@ -152,6 +185,9 @@ import {
   ClipboardCheck as ClipboardDocumentCheckIcon,
   ChevronDown as ChevronDownIcon,
   FileText as DocumentTextIcon,
+  Moon as MoonIcon,
+  Plus as PlusIcon,
+  Sun as SunIcon,
   House as HomeModernIcon,
   Power as PowerIcon,
   CircleHelp as QuestionMarkCircleIcon,
@@ -167,6 +203,8 @@ const portalAccount = computed(() => page.props?.auth?.user?.data ?? page.props?
 const sidebarOpen = ref(false)
 const profileMenuOpen = ref(false)
 const languageMenuOpen = ref(false)
+// Portal accounts are not staff users: the theme is remembered in this browser only.
+const { isDark, toggle: toggleTheme } = useTheme()
 
 const dictionary = {
   en: {
@@ -181,16 +219,18 @@ const dictionary = {
     creditNotes: 'Credit notes',
     contractGuides: 'Contract guides',
     faq: 'FAQ',
-    profile: 'Perfil',
-    security: 'Segurança',
-    newRequest: 'Novo pedido',
-    portalProfile: 'Perfil do portal',
-    portalSecurity: 'Definições de segurança',
-    logout: 'Terminar sessão',
+    profile: 'Profile',
+    security: 'Security',
+    newRequest: 'New request',
+    portalProfile: 'Portal profile',
+    portalSecurity: 'Security settings',
+    logout: 'Sign out',
     navigation: 'Navigation',
     closeNavigation: 'Close navigation',
-    portalArea: 'Portal do cliente',
-    customer: 'Cliente',
+    portalArea: 'Customer area',
+    customer: 'Customer',
+    darkTheme: 'Switch to dark theme',
+    lightTheme: 'Switch to light theme',
   },
   pt: {
     dashboard: 'Resumo',
@@ -214,6 +254,8 @@ const dictionary = {
     closeNavigation: 'Fechar navegação',
     portalArea: 'Área do cliente',
     customer: 'Cliente',
+    darkTheme: 'Mudar para tema escuro',
+    lightTheme: 'Mudar para tema claro',
   },
 }
 
@@ -251,6 +293,7 @@ const navigation = [
 ]
 
 const isActive = (item) => page.url.startsWith(item.match)
+const phoneNavigation = navigation.filter((item) => ['dashboard', 'requests', 'certificates', 'invoices'].includes(item.key))
 const pageTitle = computed(() => labels.value[navigation.find(isActive)?.key] || labels.value.portalArea)
 
 const logout = () => {
@@ -275,11 +318,26 @@ const closeMenus = (event) => {
   }
 }
 
+const onKeydown = (event) => {
+  if (event.key === 'Escape' && (profileMenuOpen.value || languageMenuOpen.value)) {
+    profileMenuOpen.value = false
+    languageMenuOpen.value = false
+    return
+  }
+
+  if (isThemeShortcut(event)) {
+    event.preventDefault()
+    toggleTheme()
+  }
+}
+
 onMounted(() => {
   document.addEventListener('click', closeMenus)
+  document.addEventListener('keydown', onKeydown)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', closeMenus)
+  document.removeEventListener('keydown', onKeydown)
 })
 </script>

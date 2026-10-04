@@ -58,8 +58,10 @@ test('legacy consumers retain their existing request method until separately mig
 
 test('pending actions expose disabled and busy states without changing layout or motion', () => {
   assert.match(page, /:action-processing="isSubmitting"/);
-  assert.equal(table.match(/:disabled="actionProcessing \|\| isProcessingAction"/g).length, 4);
+  // One stacked register serves every width, so each row action appears once.
+  assert.equal(table.match(/:disabled="actionProcessing \|\| isProcessingAction"/g).length, 2);
   assert.match(table, /:processing="actionProcessing \|\| isProcessingAction"/);
   assert.match(selector, /:aria-busy="processing"/);
-  assert.match(selector, /:disabled="processing \|\| !actionId \|\| !recordIds.length"/);
+  // The selection bar offers each action as a button; all of them, and "clear", wait while pending.
+  assert.equal(selector.match(/:disabled="processing"/g).length, 2);
 });

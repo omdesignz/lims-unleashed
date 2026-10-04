@@ -1,10 +1,10 @@
 <script setup>
 import { usePermission } from "@/Composables/usePermissions";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue';
 import { Link, router } from "@inertiajs/vue3";
 import {
   Download as ArrowDownTrayIcon,
-  ArrowLeft as ArrowLeftIcon,
   Banknote as BanknotesIcon,
   Building as BuildingOfficeIcon,
   BadgeCheck as CheckBadgeIcon,
@@ -159,68 +159,48 @@ function openInvoice() {
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <Link :href="route(`${config.routePrefix}.index`)" class="ds-button ds-button-ghost px-0">
-        <ArrowLeftIcon class="h-4 w-4" />
-        Voltar ao registo
-      </Link>
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: isImport ? 'Certificados de importação' : 'Certificados de exportação', url: route(`${config.routePrefix}.index`) }, { title: certificate.cert_no || config.title }]" :title="certificate.cert_no || config.title" :lede="`${config.title} · ${config.counterpartyLabel}: ${config.counterparty || 'não identificado'}`">
+      <template #badges>
+        <span class="ds-badge" :class="status.className">
+          <CheckBadgeIcon class="h-3.5 w-3.5" />
+          {{ status.label }}
+        </span>
+      </template>
+      <template #actions>
+        <button type="button" class="ds-button ds-button-secondary" @click="downloadPdf">
+          <ArrowDownTrayIcon class="h-4 w-4" />
+          PDF
+        </button>
+        <button type="button" class="ds-button ds-button-secondary" @click="shareOpen = true">
+          <EnvelopeIcon class="h-4 w-4" />
+          Enviar
+        </button>
+        <Link v-if="canEdit" :href="route(`${config.routePrefix}.edit`, certificate.id)" class="ds-button ds-button-primary">
+          <PencilSquareIcon class="h-4 w-4" />
+          Editar
+        </Link>
+      </template>
+    </PageHeader>
 
-      <div class="mt-4 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex min-w-0 items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <component :is="config.icon" class="h-5 w-5" />
-          </span>
-          <div class="min-w-0">
-            <p class="ds-kicker">{{ config.kicker }}</p>
-            <div class="mt-1 flex flex-wrap items-center gap-2">
-              <h1 class="ds-heading text-2xl">{{ certificate.cert_no || config.title }}</h1>
-              <span class="ds-badge" :class="status.className">
-                <CheckBadgeIcon class="h-3.5 w-3.5" />
-                {{ status.label }}
-              </span>
-            </div>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">
-              {{ config.title }} · {{ config.counterpartyLabel }}: {{ config.counterparty || "não identificado" }}
-            </p>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          <button type="button" class="ds-button ds-button-secondary" @click="downloadPdf">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            PDF
-          </button>
-          <button type="button" class="ds-button ds-button-secondary" @click="shareOpen = true">
-            <EnvelopeIcon class="h-4 w-4" />
-            Enviar
-          </button>
-          <Link v-if="canEdit" :href="route(`${config.routePrefix}.edit`, certificate.id)" class="ds-button ds-button-primary">
-            <PencilSquareIcon class="h-4 w-4" />
-            Editar
-          </Link>
-        </div>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Data do certificado</dt>
+        <dd class="pl-cell-text">{{ formatDate(certificate.date) }}</dd>
       </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-r xl:border-b-0">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Data do certificado</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatDate(certificate.date) }}</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 xl:border-b-0 xl:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Produtos</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ items.length }} linhas</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Quantidade total</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatQuantity(totalQuantity) }} un.</dd>
-        </div>
-        <div class="px-4 py-3">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Facturação</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ certificate.invoice_id ? "Associada" : certificate.invoiced ? "Facturado · vínculo indisponível" : "Pendente" }}</dd>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Produtos</dt>
+        <dd class="pl-cell-text">{{ items.length }} linhas</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Quantidade total</dt>
+        <dd class="pl-cell-text">{{ formatQuantity(totalQuantity) }} un.</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Facturação</dt>
+        <dd class="pl-cell-text">{{ certificate.invoice_id ? "Associada" : certificate.invoiced ? "Facturado · vínculo indisponível" : "Pendente" }}</dd>
+      </div>
+    </dl>
 
     <div class="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_19rem]">
       <main class="min-w-0 space-y-6">

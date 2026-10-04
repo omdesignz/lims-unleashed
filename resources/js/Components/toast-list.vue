@@ -23,7 +23,7 @@ onUnmounted(removeFinishEventListener)
 
 <template>
   <!-- Plano: toasts rise from the bottom-right corner and leave the same way. -->
-  <div class="pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex justify-end p-3 pb-[4.5rem] sm:p-6 md:pb-6" aria-live="polite" aria-atomic="false">
+  <div class="pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex justify-end p-3 pb-[calc(var(--bottombar-height)+0.75rem)] md:p-6" aria-live="polite" aria-atomic="false">
     <div class="flex w-full max-w-[26rem] flex-col-reverse items-stretch gap-2">
       <TransitionGroup
         enter-from-class="translate-y-2 opacity-0"

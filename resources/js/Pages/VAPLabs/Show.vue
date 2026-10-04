@@ -1,7 +1,8 @@
 <script setup>
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import {
-  ArrowLeft as ArrowLeftIcon,
   ArrowRight as ArrowRightIcon,
   FlaskConical as BeakerIcon,
   Landmark as BuildingLibraryIcon,
@@ -30,17 +31,16 @@ function deleteLab() {
 </script>
 
 <template>
-  <div class="space-y-5">
-    <header class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex min-w-0 items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))]"><BeakerIcon class="h-5 w-5" /></span>
-          <div class="min-w-0"><p class="ds-kicker">{{ $t('gestlab.general.labels.vap_labs.title') }}</p><h1 class="ds-heading mt-1 truncate text-xl">{{ lab.name }}</h1><div class="mt-2 flex flex-wrap gap-2"><span class="ds-badge bg-cyan-50 font-mono text-cyan-800 ring-1 ring-inset ring-cyan-600/20 dark:bg-cyan-500/10 dark:text-cyan-200">{{ lab.code }}</span><span class="ds-badge bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300">{{ $t('gestlab.general.labels.vap_labs.status.active') }}</span></div></div>
-        </div>
-        <div class="flex flex-wrap gap-2"><Link :href="route('vap-labs.labs.index')" class="ds-button ds-button-secondary"><ArrowLeftIcon class="h-4 w-4" />{{ $t('gestlab.general.labels.vap_labs.buttons.back') }}</Link><Link :href="route('vap-labs.labs.edit', lab.id)" class="ds-button ds-button-primary"><PencilSquareIcon class="h-4 w-4" />{{ $t('gestlab.general.labels.vap_labs.buttons.edit') }}</Link></div>
-      </div>
-      <p class="border-t border-[var(--ds-border)] px-5 py-4 text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">{{ lab.description || $t('gestlab.general.labels.vap_labs.no_description') }}</p>
-    </header>
+  <div class="pl-page space-y-5">
+    <PageHeader :trail="[{ title: 'Laboratórios', url: route('vap-labs.labs.index') }, { title: lab.name }]" :title="lab.name" :lede="lab.description || $t('gestlab.general.labels.vap_labs.no_description')">
+      <template #badges>
+        <span class="ds-chip pl-num">{{ lab.code }}</span>
+        <StatusChip tone="ok">{{ $t('gestlab.general.labels.vap_labs.status.active') }}</StatusChip>
+      </template>
+      <template #actions>
+        <Link :href="route('vap-labs.labs.edit', lab.id)" class="ds-button ds-button-primary"><PencilSquareIcon class="h-4 w-4" />{{ $t('gestlab.general.labels.vap_labs.buttons.edit') }}</Link>
+      </template>
+    </PageHeader>
 
     <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
       <div class="space-y-5">

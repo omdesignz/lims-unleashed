@@ -1,10 +1,7 @@
 <script setup>
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
 import NotificationAdminHeader from '@/Components/notifications/NotificationAdminHeader.vue'
-import {
-  notificationIndicatorClasses,
-  notificationTypeClasses,
-  notificationTypeLabel,
-} from '@/Composables/useNotificationPresentation'
+import { notificationTypeLabel } from '@/Composables/useNotificationPresentation'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import {
@@ -35,7 +32,6 @@ const periodOptions = [
 ]
 
 const deliveryTrend = computed(() => Object.entries(props.stats.delivery_trend || {}).map(([date, values]) => ({ date, ...values })))
-const maxTrendValue = computed(() => Math.max(1, ...deliveryTrend.value.flatMap((entry) => [Number(entry.sent), Number(entry.read)])))
 const typeDistribution = computed(() => Object.entries(props.stats.notification_types || {}).sort(([, first], [, second]) => second - first))
 const totalTypes = computed(() => typeDistribution.value.reduce((total, [, count]) => total + Number(count), 0))
 
@@ -48,7 +44,6 @@ const metrics = computed(() => [
 
 const formatDate = (value) => new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short' }).format(new Date(value))
 const formatRangeDate = (value) => value ? new Intl.DateTimeFormat('pt-PT', { dateStyle: 'medium' }).format(new Date(value)) : '-'
-const percentage = (value, total) => total ? Math.round((Number(value) / Number(total)) * 100) : 0
 
 const updatePeriod = () => {
   router.get(route('admin.notifications.analytics'), { period: selectedPeriod.value }, { preserveState: true, replace: true })
@@ -56,7 +51,7 @@ const updatePeriod = () => {
 </script>
 
 <template>
-  <div class="space-y-5">
+  <div class="pl-page space-y-5">
     <Head title="Analítica de comunicação" />
     <NotificationAdminHeader
       title="Analítica de comunicação"
@@ -105,47 +100,30 @@ const updatePeriod = () => {
     </section>
 
     <div class="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(19rem,0.8fr)]">
-      <section class="ds-panel overflow-hidden">
-        <header class="border-b border-[var(--ds-border)] px-5 py-4">
-          <p class="ds-kicker">Evolucao temporal</p>
-          <h2 class="ds-heading mt-1 text-base">Emissão e leitura por dia</h2>
-        </header>
-        <div v-if="deliveryTrend.length" class="overflow-x-auto p-5">
-          <div class="min-w-[40rem] space-y-3">
-            <div class="flex justify-end gap-4 text-xs font-bold text-[var(--ds-text-muted)]">
-              <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm bg-[rgb(var(--primary-600-rgb))]" /> Emitidas</span>
-              <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Lidas</span>
-            </div>
-            <div v-for="entry in deliveryTrend" :key="entry.date" class="grid grid-cols-[5rem_minmax(0,1fr)_3rem] items-center gap-3">
-              <span class="text-xs font-bold text-[var(--ds-text-muted)]">{{ formatDate(entry.date) }}</span>
-              <div class="space-y-1.5">
-                <div class="h-2 rounded-full bg-[var(--ds-panel-muted)]"><div class="h-full rounded-full bg-[rgb(var(--primary-600-rgb))]" :style="{ width: `${(entry.sent / maxTrendValue) * 100}%` }" /></div>
-                <div class="h-2 rounded-full bg-[var(--ds-panel-muted)]"><div class="h-full rounded-full bg-emerald-500" :style="{ width: `${(entry.read / maxTrendValue) * 100}%` }" /></div>
-              </div>
-              <span class="text-right text-xs font-black tabular-nums text-[var(--ds-text)]">{{ entry.sent }}/{{ entry.read }}</span>
-            </div>
-          </div>
+      <section class="pl-panel min-w-0" aria-labelledby="notification-trend">
+        <header class="pl-panel-head"><h2 id="notification-trend" class="pl-k">Emissão e leitura por dia</h2></header>
+        <div class="p-4">
+          <PlanoChart
+            kind="column"
+            label="Notificações emitidas e lidas por dia"
+            :categories="deliveryTrend.map((entry) => formatDate(entry.date))"
+            :series="[{ name: 'Emitidas', data: deliveryTrend.map((entry) => Number(entry.sent) || 0) }, { name: 'Lidas', data: deliveryTrend.map((entry) => Number(entry.read) || 0) }]"
+            empty-text="Sem actividade no período seleccionado."
+          />
         </div>
-        <p v-else class="px-5 py-12 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem actividade no período seleccionado.</p>
       </section>
 
-      <section class="ds-panel overflow-hidden">
-        <header class="border-b border-[var(--ds-border)] px-5 py-4">
-          <p class="ds-kicker">Composição</p>
-          <h2 class="ds-heading mt-1 text-base">Distribuição por tipo</h2>
-        </header>
-        <div v-if="typeDistribution.length" class="divide-y divide-[var(--ds-border)]">
-          <article v-for="([type, count]) in typeDistribution" :key="type" class="px-5 py-4">
-            <div class="flex items-center gap-3">
-              <span class="h-2.5 w-2.5 rounded-full" :class="notificationIndicatorClasses(type)" />
-              <span class="ds-badge ring-1 ring-inset" :class="notificationTypeClasses(type)">{{ notificationTypeLabel(type) }}</span>
-              <span class="ml-auto text-sm font-black tabular-nums text-[var(--ds-text)]">{{ count }}</span>
-            </div>
-            <div class="mt-3 h-1.5 rounded-full bg-[var(--ds-panel-muted)]"><div class="h-full rounded-full" :class="notificationIndicatorClasses(type)" :style="{ width: `${percentage(count, totalTypes)}%` }" /></div>
-            <p class="mt-2 text-right text-xs font-bold text-[var(--ds-text-muted)]">{{ percentage(count, totalTypes) }}%</p>
-          </article>
+      <section class="pl-panel min-w-0" aria-labelledby="notification-types">
+        <header class="pl-panel-head"><h2 id="notification-types" class="pl-k">Distribuição por tipo</h2><span class="pl-k pl-faint">{{ totalTypes }} notificações</span></header>
+        <div class="p-4">
+          <PlanoChart
+            kind="bar"
+            label="Notificações por tipo"
+            :categories="typeDistribution.map(([type]) => notificationTypeLabel(type))"
+            :series="[{ name: 'Notificações', data: typeDistribution.map(([, count]) => Number(count) || 0) }]"
+            empty-text="Sem classificações no período."
+          />
         </div>
-        <p v-else class="px-5 py-12 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem classificações no período.</p>
       </section>
     </div>
 

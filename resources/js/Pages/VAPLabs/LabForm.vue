@@ -1,11 +1,10 @@
 <script setup>
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import {
   ArrowLeft as ArrowLeftIcon,
   FlaskConical as BeakerIcon,
-  Landmark as BuildingLibraryIcon,
   CircleCheck as CheckCircleIcon,
-  Mail as EnvelopeIcon,
   IdCard as IdentificationIcon,
   Phone as PhoneIcon,
   Users as UserGroupIcon,
@@ -76,31 +75,34 @@ function resetForm() {
 </script>
 
 <template>
-  <form class="space-y-5" @submit.prevent="submit">
-    <header class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">{{ $t('gestlab.general.labels.vap_labs.title') }}</p>
-          <h1 class="ds-heading mt-1 text-xl">{{ isEditing ? lab.name : $t('gestlab.general.labels.vap_labs.buttons.add_lab') }}</h1>
-          <p class="ds-copy mt-1 text-sm">{{ $t('gestlab.general.labels.vap_labs.description') }}</p>
-        </div>
-        <div class="flex gap-2">
-          <button type="button" class="ds-button ds-button-secondary" @click="router.visit(route('vap-labs.labs.index'))">
-            <ArrowLeftIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.vap_labs.buttons.back_to_labs') }}
-          </button>
-          <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.name.trim() || !form.code.trim()">
-            <CheckCircleIcon class="h-4 w-4" />
-            {{ form.processing ? $t('gestlab.general.labels.vap_labs.buttons.processing') : $t('gestlab.general.labels.vap_labs.buttons.save_lab') }}
-          </button>
-        </div>
+  <form class="pl-page space-y-5" @submit.prevent="submit">
+    <PageHeader :title="isEditing ? lab.name : $t('gestlab.general.labels.vap_labs.buttons.add_lab')" :lede="$t('gestlab.general.labels.vap_labs.description')">
+      <template #actions>
+        <button type="button" class="ds-button ds-button-secondary" @click="router.visit(route('vap-labs.labs.index'))">
+          <ArrowLeftIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.vap_labs.buttons.back_to_labs') }}
+        </button>
+        <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.name.trim() || !form.code.trim()">
+          <CheckCircleIcon class="h-4 w-4" />
+          {{ form.processing ? $t('gestlab.general.labels.vap_labs.buttons.processing') : $t('gestlab.general.labels.vap_labs.buttons.save_lab') }}
+        </button>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.vap_labs.stats.total_labs') }}</dt>
+        <dd class="pl-cell-text">{{ labsCount }}</dd>
       </div>
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
-        <div class="px-5 py-3.5"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_labs.stats.total_labs') }}</dt><dd class="mt-1 text-lg font-black text-[var(--ds-text)]">{{ labsCount }}</dd></div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-3.5 sm:border-t-0"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_labs.stats.active_labs') }}</dt><dd class="mt-1 text-lg font-black text-emerald-700 dark:text-emerald-300">{{ activeLabsCount }}</dd></div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-3.5 sm:border-t-0"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_labs.last_updated') }}</dt><dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">{{ lastUpdated || '-' }}</dd></div>
-      </dl>
-    </header>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.vap_labs.stats.active_labs') }}</dt>
+        <dd class="pl-cell-text">{{ activeLabsCount }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.vap_labs.last_updated') }}</dt>
+        <dd class="pl-cell-text">{{ lastUpdated || '-' }}</dd>
+      </div>
+    </dl>
 
     <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
       <div class="space-y-5">

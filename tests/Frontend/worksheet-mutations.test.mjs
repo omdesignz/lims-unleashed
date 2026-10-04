@@ -99,11 +99,20 @@ function inputComponent() {
   return new Function('Vue', 'DateTimePicker', code)(Vue, { render: () => null });
 }
 
+// The Plano page header, reduced to what the page hands it: title, sentence and slots.
+const pageHeaderStub = {
+  props: ['title', 'lede', 'trail', 'crumbs'],
+  setup: (props, { slots }) => () => Vue.h('header', [
+    Vue.h('h1', props.title), slots.lede?.() ?? Vue.h('p', props.lede), slots.badges?.(), slots.actions?.(), slots.default?.(),
+  ]),
+};
+
 async function renderEditor({ editable = false, processing = false, errors = {}, empty = false } = {}) {
   const { descriptor } = parse(editor);
   const code = compileScript(descriptor, { id: 'worksheet-editor', inlineTemplate: true }).content
     .replace(/import Layout[^\n]+\n/, '')
-    .replace(/import \{ Link, useForm \} from [^;]+;/, '')
+    .replace(/import PageHeader[^\n]+\n/, '')
+    .replace(/import \{ (?:Link, )?useForm \} from [^;]+;/, '')
     .replace(/import \{([^}]+)\} from "@lucide\/vue";/, (_, icons) => `const {${icons.replace(/ as /g, ': ')}} = iconStubs;`)
     .replace(/import \{([^}]+)\} from ['"]vue['"];?/g, (_, imports) => `const {${imports.replace(/\bas\b/g, ':')}} = Vue;`)
     .replace('export default', 'return');
@@ -117,8 +126,8 @@ async function renderEditor({ editable = false, processing = false, errors = {},
     return form;
   };
   const Link = { props: ['href'], setup: (props, { slots }) => () => Vue.h('a', { href: props.href }, slots.default?.()) };
-  const component = new Function('Vue', 'Layout', 'Link', 'useForm', 'iconStubs', 'route', code)(
-    Vue, {}, Link, useForm, iconStubs, (name) => name,
+  const component = new Function('Vue', 'Layout', 'Link', 'useForm', 'iconStubs', 'route', 'PageHeader', code)(
+    Vue, {}, Link, useForm, iconStubs, (name) => name, pageHeaderStub,
   );
   const worksheet = {
       id: 7, name: 'Folha de bancada', updated_at: null,
@@ -172,7 +181,8 @@ async function renderIndex({ canRestore = true, processing = false, errors = {},
   const { descriptor } = parse(index);
   const code = compileScript(descriptor, { id: 'worksheet-index', inlineTemplate: true }).content
     .replace(/import Layout[^\n]+\n/, '')
-    .replace(/import \{ Link, useForm \} from [^;]+;/, '')
+    .replace(/import PageHeader[^\n]+\n/, '')
+    .replace(/import \{ (?:Link, )?useForm \} from [^;]+;/, '')
     .replace(/import \{([^}]+)\} from "@lucide\/vue";/, (_, icons) => `const {${icons.replace(/ as /g, ': ')}} = iconStubs;`)
     .replace(/import \{([^}]+)\} from ['"]vue['"];?/g, (_, imports) => `const {${imports.replace(/\bas\b/g, ':')}} = Vue;`)
     .replace('export default', 'return');
@@ -186,7 +196,7 @@ async function renderIndex({ canRestore = true, processing = false, errors = {},
     return form;
   };
   const Link = { props: ['href'], setup: (props, { slots }) => () => Vue.h('a', { href: props.href }, slots.default?.()) };
-  const component = new Function('Vue', 'Layout', 'Link', 'useForm', 'iconStubs', 'route', code)(Vue, {}, Link, useForm, iconStubs, route);
+  const component = new Function('Vue', 'Layout', 'Link', 'useForm', 'iconStubs', 'route', 'PageHeader', code)(Vue, {}, Link, useForm, iconStubs, route, pageHeaderStub);
   const app = Vue.createSSRApp(component, {
     trashed: 'only', can_restore: canRestore,
     worksheets: empty ? [] : [{ id: 7, name: 'Folha arquivada', deleted_at: '2026-09-28', worksheets: { sheets: [] } }],

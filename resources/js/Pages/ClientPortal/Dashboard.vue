@@ -1,16 +1,15 @@
 <script setup>
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import { Link } from "@inertiajs/vue3";
 import {
   ArrowRight as ArrowRightIcon,
   Banknote as BanknotesIcon,
   FlaskConical as BeakerIcon,
-  Building2 as BuildingOffice2Icon,
   BadgeCheck as CheckBadgeIcon,
   ClipboardCheck as ClipboardDocumentCheckIcon,
   Clock as ClockIcon,
   FileText as DocumentTextIcon,
-  TriangleAlert as ExclamationTriangleIcon,
   Plus as PlusIcon,
   BadgePercent as ReceiptPercentIcon,
   ShieldAlert as ShieldExclamationIcon,
@@ -77,40 +76,25 @@ function formatDate(value) {
 
 <template>
   <div class="space-y-6">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <BuildingOffice2Icon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <p class="ds-kicker">Área do cliente</p>
-              <h1 class="ds-heading mt-1 break-words text-2xl">{{ warehouse.name || warehouse.customer || "Resumo da conta" }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Acompanhe pedidos, amostras, documentos de qualidade e conta corrente num único espaco.</p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span v-if="warehouse.email" class="ds-chip">{{ warehouse.email }}</span>
-                <span v-if="warehouse.code" class="ds-chip font-mono">{{ warehouse.code }}</span>
-                <span v-if="warehouse.address" class="ds-chip">{{ warehouse.address }}</span>
-              </div>
-            </div>
-          </div>
+    <PageHeader :title="warehouse.name || warehouse.customer || 'Resumo da conta'" lede="Acompanhe pedidos, amostras, documentos de qualidade e conta corrente num único espaco.">
+      <template #actions>
+        <Link :href="route('portal.requests.index', { new: 1 })" class="ds-button ds-button-primary">
+          <PlusIcon class="h-4 w-4" /> Novo pedido </Link>
+        <Link :href="route('portal.ratings.index')" class="ds-button ds-button-secondary">Avaliações pendentes</Link>
+      </template>
+      <template #badges>
+        <span v-if="warehouse.code" class="ds-chip pl-num">{{ warehouse.code }}</span>
+        <span v-if="warehouse.email" class="ds-chip ds-chip-neutral">{{ warehouse.email }}</span>
+        <span v-if="warehouse.address" class="ds-chip ds-chip-neutral">{{ warehouse.address }}</span>
+      </template>
+    </PageHeader>
 
-          <Link :href="route('portal.requests.index', { new: 1 })" class="ds-button ds-button-primary">
-            <PlusIcon class="h-4 w-4" /> Novo pedido </Link>
-        </div>
-        <Link :href="route('portal.ratings.index')" class="ds-button ds-button-secondary mt-4">Avaliações pendentes</Link>
+    <dl class="pl-cells">
+      <div v-for="metric in metricCards" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
       </div>
-
-      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
-        <div v-for="metric in metricCards" :key="metric.label" class="bg-[var(--ds-panel)] p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt><dd class="mt-3 break-words text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p></div>
-            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+    </dl>
 
     <section class="ds-card overflow-hidden">
       <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:flex sm:items-start sm:justify-between sm:gap-4 sm:px-6">

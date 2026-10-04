@@ -1,5 +1,5 @@
 <script setup>
-import { useId } from 'vue'
+import { nextTick, onMounted, ref, useId, watch } from 'vue'
 import { motion } from 'motion-v'
 import { springPlane } from '@/Support/motion'
 
@@ -16,10 +16,25 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 const planeId = `pl-cell-plane-${useId()}`
 const pad = (value) => String(value ?? 0)
+
+// On phones the cells scroll as one strip: keep the chosen one in view.
+const strip = ref(null)
+
+function revealChosen() {
+  const group = strip.value
+  const chosen = group?.querySelector('[aria-pressed="true"]')
+
+  if (group && chosen && group.scrollWidth > group.clientWidth) {
+    group.scrollLeft += chosen.getBoundingClientRect().left - group.getBoundingClientRect().left - 16
+  }
+}
+
+onMounted(revealChosen)
+watch(() => props.modelValue, () => nextTick(revealChosen))
 </script>
 
 <template>
-  <div class="pl-cells" role="group" :aria-label="props.label">
+  <div ref="strip" class="pl-cells" role="group" :aria-label="props.label">
     <button
       v-for="item in props.items"
       :key="item.key"

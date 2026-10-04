@@ -1,51 +1,32 @@
 <template>
-  <form class="space-y-6" @submit.prevent="submit">
-    <section class="ds-command-surface overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <Link :href="route('formulas.index')" class="ds-link inline-flex items-center gap-1.5 text-xs font-bold">
-            <ArrowLeftIcon class="h-4 w-4" />
-            Biblioteca de fórmulas
-          </Link>
-          <div class="mt-3 flex items-start gap-3">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))]">
-              <CalculatorIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <p class="ds-kicker">Configuração analítica</p>
-              <h1 class="ds-heading mt-1 text-xl sm:text-2xl">{{ isEdit ? `Editar ${form.name || 'fórmula'}` : 'Nova fórmula' }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Definição controlada da expressão, entradas, arredondamento e unidade reportável.</p>
-            </div>
-          </div>
-        </div>
+  <form class="pl-page space-y-6" @submit.prevent="submit">
+    <PageHeader :trail="[{ title: 'Biblioteca de fórmulas', url: route('formulas.index') }, { title: isEdit ? `Editar ${form.name || 'fórmula'}` : 'Nova fórmula' }]" :title="isEdit ? `Editar ${form.name || 'fórmula'}` : 'Nova fórmula'" lede="Definição controlada da expressão, entradas, arredondamento e unidade reportável.">
+      <template #actions>
+        <button type="button" class="ds-button ds-button-secondary" :disabled="!form.isDirty || form.processing" @click="$emit('discard')">
+          <ArrowPathIcon class="h-4 w-4" />
+          Repor
+        </button>
+        <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
+          <CheckIcon class="h-4 w-4" />
+          {{ form.processing ? 'A guardar...' : isEdit ? 'Guardar alterações' : 'Criar fórmula' }}
+        </button>
+      </template>
+    </PageHeader>
 
-        <div class="flex shrink-0 flex-wrap gap-2">
-          <button type="button" class="ds-button ds-button-secondary" :disabled="!form.isDirty || form.processing" @click="$emit('discard')">
-            <ArrowPathIcon class="h-4 w-4" />
-            Repor
-          </button>
-          <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-            <CheckIcon class="h-4 w-4" />
-            {{ form.processing ? 'A guardar...' : isEdit ? 'Guardar alterações' : 'Criar fórmula' }}
-          </button>
-        </div>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Estado</dt>
+        <dd class="pl-cell-text"><span class="ds-badge" :class="form.is_active ? 'ds-badge-success' : 'ds-badge-neutral'">{{ form.is_active ? 'Activa' : 'Inactiva' }}</span></dd>
       </div>
-
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
-        <div class="px-5 py-4 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Estado</dt>
-          <dd class="mt-2"><span class="ds-badge" :class="form.is_active ? 'ds-badge-success' : 'ds-badge-neutral'">{{ form.is_active ? 'Activa' : 'Inactiva' }}</span></dd>
-        </div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Categoria</dt>
-          <dd class="mt-2"><span class="ds-badge ds-badge-info">{{ categoryLabel }}</span></dd>
-        </div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Entradas definidas</dt>
-          <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ form.variables.length }}</dd>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Categoria</dt>
+        <dd class="pl-cell-text"><span class="ds-badge ds-badge-info">{{ categoryLabel }}</span></dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Entradas definidas</dt>
+        <dd class="pl-cell-value">{{ form.variables.length }}</dd>
+      </div>
+    </dl>
 
     <section v-if="!isEdit" class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
@@ -205,7 +186,7 @@
       </div>
 
       <div v-if="form.variables.length" class="overflow-x-auto">
-        <DataTable class="min-w-[66rem] divide-y divide-[var(--ds-border)]">
+        <DataTable :stack="false" class="min-w-[66rem] divide-y divide-[var(--ds-border)]">
           <thead class="ds-table-head">
             <tr>
               <th class="ds-table-heading w-44 px-4 py-3 text-left sm:pl-6">Nome</th>
@@ -272,13 +253,12 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Link } from '@inertiajs/vue3'
 import {
-  ArrowLeft as ArrowLeftIcon,
   RefreshCw as ArrowPathIcon,
   ArrowLeftRight as ArrowsRightLeftIcon,
   FlaskConical as BeakerIcon,
-  Calculator as CalculatorIcon,
   Check as CheckIcon,
   Play as PlayIcon,
   Plus as PlusIcon,

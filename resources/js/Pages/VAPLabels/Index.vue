@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="pl-page space-y-6">
     <ModuleHero
       :eyebrow="$t('gestlab.general.labels.vap_labels.index.eyebrow')"
       :title="$t('gestlab.general.labels.vap_labels.title')"

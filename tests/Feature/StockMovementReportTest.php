@@ -87,6 +87,9 @@ class StockMovementReportTest extends TestCase
                 ->where('charts.direction_breakdown.series.0.data', [2.5, 1.25, 1.25])
                 ->where('charts.daily_activity.series.0.data.0', 2.5)
                 ->where('charts.daily_activity.series.1.data.0', 1.25)
+                ->where('charts.daily_movements.series.0.name', 'Entradas')
+                ->where('charts.daily_movements.series.0.data.0', 1)
+                ->where('charts.daily_movements.series.1.data.0', 1)
             );
     }
 }

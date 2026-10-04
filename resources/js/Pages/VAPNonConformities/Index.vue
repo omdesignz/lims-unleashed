@@ -1,80 +1,48 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
+  <div class="pl-page space-y-6">
     <Head title="Não conformidades" />
     <p v-if="downloads.error.value || filterError" role="alert" class="ds-alert ds-alert-danger">{{ downloads.error.value || filterError }}</p>
     <p v-if="downloads.processing.value" role="status">A preparar exportação…</p>
     <p v-if="archive.failed.value" role="alert" class="ds-alert ds-alert-danger">{{ archive.message.value }}</p>
     <p v-if="archive.processing.value" role="status">A guardar…</p>
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-        <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Quality assurance</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot lims-status-dot-hold"></span>
-              CAPA fluxo de trabalho
-            </span>
-          </div>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-rose-700 dark:text-rose-300">
-              <ExclamationTriangleIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">
-                {{ $t('gestlab.general.labels.vap_non_conformities.title') }}
-              </h1>
-              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                {{ $t('gestlab.general.labels.vap_non_conformities.index_description') }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
-          <Link :href="route('vap_non_conformities.index', { archived: filters.archived ? undefined : 1 })" class="ds-button ds-button-secondary">{{ filters.archived ? 'Registos activos' : 'Arquivo' }}</Link>
-          <button type="button" class="ds-button ds-button-secondary" :disabled="downloads.processing.value || filtering" @click="exportReport('pdf')">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            PDF
-          </button>
-          <button type="button" class="ds-button ds-button-secondary" :disabled="downloads.processing.value || filtering" @click="exportReport('excel')">
-            <DocumentArrowDownIcon class="h-4 w-4" />
-            Excel
-          </button>
-          <Link v-if="can.create && !filters.archived" :href="route('vap_non_conformities.create')" class="ds-button ds-button-primary">
-            <PlusCircleIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.vap_non_conformities.buttons.new_non_conformity') }}
-          </Link>
-        </div>
-      </div>
-
-      <p class="mt-4 text-sm text-[var(--ds-text-muted)]">Indicadores e exportações: {{ filters.archived ? 'arquivo' : 'registos activos' }} do laboratório, com os filtros aplicados.</p>
-      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <article v-for="card in summaryCards" :key="card.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
-              <p class="mt-3 text-2xl font-black text-[var(--ds-text)]">{{ card.value }}</p>
-            </div>
-            <component :is="card.icon" :class="['h-5 w-5', card.tone]" />
-          </div>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
-        </article>
-      </div>
-
-      <nav class="mt-5 flex overflow-x-auto border-t border-[var(--ds-border)] pt-1" aria-label="Vistas de não conformidades">
-        <button
-          v-for="view in workspaceViews"
-          :key="view.value"
-          type="button"
-          class="-mb-px inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-bold transition"
-          :class="workspaceView === view.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
-          @click="workspaceView = view.value"
-        >
-          <component :is="view.icon" class="h-4 w-4" />
-          {{ view.label }}
+    <PageHeader :title="$t('gestlab.general.labels.vap_non_conformities.title')" :lede="$t('gestlab.general.labels.vap_non_conformities.index_description')">
+      <template #actions>
+        <Link :href="route('vap_non_conformities.index', { archived: filters.archived ? undefined : 1 })" class="ds-button ds-button-secondary">{{ filters.archived ? 'Registos activos' : 'Arquivo' }}</Link>
+        <button type="button" class="ds-button ds-button-secondary" :disabled="downloads.processing.value || filtering" @click="exportReport('pdf')">
+          <ArrowDownTrayIcon class="h-4 w-4" />
+          PDF
         </button>
-      </nav>
-    </section>
+        <button type="button" class="ds-button ds-button-secondary" :disabled="downloads.processing.value || filtering" @click="exportReport('excel')">
+          <DocumentArrowDownIcon class="h-4 w-4" />
+          Excel
+        </button>
+        <Link v-if="can.create && !filters.archived" :href="route('vap_non_conformities.create')" class="ds-button ds-button-primary">
+          <PlusCircleIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.vap_non_conformities.buttons.new_non_conformity') }}
+        </Link>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells">
+      <div v-for="card in summaryCards" :key="card.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ card.label }}</dt>
+        <dd class="pl-cell-value">{{ card.value }}</dd>
+      </div>
+    </dl>
+    <p class="text-[13px] text-[var(--pl-muted)]">Indicadores e exportações: {{ filters.archived ? 'arquivo' : 'registos activos' }} do laboratório, com os filtros aplicados.</p>
+
+    <nav class="pl-tabs" aria-label="Vistas de não conformidades">
+      <button
+        v-for="view in workspaceViews"
+        :key="view.value"
+        type="button"
+        class="pl-tab"
+        :aria-selected="workspaceView === view.value"
+        @click="workspaceView = view.value"
+      >
+        {{ view.label }}
+      </button>
+    </nav>
 
     <section v-show="workspaceView === 'register'" class="ds-command-surface p-5 sm:p-6">
       <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(16rem,1.4fr)_repeat(3,minmax(11rem,1fr))]">
@@ -145,49 +113,37 @@
       </div>
     </section>
 
-    <section v-show="workspaceView === 'analytics'" class="ds-command-surface overflow-hidden">
-      <div class="ds-table-summary px-5 py-4">
-        <div>
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Análise CAPA</p>
-          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Tendência, severidade e estado do fluxo</h2>
+    <section v-show="workspaceView === 'analytics'" class="grid gap-6 xl:grid-cols-3" aria-label="Análise CAPA">
+      <article class="pl-panel min-w-0">
+        <header class="pl-panel-head">
+          <h2 class="pl-k">Relatadas por mês</h2>
+          <span class="pl-k pl-faint">Últimos 6 meses</span>
+        </header>
+        <div class="p-4">
+          <p class="mb-3 text-[12.5px] text-[var(--pl-muted)]">Datas de relato dos registos filtrados, nos últimos seis meses.</p>
+          <PlanoChart kind="column" label="Não conformidades relatadas por mês" :categories="charts?.trend?.categories || []" :series="charts?.trend?.series || []" />
         </div>
-        <span class="ds-chip">{{ riskLoad }} registos em atenção</span>
-      </div>
+      </article>
 
-      <div class="grid gap-4 p-4 xl:grid-cols-3">
-        <article class="ds-card p-5">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Tendência de não conformidades</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Datas de relato dos registos filtrados, nos últimos seis meses.</p>
-            </div>
-            <ChartBarSquareIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
-          </div>
-          <ChartWrapper class="mt-4 min-h-72" type="area" height="288" :series="ncTrendSeries" :options="ncTrendOptions" />
-        </article>
+      <article class="pl-panel min-w-0">
+        <header class="pl-panel-head">
+          <h2 class="pl-k">Severidade</h2>
+          <span class="pl-k pl-faint">{{ riskLoad }} em atenção</span>
+        </header>
+        <div class="p-4">
+          <PlanoChart kind="donut" label="Não conformidades por severidade" :categories="charts?.severity?.labels || []" :series="[{ name: 'Não conformidades', data: charts?.severity?.series || [] }]" :tones="{ Baixa: 'neutral', Média: 'accent', Alta: 'warn', Crítica: 'bad' }" />
+        </div>
+      </article>
 
-        <article class="ds-card p-5">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Distribuição por severidade</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Prioridade para contenção, investigação e CAPA.</p>
-            </div>
-            <ExclamationCircleIcon class="h-5 w-5 text-rose-700 dark:text-rose-300" />
-          </div>
-          <ChartWrapper class="mt-4 min-h-72" type="donut" height="288" :series="severityChartSeries" :options="severityChartOptions" />
-        </article>
-
-        <article class="ds-card p-5">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Estado do fluxo</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Abertas, em progresso, resolvidas e encerradas.</p>
-            </div>
-            <ClipboardDocumentCheckIcon class="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
-          </div>
-          <ChartWrapper class="mt-4 min-h-72" type="bar" height="288" :series="statusChartSeries" :options="statusChartOptions" />
-        </article>
-      </div>
+      <article class="pl-panel min-w-0">
+        <header class="pl-panel-head">
+          <h2 class="pl-k">Estado do fluxo</h2>
+          <span class="pl-k pl-faint">Abertas a fechadas</span>
+        </header>
+        <div class="p-4">
+          <PlanoChart kind="bar" label="Não conformidades por estado do fluxo" :categories="charts?.status?.labels || []" :series="[{ name: 'Não conformidades', data: charts?.status?.series || [] }]" />
+        </div>
+      </article>
     </section>
 
     <section v-show="workspaceView === 'register'" class="ds-table-shell">
@@ -350,7 +306,8 @@
 
 <script setup>
 import BaseSelect from '@/Components/base/BaseSelect.vue'
-import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
 import { useFileDownload } from '@/Composables/useFileDownload'
 import { useRecordArchive } from '@/Composables/useRecordArchive'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
@@ -459,8 +416,6 @@ const categoryLabels = {
   other: 'Outro',
 }
 
-const chartTextColor = '#6b7482'
-const chartGridColor = '#dbe3ea'
 
 const nonConformityRows = computed(() => props.nonConformities?.data || [])
 const riskLoad = computed(() => Number(props.stats?.attention || 0))
@@ -495,33 +450,6 @@ const summaryCards = computed(() => [
     tone: 'text-orange-700 dark:text-orange-300',
   },
 ])
-
-const ncTrendSeries = computed(() => props.charts?.trend?.series || [])
-const ncTrendOptions = computed(() => ({
-  chart: { foreColor: chartTextColor, toolbar: { show: false } },
-  xaxis: { categories: props.charts?.trend?.categories || [] },
-  grid: { borderColor: chartGridColor },
-  stroke: { curve: 'smooth', width: 3 },
-  fill: { type: 'solid', opacity: 0.12 },
-  tooltip: { theme: 'light' },
-}))
-
-const severityChartSeries = computed(() => props.charts?.severity?.series || [])
-const severityChartOptions = computed(() => ({
-  labels: props.charts?.severity?.labels || [],
-  chart: { foreColor: chartTextColor },
-  legend: { position: 'bottom' },
-  tooltip: { theme: 'light' },
-}))
-
-const statusChartSeries = computed(() => [{ name: 'Não conformidades', data: props.charts?.status?.series || [] }])
-const statusChartOptions = computed(() => ({
-  chart: { foreColor: chartTextColor, toolbar: { show: false } },
-  xaxis: { categories: props.charts?.status?.labels || [] },
-  plotOptions: { bar: { borderRadius: 6, columnWidth: '44%' } },
-  grid: { borderColor: chartGridColor },
-  tooltip: { theme: 'light' },
-}))
 
 const activeFilterPills = computed(() => {
   const pills = []

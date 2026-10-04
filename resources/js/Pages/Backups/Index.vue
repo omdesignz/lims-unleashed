@@ -1,20 +1,7 @@
 <template>
-  <div class="space-y-6">
-    <section class="ds-command-surface overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Continuidade operacional</p>
-          <div class="mt-2 flex items-start gap-3">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))]">
-              <CircleStackIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-xl sm:text-2xl">Cópias de segurança</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Monitorize a protecção dos dados do laboratório e execute cópias controladas por âmbito.</p>
-            </div>
-          </div>
-        </div>
-
+  <div class="pl-page space-y-6">
+    <PageHeader title="Cópias de segurança" lede="Monitorize a protecção dos dados do laboratório e execute cópias controladas por âmbito.">
+      <template #actions>
         <span
           class="inline-flex w-fit items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold"
           :class="loadError
@@ -24,23 +11,23 @@
           <span class="h-2 w-2 rounded-full" :class="loadError ? 'bg-red-500' : 'bg-emerald-500'" />
           {{ loadError ? 'Monitorização indisponível' : 'Monitorização activa' }}
         </span>
-      </div>
+      </template>
+    </PageHeader>
 
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
-        <div class="px-5 py-4 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Destinos protegidos</dt>
-          <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ disks.length }}</dd>
-        </div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Cópias no destino activo</dt>
-          <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ activeDiskBackups.length }}</dd>
-        </div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Última verificação</dt>
-          <dd class="mt-2 text-sm font-bold tabular-nums text-[var(--ds-text)]">{{ lastUpdated }}</dd>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Destinos protegidos</dt>
+        <dd class="pl-cell-value">{{ disks.length }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Cópias no destino activo</dt>
+        <dd class="pl-cell-value">{{ activeDiskBackups.length }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Última verificação</dt>
+        <dd class="pl-cell-text">{{ lastUpdated }}</dd>
+      </div>
+    </dl>
 
     <div v-if="loadError" role="alert" class="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
       <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 shrink-0" />
@@ -125,6 +112,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { useForm } from '@inertiajs/vue3'
 import {
   RefreshCw as ArrowPathIcon,

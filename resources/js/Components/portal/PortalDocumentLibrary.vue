@@ -1,5 +1,6 @@
 <script setup>
 import Pagination from "@/Components/pagination.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import { Link, router, usePage } from "@inertiajs/vue3";
 import {
   Download as ArrowDownTrayIcon,
@@ -106,40 +107,21 @@ function toneClass(tone) {
 
 <template>
   <div class="space-y-6">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <component :is="icon" class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <p class="ds-kicker">{{ kicker }}</p>
-              <h1 class="ds-heading mt-1 text-2xl">{{ title }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">{{ description }}</p>
-            </div>
-          </div>
+    <PageHeader :title="title" :lede="description">
+      <template #actions>
+        <Link :href="route('portal.requests.index', { request_type: supportType, new: 1, title: supportTitle })" class="ds-button ds-button-primary">
+          <PlusIcon class="h-4 w-4" />
+          Pedir apoio
+        </Link>
+      </template>
+    </PageHeader>
 
-          <Link :href="route('portal.requests.index', { request_type: supportType, new: 1, title: supportTitle })" class="ds-button ds-button-primary">
-            <PlusIcon class="h-4 w-4" />
-            Pedir apoio
-          </Link>
-        </div>
+    <dl class="pl-cells">
+      <div v-for="metric in metrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
       </div>
-
-      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
-        <div v-for="metric in metrics" :key="metric.label" class="bg-[var(--ds-panel)] p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-              <dd class="mt-3 break-words text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
-              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
-            </div>
-            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+    </dl>
 
     <section class="ds-card overflow-hidden">
       <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:px-6">

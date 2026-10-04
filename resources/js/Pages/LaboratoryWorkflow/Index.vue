@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import {
   ArrowRight as ArrowRightIcon,
@@ -89,37 +90,16 @@ function formatDate(value) {
 <template>
   <Head title="Fluxo laboratorial" />
 
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <p class="ds-kicker">Operação ponta a ponta</p>
-          <h1 class="ds-heading mt-2 text-2xl">Fluxo laboratorial</h1>
-          <p class="ds-copy mt-2 text-sm">
-            Dossiers aceites pelo cliente, acompanhados da recepção da amostra até à validação do boletim.
-          </p>
-        </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Fluxo laboratorial" lede="Dossiers aceites pelo cliente, acompanhados da recepção da amostra até à validação do boletim." />
 
-        <div class="lims-status-strip flex items-center gap-3 px-4 py-3">
-          <span class="lims-status-dot lims-status-dot-instrument" />
-          <div>
-            <p class="text-xs font-bold text-[var(--ds-text)]">Fila operacional única</p>
-            <p class="mt-0.5 text-xs font-semibold text-[var(--ds-text-muted)]">Cada dossier mostra a próxima acção exacta</p>
-          </div>
-        </div>
+    <dl class="pl-cells">
+      <div v-for="metric in metrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted"><component :is="metric.icon" class="h-4 w-4" />
+            {{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
       </div>
-
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[var(--ds-border)] lg:grid-cols-4 lg:divide-y-0">
-        <div v-for="metric in metrics" :key="metric.label" class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold text-[var(--ds-text-muted)]">
-            <component :is="metric.icon" class="h-4 w-4" />
-            {{ metric.label }}
-          </dt>
-          <dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.note }}</p>
-        </div>
-      </dl>
-    </section>
+    </dl>
 
     <section class="ds-panel overflow-hidden">
       <form class="grid gap-3 border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 sm:grid-cols-[minmax(0,1fr)_15rem_auto] sm:items-end" @submit.prevent="applyFilters">

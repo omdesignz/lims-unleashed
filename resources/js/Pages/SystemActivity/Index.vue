@@ -1,15 +1,14 @@
 <script setup>
 import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
   Download as ArrowDownTrayIcon,
   RefreshCw as ArrowPathIcon,
-  CalendarDays as CalendarDaysIcon,
   ChevronDown as ChevronDownIcon,
   ChevronUp as ChevronUpIcon,
-  Database as CircleStackIcon,
   FileSearch as DocumentMagnifyingGlassIcon,
   TriangleAlert as ExclamationTriangleIcon,
   Eye as EyeIcon,
@@ -69,39 +68,6 @@ const filters = useForm({
 
 const rows = computed(() => props.record?.data ?? []);
 const totalActivities = computed(() => props.record?.total ?? 0);
-const pageStatistics = computed(() => {
-  const today = new Date().toDateString();
-  const actors = new Set();
-  let todayCount = 0;
-  let exceptionCount = 0;
-
-  for (const activity of rows.value) {
-    if (activity.created_at && new Date(activity.created_at).toDateString() === today) {
-      todayCount += 1;
-    }
-
-    if (activity.causer_id) {
-      actors.add(String(activity.causer_id));
-    }
-
-    if (activityLevel(activity) === "danger" || activityLevel(activity) === "warning") {
-      exceptionCount += 1;
-    }
-  }
-
-  return {
-    today: todayCount,
-    actors: actors.size,
-    exceptions: exceptionCount,
-  };
-});
-const metrics = computed(() => [
-  { label: "Total", value: totalActivities.value, detail: "eventos no registo", icon: CircleStackIcon },
-  { label: "Nesta página", value: rows.value.length, detail: "eventos carregados", icon: DocumentMagnifyingGlassIcon },
-  { label: "Hoje", value: pageStatistics.value.today, detail: "eventos visíveis", icon: CalendarDaysIcon },
-  { label: "Atenção", value: pageStatistics.value.exceptions, detail: "avisos ou falhas", icon: ExclamationTriangleIcon },
-  { label: "Atores", value: pageStatistics.value.actors, detail: "utilizadores distintos", icon: UserGroupIcon },
-]);
 const activeFilters = computed(() => {
   const labels = {
     log_name: "Log",
@@ -383,51 +349,26 @@ function confirmDelete() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <DocumentMagnifyingGlassIcon class="h-5 w-5" />
-          </span>
-          <div>
-            <p class="ds-kicker">Auditoria do sistema</p>
-            <h1 class="ds-heading mt-1 text-2xl">Registo de actividade</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Eventos técnicos e administrativos para investigação, segurança e rastreabilidade.</p>
-          </div>
-        </div>
-        <div class="flex flex-wrap gap-3">
-          <button type="button" class="ds-button ds-button-secondary" @click="showFilters = !showFilters">
-            <FunnelIcon class="h-4 w-4" />
-            Filtros
-            <span v-if="hasActiveFilters" class="ds-badge ds-badge-info">{{ activeFilters.length }}</span>
-            <ChevronUpIcon v-if="showFilters" class="h-4 w-4" />
-            <ChevronDownIcon v-else class="h-4 w-4" />
-          </button>
-          <a v-if="hasPermission('export_activity_log')" :href="exportUrl" class="ds-button ds-button-secondary">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar
-          </a>
-          <button v-if="hasPermission('delete_activity_log')" type="button" class="ds-button ds-button-danger" @click="requestDelete()">
-            <TrashIcon class="h-4 w-4" />
-            Limpar registo
-          </button>
-        </div>
-      </div>
-
-      <dl class="grid border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 lg:grid-cols-5">
-        <div v-for="metric in metrics" :key="metric.label" class="border-b border-[var(--ds-border)] px-4 py-4 sm:border-r lg:border-b-0 lg:last:border-r-0">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-              <dd class="mt-1 text-xl font-bold tabular-nums text-[var(--ds-text)]">{{ metric.value }}</dd>
-              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
-            </div>
-            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Registo de actividade" lede="Eventos técnicos e administrativos para investigação, segurança e rastreabilidade.">
+      <template #actions>
+        <button type="button" class="ds-button ds-button-secondary" @click="showFilters = !showFilters">
+          <FunnelIcon class="h-4 w-4" />
+          Filtros
+          <span v-if="hasActiveFilters" class="ds-badge ds-badge-info">{{ activeFilters.length }}</span>
+          <ChevronUpIcon v-if="showFilters" class="h-4 w-4" />
+          <ChevronDownIcon v-else class="h-4 w-4" />
+        </button>
+        <a v-if="hasPermission('export_activity_log')" :href="exportUrl" class="ds-button ds-button-secondary">
+          <ArrowDownTrayIcon class="h-4 w-4" />
+          Exportar
+        </a>
+        <button v-if="hasPermission('delete_activity_log')" type="button" class="ds-button ds-button-danger" @click="requestDelete()">
+          <TrashIcon class="h-4 w-4" />
+          Limpar registo
+        </button>
+      </template>
+    </PageHeader>
 
     <section v-if="showFilters" class="ds-command-surface p-4 sm:p-5">
       <div class="flex flex-col gap-4 border-b border-[var(--ds-border)] pb-4 sm:flex-row sm:items-start sm:justify-between">

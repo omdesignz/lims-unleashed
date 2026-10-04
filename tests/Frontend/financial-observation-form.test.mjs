@@ -66,6 +66,8 @@ test('observation-only form and persistent-layout pages compile with accessible 
   assert.match(source, /:disabled="form.processing \|\| !form.isDirty"/)
   assert.match(source, /maxlength="5000"/)
   assert.match(source, /Apenas as observações/)
-  assert.match(source, /<h1 class="[^"]*\[overflow-wrap:anywhere\]/)
+  // The title lives in the Plano page header, which wraps long document numbers.
+  assert.match(source, /<PageHeader :title="`\$\{config\.title\} · /)
+  assert.match(readFileSync(new URL('../../resources/js/Components/plano/PageHeader.vue', import.meta.url), 'utf8'), /<h1 class="pl-d1 min-w-0 break-words">/)
   assert.doesNotMatch(source, /v-motion|transition-all|animate-/)
 })

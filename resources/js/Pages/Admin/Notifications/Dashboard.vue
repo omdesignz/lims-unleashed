@@ -59,7 +59,7 @@ const readRate = computed(() => Math.min(Number(props.stats.read_rate ?? 0), 100
 </script>
 
 <template>
-  <div class="space-y-5">
+  <div class="pl-page space-y-5">
     <Head title="Visão geral de notificações" />
     <NotificationAdminHeader
       title="Visao geral"

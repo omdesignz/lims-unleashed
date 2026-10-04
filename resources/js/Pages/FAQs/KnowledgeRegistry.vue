@@ -1,5 +1,6 @@
 <script setup>
 import Combobox from "@/Components/combobox.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
@@ -164,28 +165,15 @@ function confirmAction() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <component :is="config.icon" class="h-5 w-5" aria-hidden="true" />
-          </span>
-          <div>
-            <p class="ds-kicker">{{ config.kicker }}</p>
-            <h1 class="ds-heading mt-1 text-2xl">{{ config.title }}</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">{{ config.description }}</p>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-          <span class="inline-flex items-center rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-xs font-bold text-[var(--ds-text-muted)]">
-            {{ totalRecords }} registos · {{ representedParents }} grupos
-          </span>
-          <Link :href="route(config.counterpartRoute)" class="ds-button ds-button-secondary">{{ config.counterpartLabel }}</Link>
-        </div>
-      </div>
-    </section>
+  <div class="pl-page space-y-6">
+    <PageHeader :title="config.title" :lede="config.description">
+      <template #actions>
+        <span class="inline-flex items-center rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-xs font-bold text-[var(--ds-text-muted)]">
+          {{ totalRecords }} registos · {{ representedParents }} grupos
+        </span>
+        <Link :href="route(config.counterpartRoute)" class="ds-button ds-button-secondary">{{ config.counterpartLabel }}</Link>
+      </template>
+    </PageHeader>
 
     <RecordsTable
       :record="record"

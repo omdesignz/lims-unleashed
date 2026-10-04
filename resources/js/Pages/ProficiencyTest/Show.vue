@@ -1,75 +1,51 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="min-w-0 max-w-4xl">
-            <Link :href="route('proficiency_tests.index')" class="ds-button ds-button-ghost px-0">
-              <ArrowLeftIcon class="h-4 w-4" />
-              Voltar aos ensaios de proficiência
-            </Link>
-            <div class="mt-4 flex flex-wrap gap-2">
-              <span class="ds-badge ds-badge-neutral">{{ schemeLabel(test.scheme_type) }}</span>
-              <span class="ds-badge ds-badge-info">{{ roleLabel(test.role) }}</span>
-              <span class="ds-badge" :class="statusBadgeClass(test.status)">{{ statusLabel(test.status) }}</span>
-            </div>
-            <p class="ds-kicker mt-5">Garantia da validade dos resultados</p>
-            <h1 class="ds-heading mt-1 text-2xl">{{ test.name }}</h1>
-            <p class="ds-copy mt-2 max-w-3xl text-sm">
-              {{ test.scope || 'Registe participantes, parâmetros, resultados, z-scores e evidências para manter a rastreabilidade da ronda.' }}
-            </p>
-          </div>
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Ensaios de proficiência', url: route('proficiency_tests.index') }, { title: test.name }]" :title="test.name" :lede="test.scope || 'Registe participantes, parâmetros, resultados, z-scores e evidências para manter a rastreabilidade da ronda.'">
+      <template #badges>
+        <span class="ds-badge ds-badge-neutral">{{ schemeLabel(test.scheme_type) }}</span>
+        <span class="ds-badge ds-badge-info">{{ roleLabel(test.role) }}</span>
+        <span class="ds-badge" :class="statusBadgeClass(test.status)">{{ statusLabel(test.status) }}</span>
+        <span class="ds-chip">{{ outcomeLabel(form.outcome) }} · z-score {{ form.z_score || '—' }}</span>
+      </template>
+    </PageHeader>
 
-          <div class="ds-command-surface w-full p-4 lg:max-w-xs">
-            <p class="ds-kicker">Resultado global</p>
-            <p class="ds-heading mt-2 text-xl">{{ outcomeLabel(form.outcome) }}</p>
-            <p class="ds-copy mt-1 text-sm">z-score {{ form.z_score || '—' }}</p>
-          </div>
+    <dl class="pl-cells">
+      <div v-for="card in summaryCards" :key="card.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ card.label }}</dt>
+        <dd class="pl-cell-value">{{ card.value }}</dd>
       </div>
+    </dl>
 
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div v-for="card in summaryCards" :key="card.label" class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0">
-          <div class="flex items-center justify-between gap-3">
-            <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ card.label }}</dt>
-            <component :is="card.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-          <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.caption }}</p>
+    <section class="grid gap-6 xl:grid-cols-3" aria-label="Desempenho da ronda">
+      <article class="pl-panel min-w-0 xl:col-span-3">
+        <header class="pl-panel-head">
+          <h2 class="pl-k">z-scores por participante e parâmetro</h2>
+          <span class="pl-k pl-faint">|z| ≤ 2 satisfatório · 2–3 questionável · &gt; 3 insatisfatório</span>
+        </header>
+        <div class="p-4">
+          <PlanoChart
+            kind="column"
+            label="z-scores por participante e parâmetro"
+            :categories="charts?.z_scores?.categories ?? []"
+            :series="charts?.z_scores?.series ?? []"
+            format="decimal"
+            :reference="[{ value: 3, label: '+3 acção', tone: 'bad' }, { value: 2, label: '+2 alerta', tone: 'warn' }, { value: -2, label: '−2 alerta', tone: 'warn' }, { value: -3, label: '−3 acção', tone: 'bad' }]"
+            :height="300"
+            empty-text="Sem z-scores calculados nesta ronda."
+          />
         </div>
-      </dl>
-    </section>
-
-    <section class="grid gap-5 xl:grid-cols-3">
-      <article class="ds-panel overflow-hidden p-5">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <h2 class="ds-heading text-base">Distribuição dos z-scores</h2>
-            <p class="ds-copy mt-1 text-sm">Comparação por participante e parâmetro.</p>
-          </div>
-          <ChartBarIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
-        </div>
-        <ChartWrapper class="mt-5" type="bar" height="340" :series="zScoreChartSeries" :options="zScoreChartOptions" />
       </article>
-
-      <article class="ds-panel overflow-hidden p-5">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <h2 class="ds-heading text-base">Performance</h2>
-            <p class="ds-copy mt-1 text-sm">Classificação automática por z-score.</p>
-          </div>
-          <CheckBadgeIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
+      <article class="pl-panel min-w-0">
+        <header class="pl-panel-head"><h2 class="pl-k">Desempenho</h2><span class="pl-k pl-faint">Por z-score</span></header>
+        <div class="p-4">
+          <PlanoChart kind="donut" label="Resultados por desempenho" :categories="charts?.performance?.labels ?? []" :series="[{ name: 'Resultados', data: charts?.performance?.series ?? [] }]" :tones="{ Pendente: 'neutral', Satisfatório: 'ok', Questionável: 'warn', Insatisfatório: 'bad' }" />
         </div>
-        <ChartWrapper class="mt-5" type="donut" height="320" :series="performanceChartSeries" :options="performanceChartOptions" />
       </article>
-
-      <article class="ds-panel overflow-hidden p-5">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <h2 class="ds-heading text-base">Estado dos participantes</h2>
-            <p class="ds-copy mt-1 text-sm">Acompanhamento operacional da submissão e revisão.</p>
-          </div>
-          <UserGroupIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
+      <article class="pl-panel min-w-0 xl:col-span-2">
+        <header class="pl-panel-head"><h2 class="pl-k">Estado dos participantes</h2><span class="pl-k pl-faint">Submissão e revisão</span></header>
+        <div class="p-4">
+          <PlanoChart kind="bar" label="Participantes por estado" :categories="charts?.participant_status?.labels ?? []" :series="[{ name: 'Participantes', data: charts?.participant_status?.series ?? [] }]" :height="220" />
         </div>
-        <ChartWrapper class="mt-5" type="donut" height="320" :series="participantStatusChartSeries" :options="participantStatusChartOptions" />
       </article>
     </section>
 
@@ -221,11 +197,11 @@
 
 <script setup>
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
-import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
 import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import {
-  ArrowLeft as ArrowLeftIcon,
   Upload as ArrowUpTrayIcon,
   FlaskConical as BeakerIcon,
   ChartColumn as ChartBarIcon,
@@ -234,7 +210,7 @@ import {
   FileDown as DocumentArrowDownIcon,
   Users as UserGroupIcon,
 } from '@lucide/vue'
-import { Link, useForm } from '@inertiajs/vue3'
+import { useForm } from '@inertiajs/vue3'
 import { computed, onMounted, ref } from 'vue'
 
 defineOptions({
@@ -263,14 +239,6 @@ const form = useForm({
 const importInput = ref(null)
 const importForm = useForm({
   file: null,
-})
-
-const isDarkMode = computed(() => {
-  if (typeof document === 'undefined') {
-    return false
-  }
-
-  return document.documentElement.classList.contains('dark')
 })
 
 const outcomeOptions = computed(() => ['pending', 'satisfactory', 'questionable', 'unsatisfactory'].map((value) => ({ value, label: outcomeLabel(value) })))
@@ -312,40 +280,6 @@ const summaryCards = computed(() => [
     icon: ChartBarIcon,
   },
 ])
-
-const chartTheme = computed(() => ({
-  chart: { toolbar: { show: false }, foreColor: isDarkMode.value ? '#d7dbe0' : '#6b7482' },
-  grid: { borderColor: isDarkMode.value ? '#334155' : '#eef0f3' },
-  legend: { labels: { colors: isDarkMode.value ? '#d7dbe0' : '#6b7482' } },
-}))
-
-const zScoreChartSeries = computed(() => props.charts?.z_scores?.series ?? [{ name: 'z-score', data: [] }])
-const zScoreChartOptions = computed(() => ({
-  ...chartTheme.value,
-  xaxis: { categories: props.charts?.z_scores?.categories ?? [] },
-  colors: ['#087cf0'],
-  annotations: {
-    yaxis: [
-      { y: 2, borderColor: '#e0902b', label: { text: '+2 alerta', style: { background: '#e0902b', color: '#fff' } } },
-      { y: -2, borderColor: '#e0902b', label: { text: '-2 alerta', style: { background: '#e0902b', color: '#fff' } } },
-      { y: 3, borderColor: '#e5484d', label: { text: '+3 acção', style: { background: '#e5484d', color: '#fff' } } },
-      { y: -3, borderColor: '#e5484d', label: { text: '-3 acção', style: { background: '#e5484d', color: '#fff' } } },
-    ],
-  },
-}))
-
-const performanceChartSeries = computed(() => props.charts?.performance?.series ?? [])
-const performanceChartOptions = computed(() => ({
-  ...chartTheme.value,
-  labels: props.charts?.performance?.labels ?? [],
-  colors: ['#22a45d', '#e0902b', '#e5484d'],
-}))
-const participantStatusChartSeries = computed(() => props.charts?.participant_status?.series ?? [])
-const participantStatusChartOptions = computed(() => ({
-  ...chartTheme.value,
-  labels: props.charts?.participant_status?.labels ?? [],
-  colors: ['#98a1ae', '#38bdf8', '#7c5ce0', '#22a45d', '#e0902b'],
-}))
 
 function schemeLabel(value) {
   return {

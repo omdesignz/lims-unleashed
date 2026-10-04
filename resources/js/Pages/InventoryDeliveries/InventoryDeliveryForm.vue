@@ -1,8 +1,8 @@
 <script setup>
 import { useInventoryCatalogueOptions } from '@/Composables/useInventoryCatalogueOptions'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import Combobox from "@/Components/combobox.vue";
 import {
-  ArrowLeft as ArrowLeftIcon,
   CalendarDays as CalendarDaysIcon,
   Check as CheckIcon,
   Box as CubeIcon,
@@ -66,41 +66,23 @@ const loadItems = useInventoryCatalogueOptions()
 </script>
 
 <template>
-  <form class="space-y-6" @submit.prevent="emit('submit')">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <TruckIcon class="h-5 w-5" aria-hidden="true" />
-          </span>
-          <div>
-            <p class="ds-kicker">Expedição controlada</p>
-            <h1 class="ds-heading mt-1 text-2xl">{{ pageTitle }}</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">{{ pageDescription }}</p>
-          </div>
-        </div>
+  <form class="pl-page space-y-6" @submit.prevent="emit('submit')">
+    <PageHeader :trail="[{ title: 'Entregas', url: route('ideliveries.index') }, { title: pageTitle }]" :title="pageTitle" :lede="pageDescription" />
 
-        <Link :href="route('ideliveries.index')" class="ds-button ds-button-secondary">
-          <ArrowLeftIcon class="h-4 w-4" aria-hidden="true" />
-          Voltar ao registo
-        </Link>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted"><CalendarDaysIcon class="h-4 w-4" aria-hidden="true" /> Data</dt>
+        <dd class="pl-cell-text">{{ form.sales_date || "Por definir" }}</dd>
       </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><CalendarDaysIcon class="h-4 w-4" aria-hidden="true" /> Data</dt>
-          <dd class="mt-2 text-sm font-semibold text-[var(--ds-text)]">{{ form.sales_date || "Por definir" }}</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><CubeIcon class="h-4 w-4" aria-hidden="true" /> Linhas</dt>
-          <dd class="mt-2 text-sm font-semibold text-[var(--ds-text)]">{{ form.items.length }} materiais</dd>
-        </div>
-        <div class="px-4 py-3">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><TruckIcon class="h-4 w-4" aria-hidden="true" /> Quantidades</dt>
-          <dd class="mt-2 text-sm font-semibold text-[var(--ds-text)]">{{ validQuantityCount }}/{{ form.items.length }} linhas válidas</dd>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted"><CubeIcon class="h-4 w-4" aria-hidden="true" /> Linhas</dt>
+        <dd class="pl-cell-text">{{ form.items.length }} materiais</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted"><TruckIcon class="h-4 w-4" aria-hidden="true" /> Quantidades</dt>
+        <dd class="pl-cell-text">{{ validQuantityCount }}/{{ form.items.length }} linhas válidas</dd>
+      </div>
+    </dl>
 
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">

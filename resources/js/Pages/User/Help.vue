@@ -1,11 +1,11 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import { Link } from "@inertiajs/vue3";
 import {
   Download as ArrowDownTrayIcon,
   FlaskConical as BeakerIcon,
   Bell as BellIcon,
-  BookOpen as BookOpenIcon,
   ChartColumnBig as ChartBarSquareIcon,
   BadgeCheck as CheckBadgeIcon,
   ChevronRight as ChevronRightIcon,
@@ -75,30 +75,15 @@ const evidenceItems = [
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Referência operacional</p>
-          <div class="mt-3 flex items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <BookOpenIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-2xl">Manual operacional</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Pontos de controlo para executar trabalho laboratorial rastreável e manter evidência compatível com a ISO/IEC 17025.
-              </p>
-            </div>
-          </div>
-        </div>
-
+  <div class="pl-page space-y-6">
+    <PageHeader title="Manual operacional" lede="Pontos de controlo para executar trabalho laboratorial rastreável e manter evidência compatível com a ISO/IEC 17025.">
+      <template #actions>
         <a :href="route('users.manual.pdf')" target="_blank" rel="noopener" class="ds-button ds-button-primary whitespace-nowrap">
           <ArrowDownTrayIcon class="h-4 w-4" />
           Descarregar PDF
         </a>
-      </div>
-    </section>
+      </template>
+    </PageHeader>
 
     <div class="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
       <aside class="ds-panel p-3 lg:sticky lg:top-24" aria-label="Secções do manual">

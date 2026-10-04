@@ -29,14 +29,14 @@
       </aside>
 
       <main ref="stageContent" class="pl-main" :data-template="pageTemplate">
-        <nav v-if="!planoPages.includes(page.component)" class="pl-crumbs pl-page-crumbs" aria-label="Localização">
+        <nav v-if="!ownsCanvas" class="pl-crumbs pl-page-crumbs" aria-label="Localização">
           <template v-for="(crumb, index) in crumbs" :key="`${crumb.title}-${index}`">
             <span v-if="index" aria-hidden="true">/</span>
             <Link v-if="crumb.url && !crumb.current" :href="crumb.url">{{ crumb.title }}</Link>
             <span v-else :aria-current="crumb.current ? 'page' : undefined">{{ crumb.title }}</span>
           </template>
         </nav>
-        <div :class="{ 'lims-backoffice-content': !planoPages.includes(page.component) }" :data-module-family="moduleFamily">
+        <div :class="{ 'lims-backoffice-content': !ownsCanvas }" :data-module-family="moduleFamily">
           <confirm-dialog v-if="showSessionModal" :open="showSessionModal" :title="$t('Session Expiring Soon')" :description="$t('You will be logged out due to inactivity')" variant="warning" :hide-buttons="true" size="sm:max-w-xl" @canceled="showSessionModal = false">
             <p class="mt-4 text-sm text-[var(--pl-muted)]">{{ $t('For your security, this session will end in :seconds seconds.', { seconds: remainingTime }) }} {{ $t('Move your mouse or press any key to continue working.') }}</p>
           </confirm-dialog>
@@ -45,10 +45,24 @@
       </main>
     </div>
 
-    <!-- Below 768px the areas move to a bottom bar of five: four areas and the menu. -->
+    <!-- Below 768px the areas move to a bottom bar of five: four areas (the current
+         one always among them) and the menu, which holds every area and page. -->
     <nav class="pl-bottom" aria-label="Áreas">
-      <Link v-for="area in navAreas.slice(0, 4)" :key="area.key" :href="area.href" class="pl-bottom-item" :aria-current="area.key === activeAreaKey ? 'page' : undefined">{{ area.label }}</Link>
-      <button type="button" class="pl-bottom-item" aria-controls="area-drawer" @click="sidebarOpen = true">Menu</button>
+      <Link
+        v-for="area in phoneAreas"
+        :key="area.key"
+        :href="area.href"
+        class="pl-bottom-item"
+        :aria-label="area.label"
+        :aria-current="area.key === activeAreaKey ? 'page' : undefined"
+      >
+        <component :is="areaGlyphs[area.key]?.icon" aria-hidden="true" />
+        <span aria-hidden="true">{{ areaGlyphs[area.key]?.short ?? area.label }}</span>
+      </Link>
+      <button type="button" class="pl-bottom-item" aria-controls="area-drawer" @click="sidebarOpen = true" :aria-expanded="sidebarOpen">
+        <MenuIcon aria-hidden="true" />
+        <span>Menu</span>
+      </button>
     </nav>
 
     <TransitionRoot as="template" :show="sidebarOpen">
@@ -128,7 +142,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, nextTick, provide, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useIdle, useCounter } from '@vueuse/core'
 import appSidebar from '../Navigation/app-sidebar.vue'
 import areaBar from '../Navigation/area-bar.vue'
@@ -141,7 +155,8 @@ import {
   TransitionChild,
   TransitionRoot,
 } from '@headlessui/vue'
-import { Search as MagnifyingGlassIcon } from '@lucide/vue'
+import { Menu as MenuIcon, Search as MagnifyingGlassIcon } from '@lucide/vue'
+import { areaGlyphs, bottomBarAreas } from '@/Support/navigationAreas'
 import { Link, router, usePage, useForm } from '@inertiajs/vue3'
 import { animate } from 'motion-v'
 import { usePermission } from '@/Composables/usePermissions'
@@ -151,6 +166,7 @@ import backendModal from '@/Components/backend-modal.vue'
 import { getEcho } from '@/lib/echo'
 import toast from '@/Stores/toast'
 import { durations, easeOut, prefersReducedMotion } from '@/Support/motion'
+import { planoShellKey } from '@/Support/planoShell'
 
 const { hasPermission } = usePermission()
 
@@ -364,6 +380,7 @@ const canUseExportHub = exportHubPermissions.some((permission) => hasPermission(
 
 const navigation = [
   { title: 'Hoje', name: '/dashboard', href: route('dashboard'), show: true },
+  { title: 'Análises', name: '/analytics', href: route('analytics.board'), show: true },
   { title: 'gestlab.menu.notifications', name: '/notifications', href: route('notifications.index'), show: true },
   {
     title: 'gestlab.menu.admin_processes', name: 'Processos ADM.', show: true,
@@ -601,7 +618,7 @@ const activeCommand = computed(() => flatCommands.value[activeCommandIndex.value
 // Each area lists its daily pages under named groups; catalogues and settings fold
 // away under one heading.
 const areaDefinitions = [
-  { key: 'home', label: 'Início', groups: [{ label: 'O meu dia', paths: ['/dashboard', '/notifications', '/lab-networks'] }], match: ['/dashboard', '/notifications', '/lab-networks'] },
+  { key: 'home', label: 'Início', groups: [{ label: 'O meu dia', paths: ['/dashboard', '/analytics', '/notifications', '/lab-networks'] }], match: ['/dashboard', '/analytics', '/notifications', '/lab-networks'] },
   { key: 'samples', label: 'Amostras', groups: [{ label: 'Fluxo', paths: ['/vap-samples', '/directcollections', '/programmedcollections'] }, { label: 'Indicadores', paths: ['/vap-samples/reports'] }], match: ['/vap-samples', '/samples', '/directcollections', '/programmedcollections', '/collectionreasons', '/collectioncollaborations', '/collectionendresults', '/packagingcategories'] },
   { key: 'analysis', label: 'Análise', groups: [{ label: 'Bancada', paths: ['/laboratory-workflow', '/analysis', '/counter-analysis', '/analysis/data-exports'] }], match: ['/laboratory-workflow', '/analysis', '/counter-analysis', '/counteranalysis', '/multiple-sample-analysis', '/parameters', '/analysiscategories', '/profiles', '/matrixes', '/protocols', '/standards', '/nwps', '/units', '/temperatures', '/environmental-conditions', '/resultcategories', '/worksheets', '/formulas', '/variables'] },
   { key: 'certificates', label: 'Certificados', groups: [{ label: 'Emissão', paths: ['/qualitycertificates', '/import-certificates', '/export-certificates'] }, { label: 'Modelos', paths: ['/report-studios'] }], match: ['/qualitycertificates', '/import-certificates', '/export-certificates', '/report-studios'] },
@@ -686,10 +703,12 @@ const activeAreaKey = computed(() => {
 })
 
 const activeArea = computed(() => navAreas.value.find((area) => area.key === activeAreaKey.value) ?? null)
+const phoneAreas = computed(() => bottomBarAreas(navAreas.value, activeAreaKey.value))
 
 // Rebuilt Plano screens own their whole canvas; older screens get the content gutter.
 const planoTemplates = {
   LaboratoryWorkbench: 'today',
+  'Analytics/Board': 'page',
   'LabNetwork/Index': 'page',
   'VAPSamples/Index': 'form',
   'VAPSamples/Queue': 'queue',
@@ -731,6 +750,16 @@ const planoTemplates = {
 }
 const planoPages = Object.keys(planoTemplates)
 const pageTemplate = computed(() => planoTemplates[page.component] ?? 'page')
+
+// A page that renders the Plano page header owns its canvas: it draws its own path
+// line and gutter, so the shell stops adding the ones older screens rely on.
+const pageHeaders = ref(0)
+const ownsCanvas = computed(() => planoPages.includes(page.component) || pageHeaders.value > 0)
+provide(planoShellKey, {
+  crumbs,
+  claim: () => { pageHeaders.value++ },
+  release: () => { pageHeaders.value = Math.max(0, pageHeaders.value - 1) },
+})
 
 const openCommandPalette = () => {
   commandPaletteQuery.value = ''

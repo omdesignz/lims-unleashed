@@ -1,677 +1,184 @@
 <template>
-  <div class="commercial-document-page space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <CreditCardIcon class="h-7 w-7 text-blue-900" />
-            {{ $t('gestlab.general.labels.invoices.page_view_title') }}
-          </h1>
-          <p class="mt-2 text-gray-600">
-            {{ $t('gestlab.general.labels.invoices.page_view_description') }}
-            <span v-if="props.record.data?.customer" class="font-semibold text-blue-900">
-              {{ props.record.data?.customer }}
-            </span>
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10">
-            {{ props.record.data?.items?.length || 0 }} {{ $t('gestlab.general.labels.invoices.items') }}
-          </span>
-          <span :class="[
-            'inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ring-1 ring-inset',
-            props.record.data?.status === 'paid' ? 'bg-green-100 text-green-800 ring-green-700/10' :
-            props.record.data?.status === 'pending' ? 'bg-yellow-100 text-yellow-800 ring-yellow-700/10' :
-            props.record.data?.status === 'overdue' ? 'bg-red-100 text-red-800 ring-red-700/10' :
-            props.record.data?.status === 'draft' ? 'bg-gray-100 text-gray-800 ring-gray-700/10' :
-            'bg-blue-100 text-blue-800 ring-blue-700/10'
-          ]">
-            {{ formatStatus(props.record.data?.status) }}
-          </span>
-        </div>
+  <div class="pl-page" data-template="dossier">
+    <Head :title="`Factura${invoice.inv_no ? ' · ' + invoice.inv_no : ''}`" />
+    <PageHeader
+      :trail="[{ title: 'Facturas', url: route('invoices.index') }, { title: invoice.inv_no || 'Factura' }]"
+      :title="invoice.inv_no || $t('gestlab.general.labels.invoices.page_view_title')"
+      :lede="`${invoice.customer || 'Cliente por identificar'} · emitida a ${formatDate(invoice.created_at)}`"
+    >
+      <template #badges>
+        <StatusChip :tone="statusTone">{{ formatStatus(invoice.status) }}</StatusChip>
+      </template>
+      <template #actions>
+        <button type="button" class="ds-button ds-button-secondary" @click="downloadPDF">
+          <DocumentArrowDownIcon class="h-4 w-4" aria-hidden="true" />
+          {{ $t('gestlab.general.labels.invoices.download_pdf') }}
+        </button>
+        <button type="button" class="ds-button ds-button-secondary" @click="sendEmail">
+          <EnvelopeIcon class="h-4 w-4" aria-hidden="true" />
+          {{ $t('gestlab.general.labels.invoices.send_email') }}
+        </button>
+        <button type="button" class="ds-button ds-button-quiet" @click="duplicateInvoice">
+          <DocumentDuplicateIcon class="h-4 w-4" aria-hidden="true" />
+          {{ $t('gestlab.general.labels.invoices.duplicate') }}
+        </button>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells mb-10">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.invoices.total_amount') }} · AOA</dt>
+        <dd class="pl-cell-value">{{ formatCurrency(invoice.total) }}</dd>
       </div>
-      
-      <!-- INVOICE META INFO -->
-      <div class="mt-6 pt-6 border-t border-gray-200 grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div>
-          <p class="text-xs text-gray-500">{{ $t('gestlab.general.labels.invoices.inv_no') }}</p>
-          <p class="text-sm font-semibold text-blue-900">{{ props.record.data?.inv_no }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-gray-500">{{ $t('gestlab.general.labels.invoices.type_id') }}</p>
-          <p class="text-sm font-medium text-gray-700">{{ props.record.data?.invoice_category || 'N/A' }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-gray-500">{{ $t('gestlab.general.labels.invoices.created_at') }}</p>
-          <p class="text-sm font-medium text-gray-700">{{ formatDate(props.record.data?.created_at) }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-gray-500">{{ $t('gestlab.general.labels.invoices.amount_due') }}</p>
-          <p class="text-sm font-semibold text-blue-900 flex items-center gap-1">
-            <!-- <CurrencyEuroIcon class="h-4 w-4" /> -->
-                                    <p class="text-gray-400 mr-2">AOA</p>
-
-            {{ formatCurrency(props.record.data?.amount_due) }}
-          </p>
-        </div>
-        <div>
-          <p class="text-xs text-gray-500">{{ $t('gestlab.general.labels.invoices.total_amount') }}</p>
-          <p class="text-sm font-bold text-blue-900 flex items-center gap-1">
-            <!-- <CurrencyEuroIcon class="h-4 w-4" /> -->
-                                    <p class="text-gray-400 mr-2">AOA</p>
-
-            {{ formatCurrency(props.record.data?.total) }}
-          </p>
-        </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.invoices.amount_paid') }} · AOA</dt>
+        <dd class="pl-cell-value">{{ formatCurrency(paid) }}</dd>
       </div>
-    </div>
+      <div class="pl-cell" :class="{ 'pl-cell-bad': invoice.status === 'overdue' }">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.invoices.amount_due') }} · AOA</dt>
+        <dd class="pl-cell-value">{{ formatCurrency(invoice.amount_due) }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.invoices.payment_progress') }}</dt>
+        <dd class="grid gap-3">
+          <span class="pl-cell-value">{{ paidShare }}%</span>
+          <span class="pl-bar" aria-hidden="true"><i :style="{ width: `${paidShare}%` }" /></span>
+        </dd>
+      </div>
+    </dl>
 
-    <!-- MAIN CONTENT SECTION -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
-        
-        <!-- CUSTOMER & INVOICE DETAILS SECTION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <!-- GRADIENT HEADER -->
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <DocumentTextIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.invoices.invoice_details') }}
-            </h2>
-          </div>
-          
-          <!-- CARD CONTENT -->
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- CUSTOMER & WAREHOUSE INFO -->
-              <div class="space-y-6">
-                <!-- CUSTOMER INFO -->
-                <div>
-                  <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-3">
-                    <UserIcon class="h-4 w-4 text-blue-900" />
-                    {{ $t('gestlab.general.labels.invoices.customer_info') }}
-                  </h3>
-                  <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <p class="text-sm font-semibold text-gray-900">{{ props.record.data?.customer }}</p>
-                    <div v-if="props.record.data?.customer" class="mt-2 space-y-1">
-                      <p v-if="props.record.data?.customer.email" class="text-xs text-gray-600">
-                        {{ $t('gestlab.general.labels.email') }}: {{ props.record.data?.customer.email }}
-                      </p>
-                      <p v-if="props.record.data?.customer.phone" class="text-xs text-gray-600">
-                        {{ $t('gestlab.general.labels.phone') }}: {{ props.record.data?.customer.phone }}
-                      </p>
-                      <p v-if="props.record.data?.customer.vat_number" class="text-xs text-gray-600">
-                        {{ $t('gestlab.general.labels.vat') }}: {{ props.record.data?.customer.vat_number }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- WAREHOUSE INFO -->
-                <div>
-                  <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-3">
-                    <BuildingOfficeIcon class="h-4 w-4 text-blue-900" />
-                    {{ $t('gestlab.general.labels.invoices.delivery_address') }}
-                  </h3>
-                  <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <p class="text-sm font-semibold text-gray-900">{{ props.record.data?.warehouse }}</p>
-                    <div v-if="props.record.data?.warehouse" class="mt-2 space-y-1">
-                      <p v-if="props.record.data?.warehouse.city || props.record.data?.warehouse.postal_code" class="text-xs text-gray-600">
-                        {{ props.record.data?.warehouse.city }}{{ props.record.data?.warehouse.postal_code ? ', ' + props.record.data?.warehouse.postal_code : '' }}
-                      </p>
-                      <p v-if="props.record.data?.warehouse.country" class="text-xs text-gray-600">
-                        {{ props.record.data?.warehouse.country }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+    <div class="pl-dossier-grid">
+      <div class="grid min-w-0 gap-9">
+        <section class="pl-panel" aria-labelledby="invoice-items">
+          <header class="pl-panel-head">
+            <h2 id="invoice-items" class="pl-k">{{ $t('gestlab.general.labels.invoices.items') }}</h2>
+            <span class="pl-num text-[var(--pl-muted)]">{{ items.length }}</span>
+          </header>
 
-              <!-- INVOICE SETTINGS -->
-              <div class="space-y-6">
-                <!-- INVOICE TYPE & REFERENCE -->
-                <div>
-                  <h3 class="text-sm font-semibold text-gray-900 mb-3">
-                    {{ $t('gestlab.general.labels.invoices.invoice_settings') }}
-                  </h3>
-                  <div class="space-y-4">
-                    <div>
-                      <label class="block text-xs font-medium text-gray-700 mb-1">
-                        {{ $t('gestlab.general.labels.invoices.type_id') }}
-                      </label>
-                      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <p class="text-sm text-gray-900">{{ props.record.data?.invoice_category || 'N/A' }}</p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label class="block text-xs font-medium text-gray-700 mb-1">
-                        {{ $t('gestlab.general.labels.invoices.internal_ref') }}
-                      </label>
-                      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <p class="text-sm text-gray-900">{{ props.record.data?.internal_ref || $t('gestlab.general.labels.invoices.no_reference') }}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- LAB CODE & PRICING -->
-                <div>
-                  <div v-if="props.record.data?.lab_code" class="mb-4">
-                    <label class="block text-xs font-medium text-gray-700 mb-1">
-                      {{ $t('gestlab.general.labels.invoices.labcode_id') }}
-                    </label>
-                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <p class="text-sm font-semibold text-blue-900">{{ props.record.data?.lab_code.code }}</p>
-                      <p v-if="props.record.data?.assign_lab_code" class="text-xs text-gray-500 mt-1">
-                        {{ $t('gestlab.general.labels.invoices.assigned_to_collection') }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- PRICING MODE -->
-                  <div class="flex items-center gap-3">
-                    <TagIcon class="h-5 w-5 text-gray-500" />
-                    <div>
-                      <p class="text-sm font-medium text-gray-900">
-                        {{ $t('gestlab.general.labels.invoices.pricing_mode') }}
-                      </p>
-                      <p class="text-xs text-gray-500">
-                        {{ props.record.data?.use_matrix_price ? 
-                           $t('gestlab.general.labels.invoices.matrix_pricing') : 
-                           $t('gestlab.general.labels.invoices.parameter_pricing') }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ITEMS SECTION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="border-b border-gray-200 px-6 py-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <CalculatorIcon class="h-5 w-5 text-blue-900" />
-                {{ $t('gestlab.general.labels.invoices.items') }}
-                <span class="text-sm font-normal text-gray-500 ml-2">
-                  ({{ props.record.data?.items?.length || 0 }} {{ $t('gestlab.general.labels.invoices.items') }})
-                </span>
-              </h2>
-            </div>
+          <div v-if="!items.length" class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
+            <span class="pl-k">{{ $t('gestlab.general.labels.invoices.no_items') }}</span>
+            <p class="text-sm text-[var(--pl-muted)]">{{ $t('gestlab.general.labels.invoices.no_items_description') }}</p>
           </div>
 
-          <!-- EMPTY STATE -->
-          <div v-if="!props.record.data?.items || props.record.data?.items.length === 0" class="p-12 text-center">
-            <CreditCardIcon class="mx-auto h-12 w-12 text-gray-300" />
-            <h3 class="mt-4 text-sm font-semibold text-gray-900">
-              {{ $t('gestlab.general.labels.invoices.no_items') }}
-            </h3>
-            <p class="mt-2 text-sm text-gray-500">
-              {{ $t('gestlab.general.labels.invoices.no_items_description') }}
-            </p>
-          </div>
-
-          <!-- INVOICE ITEMS TABLE -->
           <div v-else class="overflow-x-auto">
-            <DataTable class="min-w-full divide-y divide-gray-300">
-              <thead class="bg-gray-50">
+            <DataTable>
+              <thead>
                 <tr>
-                  <th scope="col" class="py-3.5 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
-                    {{ $t('gestlab.general.labels.invoices.item_description') }}
-                  </th>
-                  <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">
-                    {{ $t('gestlab.general.labels.invoices.qty') }}
-                  </th>
-                  <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
-                    {{ $t('gestlab.general.labels.invoices.unit_price') }}
-                  </th>
-                  <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
-                    {{ $t('gestlab.general.labels.invoices.discount') }}
-                  </th>
-                  <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
-                    {{ $t('gestlab.general.labels.invoices.tax') }}
-                  </th>
-                  <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
-                    {{ $t('gestlab.general.labels.invoices.line_total') }}
-                  </th>
+                  <th scope="col">{{ $t('gestlab.general.labels.invoices.item_description') }}</th>
+                  <th scope="col" class="text-right">{{ $t('gestlab.general.labels.invoices.qty') }}</th>
+                  <th scope="col" class="text-right">{{ $t('gestlab.general.labels.invoices.unit_price') }}</th>
+                  <th scope="col" class="text-right">{{ $t('gestlab.general.labels.invoices.discount') }}</th>
+                  <th scope="col" class="text-right">{{ $t('gestlab.general.labels.invoices.tax') }}</th>
+                  <th scope="col" class="text-right">{{ $t('gestlab.general.labels.invoices.line_total') }}</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-200 bg-white">
-                <tr 
-                  v-for="(item, index) in props.record.data?.items" 
-                  :key="index"
-                  class="hover:bg-gray-50 transition-colors duration-150"
-                >
-                  <!-- Item Description -->
-                  <td class="py-4 pl-6 pr-3">
-                    <div>
-                      <p class="text-sm font-medium text-gray-900">{{ item.item_description }}</p>
-                      <div v-if="item.obs || item.exemption_code" class="mt-1 space-y-1">
-                        <p v-if="item.obs" class="text-xs text-gray-500">{{ item.obs }}</p>
-                        <p v-if="item.exemption_code" class="text-xs text-blue-600">
-                          {{ $t('gestlab.general.labels.invoices.exemption') }}: {{ item.exemption_code }}
-                        </p>
-                      </div>
-                      <p v-if="item.unit" class="text-xs text-gray-400 mt-1">
-                        {{ item.unit.code }}
-                      </p>
-                    </div>
+              <tbody>
+                <tr v-for="(item, index) in items" :key="index">
+                  <td class="py-3">
+                    <p class="font-medium">{{ item.item_description }}</p>
+                    <p v-if="item.obs" class="mt-0.5 text-[13px] text-[var(--pl-muted)]">{{ item.obs }}</p>
+                    <p v-if="item.exemption_code || item.unit" class="pl-k pl-faint mt-1.5">
+                      <template v-if="item.unit">{{ item.unit.code }}</template>
+                      <template v-if="item.exemption_code"><template v-if="item.unit"> · </template>{{ $t('gestlab.general.labels.invoices.exemption') }} {{ item.exemption_code }}</template>
+                    </p>
                   </td>
-
-                  <!-- Quantity -->
-                  <td class="px-3 py-4 text-sm text-gray-500 text-center">
-                    <p class="font-medium">{{ item.qty }}</p>
+                  <td class="pl-num text-right">{{ item.qty }}</td>
+                  <td class="pl-num text-right">{{ formatCurrency(item.unit_price) }}</td>
+                  <td class="pl-num text-right">
+                    <template v-if="item.discount_amount > 0">−{{ formatCurrency(item.discount_amount) }}<span v-if="item.discount_percentage" class="text-[var(--pl-faint)]"> · {{ item.discount_percentage }}%</span></template>
+                    <span v-else class="text-[var(--pl-faint)]">—</span>
                   </td>
-
-                  <!-- Unit Price -->
-                  <td class="px-3 py-4 text-sm text-gray-900 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <!-- <CurrencyEuroIcon class="h-4 w-4 text-gray-400" /> -->
-                                    <p class="text-gray-400 mr-2">AOA</p>
-
-                      {{ formatCurrency(item.unit_price) }}
-                    </div>
+                  <td class="pl-num text-right">
+                    <template v-if="item.tax_amount > 0">{{ formatCurrency(item.tax_amount) }}<span class="text-[var(--pl-faint)]"> · {{ item.tax_percentage }}%</span></template>
+                    <span v-else class="text-[var(--pl-faint)]">—</span>
                   </td>
-
-                  <!-- Discount -->
-                  <td class="px-3 py-4 text-sm text-gray-900 text-right">
-                    <div v-if="item.discount_amount > 0">
-                      <p class="text-red-600">
-                        -{{ formatCurrency(item.discount_amount) }}
-                      </p>
-                      <p class="text-xs text-gray-400">
-                        {{ item.discount_percentage ? '(' + item.discount_percentage + '%)' : '' }}
-                      </p>
-                    </div>
-                    <p v-else class="text-gray-400">-</p>
-                  </td>
-
-                  <!-- Tax -->
-                  <td class="px-3 py-4 text-sm text-gray-900 text-right">
-                    <div v-if="item.tax_amount > 0">
-                      <p>{{ formatCurrency(item.tax_amount) }}</p>
-                      <p class="text-xs text-gray-400">
-                        ({{ item.tax_percentage }}%)
-                      </p>
-                    </div>
-                    <p v-else class="text-gray-400">-</p>
-                  </td>
-
-                  <!-- Line Total -->
-                  <td class="px-3 py-4 text-sm font-medium text-gray-900 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <!-- <CurrencyEuroIcon class="h-4 w-4 text-gray-400" /> -->
-                                    <p class="text-gray-400 mr-2">AOA</p>
-
-                      {{ formatCurrency(item.total) }}
-                    </div>
-                  </td>
+                  <td class="pl-num text-right font-medium">{{ formatCurrency(item.total) }}</td>
                 </tr>
               </tbody>
-
-              <!-- INVOICE SUMMARY -->
-              <tfoot class="bg-gray-50 border-t-2 border-gray-200">
-                <tr>
-                  <td colspan="4" class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-gray-900 text-right">
-                    {{ $t('gestlab.general.labels.invoices.subtotal') }}
-                  </td>
-                  <td></td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm font-semibold text-gray-900 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <!-- <CurrencyEuroIcon class="h-4 w-4 text-gray-400" /> -->
-                                    <p class="text-gray-400 mr-2">AOA</p>
-
-                      {{ formatCurrency(props.record.data?.sub_total) }}
-                    </div>
-                  </td>
-                </tr>
-                <tr v-if="props.record.data?.discount > 0">
-                  <td colspan="4" class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-gray-900 text-right">
-                    {{ $t('gestlab.general.labels.invoices.discount_total') }}
-                  </td>
-                  <td></td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-red-600 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <!-- <CurrencyEuroIcon class="h-4 w-4" /> -->
-                                    <p class="h-4 w-4 mr-2">AOA</p>
-
-                      -{{ formatCurrency(props.record.data?.discount) }}
-                    </div>
-                  </td>
-                </tr>
-                <tr v-if="props.record.data?.tax > 0">
-                  <td colspan="4" class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-gray-900 text-right">
-                    {{ $t('gestlab.general.labels.invoices.tax_total') }}
-                  </td>
-                  <td></td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <!-- <CurrencyEuroIcon class="h-4 w-4 text-gray-400" /> -->
-                                    <p class="text-gray-400 mr-2">AOA</p>
-
-                      {{ formatCurrency(props.record.data?.tax) }}
-                    </div>
-                  </td>
-                </tr>
-                <tr class="bg-blue-50">
-                  <td colspan="4" class="whitespace-nowrap py-4 pl-6 pr-3 text-lg font-bold text-gray-900 text-right">
-                    {{ $t('gestlab.general.labels.invoices.total') }}
-                  </td>
-                  <td></td>
-                  <td class="whitespace-nowrap px-3 py-4 text-lg font-bold text-blue-900 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <!-- <CurrencyEuroIcon class="h-5 w-5" /> -->
-                                    <p class="h-4 w-4 mr-2">AOA</p>
-
-                      {{ formatCurrency(props.record.data?.total) }}
-                    </div>
-                  </td>
-                </tr>
-                <tr v-if="props.record.data?.amount_due < props.record.data?.total">
-                  <td colspan="4" class="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-gray-900 text-right">
-                    {{ $t('gestlab.general.labels.invoices.amount_paid') }}
-                  </td>
-                  <td></td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-green-600 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <!-- <CurrencyEuroIcon class="h-4 w-4" /> -->
-                                    <p class="h-4 w-4 mr-2">AOA</p>
-
-                      {{ formatCurrency(props.record.data?.total - props.record.data?.amount_due) }}
-                    </div>
-                  </td>
-                </tr>
-                <tr v-if="props.record.data?.amount_due > 0" class="bg-gradient-to-r from-blue-50 to-white">
-                  <td colspan="4" class="whitespace-nowrap py-4 pl-6 pr-3 text-lg font-bold text-gray-900 text-right">
-                    {{ $t('gestlab.general.labels.invoices.amount_due') }}
-                  </td>
-                  <td></td>
-                  <td class="whitespace-nowrap px-3 py-4 text-lg font-bold text-blue-900 text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <!-- <CurrencyEuroIcon class="h-5 w-5" /> -->
-                                    <p class="mr-2">AOA</p>
-
-                      {{ formatCurrency(props.record.data?.amount_due) }}
-                    </div>
-                  </td>
-                </tr>
-              </tfoot>
             </DataTable>
           </div>
-        </div>
 
-        <!-- OBSERVATIONS SECTION -->
-        <div v-if="props.record.data?.obs" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700 flex items-center gap-2 mb-3">
-              <InformationCircleIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.labels.invoices.obs') }}
-            </label>
-            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <p class="text-sm text-gray-700 whitespace-pre-line">{{ props.record.data?.obs }}</p>
-            </div>
-          </div>
-        </div>
+          <dl v-if="items.length" class="pl-facts border-t border-[var(--pl-line-strong)] sm:ml-auto sm:max-w-md sm:border-l sm:border-l-[var(--pl-line)]">
+            <div class="pl-fact"><dt>{{ $t('gestlab.general.labels.invoices.subtotal') }}</dt><dd class="pl-num text-right">{{ formatCurrency(invoice.sub_total) }}</dd></div>
+            <div v-if="invoice.discount > 0" class="pl-fact"><dt>{{ $t('gestlab.general.labels.invoices.discount_total') }}</dt><dd class="pl-num text-right">−{{ formatCurrency(invoice.discount) }}</dd></div>
+            <div v-if="invoice.tax > 0" class="pl-fact"><dt>{{ $t('gestlab.general.labels.invoices.tax_total') }}</dt><dd class="pl-num text-right">{{ formatCurrency(invoice.tax) }}</dd></div>
+            <div class="pl-fact"><dt class="text-[var(--pl-fg)]">{{ $t('gestlab.general.labels.invoices.total') }} · AOA</dt><dd class="pl-num text-right text-base font-semibold">{{ formatCurrency(invoice.total) }}</dd></div>
+          </dl>
+        </section>
+
+        <section v-if="invoice.obs" class="pl-panel" aria-labelledby="invoice-notes">
+          <header class="pl-panel-head"><h2 id="invoice-notes" class="pl-k">{{ $t('gestlab.general.labels.invoices.obs') }}</h2></header>
+          <p class="whitespace-pre-line p-4 text-sm leading-relaxed">{{ invoice.obs }}</p>
+        </section>
       </div>
 
-      <!-- RIGHT COLUMN (1/3 width) -->
-      <div class="space-y-6">
-        <!-- ACTIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            {{ $t('gestlab.general.labels.actions') }}
-          </h3>
-          <div class="space-y-4">
-            <button 
-              @click="downloadPDF"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200"
-            >
-              <DocumentArrowDownIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.invoices.download_pdf') }}
-            </button>
-            
-            <button 
-              v-if="props.record.data?.amount_due > 0"
-              @click="recordPayment"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-500 hover:to-green-400 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 transition-all duration-200"
-            >
-              <!-- <CurrencyEuroIcon class="h-5 w-5" /> -->
-                                    <p class="mr-2">AOA</p>
-
-              {{ $t('gestlab.general.labels.invoices.record_payment') }}
-            </button>
-
-            <button 
-              @click="sendEmail"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-500 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-all duration-200"
-            >
-              <EnvelopeIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.invoices.send_email') }}
-            </button>
-
-            <button 
-              @click="duplicateInvoice"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold bg-gradient-to-r from-gray-700 to-gray-600 text-white hover:from-gray-600 hover:to-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 transition-all duration-200"
-            >
-              <DocumentDuplicateIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.invoices.duplicate') }}
-            </button>
-
-            <!-- QUICK STATS -->
-            <div class="border-t border-gray-200 pt-4">
-              <h4 class="text-sm font-medium text-gray-900 mb-2">
-                {{ $t('gestlab.general.labels.summary') }}
-              </h4>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.invoices.items') }}</span>
-                  <span class="font-semibold text-blue-900">{{ props.record.data?.items?.length || 0 }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.invoices.subtotal') }}</span>
-                  <span class="font-semibold text-gray-900">{{ formatCurrency(props.record.data?.sub_total) }}</span>
-                </div>
-                <div v-if="props.record.data?.discount > 0" class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.invoices.discount') }}</span>
-                  <span class="font-semibold text-red-600">-{{ formatCurrency(props.record.data?.discount) }}</span>
-                </div>
-                <div v-if="props.record.data?.tax > 0" class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.invoices.tax') }}</span>
-                  <span class="font-semibold text-gray-900">{{ formatCurrency(props.record.data?.tax) }}</span>
-                </div>
-                <div class="flex justify-between text-sm font-semibold border-t border-gray-200 pt-2">
-                  <span class="text-gray-900">{{ $t('gestlab.general.labels.invoices.total') }}</span>
-                  <span class="text-blue-900">{{ formatCurrency(props.record.data?.total) }}</span>
-                </div>
-                <div v-if="props.record.data?.amount_due < props.record.data?.total" class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.invoices.amount_paid') }}</span>
-                  <span class="font-semibold text-green-600">{{ formatCurrency(props.record.data?.total - props.record.data?.amount_due) }}</span>
-                </div>
-                <div v-if="props.record.data?.amount_due > 0" class="flex justify-between text-sm font-semibold border-t border-gray-200 pt-2">
-                  <span class="text-gray-900">{{ $t('gestlab.general.labels.invoices.amount_due') }}</span>
-                  <span class="text-blue-900">{{ formatCurrency(props.record.data?.amount_due) }}</span>
-                </div>
-              </div>
+      <aside class="grid gap-9" aria-label="Dados do documento">
+        <section class="pl-panel" aria-labelledby="invoice-details">
+          <header class="pl-panel-head"><h2 id="invoice-details" class="pl-k">{{ $t('gestlab.general.labels.invoices.invoice_details') }}</h2></header>
+          <dl class="pl-facts">
+            <div class="pl-fact"><dt>{{ $t('gestlab.general.labels.invoices.inv_no') }}</dt><dd class="pl-num">{{ invoice.inv_no }}</dd></div>
+            <div class="pl-fact"><dt>{{ $t('gestlab.general.labels.invoices.type_id') }}</dt><dd>{{ invoice.invoice_category || '—' }}</dd></div>
+            <div class="pl-fact"><dt>{{ $t('gestlab.general.labels.invoices.created_at') }}</dt><dd>{{ formatDate(invoice.created_at) }}</dd></div>
+            <div class="pl-fact"><dt>{{ $t('gestlab.general.labels.invoices.internal_ref') }}</dt><dd>{{ invoice.internal_ref || $t('gestlab.general.labels.invoices.no_reference') }}</dd></div>
+            <div v-if="invoice.lab_code" class="pl-fact">
+              <dt>{{ $t('gestlab.general.labels.invoices.labcode_id') }}</dt>
+              <dd><span class="pl-num">{{ invoice.lab_code.code }}</span><span v-if="invoice.assign_lab_code" class="mt-1 block text-[13px] text-[var(--pl-muted)]">{{ $t('gestlab.general.labels.invoices.assigned_to_collection') }}</span></dd>
             </div>
-          </div>
-        </div>
+            <div class="pl-fact"><dt>{{ $t('gestlab.general.labels.invoices.pricing_mode') }}</dt><dd>{{ invoice.use_matrix_price ? $t('gestlab.general.labels.invoices.matrix_pricing') : $t('gestlab.general.labels.invoices.parameter_pricing') }}</dd></div>
+          </dl>
+        </section>
 
-        <!-- PAYMENT STATUS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ClipboardDocumentCheckIcon class="h-5 w-5 text-blue-900" />
-            {{ $t('gestlab.general.labels.invoices.payment_status') }}
-          </h3>
-          <div class="space-y-4">
-            <!-- Status Indicator -->
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.invoices.status') }}</span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                props.record.data?.status === 'paid' ? 'bg-green-100 text-green-800' :
-                props.record.data?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                props.record.data?.status === 'overdue' ? 'bg-red-100 text-red-800' :
-                'bg-blue-100 text-blue-800'
-              ]">
-                {{ formatStatus(props.record.data?.status) }}
-              </span>
-            </div>
-
-            <!-- Payment Progress -->
-            <div v-if="props.record.data?.total > 0">
-              <div class="flex justify-between text-sm mb-1">
-                <span class="text-gray-600">{{ $t('gestlab.general.labels.invoices.payment_progress') }}</span>
-                <span class="font-semibold text-gray-900">
-                  {{ Math.round((props.record.data?.total - props.record.data?.amount_due) / props.record.data?.total * 100) }}%
+        <section class="pl-panel" aria-labelledby="invoice-customer">
+          <header class="pl-panel-head"><h2 id="invoice-customer" class="pl-k">{{ $t('gestlab.general.labels.invoices.customer_info') }}</h2></header>
+          <dl class="pl-facts">
+            <div class="pl-fact"><dt>Cliente</dt><dd class="font-medium">{{ invoice.customer || '—' }}</dd></div>
+            <div v-if="invoice.customer?.email" class="pl-fact"><dt>{{ $t('gestlab.general.labels.email') }}</dt><dd>{{ invoice.customer.email }}</dd></div>
+            <div v-if="invoice.customer?.phone" class="pl-fact"><dt>{{ $t('gestlab.general.labels.phone') }}</dt><dd class="pl-num">{{ invoice.customer.phone }}</dd></div>
+            <div v-if="invoice.customer?.vat_number" class="pl-fact"><dt>{{ $t('gestlab.general.labels.vat') }}</dt><dd class="pl-num">{{ invoice.customer.vat_number }}</dd></div>
+            <div class="pl-fact">
+              <dt>{{ $t('gestlab.general.labels.invoices.delivery_address') }}</dt>
+              <dd>
+                {{ invoice.warehouse || '—' }}
+                <span v-if="invoice.warehouse?.city || invoice.warehouse?.postal_code || invoice.warehouse?.country" class="mt-1 block text-[13px] text-[var(--pl-muted)]">
+                  {{ [invoice.warehouse.city, invoice.warehouse.postal_code, invoice.warehouse.country].filter(Boolean).join(', ') }}
                 </span>
-              </div>
-              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  :class="[
-                    'h-full rounded-full',
-                    props.record.data?.amount_due === 0 ? 'bg-green-500' :
-                    props.record.data?.amount_due < props.record.data?.total ? 'bg-yellow-500' :
-                    'bg-blue-500'
-                  ]"
-                  :style="{ width: ((props.record.data?.total - props.record.data?.amount_due) / props.record.data?.total * 100) + '%' }"
-                ></div>
-              </div>
+              </dd>
             </div>
+          </dl>
+        </section>
 
-            <!-- Payment Details -->
-            <div class="space-y-2 pt-2 border-t border-gray-200">
-              <div class="flex justify-between text-sm">
-                <span class="text-gray-600">{{ $t('gestlab.general.labels.invoices.total_amount') }}</span>
-                <span class="font-semibold text-gray-900">{{ formatCurrency(props.record.data?.total) }}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-gray-600">{{ $t('gestlab.general.labels.invoices.amount_paid') }}</span>
-                <span class="font-semibold text-green-600">{{ formatCurrency(props.record.data?.total - props.record.data?.amount_due) }}</span>
-              </div>
-              <div class="flex justify-between text-sm font-semibold">
-                <span class="text-gray-900">{{ $t('gestlab.general.labels.invoices.amount_due') }}</span>
-                <span class="text-blue-900">{{ formatCurrency(props.record.data?.amount_due) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- AUDIT TRAIL CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            {{ $t('gestlab.general.labels.invoices.audit_trail') }}
-          </h3>
-          <div class="space-y-4">
-            <!-- Created -->
-            <div class="flex items-start gap-3">
-              <div class="flex-shrink-0">
-                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <UserIcon class="h-4 w-4 text-blue-900" />
-                </div>
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="text-sm font-medium text-gray-900">
-                  {{ $t('gestlab.general.labels.invoices.created_by') }}
-                </p>
-                <p class="text-xs text-gray-500">{{ props.record.data?.user || 'N/A' }}</p>
-                <p class="text-xs text-gray-400">{{ formatDateTime(props.record.data?.created_at) }}</p>
-              </div>
-            </div>
-            
-            <!-- Last Updated -->
-            <div v-if="props.record.data?.updated_at !== props.record.data?.created_at" class="flex items-start gap-3">
-              <div class="flex-shrink-0">
-                <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-                  <PencilIcon class="h-4 w-4 text-gray-700" />
-                </div>
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="text-sm font-medium text-gray-900">
-                  {{ $t('gestlab.general.labels.invoices.last_updated') }}
-                </p>
-                <p class="text-xs text-gray-500">{{ formatDateTime(props.record.data?.updated_at) }}</p>
-              </div>
-            </div>
-
-            <!-- Payments -->
-            <div v-if="props.record.data?.payments && props.record.data?.payments.length > 0" class="space-y-3">
-              <div 
-                v-for="payment in props.record.data?.payments" 
-                :key="payment.id"
-                class="flex items-start gap-3"
-              >
-                <div class="flex-shrink-0">
-                  <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                    <!-- <CurrencyEuroIcon class="h-4 w-4 text-green-900" /> -->
-                                    <p class="h-4 w-4 text-green-900">AOA</p>
-
-                  </div>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <p class="text-sm font-medium text-gray-900">
-                    {{ $t('gestlab.general.labels.invoices.payment_received') }}
-                  </p>
-                  <p class="text-xs text-gray-500">
-                    {{ formatCurrency(payment.amount) }} - {{ payment.method || 'N/A' }}
-                  </p>
-                  <p class="text-xs text-gray-400">{{ formatDateTime(payment.created_at) }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        <section class="pl-panel" aria-labelledby="invoice-history">
+          <header class="pl-panel-head"><h2 id="invoice-history" class="pl-k">{{ $t('gestlab.general.labels.invoices.audit_trail') }}</h2></header>
+          <ol>
+            <li class="pl-row">
+              <span><span class="block font-medium">{{ $t('gestlab.general.labels.invoices.created_by') }}</span><span class="text-[13px] text-[var(--pl-muted)]">{{ invoice.user || '—' }}</span></span>
+              <time class="pl-k pl-faint">{{ formatDateTime(invoice.created_at) }}</time>
+            </li>
+            <li v-if="invoice.updated_at !== invoice.created_at" class="pl-row">
+              <span class="font-medium">{{ $t('gestlab.general.labels.invoices.last_updated') }}</span>
+              <time class="pl-k pl-faint">{{ formatDateTime(invoice.updated_at) }}</time>
+            </li>
+            <li v-for="payment in invoice.payments ?? []" :key="payment.id" class="pl-row">
+              <span><span class="block font-medium">{{ $t('gestlab.general.labels.invoices.payment_received') }}</span><span class="pl-num text-[13px] text-[var(--pl-muted)]">AOA {{ formatCurrency(payment.amount) }} · {{ payment.method || '—' }}</span></span>
+              <time class="pl-k pl-faint">{{ formatDateTime(payment.created_at) }}</time>
+            </li>
+          </ol>
+        </section>
+      </aside>
     </div>
 
-    <!-- FOOTER ACTIONS -->
-    <div class="flex items-center justify-between pt-6">
-      <div class="text-sm text-gray-500">
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2">
-            <div class="h-3 w-3 rounded-full bg-green-500"></div>
-            <span>{{ props.record.data?.items?.length || 0 }} {{ $t('gestlab.general.labels.invoices.items') }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <!-- <CurrencyEuroIcon class="h-4 w-4 text-gray-400" /> -->
-                                    <p class="text-gray-400 mr-2">AOA</p>
-
-            <span class="font-semibold">{{ formatCurrency(props.record.data?.total) }} {{ $t('gestlab.general.labels.invoices.total') }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <div :class="[
-              'h-3 w-3 rounded-full',
-              props.record.data?.amount_due === 0 ? 'bg-green-500' :
-              props.record.data?.amount_due < props.record.data?.total ? 'bg-yellow-500' :
-              'bg-blue-500'
-            ]"></div>
-            <span>{{ formatCurrency(props.record.data?.amount_due) }} {{ $t('gestlab.general.labels.invoices.due') }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="flex items-center gap-4">
-        <button 
-          @click="$router.back()"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200"
-        >
-          <ArrowLeftIcon class="h-5 w-5" />
-          {{ $t('gestlab.general.buttons.back') }}
-        </button>
-        
-        <button 
-          v-if="canEdit"
-          @click="editInvoice"
-          class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200"
-        >
-          <PencilIcon class="h-5 w-5" />
+    <NextStepBar>
+      {{ nextStep }}
+      <template #actions>
+        <button v-if="canEdit" type="button" class="ds-button ds-button-secondary" @click="editInvoice">
+          <PencilIcon class="h-4 w-4" aria-hidden="true" />
           {{ $t('gestlab.general.buttons.edit') }}
         </button>
-      </div>
-    </div>
+        <button v-if="invoice.amount_due > 0" type="button" class="ds-button ds-button-primary" @click="recordPayment">
+          {{ $t('gestlab.general.labels.invoices.record_payment') }}
+        </button>
+      </template>
+    </NextStepBar>
 
     <DocumentShareModal
       :open="shareOpen"
@@ -686,26 +193,17 @@
 </template>
 
 <script setup>
-import '../CommercialDocumentSurface.css';
 import Layout from "@/Shared/Layouts/Layout.vue";
 import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue';
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import NextStepBar from "@/Components/plano/NextStepBar.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
+import StatusChip from "@/Components/plano/StatusChip.vue";
 import { ref, computed } from "vue";
-import { router } from "@inertiajs/vue3";
+import { Head, router } from "@inertiajs/vue3";
 import {
-  CreditCard as CreditCardIcon,
-  User as UserIcon,
-  Building as BuildingOfficeIcon,
-  FileText as DocumentTextIcon,
-  Calculator as CalculatorIcon,
-  Euro as CurrencyEuroIcon,
-  Info as InformationCircleIcon,
-  ClipboardCheck as ClipboardDocumentCheckIcon,
   Copy as DocumentDuplicateIcon,
   FileDown as DocumentArrowDownIcon,
-  Tag as TagIcon,
   Mail as EnvelopeIcon,
-  ArrowLeft as ArrowLeftIcon,
   Pencil as PencilIcon,
 } from "@lucide/vue";
 
@@ -715,6 +213,32 @@ defineOptions({
 
 const props = defineProps({
   record: Object
+});
+
+/**
+ * The invoice dossier (Plano): what was billed, what has been paid, and the one
+ * thing left to do — record the payment still owed.
+ */
+const invoice = computed(() => props.record.data ?? {});
+const items = computed(() => invoice.value.items ?? []);
+const paid = computed(() => Number(invoice.value.total || 0) - Number(invoice.value.amount_due || 0));
+const paidShare = computed(() => {
+  const total = Number(invoice.value.total || 0);
+
+  return total > 0 ? Math.min(100, Math.max(0, Math.round((paid.value / total) * 100))) : 0;
+});
+const statusTone = computed(() => ({
+  paid: 'ok',
+  pending: 'wait',
+  overdue: 'bad',
+  cancelled: 'done',
+}[invoice.value.status] ?? 'neutral'));
+const nextStep = computed(() => {
+  if (Number(invoice.value.amount_due) > 0) {
+    return `Faltam AOA ${formatCurrency(invoice.value.amount_due)} por liquidar${paid.value > 0 ? `; AOA ${formatCurrency(paid.value)} já recebidos` : ''}.`;
+  }
+
+  return invoice.value.status === 'cancelled' ? 'Documento cancelado. Não há acções pendentes.' : 'Factura liquidada. Não há acções pendentes.';
 });
 
 const shareOpen = ref(false);

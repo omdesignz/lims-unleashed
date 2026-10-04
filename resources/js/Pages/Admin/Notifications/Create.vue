@@ -107,7 +107,7 @@ const submit = () => {
 </script>
 
 <template>
-  <div class="space-y-5">
+  <div class="pl-page space-y-5">
     <Head title="Compor notificação" />
     <NotificationAdminHeader
       title="Compor notificação"

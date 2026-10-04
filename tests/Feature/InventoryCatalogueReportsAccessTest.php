@@ -64,6 +64,9 @@ class InventoryCatalogueReportsAccessTest extends TestCase
             $this->assertSame([count($types), count($types), 0], $props['charts']['severity_mix']['series']);
             $this->assertSame([2 * count($types)], $props['charts']['warehouse_exposure']['series']);
             $this->assertCount(2 * count($types), $props['charts']['replenishment_gap']['labels']);
+            foreach ($props['charts']['replenishment_coverage']['series'][0]['data'] as $coverage) {
+                $this->assertGreaterThanOrEqual(0, $coverage);
+            }
             $this->assertSame('0.0000', $rows[0]['qty_available'], 'Empty positions sort first.');
             foreach ($rows as $row) {
                 $this->assertSame(['id', 'item_id', 'warehouse_id', 'qty_available', 'min_stock_level', 'reorder_point', 'item', 'warehouse'], array_keys($row));
@@ -92,6 +95,7 @@ class InventoryCatalogueReportsAccessTest extends TestCase
             $this->assertSame(0, $props['stats']['total_items']);
             $this->assertSame([0, 0, 0], $props['charts']['severity_mix']['series']);
             $this->assertSame([], $props['charts']['replenishment_gap']['labels']);
+            $this->assertSame([], $props['charts']['replenishment_coverage']['labels']);
         } else {
             $this->assertSame(2, $props['stats'][$report === 'expiry' ? 'total_reagents' : 'total_scheduled']);
         }

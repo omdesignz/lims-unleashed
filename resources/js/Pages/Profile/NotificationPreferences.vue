@@ -1,9 +1,10 @@
 <script setup>
 import BaseInput from '@/Components/base/BaseInput.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import CheckboxInput from '@/Components/base/CheckboxInput.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { Head, Link, useForm } from '@inertiajs/vue3'
-import { ArrowLeft as ArrowLeftIcon, BellRing as BellAlertIcon, Mail as EnvelopeIcon, Inbox as InboxIcon, Signal as SignalIcon } from '@lucide/vue'
+import { Head, useForm } from '@inertiajs/vue3'
+import { Mail as EnvelopeIcon, Inbox as InboxIcon, Signal as SignalIcon } from '@lucide/vue'
 
 defineOptions({ layout: Layout })
 
@@ -27,15 +28,8 @@ const save = () => form.put(route('notification-preferences.update'), { preserve
 <template>
   <Head title="Preferências de notificações" />
 
-  <div class="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
-    <header class="flex flex-col gap-4 border-b border-[var(--ds-border)] pb-5 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="ds-kicker">Preferências pessoais</p>
-        <h1 class="ds-heading mt-2 flex items-center gap-2 text-2xl"><BellAlertIcon class="h-6 w-6" /> Notificações</h1>
-        <p class="ds-copy mt-2 max-w-3xl text-sm">Escolha como recebe alertas por área. Alertas urgentes ignoram o período de silêncio para proteger operações críticas.</p>
-      </div>
-      <Link :href="route('security')" class="ds-button ds-button-secondary"><ArrowLeftIcon class="h-4 w-4" /> Conta e segurança</Link>
-    </header>
+  <div class="pl-page w-full space-y-5">
+    <PageHeader :trail="[{ title: 'Conta e segurança', url: route('security') }, { title: 'Notificações' }]" title="Notificações" lede="Escolha como recebe alertas por área. Alertas urgentes ignoram o período de silêncio para proteger operações críticas." />
 
     <form class="space-y-5" @submit.prevent="save">
       <section class="ds-panel overflow-hidden">

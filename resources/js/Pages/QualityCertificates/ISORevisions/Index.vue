@@ -1,12 +1,12 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import Pagination from "@/Components/pagination.vue";
 import RestoreRevisionModal from "./Partials/RestoreRevisionModal.vue";
 import { computed, ref } from "vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
   Download as ArrowDownTrayIcon,
-  ArrowLeft as ArrowLeftIcon,
   RefreshCw as ArrowPathIcon,
   ArrowLeftRight as ArrowsRightLeftIcon,
   CircleCheck as CheckCircleIcon,
@@ -229,53 +229,31 @@ function handleRevisionRestored() {
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0 max-w-3xl">
-          <Link
-            :href="route('qualitycertificates.show', { certificate: certificate.id })"
-            class="ds-table-action -ml-2 mb-3"
-          >
-            <ArrowLeftIcon class="h-4 w-4" />
-            Voltar ao certificado
-          </Link>
-          <div class="flex flex-wrap items-center gap-2">
-            <p class="ds-kicker">ISO/IEC 17025</p>
-            <span class="ds-chip font-mono">{{ certificate.code || "Sem código" }}</span>
-          </div>
-          <h1 class="ds-heading mt-2 text-2xl">Controlo de revisões</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm"> Histórico imutável de alterações, aprovação, comparação e reposição do certificado para auditoria e rastreabilidade. </p>
-        </div>
-
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <a
-            :href="route('qualitycertificates.iso-revisions.export', certificate.id)"
-            class="ds-button ds-button-secondary"
-          >
-            <ArrowDownTrayIcon class="h-4 w-4" /> Exportar histórico </a>
-          <Link
-            :href="route('qualitycertificates.iso-revisions.create', certificate.id)"
-            class="ds-button ds-button-primary"
-          >
-            <DocumentPlusIcon class="h-4 w-4" /> Nova revisão </Link>
-        </div>
-      </div>
-
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
-        <div
-          v-for="metric in revisionMetrics"
-          :key="metric.label"
-          class="border-b border-[var(--ds-border)] px-5 py-4 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0"
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Certificado', url: route('qualitycertificates.show', { certificate: certificate.id }) }, { title: 'Controlo de revisões' }]" title="Controlo de revisões" lede="Histórico imutável de alterações, aprovação, comparação e reposição do certificado para auditoria e rastreabilidade.">
+      <template #badges>
+        <span class="ds-chip font-mono">{{ certificate.code || "Sem código" }}</span>
+      </template>
+      <template #actions>
+        <a
+          :href="route('qualitycertificates.iso-revisions.export', certificate.id)"
+          class="ds-button ds-button-secondary"
         >
-          <dt class="ds-table-heading">{{ metric.label }}</dt>
-          <dd class="ds-heading mt-2 text-lg">{{ metric.value }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
-            {{ metric.note }}
-          </p>
-        </div>
-      </dl>
-    </section>
+          <ArrowDownTrayIcon class="h-4 w-4" /> Exportar histórico </a>
+        <Link
+          :href="route('qualitycertificates.iso-revisions.create', certificate.id)"
+          class="ds-button ds-button-primary"
+        >
+          <DocumentPlusIcon class="h-4 w-4" /> Nova revisão </Link>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells">
+      <div v-for="metric in revisionMetrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-text">{{ metric.value }}</dd>
+      </div>
+    </dl>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
       <div class="space-y-6">

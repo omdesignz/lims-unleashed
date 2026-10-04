@@ -1,7 +1,8 @@
 <script setup>
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import { Link } from "@inertiajs/vue3";
-import { Building2 as BuildingOffice2Icon, BadgeCheck as CheckBadgeIcon, ClipboardCheck as ClipboardDocumentCheckIcon, Clock as ClockIcon, Mail as EnvelopeIcon, MapPin as MapPinIcon, Phone as PhoneIcon, ShieldCheck as ShieldCheckIcon, CircleUser as UserCircleIcon } from "@lucide/vue";
+import { Mail as EnvelopeIcon, MapPin as MapPinIcon, Phone as PhoneIcon, ShieldCheck as ShieldCheckIcon, CircleUser as UserCircleIcon } from "@lucide/vue";
 
 defineOptions({ layout: PortalLayout });
 
@@ -10,19 +11,26 @@ defineProps({ warehouse: Object, requestStats: Object });
 
 <template>
   <div class="space-y-6">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><BuildingOffice2Icon class="h-5 w-5" /></span><div><p class="ds-kicker">Perfil do portal</p><h1 class="ds-heading mt-1 break-words text-2xl">{{ warehouse?.name || warehouse?.customer || "Conta do cliente" }}</h1><p class="ds-copy mt-1 max-w-3xl text-sm">Dados do local autenticado e resumo da actividade submetida no portal.</p></div></div>
-          <Link :href="route('portal.security')" class="ds-button ds-button-primary"><ShieldCheckIcon class="h-4 w-4" />Seguranca</Link>
-        </div>
+    <PageHeader :title="warehouse?.name || warehouse?.customer || 'Conta do cliente'" lede="Dados do local autenticado e resumo da actividade submetida no portal.">
+      <template #actions>
+        <Link :href="route('portal.security')" class="ds-button ds-button-primary"><ShieldCheckIcon class="h-4 w-4" />Seguranca</Link>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Pedidos totais</dt>
+        <dd class="pl-cell-value">{{ requestStats?.total || 0 }}</dd>
       </div>
-      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-3">
-        <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between"><div><dt class="ds-field-label">Pedidos totais</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ requestStats?.total || 0 }}</dd></div><ClipboardDocumentCheckIcon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
-        <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between"><div><dt class="ds-field-label">Em aberto</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ requestStats?.open || 0 }}</dd></div><ClockIcon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
-        <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between"><div><dt class="ds-field-label">Concluídos</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ requestStats?.completed || 0 }}</dd></div><CheckBadgeIcon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Em aberto</dt>
+        <dd class="pl-cell-value">{{ requestStats?.open || 0 }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Concluídos</dt>
+        <dd class="pl-cell-value">{{ requestStats?.completed || 0 }}</dd>
+      </div>
+    </dl>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
       <section class="ds-card overflow-hidden">

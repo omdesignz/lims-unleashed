@@ -1,5 +1,6 @@
 <script setup>
 import { Dialog, DialogPanel } from '@headlessui/vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import {
   CircleCheck as CheckCircleIcon,
   Monitor as ComputerDesktopIcon,
@@ -9,7 +10,6 @@ import {
   Fingerprint as FingerPrintIcon,
   KeyRound as KeyIcon,
   Lock as LockClosedIcon,
-  ShieldCheck as ShieldCheckIcon,
 } from '@lucide/vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
@@ -269,37 +269,18 @@ function logoutOtherSessions() {
 
 <template>
   <div class="space-y-6">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <ShieldCheckIcon class="h-5 w-5" />
-            </span>
-            <div>
-              <p class="ds-kicker">Seguranca da conta</p>
-              <h1 class="ds-heading mt-1 text-2xl">Acesso ao portal</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Proteja credenciais, confirme dispositivos e reveja os acessos associados a {{ warehouse?.name || 'este local' }}.</p>
-            </div>
-          </div>
-          <Link :href="route('portal.profile')" class="ds-button ds-button-secondary">Voltar ao perfil</Link>
-        </div>
-      </div>
+    <PageHeader title="Acesso ao portal" :lede="`Proteja credenciais, confirme dispositivos e reveja os acessos associados a ${warehouse?.name || 'este local'}.`">
+      <template #actions>
+        <Link :href="route('portal.profile')" class="ds-button ds-button-secondary">Voltar ao perfil</Link>
+      </template>
+    </PageHeader>
 
-      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
-        <div v-for="item in securityCards" :key="item.label" class="bg-[var(--ds-panel)] p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <dt class="ds-field-label">{{ item.label }}</dt>
-              <dd class="mt-2 break-words text-lg font-bold text-[var(--ds-text)]">{{ item.value }}</dd>
-            </div>
-            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border" :class="statusToneClass(item.tone)">
-              <component :is="item.icon" class="h-4 w-4" />
-            </span>
-          </div>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div v-for="item in securityCards" :key="item.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ item.label }}</dt>
+        <dd class="pl-cell-text">{{ item.value }}</dd>
+      </div>
+    </dl>
 
     <p v-if="securityError" class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-200" role="alert">
       {{ securityError }}

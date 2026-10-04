@@ -1,5 +1,6 @@
 <script setup>
 import Pagination from "@/Components/pagination.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 import { Link, router } from "@inertiajs/vue3";
@@ -42,19 +43,26 @@ function applyFilters() {
 
 <template>
   <div class="space-y-6">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><QuestionMarkCircleIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Centro de ajuda</p><h1 class="ds-heading mt-1 text-2xl">Perguntas frequentes</h1><p class="ds-copy mt-1 max-w-3xl text-sm">Respostas sobre colheitas, análises, certificados, documentos e facturação.</p></div></div>
-          <Link :href="route('portal.requests.index', { new: 1, request_type: 'general_support', title: 'Pedido de ajuda' })" class="ds-button ds-button-primary"><PlusIcon class="h-4 w-4" />Pedir ajuda</Link>
-        </div>
+    <PageHeader title="Perguntas frequentes" lede="Respostas sobre colheitas, análises, certificados, documentos e facturação.">
+      <template #actions>
+        <Link :href="route('portal.requests.index', { new: 1, request_type: 'general_support', title: 'Pedido de ajuda' })" class="ds-button ds-button-primary"><PlusIcon class="h-4 w-4" />Pedir ajuda</Link>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Perguntas nesta página</dt>
+        <dd class="pl-cell-value">{{ questions.length }}</dd>
       </div>
-      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-3">
-        <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Perguntas nesta página</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ questions.length }}</dd></div>
-        <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Com resposta</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ answeredCount }}</dd></div>
-        <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Categorias visíveis</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ categories.length }}</dd></div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Com resposta</dt>
+        <dd class="pl-cell-value">{{ answeredCount }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Categorias visíveis</dt>
+        <dd class="pl-cell-value">{{ categories.length }}</dd>
+      </div>
+    </dl>
 
     <section class="ds-card overflow-hidden">
       <form class="grid gap-4 px-5 py-5 sm:grid-cols-[minmax(0,1fr)_14rem_auto] sm:items-end sm:px-6" role="search" @submit.prevent="applyFilters">

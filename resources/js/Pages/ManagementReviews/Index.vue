@@ -1,9 +1,9 @@
 <script setup>
 import Pagination from "@/Components/pagination.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router } from "@inertiajs/vue3";
 import {
-  BadgeCheck as CheckBadgeIcon,
   CircleCheck as CheckCircleIcon,
   ClipboardList as ClipboardDocumentListIcon,
   Clock as ClockIcon,
@@ -60,32 +60,15 @@ function applyFilter() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex items-start gap-3">
-        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-          <CheckBadgeIcon class="h-5 w-5" />
-        </span>
-        <div>
-          <p class="ds-kicker">Governança do SGQ</p>
-          <h1 class="ds-heading mt-1 text-2xl">Revisões pela gestão</h1>
-          <p class="ds-copy mt-1 max-w-3xl text-sm">Planeamento, decisões, riscos, oportunidades e melhoria acompanhados pela direcção.</p>
-        </div>
-      </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Revisões pela gestão" lede="Planeamento, decisões, riscos, oportunidades e melhoria acompanhados pela direcção." />
 
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
-        <div v-for="metric in metrics" :key="metric.label" class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r sm:last:border-r-0">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-              <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
-              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
-            </div>
-            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div v-for="metric in metrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
+      </div>
+    </dl>
 
     <section class="ds-panel overflow-hidden">
       <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">

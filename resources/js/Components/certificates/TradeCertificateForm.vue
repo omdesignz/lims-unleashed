@@ -1,9 +1,11 @@
 <script setup>
 import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
 import FinancialObservationForm from "@/Components/documents/FinancialObservationForm.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
+import NextStepBar from "@/Components/plano/NextStepBar.vue";
+import StatusChip from "@/Components/plano/StatusChip.vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeft as ArrowLeftIcon,
   Banknote as BanknotesIcon,
   Building as BuildingOfficeIcon,
   BadgeCheck as CheckBadgeIcon,
@@ -258,47 +260,24 @@ function submit() {
 </script>
 
 <template>
-  <div>
+  <div :class="{ 'pl-page': !observationsOnly }" :data-template="observationsOnly ? undefined : 'form'">
   <FinancialObservationForm v-if="observationsOnly" :kind="`${kind}_certificate`" :record="record" />
   <form v-else class="min-w-0 space-y-6 overflow-x-clip" @submit.prevent="submit">
     <p v-if="form.errors.request" role="alert" class="ds-field-error">{{ form.errors.request }}</p>
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <Link :href="route(`${config.routePrefix}.index`)" class="ds-button ds-button-ghost px-0">
-        <ArrowLeftIcon class="h-4 w-4" />
-        Voltar ao registo
-      </Link>
-
-      <div class="mt-4 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex min-w-0 items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <component :is="config.icon" class="h-5 w-5" />
-          </span>
-          <div class="min-w-0">
-            <p class="ds-kicker">{{ config.kicker }}</p>
-            <h1 class="ds-heading mt-1 text-2xl">{{ isEditing ? `Editar ${config.title.toLowerCase()}` : `Novo ${config.title.toLowerCase()}` }}</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">{{ source.cert_no ? `Referência ${source.cert_no}` : "Registo de partes, percurso e produtos sob controlo documental." }}</p>
-          </div>
-        </div>
-        <span class="ds-badge" :class="form.isDirty ? 'ds-badge-warning' : 'ds-badge-neutral'">
-          {{ form.isDirty ? "Alterações por guardar" : "Sem alterações" }}
-        </span>
-      </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Modo</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ isEditing ? "Revisão" : "Emissão" }}</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Produtos</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ form.items.length }} linhas</dd>
-        </div>
-        <div class="px-4 py-3">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Quantidade</dt>
-          <dd class="mt-2 text-sm font-bold tabular-nums text-[var(--ds-text)]">{{ formatNumber(totalQuantity) }} un.</dd>
-        </div>
+    <PageHeader
+      :trail="[{ title: isImport ? 'Certificados de importação' : 'Certificados de exportação', url: route(`${config.routePrefix}.index`) }, { title: isEditing ? 'Editar' : 'Novo' }]"
+      :title="isEditing ? `Editar ${config.title.toLowerCase()}` : `Novo ${config.title.toLowerCase()}`"
+      :lede="source.cert_no ? `Referência ${source.cert_no}` : 'Registo de partes, percurso e produtos sob controlo documental.'"
+    >
+      <template #badges>
+        <StatusChip :tone="form.isDirty ? 'wait' : 'neutral'">{{ form.isDirty ? "Alterações por guardar" : "Sem alterações" }}</StatusChip>
+      </template>
+      <dl class="pl-cells mt-8">
+        <div class="pl-cell"><dt class="pl-k pl-muted">Modo</dt><dd class="pl-cell-text">{{ isEditing ? "Revisão" : "Emissão" }}</dd></div>
+        <div class="pl-cell"><dt class="pl-k pl-muted">Produtos</dt><dd class="pl-cell-text">{{ form.items.length }} linhas</dd></div>
+        <div class="pl-cell"><dt class="pl-k pl-muted">Quantidade</dt><dd class="pl-cell-text pl-num">{{ formatNumber(totalQuantity) }} un.</dd></div>
       </dl>
-    </section>
+    </PageHeader>
 
     <section class="ds-panel overflow-hidden">
       <header class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:px-6">
@@ -563,16 +542,15 @@ function submit() {
       </div>
     </section>
 
-    <section class="ds-panel flex flex-col-reverse gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-      <p class="text-xs font-semibold text-[var(--ds-text-muted)]">{{ form.items.length }} produtos · {{ formatNumber(totalQuantity) }} unidades</p>
-      <div class="flex flex-col-reverse gap-2 sm:flex-row">
+    <NextStepBar>
+      {{ form.processing ? "A guardar…" : `${form.items.length} produtos · ${formatNumber(totalQuantity)} unidades` }}
+      <template #actions>
         <Link :href="route(`${config.routePrefix}.index`)" class="ds-button ds-button-secondary">Cancelar</Link>
         <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || (isEditing && !form.isDirty)">
-          <CheckBadgeIcon class="h-4 w-4" />
           {{ form.processing ? "A guardar..." : isEditing ? "Guardar alterações" : "Emitir certificado" }}
         </button>
-      </div>
-    </section>
+      </template>
+    </NextStepBar>
   </form>
   </div>
 </template>

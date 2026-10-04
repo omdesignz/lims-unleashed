@@ -1,7 +1,7 @@
 <template>
     <div>
       <button @click="addRow">Adicionar linha</button>
-      <DataTable>
+      <DataTable :stack="false">
         <thead>
           <tr>
             <th></th>

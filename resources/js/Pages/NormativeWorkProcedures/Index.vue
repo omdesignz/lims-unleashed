@@ -1,7 +1,6 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { FileText as DocumentTextIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 
@@ -27,6 +26,6 @@ const props = defineProps({
     new-entity-label="Novo PNT"
     :code-label="$t('gestlab.general.labels.nwps.code')"
     :description-label="$t('gestlab.general.labels.nwps.description')"
-    :icon="DocumentTextIcon"
+
   />
 </template>

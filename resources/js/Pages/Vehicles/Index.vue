@@ -1,5 +1,6 @@
 <script setup>
 import Combobox from "@/Components/combobox.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
@@ -8,7 +9,6 @@ import {
   Building2 as BuildingOffice2Icon,
   Check as CheckIcon,
   IdCard as IdentificationIcon,
-  Truck as TruckIcon,
 } from "@lucide/vue";
 import { router, useForm } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
@@ -137,32 +137,13 @@ function confirmAction() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <TruckIcon class="h-5 w-5" aria-hidden="true" />
-          </span>
-          <div>
-            <p class="ds-kicker">Logística de campo</p>
-            <h1 class="ds-heading mt-1 text-2xl">Viaturas operacionais</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Frota autorizada para recolhas, transporte de amostras e deslocações técnicas com responsabilidade departamental.</p>
-          </div>
-        </div>
-
-        <div class="grid w-full grid-cols-2 overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] lg:w-auto lg:min-w-72">
-          <div class="border-r border-[var(--ds-border)] px-4 py-3">
-            <p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Viaturas</p>
-            <p class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ totalRecords }}</p>
-          </div>
-          <div class="px-4 py-3">
-            <p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Departamentos</p>
-            <p class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ representedDepartments }}</p>
-          </div>
-        </div>
-      </div>
-    </section>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Viaturas operacionais" lede="Frota autorizada para recolhas, transporte de amostras e deslocações técnicas com responsabilidade departamental.">
+      <dl class="pl-cells mt-8">
+        <div class="pl-cell"><dt class="pl-k pl-muted">Viaturas</dt><dd class="pl-cell-value">{{ totalRecords }}</dd></div>
+        <div class="pl-cell"><dt class="pl-k pl-muted">Departamentos</dt><dd class="pl-cell-value">{{ representedDepartments }}</dd></div>
+      </dl>
+    </PageHeader>
 
     <RecordsTable
       :record="record"

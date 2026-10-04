@@ -1,12 +1,10 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
   ExternalLink as ArrowTopRightOnSquareIcon,
-  FlaskConical as BeakerIcon,
-  ClipboardCheck as ClipboardDocumentCheckIcon,
-  TriangleAlert as ExclamationTriangleIcon,
   Link as LinkIcon,
 } from "@lucide/vue";
 import { Link, router } from "@inertiajs/vue3";
@@ -29,14 +27,6 @@ const selectedAction = ref(null);
 const showActionConfirmation = ref(false);
 const isSubmitting = ref(false);
 const rows = computed(() => props.record?.data ?? []);
-const totalRecords = computed(() => props.record?.meta?.total ?? rows.value.length);
-const linkedToEntry = computed(() => rows.value.filter((row) => row.sample_entry || row.entry_origin?.is_sample_entry_first || row.entry_lineage).length);
-const requiringAttention = computed(() => rows.value.filter((row) => !["approved", "completed", "concluded"].includes(String(row.status ?? "").toLowerCase())).length);
-const metrics = computed(() => [
-  { label: "Contra-análises", value: totalRecords.value, detail: "registos técnicos", icon: BeakerIcon },
-  { label: "Com linhagem", value: linkedToEntry.value, detail: "nesta página", icon: LinkIcon },
-  { label: "Em acompanhamento", value: requiringAttention.value, detail: "decisão pendente", icon: ExclamationTriangleIcon },
-]);
 const actions = [
   { id: null, label: "gestlab.actions.bulk_actions_text" },
   { id: "delete", label: "gestlab.actions.delete" },
@@ -81,33 +71,14 @@ function executeBulkAction() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <ClipboardDocumentCheckIcon class="h-5 w-5" />
-          </span>
-          <div>
-            <p class="ds-kicker">Confirmação técnica</p>
-            <h1 class="ds-heading mt-1 text-2xl">Contra-análises</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Repetições e confirmações ligadas ao resultado original, amostra, parâmetro, incerteza e decisão técnica.</p>
-          </div>
-        </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Contra-análises" lede="Repetições e confirmações ligadas ao resultado original, amostra, parâmetro, incerteza e decisão técnica.">
+      <template #actions>
         <Link :href="entrypoint.analysis_url || route('analysis.index', { category: 'insert' })" class="ds-button ds-button-primary">
           <ArrowTopRightOnSquareIcon class="h-4 w-4" /> Solicitar nos resultados
         </Link>
-      </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
-        <div v-for="metric in metrics" :key="metric.label" class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r sm:last:border-r-0">
-          <div class="flex items-start justify-between gap-3">
-            <div><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt><dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p></div>
-            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+      </template>
+    </PageHeader>
 
     <section class="flex gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
       <LinkIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />

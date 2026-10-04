@@ -1,12 +1,11 @@
 <script setup>
 import BaseInput from '@/Components/base/BaseInput.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
-import { Link, useForm } from '@inertiajs/vue3'
+import { useForm } from '@inertiajs/vue3'
 import {
-  ArrowLeft as ArrowLeftIcon,
   Check as CheckIcon,
-  FileText as DocumentTextIcon,
   Eye as EyeIcon,
 } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
@@ -197,44 +196,21 @@ function submit() {
 </script>
 
 <template>
-  <form class="min-w-0 space-y-6" @submit.prevent="submit">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="min-w-0 max-w-3xl">
-          <p class="ds-kicker">Biblioteca de etiquetas</p>
-          <div class="mt-2 flex items-start gap-3">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))]">
-              <DocumentTextIcon class="h-5 w-5" />
-            </span>
-            <div>
-              <h1 class="ds-heading text-2xl">
-                {{ isEditing ? $t('gestlab.general.labels.vap_labels.templates.edit_title') : $t('gestlab.general.labels.vap_labels.templates.create_title') }}
-              </h1>
-              <p class="ds-copy mt-1 text-sm">
-                {{ isEditing ? $t('gestlab.general.labels.vap_labels.templates.edit_description') : $t('gestlab.general.labels.vap_labels.templates.create_description') }}
-              </p>
-            </div>
-          </div>
-        </div>
-        <Link :href="route('vap_labels.label-templates.index')" class="ds-button ds-button-secondary shrink-0">
-          <ArrowLeftIcon class="h-4 w-4" />
-          {{ $t('gestlab.general.labels.vap_labels.buttons.cancel') }}
-        </Link>
-      </div>
+  <form class="pl-page space-y-6" @submit.prevent="submit">
+    <PageHeader :trail="[{ title: 'Modelos de etiqueta', url: route('vap_labels.label-templates.index') }, { title: isEditing ? $t('gestlab.general.labels.vap_labels.templates.edit_title') : $t('gestlab.general.labels.vap_labels.templates.create_title') }]" :title="isEditing ? $t('gestlab.general.labels.vap_labels.templates.edit_title') : $t('gestlab.general.labels.vap_labels.templates.create_title')" :lede="isEditing ? $t('gestlab.general.labels.vap_labels.templates.edit_description') : $t('gestlab.general.labels.vap_labels.templates.create_description')" />
 
-      <nav class="flex overflow-x-auto border-t border-[var(--ds-border)] px-3 sm:px-5" aria-label="Etapas do modelo de etiqueta">
-        <button
-          v-for="section in sections"
-          :key="section.value"
-          type="button"
-          class="-mb-px min-h-12 shrink-0 border-b-2 px-4 text-sm font-bold transition"
-          :class="activeSection === section.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
-          @click="activeSection = section.value"
-        >
-          {{ section.label }}
-        </button>
-      </nav>
-    </section>
+    <nav class="flex overflow-x-auto border-t border-[var(--ds-border)] px-3 sm:px-5" aria-label="Etapas do modelo de etiqueta">
+      <button
+        v-for="section in sections"
+        :key="section.value"
+        type="button"
+        class="-mb-px min-h-12 shrink-0 border-b-2 px-4 text-sm font-bold transition"
+        :class="activeSection === section.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+        @click="activeSection = section.value"
+      >
+        {{ section.label }}
+      </button>
+    </nav>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
       <div class="space-y-6">

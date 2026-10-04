@@ -1,7 +1,8 @@
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3'
+import { Head, useForm } from '@inertiajs/vue3'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { ref } from 'vue'
-import { Download, Upload, ArrowLeft } from '@lucide/vue'
+import { Download, Upload } from '@lucide/vue'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
 const props = defineProps({
@@ -54,35 +55,27 @@ function submit() {
 </script>
 
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+  <div class="pl-page space-y-6" :class="commercialDocumentThemeClasses">
     <Head title="Importar tarefas" />
-    <section class="ds-panel p-5 sm:p-6">
-      <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p class="ds-kicker">Metrologia e manutenção</p>
-          <h1 class="ds-heading mt-2 text-2xl">Importar tarefas</h1>
-          <p class="ds-copy mt-2 max-w-3xl text-sm">Crie tarefas pendentes a partir de um CSV. Qualquer erro impede a gravação de todo o ficheiro; nenhuma linha é ignorada.</p>
-        </div>
-        <Link :href="route('vap-maintenance.tasks')" class="ds-button ds-button-secondary">
-          <ArrowLeft class="h-4 w-4" aria-hidden="true" /> Voltar
-        </Link>
-      </div>
-      <ul class="ds-copy mt-5 space-y-2 text-sm">
-        <li>Até {{ maxRows }} linhas e 2 MB, em UTF-8, separadas por ponto e vírgula.</li>
-        <li>Obrigatórios: <code>equipment_code</code>, <code>name</code>, <code>category_id</code> e <code>due_date</code>.</li>
-        <li>Datas: <code>AAAA-MM-DD</code>. Booleanos: <code>0</code> ou <code>1</code>. Decimais usam ponto.</li>
-        <li>O código identifica equipamento deste laboratório. Categoria e fornecedor usam os IDs de referência abaixo.</li>
-        <li>Periodicidade exige quantidade e unidade: <code>hours</code>, <code>days</code>, <code>weeks</code>, <code>months</code> ou <code>years</code>.</li>
-        <li>Laboratório, número, ano e datas derivadas são atribuídos pelo sistema. A conclusão é feita depois, no fluxo normal.</li>
-      </ul>
-      <a :href="route('maintenancetasks.import.template')" class="ds-button ds-button-secondary mt-5">
-        <Download class="h-4 w-4" aria-hidden="true" /> Descarregar modelo CSV
-      </a>
-      <details class="mt-5 text-sm text-[var(--ds-text-muted)]">
-        <summary class="cursor-pointer font-semibold">Todas as colunas permitidas</summary>
-        <p class="mt-2 break-words"><code>{{ columns.join('; ') }}</code></p>
-      </details>
-    </section>
+    <PageHeader :trail="[{ title: 'Manutenção', url: route('vap-maintenance.tasks') }, { title: 'Importar tarefas' }]" title="Importar tarefas" lede="Crie tarefas pendentes a partir de um CSV. Qualquer erro impede a gravação de todo o ficheiro; nenhuma linha é ignorada." />
+
+    <ul class="ds-copy mt-5 space-y-2 text-sm">
+      <li>Até {{ maxRows }} linhas e 2 MB, em UTF-8, separadas por ponto e vírgula.</li>
+      <li>Obrigatórios: <code>equipment_code</code>, <code>name</code>, <code>category_id</code> e <code>due_date</code>.</li>
+      <li>Datas: <code>AAAA-MM-DD</code>. Booleanos: <code>0</code> ou <code>1</code>. Decimais usam ponto.</li>
+      <li>O código identifica equipamento deste laboratório. Categoria e fornecedor usam os IDs de referência abaixo.</li>
+      <li>Periodicidade exige quantidade e unidade: <code>hours</code>, <code>days</code>, <code>weeks</code>, <code>months</code> ou <code>years</code>.</li>
+      <li>Laboratório, número, ano e datas derivadas são atribuídos pelo sistema. A conclusão é feita depois, no fluxo normal.</li>
+    </ul>
+
+    <a :href="route('maintenancetasks.import.template')" class="ds-button ds-button-secondary mt-5">
+      <Download class="h-4 w-4" aria-hidden="true" /> Descarregar modelo CSV
+    </a>
+
+    <details class="mt-5 text-sm text-[var(--ds-text-muted)]">
+      <summary class="cursor-pointer font-semibold">Todas as colunas permitidas</summary>
+      <p class="mt-2 break-words"><code>{{ columns.join('; ') }}</code></p>
+    </details>
 
     <section class="ds-panel p-5 sm:p-6">
       <form class="space-y-4" enctype="multipart/form-data" @submit.prevent="submit">

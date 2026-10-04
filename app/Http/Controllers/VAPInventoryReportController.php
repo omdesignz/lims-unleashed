@@ -100,6 +100,8 @@ class VAPInventoryReportController extends Controller
         )
             ->selectRaw("SUM(CASE WHEN type_id IN (SELECT id FROM {$typeTable} WHERE code IN ({$incomingPlaceholders})) THEN ABS(CAST(qty AS NUMERIC)) ELSE 0 END) as total_in", InventoryTransaction::ADDITION_CODES)
             ->selectRaw("SUM(CASE WHEN type_id IN (SELECT id FROM {$typeTable} WHERE code IN ({$outgoingPlaceholders})) THEN ABS(CAST(qty AS NUMERIC)) ELSE 0 END) as total_out", InventoryTransaction::DEDUCTION_CODES)
+            ->selectRaw("COUNT(CASE WHEN type_id IN (SELECT id FROM {$typeTable} WHERE code IN ({$incomingPlaceholders})) THEN 1 END) as count_in", InventoryTransaction::ADDITION_CODES)
+            ->selectRaw("COUNT(CASE WHEN type_id IN (SELECT id FROM {$typeTable} WHERE code IN ({$outgoingPlaceholders})) THEN 1 END) as count_out", InventoryTransaction::DEDUCTION_CODES)
             ->groupBy(DB::raw('DATE(created_at)'))
             ->orderBy('date')
             ->get();
@@ -139,6 +141,14 @@ class VAPInventoryReportController extends Controller
                         (int) ($typeMix['stock_out'] ?? 0) + (int) ($typeMix['stock_adjustment_remove'] ?? 0),
                         (int) ($typeMix['consumption'] ?? 0),
                         (int) ($typeMix['transfer'] ?? 0),
+                    ],
+                ],
+                // Items have their own units: across items, movements are compared by count.
+                'daily_movements' => [
+                    'labels' => $movementTrend->pluck('date')->map(fn ($date) => (string) $date)->all(),
+                    'series' => [
+                        ['name' => 'Entradas', 'data' => $movementTrend->pluck('count_in')->map(fn ($value) => (int) $value)->all()],
+                        ['name' => 'Saídas', 'data' => $movementTrend->pluck('count_out')->map(fn ($value) => (int) $value)->all()],
                     ],
                 ],
                 'daily_activity' => [
@@ -315,6 +325,19 @@ class VAPInventoryReportController extends Controller
                         ->map(fn ($value) => (float) $value)
                         ->values()
                         ->all(),
+                ],
+                // Reagents have their own units: across reagents, use is compared by record count.
+                'item_records' => [
+                    'labels' => $summaryByItem->sortByDesc('usage_count')->take(8)->pluck('reagent_name')->map(fn ($name) => $name ?: 'Sem reagente')->values()->all(),
+                    'series' => [['name' => 'Registos de consumo', 'data' => $summaryByItem->sortByDesc('usage_count')->take(8)->pluck('usage_count')->map(fn ($value) => (int) $value)->values()->all()]],
+                ],
+                'user_records' => [
+                    'labels' => $summaryByUser->sortByDesc('usage_count')->pluck('used_by')->map(fn ($user) => $user ?: 'Sem utilizador')->values()->all(),
+                    'series' => $summaryByUser->sortByDesc('usage_count')->pluck('usage_count')->map(fn ($value) => (int) $value)->values()->all(),
+                ],
+                'daily_records' => [
+                    'labels' => $summaryByDate->sortBy('date')->pluck('date')->map(fn ($date) => (string) $date)->values()->all(),
+                    'series' => [['name' => 'Registos de consumo', 'data' => $summaryByDate->sortBy('date')->pluck('usage_count')->map(fn ($value) => (int) $value)->values()->all()]],
                 ],
                 'daily_consumption' => [
                     'labels' => $summaryByDate

@@ -1,20 +1,7 @@
 <template>
-  <div class="space-y-6">
-    <section class="ds-command-surface overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Centro de trabalho</p>
-          <div class="mt-2 flex items-center gap-3">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))]">
-              <BellIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-xl sm:text-2xl">Caixa de notificações</h1>
-              <p class="ds-copy mt-1 text-sm">Alertas de trabalho, decisões pendentes e actualizações do laboratório.</p>
-            </div>
-          </div>
-        </div>
-
+  <div class="pl-page space-y-6">
+    <PageHeader title="Caixa de notificações" lede="Alertas de trabalho, decisões pendentes e actualizações do laboratório.">
+      <template #actions>
         <button
           type="button"
           class="ds-button ds-button-primary shrink-0"
@@ -25,26 +12,24 @@
           <CheckIcon v-else class="h-4 w-4" />
           Marcar todas como lidas
         </button>
-      </div>
+      </template>
+    </PageHeader>
 
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
-        <div class="px-5 py-4 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Total registado</dt>
-          <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ totalNotifications }}</dd>
-        </div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Não lidas nesta página</dt>
-          <dd class="mt-1 flex items-baseline gap-2">
-            <span class="text-2xl font-bold tabular-nums text-amber-700 dark:text-amber-300">{{ unreadCount }}</span>
-            <span class="text-xs font-semibold text-[var(--ds-text-soft)]">de {{ notifications.length }}</span>
-          </dd>
-        </div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Recebidas hoje</dt>
-          <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ todayCount }}</dd>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Total registado</dt>
+        <dd class="pl-cell-value">{{ totalNotifications }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Não lidas nesta página</dt>
+        <dd class="pl-cell-text"><span class="text-2xl font-bold tabular-nums text-amber-700 dark:text-amber-300">{{ unreadCount }}</span>
+            <span class="text-xs font-semibold text-[var(--ds-text-soft)]">de {{ notifications.length }}</span></dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Recebidas hoje</dt>
+        <dd class="pl-cell-value">{{ todayCount }}</dd>
+      </div>
+    </dl>
 
     <div class="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
       <div class="min-w-0 space-y-4">
@@ -244,6 +229,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { router } from '@inertiajs/vue3'
 import {
   ArchiveX as ArchiveBoxXMarkIcon,

@@ -1,7 +1,6 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ShieldCheck as ShieldCheckIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 
@@ -32,6 +31,6 @@ const props = defineProps({
     form-description="Registe uma designação inequívoca e descreva a aplicação autorizada para manter consistência nos documentos emitidos."
     :supports-name="true"
     :supports-code="false"
-    :icon="ShieldCheckIcon"
+
   />
 </template>

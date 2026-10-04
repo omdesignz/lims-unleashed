@@ -1,5 +1,6 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import CustomerRequestForm from "@/Components/customer-requests/CustomerRequestForm.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
@@ -7,10 +8,6 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
-  Archive as ArchiveBoxIcon,
-  Building2 as BuildingOffice2Icon,
-  ClipboardList as ClipboardDocumentListIcon,
-  Package as InboxStackIcon,
   Plus as PlusIcon,
 } from "@lucide/vue";
 import { computed, ref } from "vue";
@@ -84,17 +81,6 @@ const confirmationDialogDescription = computed(() => {
 });
 
 const pageRecords = computed(() => props.record?.data || []);
-const totalRecords = computed(() => props.record?.meta?.total ?? pageRecords.value.length);
-const archivedRecords = computed(() => pageRecords.value.filter((record) => record.deleted).length);
-const activeRecords = computed(() => pageRecords.value.length - archivedRecords.value);
-const representedCustomers = computed(() => new Set(pageRecords.value.map((record) => record.customer_id).filter(Boolean)).size);
-
-const metrics = computed(() => [
-  { label: "Pedidos registados", value: totalRecords.value, detail: "volume total", icon: InboxStackIcon },
-  { label: "Activos nesta página", value: activeRecords.value, detail: "em acompanhamento", icon: ClipboardDocumentListIcon },
-  { label: "Clientes representados", value: representedCustomers.value, detail: "nesta página", icon: BuildingOffice2Icon },
-  { label: "Arquivados nesta página", value: archivedRecords.value, detail: "fora da fila activa", icon: ArchiveBoxIcon },
-]);
 
 const actions = [
   { id: null, label: "gestlab.actions.bulk_actions_text" },
@@ -176,22 +162,9 @@ function executeBulkAction() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Entrada de serviço</p>
-          <div class="mt-3 flex items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <InboxStackIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-2xl">{{ $t('gestlab.general.labels.customer_requests.page_title') }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm"> Registo, classificação e encaminhamento de necessidades comunicadas pelos clientes ao laboratório. </p>
-            </div>
-          </div>
-        </div>
-
+  <div class="pl-page space-y-6">
+    <PageHeader :title="$t('gestlab.general.labels.customer_requests.page_title')" lede="Registo, classificação e encaminhamento de necessidades comunicadas pelos clientes ao laboratório.">
+      <template #actions>
         <button
           v-if="hasPermission('add_customer_requests')"
           type="button"
@@ -201,25 +174,8 @@ function executeBulkAction() {
           <PlusIcon class="h-4 w-4" />
           Novo pedido
         </button>
-      </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div
-          v-for="metric in metrics"
-          :key="metric.label"
-          class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
-        >
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-              <dd class="mt-2 text-xl font-black text-[var(--ds-text)]">{{ metric.value }}</dd>
-              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
-            </div>
-            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+      </template>
+    </PageHeader>
 
     <section v-if="hasPermission('add_customer_requests')" class="ds-panel p-5 sm:p-6" aria-labelledby="service-invitation-heading">
       <h2 id="service-invitation-heading" class="ds-heading text-base">Convidar cliente pelo portal</h2>

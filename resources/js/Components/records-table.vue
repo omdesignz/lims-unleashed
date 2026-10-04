@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, useId, watch } from "vue";
 import Pagination from "@/Components/pagination.vue";
 import selectFilter from "@/Components/select-filter.vue";
 import emptyState from "@/Components/empty-state.vue";
@@ -9,15 +9,9 @@ import debounce from "lodash/debounce";
 import { pickBy } from "lodash";
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { Link, router, usePage } from "@inertiajs/vue3";
-import {
-  ChevronDown as ChevronDownIcon,
-  Search as MagnifyingGlassIcon,
-  Grid2x2Plus as SquaresPlusIcon,
-  SlidersHorizontal as AdjustmentsHorizontalIcon,
-} from "@lucide/vue";
+import { Plus as PlusIcon, X as XMarkIcon } from "@lucide/vue";
 import { usePermission } from "@/Composables/usePermissions";
 import { trans } from "laravel-vue-i18n";
-import DataTableShell from "@/Components/tables/DataTableShell.vue";
 
 const { hasPermission } = usePermission();
 
@@ -77,10 +71,13 @@ const props = defineProps({
 const emit = defineEmits(["execute-action", "slideover-on", "create-record"]);
 const canCreate = computed(() => props.createAction && hasPermission('add_' + props.model));
 
+// With no query string the server sends an empty list, whose `filter` is the array method.
+const initialQuery = Array.isArray(props.query) ? {} : props.query ?? {};
+
 const query = reactive({
-  search: props.query?.search ?? "",
-  filter: props.query?.filter ?? null,
-  date: props.query?.date ?? null,
+  search: initialQuery.search ?? "",
+  filter: initialQuery.filter ?? null,
+  date: initialQuery.date ?? null,
   page: null,
 });
 
@@ -120,24 +117,14 @@ const allVisibleSelected = computed(() => {
 });
 
 const hasActiveQuery = computed(() => {
-  return Boolean(query.search || query.filter || query.date);
+  const hasDate = typeof query.date === "object" && query.date !== null
+    ? Boolean(query.date.start || query.date.end)
+    : Boolean(query.date);
+
+  return Boolean(query.search || query.filter || hasDate);
 });
 
-const totalRecords = computed(() => {
-  return props.record?.meta?.total ?? props.record.data.length;
-});
-
-const resultSummary = computed(() => {
-  if (!props.record?.meta) {
-    return "";
-  }
-
-  const from = props.record.meta.from ?? 0;
-  const to = props.record.meta.to ?? 0;
-  const total = props.record.meta.total ?? props.record.data.length;
-
-  return `${from}–${to} de ${total}`;
-});
+const searchId = `records-search-${useId()}`;
 
 const defaultFilterOptions = [
   {
@@ -184,6 +171,19 @@ function toggleSelectAll() {
   props.record.data.forEach((record) => {
     record.selected = nextValue;
   });
+}
+
+function clearSelection() {
+  props.record.data.forEach((record) => {
+    record.selected = false;
+  });
+}
+
+function requestRowAction(record, action) {
+  recordId.value = record.id;
+  actionId.value = action;
+  recordUrl.value = record.links[`${action}_path`];
+  showDeleteConfirmation.value = true;
 }
 
 function clearQueryFilters() {
@@ -239,363 +239,187 @@ const masks = ref({
 </script>
 
 <template>
-  <div class="space-y-4">
-    <DataTableShell :show-summary="false">
-      <div class="space-y-3 border-b border-[var(--ds-border)] px-4 py-4 sm:px-5">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div class="min-w-0">
-            <h2 class="ds-heading text-base">
-              {{ $t("gestlab.general.titles.records_list") }}
-            </h2>
-            <p class="mt-0.5 text-[0.8125rem] text-[var(--ds-text-soft)]">
-              <template v-if="totalRecords">{{ resultSummary }} · </template>{{ totalRecords }} {{ $t("gestlab.general.labels.records") }}
-            </p>
-          </div>
+  <div class="pl-records">
+    <form class="pl-filter" role="search" @submit.prevent>
+      <label :for="searchId" class="pl-filter-prompt">Filtro://</label>
+      <BaseInput
+        :id="searchId"
+        v-model="query.search"
+        type="search"
+        data-bare
+        class="pl-filter-input"
+        :placeholder="$t('gestlab.general.search_input_placeholder')"
+      />
 
-          <div class="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              class="ds-button ds-button-secondary md:hidden"
-              @click="toggleSelectAll"
-            >
-              {{ allVisibleSelected ? $t("gestlab.general.labels.clear_selection") : $t("gestlab.general.buttons.select_all") }}
-            </button>
-            <button
-              v-if="canCreate"
-              type="button"
-              class="ds-button ds-button-primary"
-              @click="$emit('create-record')"
-            >
-              <SquaresPlusIcon class="h-4 w-4" />
-              {{ $t("gestlab.general.buttons.new_record") }}
-            </button>
-          </div>
-        </div>
+      <select-filter
+        :filters="filters"
+        :model-value="query.filter"
+        @execute="changeFilter"
+      />
 
-        <div class="flex flex-col gap-2 lg:flex-row lg:items-start">
-          <div class="relative min-w-0 lg:w-80">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <MagnifyingGlassIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
-            </div>
-            <BaseInput
-              v-model="query.search"
-              type="search"
-              :placeholder="$t('gestlab.general.search_input_placeholder')"
-              class="ds-field pl-9"
-            />
-          </div>
-
-          <div class="grid min-w-0 flex-1 gap-2 sm:grid-cols-2 lg:flex lg:items-start">
-            <select-filter
-              :filters="filters"
-              :model-value="query.filter"
-              @execute="changeFilter"
-            />
-
-            <date-picker
-              v-model.range.string="query.date"
-              locale="pt-PT"
-              color="primary"
-              mode="date"
-              range
-              :input-debounce="500"
-              :masks="masks"
-              @update:model-value="updateRange"
-            />
-
-            <button
-              v-if="hasActiveQuery"
-              type="button"
-              class="ds-button ds-button-ghost sm:col-span-2 lg:col-span-1"
-              @click="clearQueryFilters"
-            >
-              <AdjustmentsHorizontalIcon class="h-4 w-4" />
-              <span>{{ $t("gestlab.general.buttons.clear") }}</span>
-            </button>
-          </div>
-        </div>
-
-        <div v-if="selectedRecordIds.length" class="flex flex-col gap-2 rounded-xl bg-[rgb(var(--primary-50-rgb))] px-3 py-2 dark:bg-[rgb(var(--primary-400-rgb)/0.12)] lg:flex-row lg:items-center lg:justify-between">
-          <p class="text-[0.8125rem] font-medium text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-100-rgb))]">
-            {{ selectedRecordIds.length }} {{ $t("gestlab.general.labels.selected_records") }}
-          </p>
-          <select-action
-            :record-ids="selectedRecordIds"
-            :actions="actions"
-            :processing="actionProcessing || isProcessingAction"
-            @execute="executeAction"
-          />
-        </div>
+      <div class="pl-filter-dates">
+        <date-picker
+          v-model.range.string="query.date"
+          locale="pt-PT"
+          color="primary"
+          mode="date"
+          range
+          :input-debounce="500"
+          :masks="masks"
+          @update:model-value="updateRange"
+        />
       </div>
 
-      <!-- Records -->
-      <div v-if="record.data.length">
-        <!-- Mobile cards -->
-        <div class="divide-y divide-[var(--ds-border)] md:hidden">
-          <article
-            v-for="item in record.data"
-            :key="item.id"
-            class="space-y-4 px-5 py-5"
-          >
-            <div class="flex items-start justify-between gap-3">
-              <div class="flex items-center gap-3">
-                <CheckboxInput
-                  v-model="item.selected"
-                  type="checkbox"
-                  class="ds-checkbox"
-                />
-                <div>
-                  <p class="ds-heading text-sm">
-                    {{ item[displayFields[0]?.value] ?? `#${item.id}` }}
-                  </p>
-                  <p class="text-xs font-semibold text-[var(--ds-text-muted)]">
-                    ID {{ item.id }}
-                  </p>
-                </div>
-              </div>
+      <button v-if="hasActiveQuery" type="button" class="ds-chip" @click="clearQueryFilters">
+        {{ $t("gestlab.general.buttons.clear") }}
+        <XMarkIcon class="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
 
-              <slot v-if="props.hasQr" name="qr" :data="item" class="h-16 w-16" />
-            </div>
+      <button v-if="canCreate" type="button" class="ds-button ds-button-primary ml-auto" @click="$emit('create-record')">
+        <PlusIcon class="h-4 w-4" aria-hidden="true" />
+        {{ $t("gestlab.general.buttons.new_record") }}
+      </button>
+    </form>
 
-            <dl class="grid grid-cols-1 gap-2">
-              <div
-                v-for="field in displayFields"
-                :key="`${item.id}-${field.value}`"
-                class="rounded-xl bg-[var(--ds-panel-subtle)] px-3 py-2"
-              >
-                <dt class="ds-table-heading">
-                  {{ $t(field.name) }}
-                </dt>
-                <dd class="mt-1 break-words text-sm font-semibold text-[var(--ds-text)]">
-                  {{ item[field.value] ?? "—" }}
-                </dd>
-              </div>
-            </dl>
+    <section class="pl-panel" :aria-label="$t('gestlab.general.titles.records_list')" :aria-busy="actionProcessing || isProcessingAction">
+      <DataTable v-if="record.data.length" class="pl-stack-table">
+        <thead>
+          <tr>
+            <th scope="col" class="w-10">
+              <CheckboxInput
+                :checked="allVisibleSelected"
+                type="checkbox"
+                class="ds-checkbox"
+                :aria-label="$t('gestlab.general.buttons.select_all')"
+                @change="toggleSelectAll"
+              />
+            </th>
+            <th v-if="props.hasQr" scope="col"><span class="sr-only">QR</span></th>
+            <th v-for="field in displayFields" :key="field.value" scope="col">{{ $t(field.name) }}</th>
+            <th scope="col"><span class="sr-only">{{ $t("gestlab.actions.action") }}</span></th>
+          </tr>
+        </thead>
 
-            <div class="flex flex-wrap items-center gap-2 border-t border-[var(--ds-border)] pt-3 text-sm font-medium">
-              <button
-                v-if="item.action_capabilities?.restore !== false && item.deleted && hasPermission('restore_' + props.model)"
-                type="button"
-                :disabled="actionProcessing || isProcessingAction"
-                class="ds-table-action"
-                @click="() => { recordId = item.id; actionId = 'restore'; recordUrl = item.links.restore_path; showDeleteConfirmation = true; }"
-              >
-                {{ $t("gestlab.actions.restore") }}
-              </button>
+        <tbody>
+          <tr v-for="row in record.data" :key="row.id" :data-selected="Boolean(row.selected)" :data-archived="row.deleted || undefined">
+            <td class="pl-stack-check">
+              <CheckboxInput
+                v-model="row.selected"
+                type="checkbox"
+                class="ds-checkbox"
+                :aria-label="`Seleccionar ${row[displayFields[0]?.value] ?? row.id}`"
+              />
+            </td>
 
-              <button
-                v-if="item.action_capabilities?.edit !== false && !item.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
-                type="button"
-                class="ds-table-action"
-                @click="editRecord(item)"
-              >
-                {{ $t("gestlab.actions.edit") }}
-              </button>
+            <td v-if="props.hasQr" data-label="QR">
+              <slot name="qr" :data="row" class="h-24 w-24"></slot>
+            </td>
 
-              <button
-                v-if="item.action_capabilities?.edit !== false && !item.deleted && props.slideOverEdit && hasPermission('edit_' + props.model)"
-                type="button"
-                class="ds-table-action"
-                @click="editRecord(item)"
-              >
-                {{ $t("gestlab.actions.edit") }}
-              </button>
+            <td
+              v-for="(field, index) in displayFields"
+              :key="`${row.id}-${field.value}`"
+              :data-label="$t(field.name)"
+              :class="index === 0 ? 'pl-stack-lead font-medium' : ''"
+            >
+              {{ row[field.value] ?? "—" }}
+            </td>
 
-              <Link
-                v-if="!item.deleted && hasPermission('add_' + props.model) && !item?.placed_analysis && item.links.collection_type === 'programmed'"
-                :href="item.links.place_analysis_path"
-                method="post"
-                as="button"
-                preserve-scroll
-                class="ds-table-action"
-              >
-                {{ $t("gestlab.actions.insert") }}
-              </Link>
-
-              <button
-                v-if="item.action_capabilities?.delete !== false && !item.deleted && hasPermission('delete_' + props.model)"
-                type="button"
-                :disabled="actionProcessing || isProcessingAction"
-                class="ds-table-action ds-table-action-danger"
-                @click="() => { recordId = item.id; actionId = 'delete'; recordUrl = item.links.delete_path; showDeleteConfirmation = true; }"
-              >
-                {{ $t("gestlab.actions.delete") }}
-              </button>
-
-              <a
-                v-if="!item.deleted && hasPermission('view_' + props.model) && item?.links?.pdf_path"
-                :href="item.links.pdf_path"
-                target="_blank"
-                class="ds-table-action"
-              >
-                PDF
-              </a>
-
-              <a
-                v-if="!item.deleted && hasPermission('view_' + props.model) && item?.links?.pdf_collection_term"
-                :href="item.links.pdf_collection_term"
-                target="_blank"
-                class="ds-table-action"
-              >
-                {{ $t("gestlab.general.labels.collection_term") }}
-              </a>
-
-              <slot name="actions" :id="item.id" :is-active="item.is_active" :data="item" />
-            </div>
-          </article>
-        </div>
-
-        <!-- Desktop table -->
-        <div class="hidden md:block overflow-x-auto">
-          <DataTable class="min-w-full">
-            <thead class="ds-table-head">
-              <tr>
-                <th class="py-4 pl-7 pr-3 text-left">
-                  <CheckboxInput
-                    :checked="allVisibleSelected"
-                    type="checkbox"
-                    class="ds-checkbox"
-                    @change="toggleSelectAll"
-                  />
-                </th>
-                <th v-if="props.hasQr" class="ds-table-heading px-4 py-4 text-left"></th>
-                <th
-                  v-for="field in displayFields"
-                  :key="field.value"
-                  class="ds-table-heading px-4 py-4 text-left"
+            <td class="pl-stack-actions">
+              <div class="flex flex-wrap items-center justify-end gap-1">
+                <button
+                  v-if="row.action_capabilities?.restore !== false && row.deleted && hasPermission('restore_' + props.model)"
+                  type="button"
+                  :disabled="actionProcessing || isProcessingAction"
+                  class="ds-table-action"
+                  @click="requestRowAction(row, 'restore')"
                 >
-                  {{ $t(field.name) }}
-                </th>
-                <th class="ds-table-heading px-7 py-4 text-right">
-                  {{ $t("gestlab.actions.action") }}
-                </th>
-              </tr>
-            </thead>
+                  {{ $t("gestlab.actions.restore") }}
+                </button>
 
-            <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
-              <tr
-                v-for="row in record.data"
-                :key="row.id"
-                class="ds-table-row"
-              >
-                <td class="py-5 pl-7 pr-3">
-                  <CheckboxInput
-                    v-model="row.selected"
-                    type="checkbox"
-                    class="ds-checkbox"
-                  />
-                </td>
-
-                <td v-if="props.hasQr" class="px-4 py-5">
-                  <slot name="qr" :data="row" class="h-24 w-24"></slot>
-                </td>
-
-                <td
-                  v-for="field in displayFields"
-                  :key="`${row.id}-${field.value}`"
-                  class="ds-table-cell whitespace-nowrap px-4 py-5"
+                <button
+                  v-if="row.action_capabilities?.edit !== false && !row.deleted && hasPermission('edit_' + props.model)"
+                  type="button"
+                  class="ds-table-action"
+                  @click="editRecord(row)"
                 >
-                  {{ row[field.value] ?? "—" }}
-                </td>
+                  {{ $t("gestlab.actions.edit") }}
+                </button>
 
-                <td class="px-7 py-5">
-                  <div class="flex items-center justify-end gap-1 text-sm font-medium">
-                    <button
-                      v-if="row.action_capabilities?.restore !== false && row.deleted && hasPermission('restore_' + props.model)"
-                      type="button"
-                      :disabled="actionProcessing || isProcessingAction"
-                      class="ds-table-action"
-                      @click="() => { recordId = row.id; actionId = 'restore'; recordUrl = row.links.restore_path; showDeleteConfirmation = true; }"
-                    >
-                      {{ $t("gestlab.actions.restore") }}
-                    </button>
+                <Link
+                  v-if="!row.deleted && hasPermission('add_' + props.model) && !row?.placed_analysis && row.links.collection_type === 'programmed'"
+                  :href="row.links.place_analysis_path"
+                  method="post"
+                  as="button"
+                  preserve-scroll
+                  class="ds-table-action"
+                >
+                  {{ $t("gestlab.actions.insert") }}
+                </Link>
 
-                    <button
-                      v-if="row.action_capabilities?.edit !== false && !row.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
-                      type="button"
-                      class="ds-table-action"
-                      @click="editRecord(row)"
-                    >
-                      {{ $t("gestlab.actions.edit") }}
-                    </button>
+                <button
+                  v-if="row.action_capabilities?.delete !== false && !row.deleted && hasPermission('delete_' + props.model)"
+                  type="button"
+                  :disabled="actionProcessing || isProcessingAction"
+                  class="ds-table-action ds-table-action-danger"
+                  @click="requestRowAction(row, 'delete')"
+                >
+                  {{ $t("gestlab.actions.delete") }}
+                </button>
 
-                    <button
-                      v-if="row.action_capabilities?.edit !== false && !row.deleted && props.slideOverEdit && hasPermission('edit_' + props.model)"
-                      type="button"
-                      class="ds-table-action"
-                      @click="editRecord(row)"
-                    >
-                      {{ $t("gestlab.actions.edit") }}
-                    </button>
+                <a
+                  v-if="!row.deleted && hasPermission('view_' + props.model) && row?.links?.pdf_path"
+                  :href="row.links.pdf_path"
+                  target="_blank"
+                  class="ds-table-action"
+                >
+                  PDF
+                </a>
 
-                    <Link
-                      v-if="!row.deleted && hasPermission('add_' + props.model) && !row?.placed_analysis && row.links.collection_type === 'programmed'"
-                      :href="row.links.place_analysis_path"
-                      method="post"
-                      as="button"
-                      preserve-scroll
-                      class="ds-table-action"
-                    >
-                      {{ $t("gestlab.actions.insert") }}
-                    </Link>
+                <a
+                  v-if="!row.deleted && hasPermission('view_' + props.model) && row?.links?.pdf_collection_term"
+                  :href="row.links.pdf_collection_term"
+                  target="_blank"
+                  class="ds-table-action"
+                >
+                  {{ $t("gestlab.general.labels.collection_term") }}
+                </a>
 
-                    <button
-                      v-if="row.action_capabilities?.delete !== false && !row.deleted && hasPermission('delete_' + props.model)"
-                      type="button"
-                      :disabled="actionProcessing || isProcessingAction"
-                      class="ds-table-action ds-table-action-danger"
-                      @click="() => { recordId = row.id; actionId = 'delete'; recordUrl = row.links.delete_path; showDeleteConfirmation = true; }"
-                    >
-                      {{ $t("gestlab.actions.delete") }}
-                    </button>
+                <slot name="actions" :id="row.id" :is-active="row.is_active" :data="row" />
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </DataTable>
 
-                    <a
-                      v-if="!row.deleted && hasPermission('view_' + props.model) && row?.links?.pdf_path"
-                      :href="row.links.pdf_path"
-                      target="_blank"
-                      class="ds-table-action"
-                    >
-                      PDF
-                    </a>
-
-                    <a
-                      v-if="!row.deleted && hasPermission('view_' + props.model) && row?.links?.pdf_collection_term"
-                      :href="row.links.pdf_collection_term"
-                      target="_blank"
-                      class="ds-table-action"
-                    >
-                      {{ $t("gestlab.general.labels.collection_term") }}
-                    </a>
-
-                    <slot name="actions" :id="row.id" :is-active="row.is_active" :data="row" />
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </DataTable>
-        </div>
-      </div>
-
-      <!-- Empty state -->
       <empty-state
         v-else
-        class="px-4 py-12"
+        class="m-4"
         :name="$t('gestlab.general.labels.no_records')"
         :description="canCreate ? $t('gestlab.general.labels.start_creating') : ''"
         :show-create="canCreate"
         @create-record="$emit('create-record')"
       />
-      <template v-if="props.record.data.length" #pagination>
-        <Pagination
-          :links="props.record.meta.links"
-          :from="props.record.meta.from"
-          :to="props.record.meta.to"
-          :total="props.record.meta.total"
-          :current_page="props.record.meta.current_page"
-          :last_page="props.record.meta.last_page"
-        />
-      </template>
-    </DataTableShell>
+    </section>
+
+    <Pagination
+      v-if="props.record.data.length"
+      class="mt-6"
+      :links="props.record.meta.links"
+      :from="props.record.meta.from"
+      :to="props.record.meta.to"
+      :total="props.record.meta.total"
+      :current_page="props.record.meta.current_page"
+      :last_page="props.record.meta.last_page"
+    />
+
+    <select-action
+      :record-ids="selectedRecordIds"
+      :records="record.data"
+      :actions="actions"
+      :processing="actionProcessing || isProcessingAction"
+      @execute="executeAction"
+      @clear="clearSelection"
+    />
 
     <!-- Confirm dialog -->
     <confirm-dialog

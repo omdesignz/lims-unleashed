@@ -1,16 +1,15 @@
 <script setup>
 import { usePermission } from "@/Composables/usePermissions";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link } from "@inertiajs/vue3";
 import {
-  ArrowLeft as ArrowLeftIcon,
   BellRing as BellAlertIcon,
   Building2 as BuildingOffice2Icon,
   CalendarDays as CalendarDaysIcon,
   CircleCheck as CheckCircleIcon,
   MessagesSquare as ChatBubbleLeftRightIcon,
   Clock as ClockIcon,
-  FileSearch as DocumentMagnifyingGlassIcon,
   TriangleAlert as ExclamationTriangleIcon,
   Search as MagnifyingGlassIcon,
   SquarePen as PencilSquareIcon,
@@ -86,62 +85,41 @@ function booleanLabel(value, trueLabel = "Sim", falseLabel = "Não") {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <Link :href="route('occurrences.index')" class="ds-button ds-button-ghost -ml-3 w-fit">
-            <ArrowLeftIcon class="h-4 w-4" />
-            Ocorrências
-          </Link>
-          <div class="mt-3 flex items-start gap-3">
-            <span
-              class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border bg-[var(--ds-panel-raised)]"
-              :class="isOverdue ? 'border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300' : 'border-[var(--ds-border)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200'"
-            >
-              <ExclamationTriangleIcon v-if="isOverdue" class="h-5 w-5" />
-              <DocumentMagnifyingGlassIcon v-else class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <p class="ds-kicker">Dossier de ocorrência</p>
-              <h1 class="ds-heading mt-1 text-2xl">{{ occurrence.occurrence_no || `Ocorrência ${occurrence.id}` }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Evidência consolidada da triagem, investigação, acção correctiva e encerramento.</p>
-            </div>
-          </div>
-        </div>
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Ocorrências', url: route('occurrences.index') }, { title: occurrence.occurrence_no || `Ocorrência ${occurrence.id}` }]" :title="occurrence.occurrence_no || `Ocorrência ${occurrence.id}`" lede="Evidência consolidada da triagem, investigação, acção correctiva e encerramento.">
+      <template #badges>
+        <span class="ds-badge" :class="lifecycleState.className">{{ lifecycleState.label }}</span>
+      </template>
+      <template #actions>
+        <Link
+          v-if="hasPermission('edit_occurrences')"
+          :href="route('occurrences.edit', { occurrence: occurrence.id })"
+          class="ds-button ds-button-primary"
+        >
+          <PencilSquareIcon class="h-4 w-4" />
+          Editar ocorrência
+        </Link>
+      </template>
+    </PageHeader>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <span class="ds-badge" :class="lifecycleState.className">{{ lifecycleState.label }}</span>
-          <Link
-            v-if="hasPermission('edit_occurrences')"
-            :href="route('occurrences.edit', { occurrence: occurrence.id })"
-            class="ds-button ds-button-primary"
-          >
-            <PencilSquareIcon class="h-4 w-4" />
-            Editar ocorrência
-          </Link>
-        </div>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Data do registo</dt>
+        <dd class="pl-cell-text">{{ formatDate(occurrence.date_reported) }}</dd>
       </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-r xl:border-b-0">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Data do registo</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatDate(occurrence.date_reported) }}</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 xl:border-b-0 xl:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Implementação</dt>
-          <dd class="mt-2 text-sm font-bold" :class="isOverdue ? 'text-amber-700 dark:text-amber-300' : 'text-[var(--ds-text)]'">{{ formatDate(occurrence.implementation_date) }}</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Resolução</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatDate(occurrence.date_resolved) }}</dd>
-        </div>
-        <div class="px-4 py-3">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Encerramento</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatDate(occurrence.date_closed) }}</dd>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Implementação</dt>
+        <dd class="pl-cell-text" :class="isOverdue ? 'text-amber-700 dark:text-amber-300' : 'text-[var(--ds-text)]'">{{ formatDate(occurrence.implementation_date) }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Resolução</dt>
+        <dd class="pl-cell-text">{{ formatDate(occurrence.date_resolved) }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Encerramento</dt>
+        <dd class="pl-cell-text">{{ formatDate(occurrence.date_closed) }}</dd>
+      </div>
+    </dl>
 
     <section v-if="isOverdue" class="rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
       <div class="flex gap-3">

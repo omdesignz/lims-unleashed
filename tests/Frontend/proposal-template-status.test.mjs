@@ -206,6 +206,7 @@ test('real Vue template renders only the requested confirmation with shared comp
       showRawView: false, showStatusModal, showDeleteModal, pendingStatus: { id: 17, is_active: false }, statusProcessing: pending, statusError: pending ? '' : 'Could not confirm.',
       archive: { processing: Vue.ref(pending), failed: Vue.ref(!pending), message: Vue.ref('Archive failed.') }, statusRefreshError,
       ConfirmationModal: Dialog, Link: { setup: (_, { slots }) => () => Vue.h('a', slots.default?.()) },
+      PageHeader: { props: ['title', 'lede', 'trail'], setup: (props, { slots }) => () => Vue.h('header', [Vue.h('h1', props.title), slots.badges?.(), slots.actions?.(), slots.default?.()]) },
       getCategoryIcon: () => 'span', getCategoryLabel: value => value, getCategoryColor: () => ({ bg: '', text: '' }), formatDateTime: () => '—' }
     for (const [name, type] of Object.entries(script.bindings)) {
       if (type === 'setup-const' && /^[A-Z].*Icon$/.test(name)) bindings[name] = { render: () => Vue.h('svg', { 'aria-hidden': 'true' }) }

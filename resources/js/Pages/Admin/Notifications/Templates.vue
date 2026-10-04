@@ -145,7 +145,7 @@ function restorePreset() {
 </script>
 
 <template>
-  <div class="space-y-5">
+  <div class="pl-page space-y-5">
     <Head title="Modelos de comunicação" />
     <NotificationAdminHeader
       title="Modelos de comunicação"

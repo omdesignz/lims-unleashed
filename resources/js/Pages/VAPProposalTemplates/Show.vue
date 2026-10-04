@@ -1,72 +1,52 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-5 sm:px-6">
-        <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div class="max-w-4xl">
-            <div class="flex flex-wrap items-center gap-3">
-              <span class="ds-chip">
-                <component
-                  :is="getCategoryIcon(template.category)"
-                  class="h-4 w-4"
-                />
-                {{ getCategoryLabel(template.category) }}
-              </span>
-              <span :class="[
-                'ds-badge',
-                templateActive
-                  ? 'ds-badge-success'
-                  : 'ds-badge-neutral'
-              ]">
-                {{ templateActive ? $t('gestlab.general.labels.vap_proposal_templates.active') : $t('gestlab.general.labels.vap_proposal_templates.inactive') }}
-              </span>
-            </div>
-            <h1 class="ds-heading mt-3 break-words text-2xl sm:text-3xl">
-              {{ template.name }}
-            </h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">
-              {{ template.description || $t('gestlab.general.labels.vap_proposal_templates.show.description') }}
-            </p>
-          </div>
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Modelos de proposta', url: route('vap-proposals.templates.index') }, { title: template.name }]" :title="template.name" :lede="template.description || $t('gestlab.general.labels.vap_proposal_templates.show.description')">
+      <template #badges>
+        <span class="ds-chip">
+          <component
+            :is="getCategoryIcon(template.category)"
+            class="h-4 w-4"
+          />
+          {{ getCategoryLabel(template.category) }}
+        </span>
+        <span :class="[
+          'ds-badge',
+          templateActive
+            ? 'ds-badge-success'
+            : 'ds-badge-neutral'
+        ]">
+          {{ templateActive ? $t('gestlab.general.labels.vap_proposal_templates.active') : $t('gestlab.general.labels.vap_proposal_templates.inactive') }}
+        </span>
+      </template>
+      <template #actions>
+        <Link
+          :href="route('vap-proposals.create') + '?template_id=' + template.id"
+          class="ds-button ds-button-primary"
+        >
+          <DocumentPlusIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.vap_proposal_templates.show.use_this_template') }}
+        </Link>
+      </template>
+    </PageHeader>
 
-          <div class="flex flex-col gap-3 sm:flex-row">
-            <Link
-              :href="route('vap-proposals.templates.index')"
-              class="ds-button ds-button-secondary"
-            >
-              <ArrowLeftIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.buttons.back') }}
-            </Link>
-            <Link
-              :href="route('vap-proposals.create') + '?template_id=' + template.id"
-              class="ds-button ds-button-primary"
-            >
-              <DocumentPlusIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.labels.vap_proposal_templates.show.use_this_template') }}
-            </Link>
-          </div>
-        </div>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.vap_proposal_templates.used') }}</dt>
+        <dd class="pl-cell-value">{{ template.proposals_count || 0 }}</dd>
       </div>
-
-      <div class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
-        <article class="bg-[var(--ds-panel)] px-5 py-4 sm:px-6">
-          <p class="text-xs font-bold text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_proposal_templates.used') }}</p>
-          <p class="mt-1 text-xl font-bold text-[var(--ds-text)]">{{ template.proposals_count || 0 }}</p>
-        </article>
-        <article class="bg-[var(--ds-panel)] px-5 py-4 sm:px-6">
-          <p class="text-xs font-bold text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_proposal_templates.acceptance_rate') }}</p>
-          <p class="mt-1 text-xl font-bold text-[var(--ds-text)]">{{ calculateAcceptanceRate }}%</p>
-        </article>
-        <article class="bg-[var(--ds-panel)] px-5 py-4 sm:px-6">
-          <p class="text-xs font-bold text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_proposal_templates.show.variables') }}</p>
-          <p class="mt-1 text-xl font-bold text-[var(--ds-text)]">{{ variablesCount }}</p>
-        </article>
-        <article class="bg-[var(--ds-panel)] px-5 py-4 sm:px-6">
-          <p class="text-xs font-bold text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_proposal_templates.show.created_by') }}</p>
-          <p class="mt-1 truncate text-base font-bold text-[var(--ds-text)]">{{ template.user?.name || '—' }}</p>
-        </article>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.vap_proposal_templates.acceptance_rate') }}</dt>
+        <dd class="pl-cell-value">{{ calculateAcceptanceRate }}%</dd>
       </div>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.vap_proposal_templates.show.variables') }}</dt>
+        <dd class="pl-cell-value">{{ variablesCount }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.vap_proposal_templates.show.created_by') }}</dt>
+        <dd class="pl-cell-text">{{ template.user?.name || '—' }}</dd>
+      </div>
+    </dl>
 
     <!-- MAIN CONTENT GRID -->
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -508,10 +488,10 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Link, router, useHttp } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
-  ArrowLeft as ArrowLeftIcon,
   FileText as DocumentTextIcon,
   FilePlus as DocumentPlusIcon,
   Code as CodeBracketIcon,

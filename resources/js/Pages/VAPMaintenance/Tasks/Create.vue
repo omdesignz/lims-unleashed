@@ -1,21 +1,6 @@
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:flex sm:items-start sm:justify-between sm:gap-6 lg:px-6">
-        <div class="min-w-0">
-          <p class="ds-kicker">Metrologia e manutenção</p>
-          <h1 class="ds-heading mt-2 text-2xl">{{ task ? 'Editar tarefa de manutenção' : 'Nova tarefa de manutenção' }}</h1>
-          <p class="ds-copy mt-2 max-w-3xl text-sm">
-            Registe uma actividade de calibração, verificação ou manutenção com equipamento, agenda, fornecedor e custo rastreáveis.
-          </p>
-        </div>
-
-        <Link :href="route('vap-maintenance.tasks')" class="ds-button ds-button-secondary mt-4 sm:mt-0">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Voltar
-        </Link>
-      </div>
-    </section>
+  <div class="pl-page space-y-6" :class="commercialDocumentThemeClasses">
+    <PageHeader :trail="[{ title: 'Manutenção', url: route('vap-maintenance.tasks') }, { title: task ? 'Editar tarefa de manutenção' : 'Nova tarefa de manutenção' }]" :title="task ? 'Editar tarefa de manutenção' : 'Nova tarefa de manutenção'" lede="Registe uma actividade de calibração, verificação ou manutenção com equipamento, agenda, fornecedor e custo rastreáveis." />
 
     <div v-if="form.hasErrors" class="ds-panel ds-field-error p-4" role="alert">
       <p v-for="(error, field) in form.errors" :key="field">{{ error }}</p>
@@ -219,10 +204,9 @@
 
 <script setup>
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import {
-  Wrench as WrenchScrewdriverIcon,
-  ArrowLeft as ArrowLeftIcon,
   Info as InformationCircleIcon,
   Calendar as CalendarIcon,
   Settings as Cog6ToothIcon,

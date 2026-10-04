@@ -1,16 +1,15 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import { computed, ref } from "vue";
-import { Link, router } from "@inertiajs/vue3";
+import { router } from "@inertiajs/vue3";
 import {
   Download as ArrowDownTrayIcon,
-  ArrowLeft as ArrowLeftIcon,
   ArrowLeftRight as ArrowsRightLeftIcon,
   ChevronDown as ChevronDownIcon,
   Clock as ClockIcon,
   TriangleAlert as ExclamationTriangleIcon,
   Printer as PrinterIcon,
-  User as UserIcon,
 } from "@lucide/vue";
 
 defineOptions({
@@ -238,54 +237,36 @@ function printComparison() {
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden print:shadow-none">
-      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0 max-w-3xl">
-          <Link
-            :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
-            class="ds-table-action -ml-2 mb-3 print:hidden"
-          >
-            <ArrowLeftIcon class="h-4 w-4" /> Voltar ao histórico </Link>
-          <div class="flex flex-wrap items-center gap-2">
-            <p class="ds-kicker">Comparação controlada</p>
-            <span class="ds-chip font-mono">{{ certificate.code || "Sem código" }}</span>
-          </div>
-          <h1 class="ds-heading mt-2 text-2xl">Comparar revisões</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm"> Leitura lado a lado das diferenças de conteúdo, relações e metadados ISO. </p>
-        </div>
-
-        <div class="flex flex-col gap-2 sm:flex-row print:hidden">
-          <button type="button" class="ds-button ds-button-secondary" @click="swapRevisions">
-            <ArrowsRightLeftIcon class="h-4 w-4" />
-            Inverter
-          </button>
-          <a
-            :href="route('iso-revisions.export-comparison', { certificate: certificate.id, revision_a: revisionA.id, revision_b: revisionB.id })"
-            class="ds-button ds-button-secondary"
-          >
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar PDF
-          </a>
-          <button type="button" class="ds-button ds-button-primary" @click="printComparison">
-            <PrinterIcon class="h-4 w-4" />
-            Imprimir
-          </button>
-        </div>
-      </div>
-
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
-        <div
-          v-for="metric in comparisonMetrics"
-          :key="metric.label"
-          class="border-b border-[var(--ds-border)] px-5 py-4 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0"
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Revisões ISO', url: route('qualitycertificates.iso-revisions.index', certificate.id) }, { title: 'Comparar revisões' }]" title="Comparar revisões" lede="Leitura lado a lado das diferenças de conteúdo, relações e metadados ISO.">
+      <template #badges>
+        <span class="ds-chip font-mono">{{ certificate.code || "Sem código" }}</span>
+      </template>
+      <template #actions>
+        <button type="button" class="ds-button ds-button-secondary" @click="swapRevisions">
+          <ArrowsRightLeftIcon class="h-4 w-4" />
+          Inverter
+        </button>
+        <a
+          :href="route('iso-revisions.export-comparison', { certificate: certificate.id, revision_a: revisionA.id, revision_b: revisionB.id })"
+          class="ds-button ds-button-secondary"
         >
-          <dt class="ds-table-heading">{{ metric.label }}</dt>
-          <dd class="ds-heading mt-2 text-lg">{{ metric.value }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.note }}</p>
-        </div>
-      </dl>
-    </section>
+          <ArrowDownTrayIcon class="h-4 w-4" />
+          Exportar PDF
+        </a>
+        <button type="button" class="ds-button ds-button-primary" @click="printComparison">
+          <PrinterIcon class="h-4 w-4" />
+          Imprimir
+        </button>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells">
+      <div v-for="metric in comparisonMetrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-text">{{ metric.value }}</dd>
+      </div>
+    </dl>
 
     <section class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-stretch">
       <article class="ds-command-surface overflow-hidden">

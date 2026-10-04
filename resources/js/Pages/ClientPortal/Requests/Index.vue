@@ -1,5 +1,6 @@
 <script setup>
 import Pagination from "@/Components/pagination.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import PortalRequestForm from "@/Components/portal/PortalRequestForm.vue";
 import SlideOver from "@/Components/slide-over.vue";
 import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
@@ -230,31 +231,19 @@ function requestDetailLines(request) {
 
 <template>
   <div class="space-y-6">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <QueueListIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <p class="ds-kicker">Central de pedidos</p>
-              <h1 class="ds-heading mt-1 text-2xl">Pedidos do cliente</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Submeta necessidades estruturadas e acompanhe a triagem, execução e conclusão pela equipa do laboratório.</p>
-            </div>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <a :href="exportUrl" class="ds-button ds-button-secondary"><ArrowDownTrayIcon class="h-4 w-4" />Exportar CSV</a>
-            <button type="button" class="ds-button ds-button-primary" @click="openRequestPanel()"><PlusIcon class="h-4 w-4" />Nova pedido</button>
-          </div>
-        </div>
+    <PageHeader title="Pedidos do cliente" lede="Submeta necessidades estruturadas e acompanhe a triagem, execução e conclusão pela equipa do laboratório.">
+      <template #actions>
+        <a :href="exportUrl" class="ds-button ds-button-secondary"><ArrowDownTrayIcon class="h-4 w-4" />Exportar CSV</a>
+        <button type="button" class="ds-button ds-button-primary" @click="openRequestPanel()"><PlusIcon class="h-4 w-4" />Nova pedido</button>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells">
+      <div v-for="metric in metrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
       </div>
-      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
-        <div v-for="metric in metrics" :key="metric.label" class="bg-[var(--ds-panel)] p-5">
-          <div class="flex items-start justify-between gap-3"><div><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt><dd class="mt-3 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p></div><component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" /></div>
-        </div>
-      </dl>
-    </section>
+    </dl>
 
     <div class="grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)]">
       <aside class="space-y-6 self-start">

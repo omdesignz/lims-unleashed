@@ -93,6 +93,7 @@ test('portal invitation list renders authenticated invitation links and a usable
     const app = Vue.createSSRApp({ setup: () => ({ invitations: { data }, subjectLabel: () => 'Serviço geral', route: (name, params) => `/${name}/${params.invitation}` }), render });
     app.component('Link', { props: ['href'], render() { return Vue.h('a', { href: this.href }, this.$slots.default()); } });
     app.component('Pagination', { render: () => Vue.h('nav') });
+    app.component('PageHeader', { props: ['title', 'lede'], render() { return Vue.h('header', [Vue.h('h1', this.title), Vue.h('p', this.lede), this.$slots.actions?.(), this.$slots.default?.()]); } });
     app.config.warnHandler = (message) => { throw new Error(message); };
     const html = await renderToString(app);
     if (data.length) {

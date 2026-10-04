@@ -53,10 +53,10 @@
       <section class="pl-panel min-w-0" aria-labelledby="analytics-trend">
         <div class="pl-panel-head">
           <h2 id="analytics-trend" class="pl-k">Tendência de consumo</h2>
-          <span class="pl-k pl-faint">Volume diário</span>
+          <span class="pl-k pl-faint">Registos por dia</span>
         </div>
         <div v-if="consumptionTrend.length" class="min-h-72 p-4">
-          <apexchart type="line" height="288" :options="consumptionChartOptions" :series="consumptionChartSeries" />
+          <PlanoChart kind="column" label="Registos de consumo por dia" :categories="consumptionTrend.map((item) => formatTrendDay(item.date))" :series="[{ name: 'Registos de consumo', data: consumptionTrend.map((item) => Number(item.records ?? 0)) }]" />
         </div>
         <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
           <span class="pl-k">Sem consumo no período</span>
@@ -66,11 +66,11 @@
 
       <section class="pl-panel min-w-0" aria-labelledby="analytics-distribution">
         <div class="pl-panel-head">
-          <h2 id="analytics-distribution" class="pl-k">Existências por categoria</h2>
+          <h2 id="analytics-distribution" class="pl-k">Posições com existências</h2>
           <span class="pl-k pl-faint">{{ stockDistribution.length }} categorias</span>
         </div>
         <div v-if="stockDistribution.length" class="min-h-72 p-4">
-          <apexchart type="donut" height="288" :options="stockChartOptions" :series="stockChartSeries" />
+          <PlanoChart kind="bar" label="Posições com existências por categoria" :categories="stockDistribution.map((item) => item.category || 'Sem categoria')" :series="[{ name: 'Posições', data: stockDistribution.map((item) => Number(item.positions ?? 0)) }]" />
         </div>
         <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
           <span class="pl-k">Sem existências distribuídas</span>
@@ -81,10 +81,10 @@
       <section class="pl-panel min-w-0" aria-labelledby="analytics-monthly">
         <div class="pl-panel-head">
           <h2 id="analytics-monthly" class="pl-k">Comparação mensal</h2>
-          <span class="pl-k pl-faint">Ano actual e anterior</span>
+          <span class="pl-k pl-faint">Registos · ano actual e anterior</span>
         </div>
         <div v-if="monthlyComparison.length" class="min-h-72 p-4">
-          <apexchart type="bar" height="288" :options="monthlyChartOptions" :series="monthlyChartSeries" />
+          <PlanoChart kind="column" label="Registos de consumo por mês, ano actual e anterior" :categories="monthlyComparison.map((month, index) => monthLabels[index] ?? month.month)" :series="[{ name: 'Ano actual', data: monthlyComparison.map((month) => Number(month.current_records ?? 0)) }, { name: 'Ano anterior', data: monthlyComparison.map((month) => Number(month.previous_records ?? 0)), tone: 'neutral' }]" />
         </div>
         <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
           <span class="pl-k">Sem comparação mensal disponível</span>
@@ -93,11 +93,11 @@
 
       <section class="pl-panel min-w-0" aria-labelledby="analytics-top">
         <div class="pl-panel-head">
-          <h2 id="analytics-top" class="pl-k">Reagentes mais consumidos</h2>
-          <span class="pl-k pl-faint">Top 8</span>
+          <h2 id="analytics-top" class="pl-k">Reagentes mais usados</h2>
+          <span class="pl-k pl-faint">Registos de consumo · 8 maiores</span>
         </div>
         <div v-if="topReagents.length" class="min-h-72 p-4">
-          <apexchart type="bar" height="288" :options="topReagentsChartOptions" :series="topReagentsChartSeries" />
+          <PlanoChart kind="bar" label="Reagentes mais usados" :categories="topReagents.slice(0, 8).map((item) => item.name || 'Sem nome')" :series="[{ name: 'Registos de consumo', data: topReagents.slice(0, 8).map((item) => Number(item.records ?? 0)) }]" />
         </div>
         <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
           <span class="pl-k">Sem consumo por reagente</span>
@@ -112,7 +112,7 @@
           <span class="pl-k pl-faint">Meta: 90% no prazo</span>
         </div>
         <div v-if="supplierPerformance.length" class="min-h-80 p-4">
-          <apexchart type="bar" height="320" :options="supplierChartOptions" :series="supplierChartSeries" />
+          <PlanoChart kind="bar" label="Entregas no prazo por fornecedor" :categories="supplierPerformance.map((supplier) => supplier.supplier || 'Sem fornecedor')" :series="[{ name: 'Entregas no prazo', data: supplierPerformance.map((supplier) => Number(supplier.on_time_rate || 0)) }]" :reference="{ value: 90, label: 'Meta 90%' }" format="percent" />
         </div>
         <div v-else class="ds-empty-state m-4 grid justify-items-start gap-2 p-6">
           <span class="pl-k">Sem entregas avaliáveis</span>
@@ -259,7 +259,8 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { debounce } from 'lodash'
@@ -281,10 +282,8 @@ const props = defineProps({
 const analyticsData = ref(normalizeData(props.initialData))
 const isLoading = ref(false)
 const requestError = ref('')
-const isDarkMode = ref(false)
 const restockDialogOpen = ref(false)
 const creatingDrafts = ref(false)
-let themeObserver
 let requestController
 
 const filters = reactive({
@@ -371,18 +370,6 @@ const depletionRisks = computed(() => consumptionHistory.value
   .sort((a, b) => Number(a.days_remaining) - Number(b.days_remaining))
   .slice(0, 7))
 
-const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
-const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
-const baseChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  dataLabels: { enabled: false },
-  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  tooltip: { theme: chartTooltipTheme.value },
-}))
-
 // The server sends a timestamp per day and English month abbreviations (January first).
 const monthLabels = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 const formatTrendDay = (value) => {
@@ -392,98 +379,6 @@ const formatTrendDay = (value) => {
     ? String(value ?? '')
     : date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', timeZone: 'Africa/Luanda' })
 }
-
-const consumptionChartSeries = computed(() => [{
-  name: 'Consumo diário',
-  data: consumptionTrend.value.map((item) => Number(item.quantity || 0)),
-}])
-const consumptionChartOptions = computed(() => ({
-  ...baseChartOptions.value,
-  colors: ['#e5484d'],
-  stroke: { curve: 'straight', width: 3 },
-  markers: { size: 3 },
-  xaxis: {
-    categories: consumptionTrend.value.map((item) => formatTrendDay(item.date)),
-    labels: { rotate: -20, trim: true, style: { colors: chartTextColor.value } },
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-  },
-  yaxis: { labels: { style: { colors: chartTextColor.value } } },
-  legend: { show: false },
-}))
-
-const stockChartSeries = computed(() => stockDistribution.value.map((item) => Number(item.quantity || 0)))
-const stockChartOptions = computed(() => ({
-  ...baseChartOptions.value,
-  labels: stockDistribution.value.map((item) => item.category || 'Sem categoria'),
-  colors: ['#14a3a8', '#22a45d', '#7c5ce0', '#e0902b', '#e5484d', '#6b7482'],
-  legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
-  dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
-  stroke: { width: 0 },
-}))
-
-const monthlyChartSeries = computed(() => [
-  { name: 'Ano actual', data: monthlyComparison.value.map((month) => Number(month.current || 0)) },
-  { name: 'Ano anterior', data: monthlyComparison.value.map((month) => Number(month.previous || 0)) },
-])
-const monthlyChartOptions = computed(() => ({
-  ...baseChartOptions.value,
-  colors: ['#14a3a8', '#7c5ce0'],
-  plotOptions: { bar: { borderRadius: 0, columnWidth: '52%' } },
-  xaxis: {
-    categories: monthlyComparison.value.map((month, index) => monthLabels[index] ?? month.month),
-    labels: { style: { colors: chartTextColor.value } },
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-  },
-  yaxis: { labels: { style: { colors: chartTextColor.value } } },
-  legend: { position: 'top', horizontalAlign: 'right', labels: { colors: chartTextColor.value } },
-}))
-
-const topReagentsChartSeries = computed(() => [{
-  name: 'Consumo',
-  data: topReagents.value.slice(0, 8).map((item) => Number(item.consumption || 0)),
-}])
-const topReagentsChartOptions = computed(() => ({
-  ...baseChartOptions.value,
-  colors: ['#e0902b'],
-  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
-  xaxis: {
-    categories: topReagents.value.slice(0, 8).map((item) => item.name || 'Sem nome'),
-    labels: { style: { colors: chartTextColor.value } },
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-  },
-  yaxis: { labels: { maxWidth: 180, style: { colors: chartTextColor.value } } },
-  legend: { show: false },
-}))
-
-const supplierChartSeries = computed(() => [{
-  name: 'Entregas no prazo',
-  data: supplierPerformance.value.map((supplier) => Number(supplier.on_time_rate || 0)),
-}])
-const supplierChartOptions = computed(() => ({
-  ...baseChartOptions.value,
-  colors: ['#22a45d'],
-  annotations: {
-    xaxis: [{
-      x: 90,
-      borderColor: '#e5484d',
-      label: { text: 'Meta 90%', style: { color: '#fff', background: '#e5484d' } },
-    }],
-  },
-  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
-  xaxis: {
-    categories: supplierPerformance.value.map((supplier) => supplier.supplier || 'Sem fornecedor'),
-    min: 0,
-    max: 100,
-    labels: { formatter: (value) => `${value}%`, style: { colors: chartTextColor.value } },
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-  },
-  yaxis: { labels: { maxWidth: 220, style: { colors: chartTextColor.value } } },
-  legend: { show: false },
-}))
 
 function normalizeData(data = {}) {
   return {
@@ -498,11 +393,6 @@ function normalizeData(data = {}) {
 
 function arrayValue(value) {
   return Array.isArray(value) ? value : []
-}
-
-function syncDarkMode() {
-  if (typeof document === 'undefined') return
-  isDarkMode.value = document.documentElement.classList.contains('dark')
 }
 
 function formatNumber(value) {
@@ -600,16 +490,7 @@ function createRestockDraft() {
 
 watch(filters, debounce(loadAnalytics, 350), { deep: true })
 
-onMounted(() => {
-  syncDarkMode()
-  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
-    themeObserver = new MutationObserver(syncDarkMode)
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  }
-})
-
 onBeforeUnmount(() => {
   requestController?.abort()
-  themeObserver?.disconnect()
 })
 </script>

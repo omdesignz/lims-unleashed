@@ -67,7 +67,7 @@
           <span class="pl-k pl-faint">{{ dailyActivityDays }} dias · {{ filterPeriod || 'Período completo' }}</span>
         </div>
         <div class="min-h-72 p-4">
-          <apexchart type="line" height="288" :options="dailyActivityChartOptions" :series="dailyActivityChartSeries" />
+          <PlanoChart kind="line" :label="singleItem ? 'Quantidades movimentadas por dia' : 'Movimentos por dia'" :categories="((singleItem ? charts?.daily_activity?.labels : charts?.daily_movements?.labels) || []).map(dayLabel)" :series="singleItem ? (charts?.daily_activity?.series || []).slice(0, 2) : (charts?.daily_movements?.series || [])" :format="singleItem ? 'decimal' : 'count'" />
         </div>
       </section>
       <section class="pl-panel min-w-0" aria-labelledby="movement-mix-chart">
@@ -76,7 +76,7 @@
           <span class="pl-k pl-faint">{{ typeMixTotal }} eventos</span>
         </div>
         <div class="min-h-64 p-4">
-          <apexchart type="donut" height="256" :options="typeMixChartOptions" :series="typeMixChartSeries" />
+          <PlanoChart kind="bar" label="Movimentos por tipo" :categories="charts?.type_mix?.labels || []" :series="[{ name: 'Movimentos', data: typeMixChartSeries }]" />
         </div>
       </section>
       <section class="pl-panel min-w-0" aria-labelledby="movement-balance-chart">
@@ -85,7 +85,8 @@
           <span class="pl-k pl-faint">Entradas, saídas e saldo</span>
         </div>
         <div class="min-h-56 p-4">
-          <apexchart type="bar" height="224" :options="directionBreakdownChartOptions" :series="directionBreakdownChartSeries" />
+          <PlanoChart v-if="singleItem" kind="column" label="Entradas, saídas e saldo" :categories="charts?.direction_breakdown?.labels || []" :series="directionBreakdownChartSeries" format="decimal" :height="224" />
+          <div v-else class="pl-chart-empty" role="status"><span class="pl-k">Escolha um artigo</span><p>Cada artigo tem a sua unidade: as quantidades de entrada, saída e saldo comparam-se artigo a artigo.</p></div>
         </div>
       </section>
     </div>
@@ -214,7 +215,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
@@ -223,6 +224,7 @@ import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Pagination from '@/Components/pagination.vue'
 import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import PageHeader from '@/Components/plano/PageHeader.vue'
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
 import StatusChip from '@/Components/plano/StatusChip.vue'
 import { X as XMarkIcon } from '@lucide/vue'
 
@@ -237,8 +239,6 @@ const props = defineProps({
 })
 
 const loading = ref(false)
-const isDarkMode = ref(false)
-let themeObserver
 
 const filters = reactive({
   date_from: props.filters?.date_from ?? '',
@@ -258,9 +258,6 @@ const itemOptions = computed(() => props.items.map((item) => ({
 const selectedItem = ref(itemOptions.value.find((option) => String(option.value) === String(filters.item_id)) || null)
 const transactionRows = computed(() => props.transactions?.data || [])
 const summaryRows = computed(() => props.summary || [])
-const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
-const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
 const summaryCards = computed(() => [
   {
@@ -308,70 +305,17 @@ const activeFilterPills = computed(() => {
 })
 
 const hasActiveFilters = computed(() => activeFilterPills.value.length > 0)
+// Quantities only add up within one item; across items the charts count movements.
+const singleItem = computed(() => Boolean(props.filters?.item_id))
+const dayLabel = (date) => (/^\d{4}-\d{2}-\d{2}/.test(String(date)) ? `${String(date).slice(8, 10)}/${String(date).slice(5, 7)}` : date)
 const directionBreakdownChartSeries = computed(() => props.charts?.direction_breakdown?.series || [])
 const typeMixChartSeries = computed(() => props.charts?.type_mix?.series || [])
 const typeMixTotal = computed(() => typeMixChartSeries.value.reduce((total, value) => total + Number(value || 0), 0))
-const dailyActivityChartSeries = computed(() => props.charts?.daily_activity?.series || [])
 const dailyActivityDays = computed(() => props.charts?.daily_activity?.labels?.length || 0)
 const typeMixRows = computed(() => (props.charts?.type_mix?.labels || []).map((label, index) => ({
   label,
   value: props.charts?.type_mix?.series?.[index] || 0,
 })))
-
-const directionBreakdownChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  colors: ['#14a3a8'],
-  dataLabels: { enabled: false },
-  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 0, columnWidth: '52%' } },
-  xaxis: {
-    categories: props.charts?.direction_breakdown?.labels || [],
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value } },
-  },
-  yaxis: { labels: { style: { colors: chartTextColor.value } } },
-  tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false },
-}))
-
-const typeMixChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  labels: props.charts?.type_mix?.labels || [],
-  colors: ['#22a45d', '#e5484d', '#e0902b', '#14a3a8'],
-  legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
-  dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
-  stroke: { width: 0 },
-  tooltip: { theme: chartTooltipTheme.value },
-}))
-
-const dailyActivityChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  colors: ['#22a45d', '#e5484d', '#14a3a8'],
-  dataLabels: { enabled: false },
-  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  stroke: { curve: 'straight', width: [3, 3, 2] },
-  markers: { size: 2 },
-  xaxis: {
-    categories: props.charts?.daily_activity?.labels || [],
-    labels: { rotate: -20, trim: true, style: { colors: chartTextColor.value } },
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-  },
-  yaxis: { labels: { style: { colors: chartTextColor.value } } },
-  tooltip: { theme: chartTooltipTheme.value },
-}))
-
-function syncDarkMode() {
-  if (typeof document === 'undefined') return
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
 
 function formatDate(value) {
   if (!value) return 'N/D'
@@ -468,15 +412,4 @@ watch(
   { deep: true },
 )
 
-onMounted(() => {
-  syncDarkMode()
-  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
-    themeObserver = new MutationObserver(syncDarkMode)
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  }
-})
-
-onBeforeUnmount(() => {
-  themeObserver?.disconnect()
-})
 </script>

@@ -535,10 +535,10 @@ test('analysis tables use semantic selection and data-density controls', () => {
   }
 
   assert.match(dataTableShellSource, /class="ds-table-shell"/)
-  assert.match(dataTableSource, /<table class="ds-data-table">/)
+  assert.match(dataTableSource, /<table ref="table" class="ds-data-table" :data-stack="stackable \|\| undefined">/)
   assert.match(appBootstrapSource, /\.component\("DataTable", DataTable\)/)
   assert.match(vapTableSource, /<DataTableShell/)
-  assert.match(recordsTableSource, /<DataTableShell/)
+  assert.match(recordsTableSource, /<section class="pl-panel"/)
   assert.match(vapTableHeaderSource, /class="ds-checkbox"/)
   assert.match(vapTableBodySource, /class="ds-checkbox"/)
   assert.match(analysisIndexSource, /<VapTable/)
@@ -571,7 +571,7 @@ test('shared shell and primitives consume semantic design classes', () => {
   assert.match(layoutSource, /<aside id="area-column" class="pl-side"/)
   assert.match(layoutSource, /<main ref="stageContent" class="pl-main"/)
   assert.match(layoutSource, /<nav class="pl-bottom" aria-label="Áreas">/)
-  assert.match(layoutSource, /navAreas\.slice\(0, 4\)/)
+  assert.match(layoutSource, /const phoneAreas = computed\(\(\) => bottomBarAreas\(navAreas\.value, activeAreaKey\.value\)\)/)
   assert.match(layoutSource, /const areaDefinitions = \[/)
   assert.match(layoutSource, /key: 'commercial', label: 'Comercial'/)
   assert.doesNotMatch(layoutSource, /key: 'customers'/)
@@ -606,7 +606,7 @@ test('shared shell and primitives consume semantic design classes', () => {
   assert.match(textareaSource, /const generatedId = useId\(\)/)
   assert.match(selectSource, /`field-\$\{generatedId\}`/)
   assert.match(textareaSource, /`field-\$\{generatedId\}`/)
-  assert.match(moduleHeroSource, /class="ds-panel/)
+  assert.match(moduleHeroSource, /<PageHeader :trail="eyebrow \? \[\{ title: eyebrow \}, \{ title \}\] : \[\]" :title="title" :lede="description">/)
   assert.match(sideNavSource, /defineEmits\(\['open-command-palette', 'navigate'\]\)/)
   assert.match(sideNavSource, /import \{ AnimatePresence, motion \} from 'motion-v'/)
   assert.match(sideNavSource, /:aria-expanded="isOpen\(section\)"/)
@@ -653,10 +653,10 @@ test('calendar and reduced-motion behavior are part of the visual contract', () 
 })
 
 test('high-frequency data controls use the shared visual language', () => {
-  assert.match(recordsTableSource, /<DataTableShell :show-summary="false">/)
-  assert.match(recordsTableSource, /<template v-if="props\.record\.data\.length" #pagination>/)
+  assert.match(recordsTableSource, /<DataTable v-if="record\.data\.length" class="pl-stack-table">/)
+  assert.match(recordsTableSource, /<Pagination\s+v-if="props\.record\.data\.length"/)
   assert.doesNotMatch(recordsTableSource, /ds-command-surface|ds-kicker/)
-  assert.match(recordsTableSource, /class="ds-field pl-9"/)
+  assert.match(recordsTableSource, /class="pl-filter-input"/)
   assert.doesNotMatch(recordsTableSource, /color="blue"/)
 
   assert.match(comboboxSource, /class="ds-combobox-control/)
@@ -681,9 +681,10 @@ test('analytics charts share product surfaces and tolerate partial API payloads'
   assert.match(inventoryAnalyticsSource, /class="pl-panel-head"/)
   assert.match(inventoryAnalyticsSource, /<DataTable>/)
   assert.match(inventoryAnalyticsSource, /<BaseSelect/)
-  assert.match(inventoryAnalyticsSource, /<apexchart type="line"/)
-  assert.match(inventoryAnalyticsSource, /<apexchart type="donut"/)
-  assert.match(inventoryAnalyticsSource, /<apexchart type="bar"/)
+  assert.match(inventoryAnalyticsSource, /<PlanoChart kind="column" label="Registos de consumo por dia"/)
+  assert.match(inventoryAnalyticsSource, /<PlanoChart kind="bar" label="Posições com existências por categoria"/)
+  assert.match(inventoryAnalyticsSource, /:reference="\{ value: 90, label: 'Meta 90%' \}" format="percent"/)
+  assert.doesNotMatch(inventoryAnalyticsSource, /<apexchart/)
   assert.match(inventoryAnalyticsSource, /function normalizeData/)
   assert.match(inventoryAnalyticsSource, /metrics: data\.metrics \?\? \{\}/)
   assert.match(inventoryAnalyticsSource, /return Array\.isArray\(value\) \? value : \[\]/)
@@ -1012,8 +1013,8 @@ test('VAP low-stock report uses replenishment assurance surfaces', () => {
   assert.match(vapInventoryLowStockReportSource, /const activeFilterPills = computed/)
   assert.match(vapInventoryLowStockReportSource, /router\.get\(route\('vap-inventory\.reports\.low-stock'/)
   assert.match(vapInventoryLowStockReportSource, /class="ds-button ds-button-primary/)
-  assert.match(vapInventoryLowStockReportSource, /<apexchart type="bar"/)
-  assert.match(vapInventoryLowStockReportSource, /<apexchart type="donut"/)
+  assert.match(vapInventoryLowStockReportSource, /<PlanoChart kind="bar" label="Itens por severidade"/)
+  assert.match(vapInventoryLowStockReportSource, /<PlanoChart kind="donut" label="Itens em falta por armazém"/)
   assert.match(vapInventoryLowStockReportSource, /const recommendedOrders = computed/)
   assert.match(vapInventoryLowStockReportSource, /function statusTone/)
   assert.match(vapInventoryLowStockReportSource, /function stockPercentage/)
@@ -1036,8 +1037,8 @@ test('VAP inventory-value report uses reconciliation and financial-control surfa
   assert.match(vapInventoryValueReportSource, /const summaryCards = computed/)
   assert.match(vapInventoryValueReportSource, /const activeFilterPills = computed/)
   assert.match(vapInventoryValueReportSource, /router\.get\(route\('vap-inventory\.reports\.inventory-value'/)
-  assert.match(vapInventoryValueReportSource, /<apexchart type="bar"/)
-  assert.match(vapInventoryValueReportSource, /<apexchart type="donut"/)
+  assert.match(vapInventoryValueReportSource, /<PlanoChart kind="bar" label="Valor por categoria"/)
+  assert.match(vapInventoryValueReportSource, /<PlanoChart kind="donut" label="Exposição por armazém"/)
   assert.match(vapInventoryValueReportSource, /function unitCost\(position\)/)
   assert.match(vapInventoryValueReportSource, /sort_by: 'qty_available'/)
   // Phase 1: downloads go through the validated, permission-scoped export button.
@@ -1058,9 +1059,9 @@ test('VAP consumption report uses reagent-stewardship and traceability surfaces'
   assert.match(vapInventoryConsumptionReportSource, /const activeFilterPills = computed/)
   assert.match(vapInventoryConsumptionReportSource, /router\.get\(route\('vap-inventory\.reports\.consumption'/)
   assert.match(vapInventoryConsumptionReportSource, /<ComboboxEnhanced/)
-  assert.match(vapInventoryConsumptionReportSource, /<apexchart type="bar"/)
-  assert.match(vapInventoryConsumptionReportSource, /<apexchart type="donut"/)
-  assert.match(vapInventoryConsumptionReportSource, /<apexchart type="line"/)
+  assert.match(vapInventoryConsumptionReportSource, /<PlanoChart kind="bar" :label="singleItem \? 'Quantidade consumida'/)
+  assert.match(vapInventoryConsumptionReportSource, /<PlanoChart kind="donut" label="Registos de consumo por utilizador"/)
+  assert.match(vapInventoryConsumptionReportSource, /<PlanoChart :kind="singleItem \? 'area' : 'column'"/)
   assert.match(vapInventoryConsumptionReportSource, /function selectItem/)
   // Phase 1: downloads go through the validated, permission-scoped export button.
   assert.match(vapInventoryConsumptionReportSource, /<InventoryReportExportButton report-type="consumption" :filters="filters" \/>/)
@@ -1080,9 +1081,9 @@ test('VAP stock-movement report uses audit-trail and reconciliation surfaces', (
   assert.match(vapInventoryStockMovementReportSource, /const activeFilterPills = computed/)
   assert.match(vapInventoryStockMovementReportSource, /router\.get\(route\('vap-inventory\.reports\.stock-movement'/)
   assert.match(vapInventoryStockMovementReportSource, /<ComboboxEnhanced/)
-  assert.match(vapInventoryStockMovementReportSource, /<apexchart type="bar"/)
-  assert.match(vapInventoryStockMovementReportSource, /<apexchart type="donut"/)
-  assert.match(vapInventoryStockMovementReportSource, /<apexchart type="line"/)
+  assert.match(vapInventoryStockMovementReportSource, /<PlanoChart kind="bar" label="Movimentos por tipo"/)
+  assert.match(vapInventoryStockMovementReportSource, /<PlanoChart v-if="singleItem" kind="column" label="Entradas, saídas e saldo"/)
+  assert.match(vapInventoryStockMovementReportSource, /<PlanoChart kind="line" :label="singleItem \? 'Quantidades movimentadas por dia'/)
   assert.match(vapInventoryStockMovementReportSource, /role="tablist" aria-label="Modo do relatório"/)
   assert.match(vapInventoryStockMovementReportSource, /function setView/)
   assert.match(vapInventoryStockMovementReportSource, /function quantityLabel/)
@@ -1183,17 +1184,19 @@ test('VAP nonconformity CAPA workflow uses quality dossier surfaces', () => {
   ]
 
   for (const source of capaWorkflowSources) {
-    assert.match(source, /class="min-w-0 space-y-6 overflow-x-clip"/)
+    assert.match(source, source === vapNonConformityFormSource ? /class="min-w-0 space-y-6 overflow-x-clip"/ : /<div class="pl-page space-y-6">/)
     assert.match(source, /ds-/)
     assert.doesNotMatch(source, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open/)
   }
 
-  assert.match(vapNonConformitiesIndexSource, /class="ds-panel overflow-hidden p-5/)
+  assert.match(vapNonConformitiesIndexSource, /<PageHeader :title="\$t\('gestlab\.general\.labels\.vap_non_conformities\.title'\)"/)
   assert.match(vapNonConformitiesIndexSource, /class="ds-command-surface p-5/)
-  assert.match(vapNonConformitiesIndexSource, /class="ds-command-surface overflow-hidden"/)
+  assert.match(vapNonConformitiesIndexSource, /<section v-show="workspaceView === 'analytics'" class="grid gap-6 xl:grid-cols-3" aria-label="Análise CAPA">/)
   assert.match(vapNonConformitiesIndexSource, /class="ds-table-shell"/)
   assert.match(vapNonConformitiesIndexSource, /class="ds-table-summary px-5 py-4"/)
-  assert.match(vapNonConformitiesIndexSource, /<ChartWrapper/)
+  assert.match(vapNonConformitiesIndexSource, /<PlanoChart kind="column" label="Não conformidades relatadas por mês"/)
+  assert.match(vapNonConformitiesIndexSource, /<PlanoChart kind="donut" label="Não conformidades por severidade"/)
+  assert.match(vapNonConformitiesIndexSource, /<PlanoChart kind="bar" label="Não conformidades por estado do fluxo"/)
   assert.match(vapNonConformitiesIndexSource, /<confirm-dialog/)
   assert.match(vapNonConformitiesIndexSource, /const summaryCards = computed/)
   assert.match(vapNonConformitiesIndexSource, /const activeFilterPills = computed/)
@@ -1453,9 +1456,10 @@ test('commercial document indexes use shared hero surfaces and localized copy', 
 
   for (const source of commercialIndexes) {
     assert.match(source, /<ModuleHero/)
-    assert.match(source, /class="ds-card bg-\[var\(--ds-panel-raised\)\] p-4"/)
-    assert.match(source, /commercial_documents\.records/)
-    assert.match(source, /commercial_documents\.flow/)
+    assert.match(source, /<div class="pl-page space-y-6" :class="commercialDocumentThemeClasses">/)
+    assert.match(source, /<records-table/)
+    // Plano: the header carries no stat strip.
+    assert.doesNotMatch(source, /commercial_documents\.(records|flow)/)
     assert.doesNotMatch(source, /bg-\[radial-gradient|bg-gradient-to-r|border-slate|bg-slate|text-slate/)
     assert.doesNotMatch(source, />Comercial<|>Tesouraria<|>Registos<|>Fluxo<|>Facturação<|>Propostas<|>Crédito<|>Cobrança</)
     assert.doesNotMatch(source, /<br>/)
@@ -1482,8 +1486,8 @@ test('commercial document create screens use the compact LIMS form language', ()
   ]
 
   for (const source of commercialCreateScreens) {
-    assert.match(source, /commercial-document-create min-w-0 space-y-5 overflow-x-clip/)
-    assert.match(source, /class="commercial-document-header/)
+    assert.match(source, /class="pl-page commercial-document-page commercial-document-create space-y-5"/)
+    assert.match(source, /<PageHeader :trail="\[\{ title: '[^']+', url: route\('\w+\.index'\) \}, \{ title: 'Novo documento' \}\]"/)
     assert.match(source, /class="ds-panel commercial-document-section/)
     assert.match(source, /class="commercial-document-command/)
     assert.match(source, /class="ds-field/)
@@ -1586,7 +1590,7 @@ test('quality certificate ISO revision workflow uses controlled audit surfaces',
   ]
 
   for (const source of revisionPageSources) {
-    assert.match(source, /min-w-0 space-y-6 overflow-x-clip/)
+    assert.match(source, /<div class="pl-page space-y-6">/)
   }
 
   for (const source of revisionWorkflowSources) {
@@ -1714,7 +1718,7 @@ test('shared customer dossier labels laboratory data without implying unavailabl
 })
 
 test('laboratory metrics use a period-filtered throughput control surface', () => {
-  assert.match(metricsIndexSource, /class="ds-command-surface overflow-hidden"/)
+  assert.match(metricsIndexSource, /<PageHeader title="Indicadores laboratoriais"/)
   assert.match(metricsIndexSource, /class="ds-panel overflow-hidden"/)
   assert.match(metricsIndexSource, /<date-picker/)
   assert.match(metricsIndexSource, /route\('metrics\.index'\)/)
@@ -1808,7 +1812,7 @@ test('customer portal overview and document libraries use compact traceable appl
 })
 
 test('maintenance dashboard uses Tailkit-style operational surfaces', () => {
-  assert.match(vapMaintenanceDashboardSource, /class="ds-panel overflow-hidden"/)
+  assert.match(vapMaintenanceDashboardSource, /<PageHeader title="Gestão de manutenção e calibração"/)
   assert.match(vapMaintenanceDashboardSource, /class="ds-command-surface p-4"/)
   assert.match(vapMaintenanceDashboardSource, /class="ds-table-shell"/)
   assert.match(vapMaintenanceDashboardSource, /class="ds-table-summary px-5 py-4"/)
@@ -1824,7 +1828,7 @@ test('maintenance dashboard uses Tailkit-style operational surfaces', () => {
 })
 
 test('maintenance task index uses dense LIMS operational surfaces', () => {
-  assert.match(vapMaintenanceTasksIndexSource, /class="ds-panel overflow-hidden"/)
+  assert.match(vapMaintenanceTasksIndexSource, /<PageHeader title="Tarefas de manutenção"/)
   assert.match(vapMaintenanceTasksIndexSource, /class="ds-command-surface p-4"/)
   assert.match(vapMaintenanceTasksIndexSource, /class="ds-command-toolbar px-5 py-4"/)
   assert.match(vapMaintenanceTasksIndexSource, /class="ds-table-shell"/)
@@ -1839,7 +1843,7 @@ test('maintenance task index uses dense LIMS operational surfaces', () => {
 })
 
 test('maintenance category library uses compact LIMS management surfaces', () => {
-  assert.match(vapMaintenanceCategoriesSource, /class="ds-panel overflow-hidden/)
+  assert.match(vapMaintenanceCategoriesSource, /<PageHeader title="Categorias de manutenção"/)
   assert.match(vapMaintenanceCategoriesSource, /class="ds-command-surface p-5/)
   assert.match(vapMaintenanceCategoriesSource, /class="ds-card flex min-h-full/)
   assert.match(vapMaintenanceCategoriesSource, /can.archive && !category.is_preset && !category.deleted/)
@@ -1854,14 +1858,14 @@ test('maintenance category library uses compact LIMS management surfaces', () =>
 })
 
 test('maintenance task create and show screens use operational form/detail surfaces', () => {
-  assert.match(vapMaintenanceTasksCreateSource, /class="ds-panel overflow-hidden"/)
+  assert.match(vapMaintenanceTasksCreateSource, /<PageHeader :trail="\[\{ title: 'Manutenção', url: route\('vap-maintenance\.tasks'\) \}, \{ title: task \? 'Editar tarefa de manutenção' : 'Nova tarefa de manutenção' \}\]"/)
   assert.match(vapMaintenanceTasksCreateSource, /class="ds-card overflow-hidden"/)
   assert.match(vapMaintenanceTasksCreateSource, /class="ds-command-surface p-5"/)
   assert.match(vapMaintenanceTasksCreateSource, /class="ds-checkbox"/)
   assert.match(vapMaintenanceTasksCreateSource, /const fieldClass = \(field\) =>/)
   assert.match(vapMaintenanceTasksCreateSource, /useForm\(/)
 
-  assert.match(vapMaintenanceTasksShowSource, /class="ds-panel overflow-hidden"/)
+  assert.match(vapMaintenanceTasksShowSource, /<PageHeader :trail="\[\{ title: 'Manutenção', url: route\('vap-maintenance\.tasks'\) \}, \{ title: task\.maintenance_task_no \|\| 'Tarefa' \}\]"/)
   assert.match(vapMaintenanceTasksShowSource, /class="ds-command-surface p-5"/)
   assert.match(vapMaintenanceTasksShowSource, /class="ds-table-shell"/)
   assert.match(vapMaintenanceTasksShowSource, /class="ds-table-summary px-5 py-4"/)
@@ -1926,15 +1930,15 @@ test('sample registry uses a compact read-only worklist surface', () => {
 })
 
 test('sample reports workspace uses operational analytics surfaces', () => {
-  assert.match(vapSamplesReportsSource, /class="min-w-0 space-y-6 overflow-x-clip"/)
+  assert.match(vapSamplesReportsSource, /<div class="pl-page space-y-6">/)
   assert.match(vapSamplesReportsSource, /class="ds-panel overflow-hidden"/)
-  assert.match(vapSamplesReportsSource, /class="ds-command-surface overflow-hidden"/)
-  assert.match(vapSamplesReportsSource, /class="ds-card border-l-4 p-4"/)
+  assert.match(vapSamplesReportsSource, /<PageHeader :title="title \|\| 'Relatórios de amostras'"/)
+  assert.match(vapSamplesReportsSource, /<div v-for="metric in summaryCards" :key="metric\.label" class="pl-cell" :class="\{ 'pl-cell-bad': metric\.bad \}">/)
   assert.match(vapSamplesReportsSource, /class="ds-table-shell overflow-x-auto"/)
   assert.match(vapSamplesReportsSource, /class="ds-table-summary flex/)
-  assert.match(vapSamplesReportsSource, /<apexchart type="donut"/)
-  assert.match(vapSamplesReportsSource, /<apexchart type="area"/)
-  assert.match(vapSamplesReportsSource, /<apexchart type="bar"/)
+  assert.match(vapSamplesReportsSource, /<PlanoChart kind="donut" label="Amostras por estado do ciclo"/)
+  assert.match(vapSamplesReportsSource, /<PlanoChart kind="column" label="Amostras recebidas por dia"/)
+  assert.match(vapSamplesReportsSource, /<PlanoChart kind="bar" label="Descartes por método"/)
   assert.match(vapSamplesReportsSource, /const summaryCards = computed/)
   assert.match(vapSamplesReportsSource, /const breakdownGroups = computed/)
   assert.match(vapSamplesReportsSource, /function statusDotClass/)
@@ -1948,7 +1952,7 @@ test('analysis queue and result bench use controlled worklist surfaces', () => {
   const analysisWorkflowSources = [analysisIndexSource, analysisResultsWorkflowSource]
 
   for (const source of analysisWorkflowSources) {
-    assert.match(source, /min-w-0 space-y-6 overflow-x-clip/)
+    assert.match(source, /<div class="pl-page space-y-6">/)
     assert.match(source, /ds-panel/)
     assert.match(source, /lims-status-dot/)
     assert.doesNotMatch(source, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open/)
@@ -2022,7 +2026,7 @@ test('worksheet queue and editor use dense operational application UI patterns',
   assert.match(worksheetsIndexSource, /<DataTable class="min-w-full/)
   assert.match(worksheetsIndexSource, /class="ds-empty-state/)
 
-  assert.match(worksheetsEditSource, /<Link :href="route\('worksheets\.index'\)"/)
+  assert.match(worksheetsEditSource, /\{ title: 'Folhas de trabalho', url: route\('worksheets\.index'\) \}/)
   assert.match(worksheetsEditSource, /const columnCount = computed/)
   assert.match(worksheetsEditSource, /function columnLabel/)
   assert.match(worksheetsEditSource, /function removeLastRow/)
@@ -2066,7 +2070,7 @@ test('staff directory uses a competence-first Tailwind application table and foc
   assert.match(usersIndexSource, /form\.post\(route\("users\.store"/)
   assert.match(usersIndexSource, /requestRecordAction\('impersonate'/)
   assert.match(usersIndexSource, /requestRecordAction\(data\.is_active \? 'ban' : 'unban'/)
-  assert.match(usersIndexSource, /Competência e autorização/)
+  assert.match(usersIndexSource, /Competência monitorizada/)
   assert.match(usersIndexSource, /Evidência em falta/)
 })
 
@@ -2088,7 +2092,7 @@ test('staff dossier uses controlled identity, access, and competence sections', 
 test('department registry uses a supervised organizational table and direct editor workflow', () => {
   assert.match(departmentsIndexSource, /ds-/)
   assert.doesNotMatch(departmentsIndexSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open|TransitionRoot|showDeleteConfirmationSlideover/)
-  assert.match(departmentsIndexSource, /const metrics = computed/)
+  assert.match(departmentsIndexSource, /<PageHeader :title="\$t\('gestlab\.general\.labels\.departments\.page_title'\)" lede="Unidades, supervisão e contactos/)
   assert.match(departmentsIndexSource, /<RecordsTable/)
   assert.match(departmentsIndexSource, /<SlideOver/)
   assert.match(departmentsIndexSource, /@slideover-on="openEditPanel"/)
@@ -2104,7 +2108,7 @@ test('department registry uses a supervised organizational table and direct edit
 test('permission registry uses a compact access-control table and guarded editor', () => {
   assert.match(permissionsIndexSource, /ds-/)
   assert.doesNotMatch(permissionsIndexSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open|TransitionRoot|showDeleteConfirmationSlideover/)
-  assert.match(permissionsIndexSource, /const metrics = computed/)
+  assert.match(permissionsIndexSource, /<PageHeader :title="\$t\('gestlab\.general\.labels\.permissions\.page_title'\)" lede="Chaves de autorização/)
   assert.match(permissionsIndexSource, /<RecordsTable/)
   assert.match(permissionsIndexSource, /<SlideOver/)
   assert.match(permissionsIndexSource, /@slideover-on="openEditPanel"/)
@@ -2117,7 +2121,7 @@ test('permission registry uses a compact access-control table and guarded editor
 test('role registry separates role identity from permission assignment', () => {
   assert.match(rolesIndexSource, /ds-/)
   assert.doesNotMatch(rolesIndexSource, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open|TransitionRoot|showDeleteConfirmationSlideover/)
-  assert.match(rolesIndexSource, /const metrics = computed/)
+  assert.match(rolesIndexSource, /<PageHeader :title="\$t\('gestlab\.general\.labels\.roles\.page_title'\)" lede="Funções que agrupam permissões/)
   assert.match(rolesIndexSource, /<RecordsTable/)
   assert.match(rolesIndexSource, /<SlideOver/)
   assert.match(rolesIndexSource, /:slide-over-edit="false"/)
@@ -2144,7 +2148,7 @@ test('occurrence register uses a triage-first table and compact batch import', (
     assert.doesNotMatch(source, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open|TransitionRoot|showDeleteConfirmationSlideover/)
   }
 
-  assert.match(occurrencesIndexSource, /const metrics = computed/)
+  assert.match(occurrencesIndexSource, /<PageHeader :title="\$t\('gestlab\.general\.labels\.occurrences\.page_title'\)" lede="Registo, triagem e acompanhamento/)
   assert.match(occurrencesIndexSource, /<RecordsTable/)
   assert.match(occurrencesIndexSource, /:slide-over-edit="false"/)
   assert.match(occurrencesIndexSource, /route\('occurrences\.show'/)
@@ -2224,7 +2228,7 @@ test('archived document workflow uses a shared evidence-retention form and regis
 
 test('contract guide workflow uses one traceable shipping and product form', () => {
   for (const source of [contractGuidesIndexSource, contractGuidesCreateSource, contractGuidesEditSource, contractGuideFormSource]) {
-    assert.match(source, /ds-/)
+    assert.match(source, /ds-|<PageHeader :trail=/)
     assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|v-motion/)
   }
 
@@ -2256,7 +2260,7 @@ test('customer portfolio uses a traceability-first directory, dossier, and share
     assert.doesNotMatch(source, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open/)
   }
 
-  assert.match(customersIndexSource, /const metrics = computed/)
+  assert.match(customersIndexSource, /<PageHeader title="Clientes" lede="Contas ligadas a propostas/)
   assert.match(customersIndexSource, /<RecordsTable/)
   assert.match(customersIndexSource, /hasPermission\('add_customers'\)/)
   assert.match(customersCreateSource, /<CustomerForm :form="form"/)
@@ -2299,7 +2303,7 @@ test('customer site registry uses controlled operational directory and dossier s
   assert.match(warehousesIndexSource, /function executeBulkAction/)
   assert.match(warehousesShowSource, /Amostras recentes/)
   assert.match(warehousesShowSource, /Âmbito deste local/)
-  assert.match(warehousesShowSource, /Deste laboratório/)
+  assert.match(warehousesShowSource, /Sem amostras deste laboratório neste local/)
   assert.match(warehousesShowSource, /Acesso ao portal/)
   assert.match(warehousesShowSource, /function sendPasswordResetEmail/)
   assert.match(warehousesShowSource, /passwordStrengthScore\.value === 4/)
@@ -2317,7 +2321,7 @@ test('standards library uses a controlled normative catalog and shared editor', 
   assert.match(standardsIndexSource, /<RecordsTable/)
   assert.match(standardsIndexSource, /<SlideOver/)
   assert.match(standardsIndexSource, /<StandardForm :form="form"/)
-  assert.match(standardsIndexSource, /const describedRecords = computed/)
+  assert.match(standardsIndexSource, /const pageRecords = computed\(\(\) => props\.record\?\.data \|\| \[\]\)/)
   assert.match(standardsIndexSource, /function executeBulkAction/)
   assert.doesNotMatch(standardsIndexSource, /showDeleteConfirmationSlideover|TransitionRoot/)
   assert.match(standardFormSource, /id="standard-code"/)
@@ -2333,11 +2337,11 @@ test('analytical reference catalogs share a compact governed management surface'
 
   assert.match(referenceCatalogManagerSource, /<RecordsTable/)
   assert.match(referenceCatalogManagerSource, /<SlideOver v-if="isPanelOpen"/)
-  assert.match(referenceCatalogManagerSource, /const metrics = computed/)
+  assert.match(referenceCatalogManagerSource, /<PageHeader :trail="\[\{ title: kicker \}, \{ title \}\]" :title="title" :lede="description">/)
   assert.match(referenceCatalogManagerSource, /loadSelectOptions/)
   assert.match(referenceCatalogManagerSource, /hasPermission\(`add_\$\{permissionKey\}`\)/)
   assert.match(referenceCatalogManagerSource, /form\.put\(route\(`\$\{props\.routePrefix\}\.update`/)
-  assert.match(referenceCatalogManagerSource, /class="ds-field mt-2 min-h-40 resize-y"/)
+  assert.match(referenceCatalogManagerSource, /class="ds-field min-h-32 resize-y"/)
   assert.match(referenceCatalogManagerSource, /form="reference-catalog-form"/)
   assert.match(referenceCatalogManagerSource, /v-for="field in extraFields"/)
   assert.match(referenceCatalogManagerSource, /Object\.fromEntries\(props\.extraFields/)
@@ -2469,7 +2473,7 @@ test('direct collection dossier uses traceability-first operational surfaces', (
 
 test('collection queues use accessioning-first operational worklists', () => {
   for (const source of [directCollectionsIndexSource, programmedCollectionsIndexSource]) {
-    assert.match(source, /class="ds-panel overflow-hidden/)
+    assert.match(source, /<PageHeader title="Colheitas (?:directas|programadas)"/)
     assert.match(source, /entrada de amostra/i)
     assert.match(source, /Exportar XLSX/)
     assert.doesNotMatch(source, /commercialDocumentThemeClasses|ModuleHero|ModuleCard|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|bg-blue-900|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-(xl|2xl)|console\.log|alert\(|confirm\(/)
@@ -2500,7 +2504,7 @@ test('collection corrections retain chain of custody without duplicate intake fo
     assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|radial-gradient|rounded-3xl|rounded-2xl|rounded-\[|tracking-\[|bg-white|bg-slate|border-slate|text-slate|shadow-(lg|xl|2xl)|console\.log|alert\(|confirm\(|<style/)
   }
 
-  assert.match(collectionAccessionFormSource, /class="min-w-0 space-y-6 overflow-x-clip"/)
+  assert.match(collectionAccessionFormSource, /<form class="pl-page space-y-6" @submit\.prevent="submit">/)
   assert.match(collectionAccessionFormSource, /Contexto da colheita/)
   assert.match(collectionAccessionFormSource, /Amostras e cadeia de custódia/)
   assert.match(collectionAccessionFormSource, /Rastreabilidade do lote/)
@@ -2521,7 +2525,7 @@ test('supplier qualification uses scored risk and review controls', () => {
 })
 
 test('counter-analysis queue preserves source-result traceability', () => {
-  assert.match(counterAnalysisIndexSource, /class="ds-panel overflow-hidden/)
+  assert.match(counterAnalysisIndexSource, /<PageHeader title="Contra-análises"/)
   assert.match(counterAnalysisIndexSource, /<RecordsTable/)
   assert.match(counterAnalysisIndexSource, /entrypoint\.analysis_url/)
   assert.match(counterAnalysisIndexSource, /Solicitar nos resultados/)
@@ -2549,7 +2553,7 @@ test('inventory support registries use governed LIMS register and drawer pattern
   ]
 
   for (const source of supportRegistrySources) {
-    assert.match(source, /class="ds-panel overflow-hidden/)
+    assert.match(source, /<PageHeader title="(?:Fornecedores de inventário|Localizações de inventário|Armazéns e zonas de existências|Entregas de inventário)"/)
     assert.match(source, /<RecordsTable/)
     assert.match(source, /<ConfirmDialog/)
     assert.doesNotMatch(source, /commercialDocumentThemeClasses|ModuleHero|ModuleCard|TransitionRoot|showDeleteConfirmationSlideover|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|bg-blue-900|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-(xl|2xl)|console\.log|alert\(|confirm\(/)
@@ -2629,7 +2633,7 @@ test('formula create and edit routes share one controlled calculation worksheet'
   assert.match(formulasCreateSource, /post\(route\('formulas\.store'\)/)
   assert.match(formulasEditSource, /const formula = props\.record\?\.data \?\? props\.record/)
   assert.match(formulasEditSource, /put\(route\('formulas\.update', \{ formula: formula\.id \}\)/)
-  assert.match(formulaEditorFormSource, /class="ds-command-surface overflow-hidden"/)
+  assert.match(formulaEditorFormSource, /<PageHeader :trail="\[\{ title: 'Biblioteca de fórmulas', url: route\('formulas\.index'\) \}/)
   assert.match(formulaEditorFormSource, /<FormulaDisplay :formula="form\.expression \|\| ''"/)
   assert.match(formulaEditorFormSource, /<ToggleField/)
   assert.match(formulaEditorFormSource, /function synchronizeVariables\(\)/)
@@ -2641,7 +2645,7 @@ test('formula create and edit routes share one controlled calculation worksheet'
 })
 
 test('formula variables use a compact governed registry and editor', () => {
-  assert.match(variablesIndexSource, /class="ds-command-surface overflow-hidden"/)
+  assert.match(variablesIndexSource, /<PageHeader title="Variáveis de fórmula"/)
   assert.match(variablesIndexSource, /<RecordsTable/)
   assert.match(variablesIndexSource, /<SlideOver/)
   assert.match(variablesIndexSource, /<ConfirmDialog/)
@@ -2664,9 +2668,10 @@ test('phytosanitary products use the governed reference catalog manager', () => 
 
 test('proficiency workflows use compact LIMS monitoring and evidence surfaces', () => {
   for (const source of [proficiencyTestsIndexSource, proficiencyTestsShowSource]) {
-    assert.match(source, /class="min-w-0 space-y-6 overflow-x-clip"/)
+    assert.match(source, /<div class="pl-page space-y-6">/)
     assert.match(source, /class="ds-panel overflow-hidden/)
-    assert.match(source, /<ChartWrapper/)
+    assert.match(source, /<PlanoChart\s+kind="(?:column|bar)"/)
+    assert.match(source, /<PlanoChart kind="donut"/)
     assert.match(source, /class="ds-badge/)
     assert.match(source, /class="ds-field/)
     assert.match(source, /class="ds-button ds-button-primary/)
@@ -2688,8 +2693,8 @@ test('proficiency workflows use compact LIMS monitoring and evidence surfaces', 
 
 test('report studio and document manager use focused specialist workspaces', () => {
   for (const source of [reportStudiosIndexSource]) {
-    assert.match(source, /class="min-w-0 space-y-6 overflow-x-clip"/)
-    assert.match(source, /class="ds-panel overflow-hidden/)
+    assert.match(source, /<div class="pl-page space-y-6">/)
+    assert.match(source, /<PageHeader :title="\$t\('gestlab\.general\.labels\.vap_report_studios\.index\.hero\.title'\)"/)
     assert.match(source, /class="ds-kicker/)
     assert.match(source, /class="ds-heading/)
     assert.match(source, /class="ds-button ds-button-primary|class="ds-button ds-button-secondary/)
@@ -2732,8 +2737,8 @@ test('trade certificate indexes share one controlled border-workflow register', 
     assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|radial-gradient|rounded-3xl|rounded-2xl|rounded-\[|tracking-\[|bg-white|bg-slate|border-slate|text-slate|shadow-(lg|xl|2xl)|console\.log|alert\(|confirm\(/)
   }
 
-  assert.match(tradeCertificateRegisterSource, /class="min-w-0 space-y-6 overflow-x-clip"/)
-  assert.match(tradeCertificateRegisterSource, /class="ds-panel overflow-hidden/)
+  assert.match(tradeCertificateRegisterSource, /<div class="pl-page space-y-6">/)
+  assert.match(tradeCertificateRegisterSource, /<PageHeader :title="trans\(`\$\{config\.translationPrefix\}\.page_title`\)"/)
   assert.match(tradeCertificateRegisterSource, /<RecordsTable/)
   assert.match(tradeCertificateRegisterSource, /<ConfirmDialog/)
   assert.match(tradeCertificateRegisterSource, /hasPermission\(`add_\$\{config\.permissionKey\}`\)/)
@@ -2751,7 +2756,7 @@ test('trade certificate details share one governed lifecycle surface', () => {
     assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|radial-gradient|rounded-3xl|rounded-2xl|rounded-\[|tracking-\[|bg-white|bg-slate|border-slate|text-slate|shadow-(lg|xl|2xl)|console\.log|alert\(|confirm\(|send-email|duplicate/)
   }
 
-  assert.match(tradeCertificateDetailSource, /class="min-w-0 space-y-6 overflow-x-clip"/)
+  assert.match(tradeCertificateDetailSource, /<div class="pl-page space-y-6">/)
   assert.match(tradeCertificateDetailSource, /Partes e percurso/)
   assert.match(tradeCertificateDetailSource, /Produtos certificados/)
   assert.match(tradeCertificateDetailSource, /Ciclo documental/)
@@ -2789,7 +2794,7 @@ test('trade certificate editors share one sectioned border-control workflow', ()
 })
 
 test('vehicle registry uses a fleet-focused operational drawer', () => {
-  assert.match(vehiclesIndexSource, /class="ds-panel overflow-hidden/)
+  assert.match(vehiclesIndexSource, /<PageHeader title="Viaturas operacionais"/)
   assert.match(vehiclesIndexSource, /<RecordsTable/)
   assert.match(vehiclesIndexSource, /<SlideOver/)
   assert.match(vehiclesIndexSource, /:load-options="loadCategories"/)
@@ -2807,7 +2812,7 @@ test('knowledge-base questions and answers share one governed content register',
     assert.doesNotMatch(source, /commercialDocumentThemeClasses|TransitionRoot|showDeleteConfirmationSlideover|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|bg-blue-900|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-(xl|2xl)|console\.log|alert\(|confirm\(/)
   }
 
-  assert.match(knowledgeRegistrySource, /class="ds-panel overflow-hidden/)
+  assert.match(knowledgeRegistrySource, /<PageHeader :title="config\.title" :lede="config\.description">/)
   assert.match(knowledgeRegistrySource, /<RecordsTable/)
   assert.match(knowledgeRegistrySource, /<SlideOver/)
   assert.match(knowledgeRegistrySource, /v-model="form\[config\.parentField\]"/)
@@ -2841,14 +2846,14 @@ test('QMS compliance pages use application UI surfaces instead of legacy cards',
   assert.match(qmsIndexSource, /class="ds-button ds-button-primary/)
   assert.doesNotMatch(qmsIndexSource, /bg-gradient-to|rounded-3xl|rounded-\[2rem\]|bg-white\/10/)
 
-  assert.match(responsibilitiesIndexSource, /class="ds-panel px-5 py-5/)
+  assert.match(responsibilitiesIndexSource, /<PageHeader title="Matriz de responsabilidades"/)
   assert.match(responsibilitiesIndexSource, /class="ds-card space-y-4 p-5/)
   assert.match(responsibilitiesIndexSource, /class="ds-field"/)
   assert.match(responsibilitiesIndexSource, /class="ds-checkbox"/)
   assert.match(responsibilitiesIndexSource, /class="ds-button ds-button-danger/)
   assert.doesNotMatch(responsibilitiesIndexSource, /commercialDocumentThemeClasses|rounded-3xl|rounded-2xl|bg-white p-6|bg-cyan-700/)
 
-  assert.match(uncertaintySourcesIndexSource, /class="ds-panel px-5 py-5/)
+  assert.match(uncertaintySourcesIndexSource, /<PageHeader title="Registo de fontes de incerteza"/)
   assert.match(uncertaintySourcesIndexSource, /class="ds-card space-y-4 p-5/)
   assert.match(uncertaintySourcesIndexSource, /class="ds-field"/)
   assert.match(uncertaintySourcesIndexSource, /class="ds-checkbox"/)
@@ -2902,11 +2907,11 @@ test('notification administration uses one traceable operational workflow', () =
   ]
 
   for (const source of notificationSources) {
-    assert.match(source, /ds-/)
+    assert.match(source, /ds-|pl-/)
     assert.doesNotMatch(source, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open/)
   }
 
-  assert.match(notificationAdminHeaderSource, /ds-settings-tab/)
+  assert.match(notificationAdminHeaderSource, /class="pl-tab"/)
   assert.match(notificationDashboardSource, /Últimas mensagens emitidas/)
   assert.match(notificationIndexSource, /route\('notifications\.read'/)
   assert.match(notificationIndexSource, /route\('notifications\.unread'/)
@@ -2994,7 +2999,7 @@ test('staff messaging uses a searchable communication register and sectioned for
 
 test('paid-service catalog shares one tax-aware commercial workflow', () => {
   for (const source of [paidServicesIndexSource, paidServicesCreateSource, paidServicesEditSource, paidServiceFormSource]) {
-    assert.match(source, /ds-/)
+    assert.match(source, /ds-|<PageHeader :trail=/)
     assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
   }
 

@@ -1,56 +1,28 @@
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+  <div class="pl-page space-y-6" :class="commercialDocumentThemeClasses">
     <Head title="Tarefas de manutenção" />
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:flex sm:items-start sm:justify-between sm:gap-6 lg:px-6">
-        <div class="min-w-0">
-          <p class="ds-kicker">Metrologia e manutenção</p>
-          <div class="mt-2 flex flex-wrap items-center gap-3">
-            <h1 class="ds-heading text-2xl">Tarefas de manutenção</h1>
-            <span
-              :class="[
-                'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ring-1',
-                stats?.overdue > 0
-                  ? 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20'
-                  : 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20',
-              ]"
-            >
-              {{ stats?.overdue > 0 ? `${stats.overdue} atrasadas` : 'Agenda em dia' }}
-            </span>
-          </div>
-          <p class="ds-copy mt-2 max-w-3xl text-sm">
-            Controle calibrações, preventivas, fornecedores e custos com uma lista operacional densa para rastreabilidade diária.
-          </p>
+    <PageHeader title="Tarefas de manutenção" lede="Calibrações, preventivas, fornecedores e custos, numa lista para a rastreabilidade diária.">
+      <template #badges>
+        <StatusChip :tone="stats?.overdue > 0 ? 'bad' : 'ok'">{{ stats?.overdue > 0 ? `${stats.overdue} atrasadas` : 'Agenda em dia' }}</StatusChip>
+        <span class="ds-chip">{{ taskTotal }} tarefas</span>
+      </template>
+      <template #actions>
+        <Link :href="route('vap-maintenance.tasks', archived ? {} : { archived: 1 })" class="ds-button ds-button-secondary">
+          {{ archived ? 'Tarefas activas' : 'Arquivo' }}
+        </Link>
+        <Link v-if="can.create" :href="route('maintenancetasks.import.form')" class="ds-button ds-button-secondary">Importar CSV</Link>
+        <Link v-if="can.create" :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary">
+          Nova tarefa<PlusIcon aria-hidden="true" />
+        </Link>
+      </template>
+      <dl class="pl-cells mt-8">
+        <div v-for="card in statsCards" :key="card.label" class="pl-cell" :class="{ 'pl-cell-bad': card.bad }">
+          <dt class="pl-k pl-muted">{{ card.label }}</dt>
+          <dd class="pl-cell-value">{{ card.value }}</dd>
+          <dd class="text-sm text-[var(--pl-muted)]">{{ card.caption }}</dd>
         </div>
-
-        <div class="mt-4 flex flex-wrap items-center gap-2 sm:mt-0 sm:justify-end">
-          <span class="ds-chip">{{ taskTotal }} tarefas</span>
-          <Link :href="route('vap-maintenance.tasks', archived ? {} : { archived: 1 })" class="ds-button ds-button-secondary">
-            {{ archived ? 'Tarefas activas' : 'Arquivo' }}
-          </Link>
-          <Link v-if="can.create" :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary">
-            <PlusIcon class="h-4 w-4" />
-            Nova tarefa
-          </Link>
-          <Link v-if="can.create" :href="route('maintenancetasks.import.form')" class="ds-button ds-button-secondary">Importar CSV</Link>
-        </div>
-      </div>
-
-      <div class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
-        <article v-for="card in statsCards" :key="card.label" class="bg-[var(--ds-panel)] p-5">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
-              <p class="mt-3 text-3xl font-bold text-[var(--ds-text)]">{{ card.value }}</p>
-              <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ card.caption }}</p>
-            </div>
-            <span :class="['inline-flex h-10 w-10 items-center justify-center rounded-lg ring-1', card.tone]">
-              <component :is="card.icon" class="h-5 w-5" />
-            </span>
-          </div>
-        </article>
-      </div>
-    </section>
+      </dl>
+    </PageHeader>
 
     <div v-if="completionRequest.hasErrors || completionError" class="ds-panel ds-field-error p-4" role="alert">
       <p v-if="completionError">{{ completionError }}</p>
@@ -623,6 +595,8 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import { useFileDownload } from '@/Composables/useFileDownload'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { Head, Link, router, useHttp } from '@inertiajs/vue3'
@@ -729,6 +703,7 @@ const statsCards = computed(() => [
     label: 'Tarefas atrasadas',
     value: props.stats?.overdue ?? 0,
     caption: 'Fora do prazo planeado',
+    bad: (props.stats?.overdue ?? 0) > 0,
     icon: ExclamationTriangleIcon,
     tone: 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20',
   },

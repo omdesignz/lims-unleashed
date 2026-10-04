@@ -1,31 +1,20 @@
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p class="ds-kicker">SGQ</p>
-            <h1 class="mt-2 text-2xl font-semibold tracking-tight text-[var(--ds-text)] sm:text-3xl">Sistema de gestão da qualidade</h1>
-            <p class="mt-3 max-w-3xl text-sm leading-6 text-[var(--ds-text-muted)]">
-              Consolida competência técnica, revisões, não conformidades, reclamações, responsabilidades e fontes de incerteza num único painel operacional.
-            </p>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <Link :href="route('users.index')" class="ds-button ds-button-secondary">Competência</Link>
-            <Link :href="route('supplier-assessments.index')" class="ds-button ds-button-secondary">Fornecedores</Link>
-            <Link :href="route('responsibility-matrix.index')" class="ds-button ds-button-secondary">Responsabilidades</Link>
-            <Link :href="route('uncertainty-sources.index')" class="ds-button ds-button-primary">Incerteza</Link>
-          </div>
-        </div>
-      </div>
+  <div class="pl-page space-y-6" :class="commercialDocumentThemeClasses">
+    <PageHeader title="Sistema de gestão da qualidade" lede="Consolida competência técnica, revisões, não conformidades, reclamações, responsabilidades e fontes de incerteza num único painel operacional.">
+      <template #actions>
+        <Link :href="route('users.index')" class="ds-button ds-button-secondary">Competência</Link>
+        <Link :href="route('supplier-assessments.index')" class="ds-button ds-button-secondary">Fornecedores</Link>
+        <Link :href="route('responsibility-matrix.index')" class="ds-button ds-button-secondary">Responsabilidades</Link>
+        <Link :href="route('uncertainty-sources.index')" class="ds-button ds-button-primary">Incerteza</Link>
+      </template>
+    </PageHeader>
 
-      <dl class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-5">
-        <div v-for="card in priorityCards" :key="card.label" class="px-5 py-4 sm:px-6">
-          <dt class="text-xs font-semibold uppercase tracking-wide text-[var(--ds-text-soft)]">{{ card.label }}</dt>
-          <dd class="mt-2 text-2xl font-semibold text-[var(--ds-text)]">{{ card.value }}</dd>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div v-for="card in priorityCards" :key="card.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ card.label }}</dt>
+        <dd class="pl-cell-value">{{ card.value }}</dd>
+      </div>
+    </dl>
 
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
@@ -206,6 +195,7 @@
 
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { Link } from '@inertiajs/vue3'
 import { computed } from 'vue'

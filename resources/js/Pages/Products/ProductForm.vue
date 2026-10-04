@@ -1,12 +1,11 @@
 <script setup>
 import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import ToggleField from "@/Components/base/ToggleField.vue";
 import {
-  ArrowLeft as ArrowLeftIcon,
   Banknote as BanknotesIcon,
   FlaskConical as BeakerIcon,
   Check as CheckIcon,
-  Box as CubeIcon,
   BadgePercent as ReceiptPercentIcon,
 } from "@lucide/vue";
 import { Link } from "@inertiajs/vue3";
@@ -98,41 +97,23 @@ function formatMoney(value) {
 </script>
 
 <template>
-  <form class="space-y-6" @submit.prevent="emit('submit')">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <CubeIcon class="h-5 w-5" aria-hidden="true" />
-          </span>
-          <div>
-            <p class="ds-kicker">Catálogo comercial analítico</p>
-            <h1 class="ds-heading mt-1 text-2xl">{{ pageTitle }}</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Defina a matriz laboratorial, o preço aplicável e o enquadramento fiscal da oferta.</p>
-          </div>
-        </div>
+  <form class="pl-page space-y-6" @submit.prevent="emit('submit')">
+    <PageHeader :trail="[{ title: 'Produtos', url: route('products.index') }, { title: pageTitle }]" :title="pageTitle" lede="Defina a matriz laboratorial, o preço aplicável e o enquadramento fiscal da oferta." />
 
-        <Link :href="route('products.index')" class="ds-button ds-button-secondary">
-          <ArrowLeftIcon class="h-4 w-4" aria-hidden="true" />
-          Voltar ao catálogo
-        </Link>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted"><BeakerIcon class="h-4 w-4" aria-hidden="true" /> Matriz</dt>
+        <dd class="pl-cell-text">{{ form.matrix_id?.label || "Por seleccionar" }}</dd>
       </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><BeakerIcon class="h-4 w-4" aria-hidden="true" /> Matriz</dt>
-          <dd class="mt-2 truncate text-sm font-semibold text-[var(--ds-text)]">{{ form.matrix_id?.label || "Por seleccionar" }}</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><BanknotesIcon class="h-4 w-4" aria-hidden="true" /> Preço</dt>
-          <dd class="mt-2 text-sm font-semibold text-[var(--ds-text)]">{{ formatMoney(effectivePrice) }}</dd>
-        </div>
-        <div class="px-4 py-3">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><ReceiptPercentIcon class="h-4 w-4" aria-hidden="true" /> Fiscalidade</dt>
-          <dd class="mt-2 truncate text-sm font-semibold text-[var(--ds-text)]">{{ taxLabel }}</dd>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted"><BanknotesIcon class="h-4 w-4" aria-hidden="true" /> Preço</dt>
+        <dd class="pl-cell-text">{{ formatMoney(effectivePrice) }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted"><ReceiptPercentIcon class="h-4 w-4" aria-hidden="true" /> Fiscalidade</dt>
+        <dd class="pl-cell-text">{{ taxLabel }}</dd>
+      </div>
+    </dl>
 
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">

@@ -1,90 +1,12 @@
-<template>
-  <div class="flex flex-wrap items-center gap-2.5">
-    <Listbox
-      :disabled="processing || !recordIds.length"
-      :model-value="actionId"
-      as="div"
-      class="relative min-w-60"
-      @update:model-value="selectAction"
-    >
-      <ListboxButton
-        class="ds-combobox-control group inline-flex w-full items-center justify-between gap-3 px-3.5 py-2 text-left text-sm font-semibold"
-        :data-disabled="processing || !recordIds.length"
-      >
-        <span class="inline-flex min-w-0 items-center gap-2">
-          <span
-            :class="[
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition',
-              recordIds.length
-                ? 'bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] group-hover:bg-[rgb(var(--primary-50-rgb))] dark:text-[rgb(var(--accent-200-rgb))]'
-                : 'bg-[var(--ds-panel-muted)] text-[var(--ds-text-soft)]',
-            ]"
-          >
-            <QueueListIcon class="h-4 w-4" />
-          </span>
-          <span class="truncate">{{ $t(selectedActionLabel) }}</span>
-        </span>
-
-        <span class="inline-flex items-center gap-2">
-          <span
-            v-if="recordIds.length"
-            class="rounded-full bg-[rgb(var(--primary-800-rgb))] px-2 py-0.5 text-[11px] font-black text-white dark:bg-[rgb(var(--primary-400-rgb))] dark:text-[rgb(var(--primary-950-rgb))]"
-          >
-            {{ recordIds.length }}
-          </span>
-          <ChevronUpDownIcon class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
-        </span>
-      </ListboxButton>
-
-      <TransitionRoot
-        leave="transition ease-out duration-100"
-        leave-from="opacity-100"
-        leave-to="opacity-0"
-      >
-        <ListboxOptions class="ds-floating-panel absolute left-0 z-50 mt-2 max-h-72 w-full overflow-auto p-2 focus:outline-none">
-          <ListboxOption
-            v-for="action in actionableActions"
-            :key="action.id"
-            v-slot="{ active, selected }"
-            as="template"
-            :value="action.id"
-          >
-            <li
-              class="ds-option ds-option-compact justify-between gap-3"
-              :class="{ 'ds-option-active': active }"
-            >
-              <span class="truncate">{{ $t(action.label) }}</span>
-              <CheckIcon
-                v-if="selected"
-                class="h-4 w-4 text-current"
-              />
-            </li>
-          </ListboxOption>
-
-          <li v-if="!actionableActions.length" class="rounded-2xl px-3 py-2.5 text-sm font-semibold text-[var(--ds-text-muted)]">
-            {{ $t('gestlab.general.messages.no_items') }}
-          </li>
-        </ListboxOptions>
-      </TransitionRoot>
-    </Listbox>
-
-    <button
-      :disabled="processing || !actionId || !recordIds.length"
-      :aria-busy="processing"
-      class="ds-button ds-button-primary"
-      @click="executeSelectedAction"
-    >
-      <CursorArrowRippleIcon class="h-4 w-4" />
-      {{ $t('gestlab.actions.apply') }}
-    </button>
-  </div>
-</template>
-
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions, TransitionRoot } from '@headlessui/vue'
-import { Check as CheckIcon, ChevronsUpDown as ChevronUpDownIcon, MousePointerClick as CursorArrowRippleIcon, Rows3 as QueueListIcon } from '@lucide/vue'
+import { computed } from 'vue'
+import { X as XMarkIcon } from '@lucide/vue'
 
+/**
+ * The Plano selection bar: an ink plane that appears once rows are selected and
+ * offers each bulk action as its own button. Archiving is offered only while a
+ * live record is selected, restoring only while an archived one is.
+ */
 const props = defineProps({
   actions: {
     type: Array,
@@ -94,34 +16,51 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  records: {
+    type: Array,
+    default: () => [],
+  },
   processing: Boolean,
 })
 
-const emit = defineEmits(['execute'])
-const actionId = ref(null)
+const emit = defineEmits(['execute', 'clear'])
 
-const actionableActions = computed(() => props.actions.filter(action => action.id))
-const selectedAction = computed(() => actionableActions.value.find(action => action.id === actionId.value))
-const selectedActionLabel = computed(() => selectedAction.value?.label ?? 'gestlab.actions.select_action')
+const selectedRecords = computed(() => props.records.filter(record => props.recordIds.includes(record.id)))
+const hasArchived = computed(() => selectedRecords.value.some(record => record.deleted))
+const hasLive = computed(() => selectedRecords.value.some(record => !record.deleted))
 
-watch(
-  () => props.recordIds.length,
-  count => {
-    if (!count) {
-      actionId.value = null
-    }
-  },
-)
+const actionableActions = computed(() => props.actions.filter((action) => {
+  if (!action.id) return false
+  if (!selectedRecords.value.length) return true
+  if (action.id === 'restore') return hasArchived.value
+  if (action.id === 'delete') return hasLive.value
 
-function selectAction(value) {
-  actionId.value = value
-}
+  return true
+}))
 
-function executeSelectedAction() {
-  if (props.processing || !actionId.value || !props.recordIds.length) {
+function executeAction(actionId) {
+  if (props.processing || !actionId || !props.recordIds.length) {
     return
   }
 
-  emit('execute', actionId.value)
+  emit('execute', actionId)
 }
 </script>
+
+<template>
+  <div v-if="recordIds.length" class="pl-selection" role="region" :aria-label="$t('gestlab.actions.bulk_actions_text')" :aria-busy="processing">
+    <span role="status"><span class="pl-num">{{ recordIds.length }}</span> {{ $t('gestlab.general.labels.selected_records') }}</span>
+    <button
+      v-for="action in actionableActions"
+      :key="action.id"
+      type="button"
+      :disabled="processing"
+      @click="executeAction(action.id)"
+    >
+      {{ $t(action.label) }}
+    </button>
+    <button type="button" :disabled="processing" :aria-label="$t('gestlab.general.labels.clear_selection')" @click="emit('clear')">
+      <XMarkIcon class="h-4 w-4" aria-hidden="true" />
+    </button>
+  </div>
+</template>

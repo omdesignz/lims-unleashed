@@ -1,8 +1,8 @@
 <script setup>
 import PaidServiceForm from '@/Components/paid-services/PaidServiceForm.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { Link, useForm } from '@inertiajs/vue3'
-import { ArrowLeft as ArrowLeftIcon, Box as CubeIcon } from '@lucide/vue'
+import { useForm } from '@inertiajs/vue3'
 
 defineOptions({ layout: Layout })
 
@@ -11,13 +11,8 @@ const submit = () => form.post(route('paidservices.store'))
 </script>
 
 <template>
-  <div class="space-y-5">
-    <section class="ds-panel overflow-hidden">
-      <header class="flex flex-col gap-4 border-b border-[var(--ds-border)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div class="flex items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><CubeIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Catálogo comercial</p><h1 class="ds-heading mt-1 text-xl sm:text-2xl">Novo serviço facturável</h1><p class="ds-copy mt-1 text-sm">Defina o âmbito, o preço e o tratamento fiscal utilizado nos documentos comerciais.</p></div></div>
-        <Link :href="route('paidservices.index')" class="ds-button ds-button-secondary"><ArrowLeftIcon class="h-4 w-4" />Catálogo</Link>
-      </header>
-    </section>
+  <div class="pl-page space-y-5">
+    <PageHeader :trail="[{ title: 'Serviços', url: route('paidservices.index') }, { title: 'Novo serviço facturável' }]" title="Novo serviço facturável" lede="Defina o âmbito, o preço e o tratamento fiscal utilizado nos documentos comerciais." />
     <PaidServiceForm :form="form" submit-label="Adicionar ao catálogo" @submit="submit" />
   </div>
 </template>

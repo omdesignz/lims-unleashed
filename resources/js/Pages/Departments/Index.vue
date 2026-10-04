@@ -1,5 +1,6 @@
 <script setup>
 import Combobox from "@/Components/combobox.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
@@ -7,12 +8,8 @@ import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
-  Building2 as BuildingOffice2Icon,
-  Mail as EnvelopeIcon,
   IdCard as IdentificationIcon,
-  Phone as PhoneIcon,
   Plus as PlusIcon,
-  CircleUser as UserCircleIcon,
 } from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
@@ -45,33 +42,6 @@ const form = useForm("DepartmentEditor", {
 });
 
 const pageRecords = computed(() => props.record?.data || []);
-const totalRecords = computed(() => props.record?.meta?.total ?? pageRecords.value.length);
-const metrics = computed(() => [
-  {
-    label: "Unidades",
-    value: totalRecords.value,
-    detail: "estrutura registada",
-    icon: BuildingOffice2Icon,
-  },
-  {
-    label: "Com supervisão",
-    value: pageRecords.value.filter((department) => department.supervisor).length,
-    detail: "responsável identificado",
-    icon: UserCircleIcon,
-  },
-  {
-    label: "Correio electrónico configurado",
-    value: pageRecords.value.filter((department) => department.email).length,
-    detail: "contacto institucional",
-    icon: EnvelopeIcon,
-  },
-  {
-    label: "Extensão interna",
-    value: pageRecords.value.filter((department) => department.extension).length,
-    detail: "contacto directo",
-    icon: PhoneIcon,
-  },
-]);
 
 const actions = [
   { id: null, label: "gestlab.actions.bulk_actions_text" },
@@ -175,24 +145,9 @@ function executeBulkAction() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Estrutura organizacional</p>
-          <div class="mt-3 flex items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <BuildingOffice2Icon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-2xl">{{ $t("gestlab.general.labels.departments.page_title") }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Unidades, supervisão e contactos usados na atribuição de trabalho, competência e responsabilidade técnica.
-              </p>
-            </div>
-          </div>
-        </div>
-
+  <div class="pl-page space-y-6">
+    <PageHeader :title="$t('gestlab.general.labels.departments.page_title')" lede="Unidades, supervisão e contactos usados na atribuição de trabalho, competência e responsabilidade técnica.">
+      <template #actions>
         <button
           v-if="hasPermission('add_departments')"
           type="button"
@@ -202,25 +157,8 @@ function executeBulkAction() {
           <PlusIcon class="h-4 w-4" />
           Nova unidade
         </button>
-      </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div
-          v-for="metric in metrics"
-          :key="metric.label"
-          class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
-        >
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-              <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
-              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
-            </div>
-            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+      </template>
+    </PageHeader>
 
     <RecordsTable
       :record="record"

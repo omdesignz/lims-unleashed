@@ -1,13 +1,12 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { Link, useForm } from "@inertiajs/vue3";
+import PageHeader from "@/Components/plano/PageHeader.vue";
+import { useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeft as ArrowLeftIcon,
   Check as CheckIcon,
   TriangleAlert as ExclamationTriangleIcon,
   KeyRound as KeyIcon,
   Search as MagnifyingGlassIcon,
-  ShieldCheck as ShieldCheckIcon,
   Users as UserGroupIcon,
   X as XMarkIcon,
 } from "@lucide/vue";
@@ -88,61 +87,43 @@ function submit() {
 </script>
 
 <template>
-  <form class="space-y-6" @submit.prevent="submit">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <Link :href="route('roles.index')" class="ds-button ds-button-ghost -ml-3 w-fit">
-            <ArrowLeftIcon class="h-4 w-4" />
-            Funções
-          </Link>
-          <div class="mt-3 flex items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <ShieldCheckIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <p class="ds-kicker">Controlo de acesso</p>
-              <h1 class="ds-heading mt-1 text-2xl">Editar função</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Ajuste a identidade e conceda apenas as permissões necessárias a <span class="font-bold text-[var(--ds-text)]">{{ form.label || form.name }}</span>.
-              </p>
-            </div>
-          </div>
-        </div>
+  <form class="pl-page space-y-6" @submit.prevent="submit">
+    <PageHeader :trail="[{ title: 'Funções', url: route('roles.index') }, { title: 'Editar função' }]" title="Editar função">
+      <template #lede>Ajuste a identidade e conceda apenas as permissões necessárias a <span class="font-bold text-[var(--ds-text)]">{{ form.label || form.name }}</span>.</template>
+      <template #badges>
+        <span
+          class="ds-badge"
+          :class="form.isDirty ? 'ds-badge-warning' : 'ds-badge-neutral'"
+        >
+          {{ form.isDirty ? "Alterações por guardar" : "Sem alterações" }}
+        </span>
+      </template>
+      <template #actions>
+        <button
+          type="submit"
+          class="ds-button ds-button-primary"
+          :disabled="form.processing || !form.isDirty || !isFormValid"
+        >
+          <CheckIcon class="h-4 w-4" />
+          {{ form.processing ? "A guardar..." : "Guardar função" }}
+        </button>
+      </template>
+    </PageHeader>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <span
-            class="ds-badge"
-            :class="form.isDirty ? 'ds-badge-warning' : 'ds-badge-neutral'"
-          >
-            {{ form.isDirty ? "Alterações por guardar" : "Sem alterações" }}
-          </span>
-          <button
-            type="submit"
-            class="ds-button ds-button-primary"
-            :disabled="form.processing || !form.isDirty || !isFormValid"
-          >
-            <CheckIcon class="h-4 w-4" />
-            {{ form.processing ? "A guardar..." : "Guardar função" }}
-          </button>
-        </div>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Permissões atribuídas</dt>
+        <dd class="pl-cell-value">{{ selectedPermissionsCount }}</dd>
       </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Permissões atribuídas</dt>
-          <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ selectedPermissionsCount }}</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Disponíveis</dt>
-          <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ remainingPermissionsCount }}</dd>
-        </div>
-        <div class="px-4 py-3">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Guard</dt>
-          <dd class="mt-2 font-mono text-sm font-bold text-[var(--ds-text)]">{{ form.guard_name || "-" }}</dd>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Disponíveis</dt>
+        <dd class="pl-cell-value">{{ remainingPermissionsCount }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Guard</dt>
+        <dd class="pl-cell-text">{{ form.guard_name || "-" }}</dd>
+      </div>
+    </dl>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_19rem] xl:items-start">
       <div class="space-y-6">

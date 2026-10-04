@@ -1,5 +1,6 @@
 <script setup>
 import BaseInput from "@/Components/base/BaseInput.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import Pagination from "@/Components/pagination.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router } from "@inertiajs/vue3";
@@ -133,43 +134,30 @@ function valueOrDash(value) {
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0 max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <p class="ds-kicker">Operação e rastreabilidade</p>
-            <span class="ds-chip">
-              <span class="lims-status-dot" :class="isAudit ? 'lims-status-dot-release' : 'lims-status-dot-hold'" />
-              {{ isAudit ? "Registo controlado" : "Fila diária" }}
-            </span>
-          </div>
-          <h1 class="ds-heading mt-2 text-2xl">Dados laboratoriais</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            {{ isAudit
-              ? "Resultados inseridos, verificados e aprovados com valores, responsáveis e datas de decisão."
-              : "Amostras e parâmetros ainda por processar, organizados para execução na bancada." }}
-          </p>
-        </div>
-
+  <div class="pl-page space-y-6">
+    <PageHeader title="Dados laboratoriais" :lede="isAudit
+              ? 'Resultados inseridos, verificados e aprovados com valores, responsáveis e datas de decisão.'
+              : 'Amostras e parâmetros ainda por processar, organizados para execução na bancada.'">
+      <template #badges>
+        <span class="ds-chip">
+          <span class="lims-status-dot" :class="isAudit ? 'lims-status-dot-release' : 'lims-status-dot-hold'" />
+          {{ isAudit ? "Registo controlado" : "Fila diária" }}
+        </span>
+      </template>
+      <template #actions>
         <a :href="exportUrl" class="ds-button ds-button-primary shrink-0">
           <ArrowDownTrayIcon class="h-4 w-4" aria-hidden="true" />
           Exportar XLSX
         </a>
-      </div>
+      </template>
+    </PageHeader>
 
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
-        <div
-          v-for="metric in metrics"
-          :key="metric.label"
-          class="min-w-0 border-b border-[var(--ds-border)] px-5 py-4 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0"
-        >
-          <dt class="ds-table-heading">{{ metric.label }}</dt>
-          <dd class="ds-heading mt-2 text-xl tabular-nums">{{ metric.value }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.note }}</p>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div v-for="metric in metrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
+      </div>
+    </dl>
 
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-4 sm:px-5">

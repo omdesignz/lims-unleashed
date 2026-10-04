@@ -129,9 +129,11 @@ class VAPInventoryAnalyticsController extends Controller
             });
 
         // Group by day
+        // Reagents have their own units: `records` compares days across reagents.
         return $query->select(
             DB::raw('DATE(date) as date'),
-            DB::raw('SUM(quantity_used) as quantity')
+            DB::raw('SUM(quantity_used) as quantity'),
+            DB::raw('COUNT(*) as records')
         )
             ->groupBy(DB::raw('DATE(date)'))
             ->orderBy('date')
@@ -140,6 +142,7 @@ class VAPInventoryAnalyticsController extends Controller
                 return [
                     'date' => $item->date,
                     'quantity' => (float) $item->quantity,
+                    'records' => (int) $item->records,
                 ];
             });
     }
@@ -163,7 +166,8 @@ class VAPInventoryAnalyticsController extends Controller
             // Select only what the chart needs
             ->select(
                 'item_categories.name as category_name',
-                DB::raw('SUM(inventory.qty_available) as total_quantity')
+                DB::raw('SUM(inventory.qty_available) as total_quantity'),
+                DB::raw('COUNT(CASE WHEN inventory.qty_available > 0 THEN 1 END) as stocked_positions')
             )
 
             // Group by name and ID (ID ensures uniqueness, name is for the label)
@@ -172,8 +176,9 @@ class VAPInventoryAnalyticsController extends Controller
             ->get()
             ->map(function ($row) {
                 return [
-                    'category' => $row->category_name ?? 'Uncategorized',
+                    'category' => $row->category_name ?? 'Sem categoria',
                     'quantity' => (int) $row->total_quantity,
+                    'positions' => (int) $row->stocked_positions,
                 ];
             });
     }
@@ -195,7 +200,8 @@ class VAPInventoryAnalyticsController extends Controller
             ->whereYear('date', $currentYear)
             ->select(
                 DB::raw('EXTRACT(MONTH FROM date) as month'),
-                DB::raw('SUM(quantity_used) as total')
+                DB::raw('SUM(quantity_used) as total'),
+                DB::raw('COUNT(*) as records')
             )
             ->groupBy(DB::raw('EXTRACT(MONTH FROM date)'))
             ->orderBy('month')
@@ -207,7 +213,8 @@ class VAPInventoryAnalyticsController extends Controller
             ->whereYear('date', $previousYear)
             ->select(
                 DB::raw('EXTRACT(MONTH FROM date) as month'),
-                DB::raw('SUM(quantity_used) as total')
+                DB::raw('SUM(quantity_used) as total'),
+                DB::raw('COUNT(*) as records')
             )
             ->groupBy(DB::raw('EXTRACT(MONTH FROM date)'))
             ->orderBy('month')
@@ -224,6 +231,8 @@ class VAPInventoryAnalyticsController extends Controller
                 'month' => $monthName,
                 'current' => (float) $current,
                 'previous' => (float) $previous,
+                'current_records' => (int) ($currentYearData->get($i)->records ?? 0),
+                'previous_records' => (int) ($previousYearData->get($i)->records ?? 0),
             ];
         }
 
@@ -241,9 +250,11 @@ class VAPInventoryAnalyticsController extends Controller
         return $query->select(
             'reagent_id',
             'reagent_name',
-            DB::raw('SUM(quantity_used) as consumption')
+            DB::raw('SUM(quantity_used) as consumption'),
+            DB::raw('COUNT(*) as records')
         )
             ->groupBy('reagent_id', 'reagent_name')
+            ->orderByDesc('records')
             ->orderByDesc('consumption')
             ->limit(20)
             ->get()
@@ -252,6 +263,7 @@ class VAPInventoryAnalyticsController extends Controller
                     'id' => $item->reagent_id,
                     'name' => $item->reagent_name,
                     'consumption' => (float) $item->consumption,
+                    'records' => (int) $item->records,
                 ];
             });
     }

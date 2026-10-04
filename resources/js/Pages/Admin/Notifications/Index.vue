@@ -67,7 +67,7 @@ const markAsUnread = (notification) => {
 </script>
 
 <template>
-  <div class="space-y-5">
+  <div class="pl-page space-y-5">
     <Head title="Registo de notificações" />
     <NotificationAdminHeader
       title="Registo de notificações"

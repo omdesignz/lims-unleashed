@@ -1,5 +1,6 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import Pagination from "@/Components/pagination.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
@@ -162,36 +163,22 @@ watch(() => filterForm.status, applyFilters);
 <template>
   <Head title="Condições ambientais" />
 
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <BeakerIcon class="h-5 w-5" />
-          </span>
-          <div>
-            <p class="ds-kicker">Monitorização laboratorial</p>
-            <h1 class="ds-heading mt-1 text-2xl">Condições ambientais</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Temperatura, humidade, pressão e CO2 por área, com limites e avaliação automática de desvios.</p>
-          </div>
-        </div>
-        <div class="flex flex-wrap gap-3">
-          <Link :href="route('temperatures.index')" class="ds-button ds-button-secondary">Catálogo de temperaturas</Link>
-          <button v-if="hasPermission('add_temperatures')" type="button" class="ds-button ds-button-primary" @click="resetForm">
-            <PlusIcon class="h-4 w-4" /> Novo registo
-          </button>
-        </div>
-      </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Condições ambientais" lede="Temperatura, humidade, pressão e CO2 por área, com limites e avaliação automática de desvios.">
+      <template #actions>
+        <Link :href="route('temperatures.index')" class="ds-button ds-button-secondary">Catálogo de temperaturas</Link>
+        <button v-if="hasPermission('add_temperatures')" type="button" class="ds-button ds-button-primary" @click="resetForm">
+          <PlusIcon class="h-4 w-4" /> Novo registo
+        </button>
+      </template>
+    </PageHeader>
 
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div v-for="metric in metricItems" :key="metric.label" class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-r xl:border-b-0 xl:last:border-r-0">
-          <div class="flex items-start justify-between gap-3">
-            <div><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt><dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p></div>
-            <component :is="metric.icon" class="h-5 w-5" :class="metric.label === 'Fora dos limites' ? 'text-red-500' : 'text-[var(--ds-text-soft)]'" />
-          </div>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div v-for="metric in metricItems" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
+      </div>
+    </dl>
 
     <section class="grid gap-5 xl:grid-cols-[minmax(22rem,0.85fr)_minmax(0,1.45fr)]">
       <form v-if="canEditForm" class="ds-panel overflow-hidden" @submit.prevent="submit">

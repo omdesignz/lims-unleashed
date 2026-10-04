@@ -1,5 +1,6 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
 import { usePermission } from "@/Composables/usePermissions";
@@ -9,8 +10,6 @@ import {
   Fingerprint as FingerPrintIcon,
   KeyRound as KeyIcon,
   Plus as PlusIcon,
-  ShieldCheck as ShieldCheckIcon,
-  Tag as TagIcon,
 } from "@lucide/vue";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
@@ -40,33 +39,6 @@ const form = useForm("PermissionEditor", {
 });
 
 const pageRecords = computed(() => props.record?.data || []);
-const totalRecords = computed(() => props.record?.meta?.total ?? pageRecords.value.length);
-const metrics = computed(() => [
-  {
-    label: "Permissões",
-    value: totalRecords.value,
-    detail: "regras registadas",
-    icon: FingerPrintIcon,
-  },
-  {
-    label: "Com etiqueta",
-    value: pageRecords.value.filter((permission) => permission.label).length,
-    detail: "legíveis na interface",
-    icon: TagIcon,
-  },
-  {
-    label: "Guard web",
-    value: pageRecords.value.filter((permission) => !permission.guard_name || permission.guard_name === "web").length,
-    detail: "sessão de backoffice",
-    icon: ShieldCheckIcon,
-  },
-  {
-    label: "Outros guards",
-    value: pageRecords.value.filter((permission) => permission.guard_name && permission.guard_name !== "web").length,
-    detail: "contextos segregados",
-    icon: KeyIcon,
-  },
-]);
 
 const actions = computed(() => props.manageGlobalAccess ? [
   { id: null, label: "gestlab.actions.bulk_actions_text" },
@@ -152,24 +124,9 @@ function executeBulkAction() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Controlo de acesso</p>
-          <div class="mt-3 flex items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <FingerPrintIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-2xl">{{ $t("gestlab.general.labels.permissions.page_title") }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Chaves de autorização usadas por funções, políticas e operações protegidas do LIMS.
-              </p>
-            </div>
-          </div>
-        </div>
-
+  <div class="pl-page space-y-6">
+    <PageHeader :title="$t('gestlab.general.labels.permissions.page_title')" lede="Chaves de autorização usadas por funções, políticas e operações protegidas do LIMS.">
+      <template #actions>
         <button
           v-if="manageGlobalAccess && hasPermission('add_permissions')"
           type="button"
@@ -179,25 +136,8 @@ function executeBulkAction() {
           <PlusIcon class="h-4 w-4" />
           Nova permissão
         </button>
-      </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div
-          v-for="metric in metrics"
-          :key="metric.label"
-          class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
-        >
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-              <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
-              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
-            </div>
-            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+      </template>
+    </PageHeader>
 
     <RecordsTable
       :record="record"

@@ -235,6 +235,7 @@
   --sidebar-width: 240px;
   --topbar-height: 64px;
   --nextbar-height: 72px;
+  --bottombar-height: calc(60px + env(safe-area-inset-bottom));
 }
 
 /* ============================================================
@@ -602,56 +603,124 @@ select {
 }
 
 /* ============================================================
-    15. ApexCharts Dark Mode
+    15. Charts — the Plano chart language (Support/charts.js)
+   ------------------------------------------------------------
+   Thin marks, solid hairline grid, mono axes, square keys. The
+   tooltip leads with the value; legends are HTML so they share the
+   interface type. Colours come from the validated palette only.
    ============================================================ */
-.apexcharts-canvas {
-  color: var(--color-text-primary);
-}
+.pl-chart { display: grid; min-width: 0; gap: 12px; margin: 0; container-type: inline-size; }
+.pl-chart-plot { min-width: 0; transition: opacity 160ms var(--pl-ease); }
+.pl-chart-plot.is-refreshing { opacity: 0.45; }
+.pl-chart-body { display: grid; min-width: 0; gap: 16px; }
+.pl-chart-body[data-kind="donut"] { grid-template-columns: minmax(0, 220px) minmax(0, 1fr); align-items: center; }
 
-.apexcharts-canvas text,
-.apexcharts-legend-text,
+.pl-chart-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; padding: 0; list-style: none; color: var(--pl-muted); font: 500 11px/1.4 var(--pl-mono); }
+.pl-chart-legend li { display: inline-flex; align-items: center; gap: 8px; }
+.pl-chart-key { display: inline-block; width: 10px; height: 10px; flex: none; }
+.pl-chart-key[data-kind="line"], .pl-chart-key[data-kind="area"] { width: 14px; height: 2px; }
+
+.pl-chart-shares { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.pl-chart-shares li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 52px; align-items: center; gap: 10px; min-height: 34px; border-bottom: 1px solid var(--pl-line); font-size: 13.5px; }
+.pl-chart-shares li:last-child { border-bottom: 0; }
+.pl-chart-share-label { overflow: hidden; color: var(--pl-fg); text-overflow: ellipsis; white-space: nowrap; }
+.pl-chart-shares strong { font-weight: 600; text-align: right; }
+.pl-chart-shares .pl-muted { color: var(--pl-muted); font-size: 12px; text-align: right; }
+
+.pl-chart-empty { display: grid; place-content: center; justify-items: center; gap: 6px; border: 1px dashed var(--pl-line-strong); padding: 24px; color: var(--pl-muted); text-align: center; font-size: 13.5px; }
+.pl-chart-skeleton { display: flex; align-items: flex-end; gap: 12px; border-bottom: 1px solid var(--pl-line-strong); padding: 0 8px; }
+.pl-chart-skeleton .pl-skel { flex: 1; max-width: 24px; }
+
+.pl-chart-data { border-top: 1px solid var(--pl-line); }
+.pl-chart-data > summary { display: inline-flex; min-height: 32px; align-items: center; gap: 8px; cursor: pointer; color: var(--pl-muted); font: 500 10.5px/1 var(--pl-mono); letter-spacing: 0.1em; list-style: none; text-transform: uppercase; }
+.pl-chart-data > summary::-webkit-details-marker { display: none; }
+.pl-chart-data > summary::before { content: '+'; width: 10px; color: var(--pl-faint); }
+.pl-chart-data[open] > summary::before { content: '−'; }
+.pl-chart-data > summary:hover { color: var(--pl-fg); }
+.pl-chart-data-scroll { max-height: 320px; overflow: auto; border: 1px solid var(--pl-line); }
+.pl-chart-data-scroll th[scope="row"] { color: var(--pl-fg); text-align: left; }
+
+/* ApexCharts internals: Plano type and colours, no shadows, no rounded tips. */
+.apexcharts-canvas { color: var(--pl-fg); }
+.apexcharts-canvas text { font-variant-numeric: tabular-nums; }
+.apexcharts-gridline { shape-rendering: crispEdges; }
+.apexcharts-tooltip.apexcharts-theme-light,
+.apexcharts-tooltip.apexcharts-theme-dark,
 .apexcharts-tooltip {
-  font-family: var(--font-sans) !important;
-  font-variant-numeric: tabular-nums;
-}
-
-.apexcharts-tooltip {
-  border: 1px solid var(--ds-border) !important;
-  border-radius: var(--ds-radius-card) !important;
-  background: var(--ds-panel-raised) !important;
-  color: var(--ds-text) !important;
-  box-shadow: var(--ds-shadow-overlay) !important;
-}
-
-.apexcharts-tooltip-title {
-  border-bottom: 1px solid var(--ds-border) !important;
-  background: var(--ds-panel-subtle) !important;
-  font-weight: 500 !important;
-}
-
-.dark .apexcharts-canvas text,
-.dark .apexcharts-legend-text,
-.dark .apexcharts-xaxis-title-text,
-.dark .apexcharts-yaxis-title-text {
-  fill: #b4bcc8 !important;
-  color: #b4bcc8 !important;
-}
-
-.dark .apexcharts-gridline,
-.dark .apexcharts-xaxis-tick {
-  stroke: rgba(148, 163, 184, 0.22) !important;
-}
-
-.dark .apexcharts-tooltip,
-.dark .apexcharts-tooltip-title {
-  border-color: rgba(51, 65, 85, 0.95) !important;
-  background: #161b23 !important;
-  color: #e3e6ea !important;
+  border: 1px solid var(--pl-line-strong) !important;
+  border-radius: 0 !important;
+  background: var(--pl-bg) !important;
+  color: var(--pl-fg) !important;
   box-shadow: none !important;
 }
 
-.dark .apexcharts-tooltip-marker {
-  box-shadow: none;
+.pl-chart-tip { display: grid; gap: 6px; min-width: 140px; padding: 10px 12px; font-family: var(--pl-sans); }
+.pl-chart-tip-title { margin: 0 0 2px; color: var(--pl-muted); font: 500 10px/1.3 var(--pl-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.pl-chart-tip-row { display: grid; grid-template-columns: 12px auto minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12.5px; }
+.pl-chart-tip-row strong { color: var(--pl-fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pl-chart-tip-row span:last-child { overflow: hidden; color: var(--pl-muted); text-overflow: ellipsis; white-space: nowrap; }
+.pl-chart-tip-key { width: 12px; height: 2px; }
+
+/* Analytics board and chart builder */
+.pl-board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.pl-board-card { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+.pl-board-card .pl-panel-head { height: auto; min-height: 64px; padding-block: 12px; }
+
+.pl-board-empty { display: grid; gap: 24px; border: 1px dashed var(--pl-line-strong); padding: 28px; }
+.pl-board-starters { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0; margin: 0; padding: 0; border: 1px solid var(--pl-line); list-style: none; }
+.pl-board-starter { position: relative; display: grid; width: 100%; height: 100%; min-height: 96px; align-content: start; gap: 8px; border-right: 1px solid var(--pl-line); border-bottom: 1px solid var(--pl-line); background: var(--pl-bg); padding: 16px 44px 16px 16px; text-align: left; transition: background-color 120ms var(--pl-ease); }
+.pl-board-starter:hover { background: var(--pl-layer); }
+.pl-board-starter > svg { position: absolute; top: 16px; right: 16px; width: 16px; height: 16px; color: var(--pl-accent-text); }
+
+.pl-builder { display: grid; gap: 24px; padding: 20px 24px 24px; }
+.pl-builder-fields { display: grid; align-content: start; gap: 18px; }
+.pl-builder-fields legend { margin-bottom: 8px; }
+.pl-builder-preview { min-width: 0; border: 1px solid var(--pl-line); padding: 16px; }
+.pl-builder-colours { display: grid; margin: 0; padding: 0; border: 1px solid var(--pl-line); list-style: none; }
+.pl-builder-colours li { display: grid; gap: 8px; border-bottom: 1px solid var(--pl-line); padding: 10px; }
+.pl-builder-colours li:last-child { border-bottom: 0; }
+
+/* The 1px gap shows the container's line colour, so wrapped rows keep their dividers. */
+.pl-segmented { display: flex; flex-wrap: wrap; gap: 1px; border: 1px solid var(--pl-line-strong); background: var(--pl-line); }
+.pl-segmented > button { min-height: 36px; flex: 1 1 auto; background: var(--pl-bg); padding: 0 12px; color: var(--pl-muted); font: 500 10.5px/1 var(--pl-mono); letter-spacing: 0.08em; text-transform: uppercase; transition: background-color 120ms var(--pl-ease), color 120ms var(--pl-ease); }
+.pl-segmented > button:hover:not(:disabled):not([aria-checked="true"]) { background: var(--pl-layer); color: var(--pl-fg); }
+.pl-segmented > button[aria-checked="true"] { background: var(--pl-accent); color: var(--pl-accent-ink); }
+.pl-segmented > button:disabled { cursor: not-allowed; background-image: var(--pl-tex-stripes); color: var(--pl-faint); }
+
+.pl-swatch { width: 22px; height: 22px; border: 2px solid var(--pl-bg); outline: 1px solid var(--pl-line); transition: outline-color 120ms var(--pl-ease); }
+.pl-swatch:hover { outline-color: var(--pl-muted); }
+.pl-swatch[aria-checked="true"] { outline: 2px solid var(--pl-fg); }
+
+@media (min-width: 1100px) {
+  .pl-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 900px) {
+  .pl-builder { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: start; }
+  .pl-builder-preview { position: sticky; top: 0; }
+}
+
+/* In one column the preview leads and stays in view while the fields scroll under it.
+   It is capped so the fields always keep more than half of the panel. */
+@media (max-width: 899.98px) {
+  .pl-builder-preview { position: sticky; top: 0; z-index: 2; order: -1; max-height: 46dvh; overflow-y: auto; background: var(--pl-layer); box-shadow: 0 12px 0 var(--pl-layer); padding: 12px; }
+  /* A field brought into view by focus or the keyboard lands below the pinned preview. */
+  .pl-builder-fields > * { scroll-margin-top: 48dvh; }
+}
+
+@media (pointer: coarse) {
+  .pl-swatch { width: 32px; height: 32px; }
+  .pl-segmented > button { min-height: 44px; }
+}
+
+/* A donut beside its list needs room; in a narrow chart the list goes underneath. */
+@container (max-width: 520px) {
+  .pl-chart-body[data-kind="donut"] { grid-template-columns: minmax(0, 1fr); }
+  .pl-chart-body[data-kind="donut"] .pl-chart-plot { width: 100%; max-width: 240px; margin-inline: auto; }
+}
+
+@media (forced-colors: active) {
+  .pl-chart-key { forced-color-adjust: none; }
 }
 
 /* ============================================================
@@ -1077,17 +1146,6 @@ select {
 
 .lims-backoffice-content :where(.apexcharts-canvas) {
   max-width: 100%;
-}
-
-.lims-backoffice-content :where(.apexcharts-tooltip, .apexcharts-menu) {
-  border-radius: 0.875rem !important;
-  border-color: rgb(230 233 237) !important;
-  box-shadow: none !important;
-}
-
-.dark .lims-backoffice-content :where(.apexcharts-tooltip, .apexcharts-menu) {
-  border-color: rgb(38 45 58) !important;
-  background: rgb(15 19 25) !important;
 }
 
 /* Avoid the “card inside card” look in dense system modules. */
@@ -2568,6 +2626,11 @@ input[type="checkbox"]:not(.peer):not(.sr-only):disabled {
 
 .pl-areas::-webkit-scrollbar { display: none; }
 
+/* When the areas outgrow the bar, the edge with more areas behind it fades out. */
+.pl-areas[data-more-after] { mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); }
+.pl-areas[data-more-before] { mask-image: linear-gradient(to right, transparent, #000 48px); }
+.pl-areas[data-more-before][data-more-after] { mask-image: linear-gradient(to right, transparent, #000 48px, #000 calc(100% - 48px), transparent); }
+
 .pl-area {
   position: relative;
   display: inline-flex;
@@ -2708,6 +2771,12 @@ input[type="checkbox"]:not(.peer):not(.sr-only):disabled {
 
 .pl-side-area[aria-current="page"] { color: var(--pl-accent-text); box-shadow: inset 2px 0 0 var(--pl-accent-text); }
 
+.pl-side-receive { min-height: 48px !important; justify-content: space-between; margin: 0 16px; }
+
+@media (pointer: coarse) {
+  .pl-side-area { height: 44px; }
+}
+
 .pl-lab {
   display: flex;
   width: calc(100% - 32px);
@@ -2827,6 +2896,8 @@ input[type="checkbox"]:not(.peer):not(.sr-only):disabled {
 .pl-menu-item-danger,
 .app-menu-item-danger { color: var(--pl-bad); }
 .pl-menu-item .pl-kbd { margin-left: auto; }
+.pl-menu-item:disabled,
+.app-menu-item:disabled { cursor: not-allowed; color: var(--pl-faint); background: transparent; }
 
 /* Bottom area bar (phones) and the menu drawer */
 .pl-bottom { display: none; }
@@ -2854,7 +2925,9 @@ input[type="checkbox"]:not(.peer):not(.sr-only):disabled {
   margin: 18px 0 32px;
 }
 
-.pl-page-head h1 { margin: 0; }
+.pl-page-head h1 { margin: 0; overflow-wrap: anywhere; }
+.pl-page-head > * { max-width: 100%; }
+.pl-page-header .pl-crumbs { flex-wrap: wrap; }
 .pl-page-head .pl-lede { margin-top: 14px; max-width: 64ch; }
 .pl-page-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 
@@ -2865,6 +2938,8 @@ input[type="checkbox"]:not(.peer):not(.sr-only):disabled {
 /* Positioned, so screen-reader-only labels in header cells stay inside the scroller. */
 .pl-panel:has(> .ds-data-table) { position: relative; overflow-x: auto; }
 .pl-panel [role='tabpanel']:has(> .ds-data-table) { position: relative; overflow-x: auto; }
+/* Any table scroller on a Plano page is positioned for the same reason. */
+.pl-page .overflow-x-auto { position: relative; }
 .pl-panel > .ds-data-table td.pl-num,
 .pl-panel > .ds-data-table td:first-child { white-space: nowrap; }
 
@@ -2990,6 +3065,9 @@ a.pl-cell:hover { background: var(--pl-layer); }
 .pl-cell[aria-current="page"] :is(.pl-muted, .pl-faint, .pl-k) { color: inherit; opacity: 0.8; }
 .pl-cell-value { font: 700 30px/1.1 var(--pl-sans); letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
 .pl-cell-bad .pl-k { color: var(--pl-bad); }
+/* A cell that states a fact (a date, a name) rather than a count. */
+.pl-cell-text { font: 600 15px/1.35 var(--pl-sans); letter-spacing: -0.01em; overflow-wrap: anywhere; }
+dl.pl-cells > .pl-cell { align-content: start; }
 
 /* --- Pager --- */
 .pl-pager { display: inline-flex; border: 1px solid var(--pl-line); }
@@ -3044,6 +3122,51 @@ a.pl-cell:hover { background: var(--pl-layer); }
 }
 
 .pl-filter-input::placeholder { color: var(--pl-faint); }
+.pl-filter-dates { width: 21rem; max-width: 100%; }
+.pl-filter :is(.ds-field, .ds-combobox-control) { min-height: 40px; }
+
+/* A register with nothing after its filter row closes the frame itself. */
+.pl-filter:last-child { border-bottom: 1px solid var(--pl-line); }
+
+/* Archived rows stay legible but step back. */
+.ds-data-table > tbody > tr[data-archived] > td:not(.pl-stack-actions) { color: var(--pl-faint); }
+
+/* --- Stacked table: below 768px each row becomes a labelled list, so nothing scrolls sideways --- */
+@media (max-width: 767px) {
+  .pl-stack-table,
+  .pl-stack-table > tbody { display: block; }
+  .pl-stack-table > thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  .pl-stack-table > tbody > tr {
+    position: relative;
+    display: grid;
+    padding: 12px 0;
+  }
+
+  .pl-stack-table > tbody > tr > td {
+    display: grid;
+    height: auto !important;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 14px;
+    padding: 5px 16px !important;
+    overflow-wrap: anywhere;
+    white-space: normal !important;
+  }
+
+  .pl-stack-table > tbody > tr > td[data-label]::before {
+    content: attr(data-label);
+    color: var(--pl-muted);
+    font: 500 11px/1.5 var(--pl-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .pl-stack-table > tbody > tr > td.pl-stack-lead { padding-right: 52px !important; font-size: 15px; }
+  .pl-stack-table > tbody > tr > td.pl-stack-check { position: absolute; top: 12px; right: 0; display: block; }
+  .pl-stack-table > tbody > tr > td.pl-stack-actions { display: block; padding-top: 10px !important; }
+  .pl-stack-table > tbody > tr > td.pl-stack-actions > div { justify-content: flex-start; margin-left: -10px; }
+  .pl-stack-table > tbody > tr:hover > td:first-child { box-shadow: none; }
+}
 
 /* --- Selection bar (bulk actions) --- */
 .pl-selection {
@@ -3071,6 +3194,12 @@ a.pl-cell:hover { background: var(--pl-layer); }
 }
 
 .pl-selection > :last-child { border-right: 0; }
+.pl-selection > :disabled { opacity: 0.5; cursor: progress; }
+.pl-selection { animation: pl-rise 180ms var(--pl-ease) both; }
+
+@keyframes pl-rise {
+  from { opacity: 0; transform: translateY(8px); }
+}
 .pl-selection > button:hover,
 .pl-selection > a:hover { background: color-mix(in srgb, var(--pl-bg) 12%, transparent); }
 
@@ -3300,7 +3429,7 @@ tr:hover .pl-row-go,
 
 /* --- Responsive --- */
 @media (max-width: 1599px) {
-  .pl-area { padding: 0 10px; }
+  .pl-area { padding: 0 8px; letter-spacing: 0.06em; }
   .pl-find { width: 40px; justify-content: center; padding: 0; }
   .pl-find-label,
   .pl-find .pl-kbd { display: none; }
@@ -3341,44 +3470,185 @@ tr:hover .pl-row-go,
     z-index: 45;
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    height: 56px;
+    height: var(--bottombar-height);
     border-top: 1px solid var(--pl-line-strong);
     background: var(--pl-bg);
     padding-bottom: env(safe-area-inset-bottom);
   }
 
   .pl-bottom-item {
-    display: grid;
+    display: flex;
     min-width: 0;
-    place-items: center;
-    overflow: hidden;
-    padding: 0 4px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 2px;
     color: var(--pl-muted);
-    font: 500 9.5px/1 var(--pl-mono);
-    letter-spacing: 0.08em;
-    text-overflow: ellipsis;
+    font: 500 9px/1 var(--pl-mono);
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    white-space: nowrap;
+    transition: color 120ms var(--pl-ease);
   }
 
+  .pl-bottom-item svg { width: 18px; height: 18px; flex: none; }
+  .pl-bottom-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pl-bottom-item:active { background: var(--pl-layer); }
+
   .pl-bottom-item[aria-current="page"] { box-shadow: inset 0 2px 0 var(--pl-accent-text); color: var(--pl-accent-text); }
-  .pl-main { padding-bottom: 56px; }
+  .pl-main { padding-bottom: var(--bottombar-height); }
   .pl-page { padding: 24px 16px 48px; }
   .pl-page-crumbs { padding: 24px 16px 0; }
-  .pl-page-head { flex-direction: column; align-items: flex-start; gap: 18px; margin-bottom: 24px; }
+  .pl-page-head { flex-direction: column; align-items: stretch; gap: 18px; margin-bottom: 24px; }
+  .pl-page-actions { justify-content: flex-start; }
+  .pl-page-actions > :is(a, button, .ds-button) { flex: 1 1 auto; justify-content: center; }
+  .pl-page-actions:has(> :nth-child(3)) > .ds-button-primary { flex-basis: 100%; order: 1; }
   .pl-page-head .pl-d1 { font-size: 32px; }
   .pl-cells { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pl-cell { border-bottom: 1px solid var(--pl-line); }
   .pl-cell:nth-child(2n) { border-right: 0; }
-  .pl-nextbar { flex-wrap: wrap; margin: 24px -16px -48px; padding: 12px 16px; bottom: 56px; }
+  .pl-cells > .pl-cell:last-child:nth-child(odd) { grid-column: 1 / -1; border-right: 0; }
+  /* Filter cells become one swipeable strip so the records start on the first screen. */
+  .pl-cells:is([role="group"], :has(> button.pl-cell, > a.pl-cell)) {
+    display: flex;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .pl-cells:is([role="group"], :has(> button.pl-cell, > a.pl-cell))::-webkit-scrollbar { display: none; }
+
+  .pl-cells:is([role="group"], :has(> button.pl-cell, > a.pl-cell)) > .pl-cell {
+    flex: 0 0 auto;
+    min-width: 112px;
+    gap: 6px;
+    border-right: 1px solid var(--pl-line);
+    border-bottom: 0;
+    padding: 10px 14px;
+    scroll-snap-align: start;
+  }
+
+  .pl-cells:is([role="group"], :has(> button.pl-cell, > a.pl-cell)) > .pl-cell:last-child { border-right: 0; }
+  .pl-cells:is([role="group"], :has(> button.pl-cell, > a.pl-cell)) .pl-cell-value { font-size: 22px; }
+  .pl-nextbar { flex-wrap: wrap; margin: 24px -16px -48px; padding: 12px 16px; bottom: var(--bottombar-height); }
   .pl-nextbar-label { display: none; }
-  .pl-nextbar-actions { width: 100%; }
-  .pl-nextbar-actions > * { flex: 1; }
+  .pl-nextbar { gap: 10px; padding-block: 10px; }
+  .pl-nextbar-text { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 13px; }
+  .pl-nextbar .ds-button { min-height: 44px; }
+  .pl-selection { bottom: calc(var(--bottombar-height) + 16px); }
+  .pl-selection > * { height: 48px; padding: 0 14px; }
+  .pl-nextbar-actions { width: 100%; flex-wrap: wrap; }
+  .pl-nextbar-actions > * { min-width: 0; flex: 1 1 0; white-space: normal; }
+  /* With more than two actions the primary one takes its own full-width row. */
+  .pl-nextbar-actions:has(> :nth-child(3)) > .ds-button-primary { flex-basis: 100%; order: 1; }
   .pl-band { height: 120px; padding: 20px 16px 0; }
+  .pl-band > :not(:first-child) { display: none; }
+  .pl-hero-meta { flex-direction: column; gap: 6px; }
   .pl-hero { width: calc(100% - 32px); margin: -60px 16px 0; padding: 20px; }
   .pl-hero-row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .pl-hero .pl-d0 { font-size: 52px; }
   .lims-backoffice-content > :where(div, form, section, main) { padding: 16px 16px 48px; }
+}
+
+/* A grid item's automatic minimum is its widest content, so on narrow screens one
+   long value would widen the whole page. Inside pages, grid items may shrink to
+   their track (explicit min-w-* utilities still win). */
+:where(.pl-page, .lims-backoffice-content) :where(.grid) > :where(*) { min-width: 0; }
+
+/* Phones: a data table becomes a list of stacked records. The first named column
+   is the record's title, every other cell shows its column name as a label, and
+   row actions sit at the record's top-right corner (always visible: touch has no
+   hover). Labels come from the header (`Support/stackedTable.js`). */
+@media (max-width: 639px) {
+  .pl-panel:has(> .ds-data-table[data-stack]) { overflow-x: visible; }
+
+  .ds-data-table[data-stack],
+  .ds-data-table[data-stack] > tbody { display: block; width: 100%; }
+
+  .ds-data-table[data-stack] > thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ds-data-table[data-stack] > tbody > tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 8px 12px;
+    padding: 14px 16px;
+  }
+
+  .ds-data-table[data-stack] > tbody > tr:hover > td:first-child { box-shadow: none; }
+
+  .ds-data-table[data-stack] > tbody > tr > td {
+    display: block;
+    min-width: 0;
+    height: auto;
+    grid-column: 1 / -1;
+    overflow-wrap: anywhere;
+  }
+
+  /* The label floats left so the value keeps its own inline flow on the right. */
+  .ds-data-table[data-stack] > tbody > tr > td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    float: left;
+    max-width: 45%;
+    margin-right: 16px;
+    color: var(--pl-muted);
+    font: 500 10px/2 var(--pl-mono);
+    letter-spacing: 0.1em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .ds-data-table[data-stack] > tbody > tr > td[data-cell="title"] {
+    grid-row: 1;
+    grid-column: 1;
+    font-weight: 600;
+  }
+
+  .ds-data-table[data-stack] > tbody > tr > td[data-cell="title"]::before { display: none; }
+
+  .ds-data-table[data-stack] > tbody > tr > td[data-cell="action"] {
+    display: flex;
+    grid-row: 1;
+    grid-column: 2;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .ds-data-table[data-stack] > tbody > tr > td[data-cell="action"] ~ td[data-cell="action"] { grid-row: auto; grid-column: 1 / -1; }
+  .ds-data-table[data-stack] > tbody > tr > td:empty { display: none; }
+  .ds-data-table[data-stack] > tbody > tr > td > :is(.ds-field, input, select, textarea, .ds-combobox-control) { width: 100%; margin-top: 6px; text-align: left; }
+  .ds-data-table[data-stack] > tbody > tr > td:has(> :is(.ds-field, input, select, textarea, .ds-combobox-control))::before { float: none; display: block; }
+  .ds-data-table[data-stack] .pl-row-go { opacity: 1; }
+
+  .ds-data-table[data-stack] > tfoot { display: block; }
+  .ds-data-table[data-stack] > tfoot > tr { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding: 12px 16px; }
+  .ds-data-table[data-stack] > tfoot > tr > td { height: auto; }
+}
+
+/* Utilities here compile as !important inside their layer, and the shared table
+   cell rule sets its padding the same way in the base layer: only base-layer
+   !important declarations can release them for stacked rows. */
+@layer base {
+  @media (max-width: 639px) {
+    .ds-data-table[data-stack] > tbody > tr > td { max-width: none !important; border: 0 !important; padding: 0 !important; overflow: visible !important; text-align: right !important; text-overflow: clip !important; white-space: normal !important; }
+    .ds-data-table[data-stack] > tbody > tr > td[data-cell="title"] { text-align: left !important; }
+    .ds-data-table[data-stack] > tbody > tr > td[data-cell="note"] { text-align: left !important; }
+    .ds-data-table[data-stack] > tfoot > tr > td { padding: 0 !important; }
+  }
+}
+
+/* Touch screens have no hover: row actions stay visible. */
+@media (hover: none) {
+  .pl-row-go { opacity: 1; }
 }
 
 /* ============================================================
@@ -3532,12 +3802,22 @@ tr:hover .pl-row-go,
   --ds-control-height: 40px;
   --ds-control-height-compact: 32px;
   --ds-control-inset: 12px;
+  --ds-field-font-size: 14px;
 }
 
+/* Touch screens: larger targets, and 16px text in fields so phones do not zoom
+   the page when a field takes focus (pinch-zoom stays available). */
 @media (pointer: coarse) {
   :root {
     --ds-control-height: 44px;
     --ds-control-height-compact: 40px;
+    --ds-field-font-size: 16px;
+  }
+
+  @layer base {
+    :is(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea)[data-bare] {
+      font-size: 16px !important;
+    }
   }
 }
 
@@ -3555,7 +3835,7 @@ tr:hover .pl-row-go,
     color: var(--pl-fg) !important;
     box-shadow: none !important;
     font-family: var(--pl-sans) !important;
-    font-size: 14px !important;
+    font-size: var(--ds-field-font-size) !important;
     font-weight: 400 !important;
     letter-spacing: -0.01em;
     line-height: 1.4 !important;
@@ -3636,7 +3916,7 @@ tr:hover .pl-row-go,
   .ds-combobox-control {
     min-height: var(--ds-control-height) !important;
     border-radius: 0 !important;
-    font-size: 14px !important;
+    font-size: var(--ds-field-font-size) !important;
     font-weight: 400 !important;
   }
 

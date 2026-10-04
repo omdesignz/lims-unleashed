@@ -1,5 +1,6 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import ArchiveMutationFeedback from "@/Components/archive-mutation-feedback.vue";
 import { useRecordArchive } from "@/Composables/useRecordArchive";
 import RecordsTable from "@/Components/records-table.vue";
@@ -101,44 +102,30 @@ function archiveRecord(operation, ids) {
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex min-w-0 items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <component :is="config.icon" class="h-5 w-5" />
-          </span>
-          <div class="min-w-0">
-            <p class="ds-kicker">{{ config.kicker }}</p>
-            <h1 class="ds-heading mt-1 text-2xl">{{ trans(`${config.translationPrefix}.page_title`) }}</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">{{ trans(`${config.translationPrefix}.overview_description`) }}</p>
-          </div>
-        </div>
-
+  <div class="pl-page space-y-6">
+    <PageHeader :title="trans(`${config.translationPrefix}.page_title`)" :lede="trans(`${config.translationPrefix}.overview_description`)">
+      <template #actions>
         <button v-if="hasPermission(`add_${config.permissionKey}`)" type="button" class="ds-button ds-button-primary" @click="createRecord">
           <DocumentCheckIcon class="h-4 w-4" />
           Novo certificado
         </button>
-      </div>
+      </template>
+    </PageHeader>
 
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Registos</dt>
-          <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ totalRecords }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">catálogo completo</p>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Activos nesta página</dt>
-          <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ activeRecords }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">em circulação</p>
-        </div>
-        <div class="px-4 py-3">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Seleccionados</dt>
-          <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ selectedRecordIds.length }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">para acção em lote</p>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Registos</dt>
+        <dd class="pl-cell-value">{{ totalRecords }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Activos nesta página</dt>
+        <dd class="pl-cell-value">{{ activeRecords }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Seleccionados</dt>
+        <dd class="pl-cell-value">{{ selectedRecordIds.length }}</dd>
+      </div>
+    </dl>
 
     <ArchiveMutationFeedback :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="router.reload()" />
     <RecordsTable

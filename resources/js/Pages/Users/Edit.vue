@@ -1,54 +1,31 @@
 <template>
-  <div class="space-y-6">
+  <div class="pl-page space-y-6">
     <Head :title="`Dossier de pessoal — ${record.name}`" />
     <fieldset :disabled="isSaving" :aria-busy="isSaving" class="min-w-0 space-y-6 border-0 p-0">
-    <section class="ds-command-surface overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex min-w-0 items-start gap-4">
-          <img
-            v-if="record.profile_photo_url"
-            :src="record.profile_photo_url"
-            :alt="record.name"
-            class="h-14 w-14 shrink-0 rounded-lg border border-[var(--ds-border)] object-cover"
-          >
-          <span v-else class="grid h-14 w-14 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-lg font-bold text-[rgb(var(--primary-700-rgb))]">
-            {{ initials }}
-          </span>
+    <PageHeader :title="form.name" :lede="form.email">
+      <template #badges>
+        <span class="ds-badge" :class="formStatus.className">{{ formStatus.label }}</span>
+        <span v-for="role in form.roles" :key="role.value" class="ds-badge ds-badge-info">{{ role.label }}</span>
+        <span v-if="form.roles.length === 0" class="ds-badge ds-badge-neutral">Sem função atribuída</span>
+      </template>
+      <template #actions>
+        <button v-if="accountCapabilities.qualifications || accountCapabilities.profile" type="button" class="ds-button ds-button-secondary" :disabled="isSaving" @click="toggleEditMode">
+          <XMarkIcon v-if="editUserInfo" class="h-4 w-4" />
+          <PencilSquareIcon v-else class="h-4 w-4" />
+          {{ editUserInfo ? 'Cancelar edição' : 'Editar dossier' }}
+        </button>
+      </template>
+    </PageHeader>
 
-          <div class="min-w-0">
-            <p class="ds-kicker">Dossier de pessoal</p>
-            <h1 class="ds-heading mt-1 truncate text-xl sm:text-2xl">{{ form.name }}</h1>
-            <p class="mt-1 truncate text-sm font-semibold text-[var(--ds-text-muted)]">{{ form.email }}</p>
-            <div class="mt-2 flex flex-wrap items-center gap-2">
-              <span v-for="role in form.roles" :key="role.value" class="ds-badge ds-badge-info">{{ role.label }}</span>
-              <span v-if="form.roles.length === 0" class="ds-badge ds-badge-neutral">Sem função atribuída</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex shrink-0 flex-wrap items-center gap-2">
-          <span class="ds-badge" :class="formStatus.className">
-            <component :is="formStatus.icon" class="h-3.5 w-3.5" />
-            {{ formStatus.label }}
-          </span>
-          <button v-if="accountCapabilities.qualifications || accountCapabilities.profile" type="button" class="ds-button ds-button-secondary" :disabled="isSaving" @click="toggleEditMode">
-            <XMarkIcon v-if="editUserInfo" class="h-4 w-4" />
-            <PencilSquareIcon v-else class="h-4 w-4" />
-            {{ editUserInfo ? 'Cancelar edição' : 'Editar dossier' }}
-          </button>
-        </div>
+    <dl class="pl-cells">
+      <div v-for="metric in competenceMetrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="flex items-baseline gap-2">
+          <span class="pl-cell-value" :class="metric.tone">{{ metric.value }}</span>
+          <span class="pl-k pl-faint">{{ metric.detail }}</span>
+        </dd>
       </div>
-
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
-        <div v-for="metric in competenceMetrics" :key="metric.label" class="border-b border-[var(--ds-border)] px-5 py-4 sm:[&:nth-child(odd)]:border-r xl:border-b-0 xl:[&:nth-child(odd)]:border-r-0">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-          <dd class="mt-1 flex items-baseline gap-2">
-            <span class="text-2xl font-bold tabular-nums" :class="metric.tone">{{ metric.value }}</span>
-            <span class="text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.detail }}</span>
-          </dd>
-        </div>
-      </dl>
-    </section>
+    </dl>
 
     <section class="ds-command-surface overflow-hidden">
       <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
@@ -397,6 +374,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import {
   GraduationCap as AcademicCapIcon,
@@ -412,7 +390,6 @@ import {
   SquarePen as PencilSquareIcon,
   Plus as PlusIcon,
   ShieldCheck as ShieldCheckIcon,
-  User as UserIcon,
   X as XMarkIcon,
 } from '@lucide/vue'
 import ComboboxMultipleEnhanced from '@/Components/combobox-multiple-enhanced.vue'

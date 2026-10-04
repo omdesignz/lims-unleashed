@@ -1,6 +1,6 @@
 <template>
     <div>
-      <DataTable>
+      <DataTable :stack="false">
         <tr>
           <th>Input Values</th>
           <th>Calculated Values</th>

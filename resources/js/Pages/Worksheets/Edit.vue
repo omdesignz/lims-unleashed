@@ -1,8 +1,8 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { Link, useForm } from "@inertiajs/vue3";
+import PageHeader from "@/Components/plano/PageHeader.vue";
+import { useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeft as ArrowLeftIcon,
   CircleCheck as CheckCircleIcon,
   Clock as ClockIcon,
   FileCheck as DocumentCheckIcon,
@@ -157,79 +157,40 @@ function formatDate(date) {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <nav aria-label="Breadcrumb" class="mb-5">
-        <Link :href="route('worksheets.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Folhas de trabalho laboratoriais
-        </Link>
-      </nav>
-
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Folha de trabalho #{{ worksheet.id }}</p>
-          <div class="mt-3 flex items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <TableCellsIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading break-words text-2xl">{{ form.name || "Folha de trabalho sem nome" }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm"> Folha de bancada baseada no âmbito controlado da análise e preparada para registo técnico rastreável. </p>
-              <ul class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-[var(--ds-text-muted)]">
-                <li class="inline-flex items-center gap-1.5">
-                  <ClockIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
-                  {{ formatDate(worksheet.updated_at) }}
-                </li>
-                <li class="inline-flex items-center gap-1.5">
-                  <QueueListIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
-                  {{ form.worksheets.sheets.length }} folhas
-                </li>
-                <li>
-                  <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold" :class="statusClasses(scopeControl.status)">
-                    {{ scopeControl.status_label || "Sem estado" }}
-                  </span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap gap-2 lg:justify-end">
-          <button type="button" class="ds-button ds-button-secondary" :disabled="!canMutate" @click="addSheet">
-            <PlusIcon class="h-4 w-4" />
-            Nova folha
-          </button>
-          <button
-            type="button"
-            class="ds-button ds-button-secondary"
-            :disabled="!canMutate || form.worksheets.sheets.length <= 1"
-            @click="removeActiveSheet"
-          >
-            <TrashIcon class="h-4 w-4" />
-            Remover folha
-          </button>
-          <button type="button" class="ds-button ds-button-primary" :disabled="!canMutate || !form.isDirty" :aria-busy="form.processing" @click="saveWorksheet">
-            <DocumentCheckIcon class="h-4 w-4" />
-            {{ form.processing ? "A guardar..." : form.isDirty ? "Guardar alterações" : "Sem alterações" }}
-          </button>
-        </div>
-      </div>
-
-      <dl
-        v-if="scopeControl.expected_count || scopeControl.missing_count || scopeControl.status_label"
-        class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4"
-      >
-        <div
-          v-for="item in scopeSummary"
-          :key="item.label"
-          class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Folhas de trabalho', url: route('worksheets.index') }, { title: form.name || 'Folha de trabalho sem nome' }]" :title="form.name || 'Folha de trabalho sem nome'" lede="Folha de bancada baseada no âmbito controlado da análise e preparada para registo técnico rastreável.">
+      <template #badges>
+        <span class="ds-chip" :class="statusClasses(scopeControl.status)">{{ scopeControl.status_label || "Sem estado" }}</span>
+        <span class="ds-chip ds-chip-neutral">{{ form.worksheets.sheets.length }} folhas</span>
+        <span class="ds-chip ds-chip-neutral">{{ formatDate(worksheet.updated_at) }}</span>
+      </template>
+      <template #actions>
+        <button type="button" class="ds-button ds-button-secondary" :disabled="!canMutate" @click="addSheet">
+          <PlusIcon class="h-4 w-4" />
+          Nova folha
+        </button>
+        <button
+          type="button"
+          class="ds-button ds-button-secondary"
+          :disabled="!canMutate || form.worksheets.sheets.length <= 1"
+          @click="removeActiveSheet"
         >
-          <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">{{ item.label }}</dt>
-          <dd class="mt-2 text-lg font-black text-[var(--ds-text)]">{{ item.value }}</dd>
-        </div>
-      </dl>
-    </section>
+          <TrashIcon class="h-4 w-4" />
+          Remover folha
+        </button>
+        <button type="button" class="ds-button ds-button-primary" :disabled="!canMutate || !form.isDirty" :aria-busy="form.processing" @click="saveWorksheet">
+          <DocumentCheckIcon class="h-4 w-4" />
+          {{ form.processing ? "A guardar..." : form.isDirty ? "Guardar alterações" : "Sem alterações" }}
+        </button>
+      </template>
+    </PageHeader>
+
+    <dl v-if="scopeControl.expected_count || scopeControl.missing_count || scopeControl.status_label" class="pl-cells">
+      <div v-for="item in scopeSummary" :key="item.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ item.label }}</dt>
+        <dd class="pl-cell-text">{{ item.value }}</dd>
+      </div>
+    </dl>
 
     <p v-if="!can_edit" class="ds-copy" role="status">Só leitura. Não tem autorização para alterar esta folha de trabalho.</p>
     <section v-if="form.hasErrors" class="ds-field-error" role="alert">
@@ -345,7 +306,7 @@ function formatDate(date) {
         </div>
 
         <div class="overflow-x-auto">
-          <DataTable v-if="activeSheet" class="min-w-full border-separate border-spacing-0 text-sm">
+          <DataTable v-if="activeSheet" :stack="false" class="min-w-full border-separate border-spacing-0 text-sm">
             <thead class="ds-table-head">
               <tr>
                 <th class="sticky left-0 z-20 w-12 border-b border-r border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-2 py-2 text-center ds-table-heading">#</th>

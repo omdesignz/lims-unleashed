@@ -1,5 +1,6 @@
 <script setup>
 import '../CommercialDocumentSurface.css';
+import PageHeader from '@/Components/plano/PageHeader.vue';
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { optionRows } from "@/Composables/useCommercialDocumentOptions";
@@ -10,18 +11,13 @@ import {throttle} from "lodash";
 import {
   Trash2 as TrashIcon,
   CirclePlus as PlusCircleIcon,
-  ClipboardCheck as ClipboardDocumentCheckIcon,
   ChevronUp as ChevronUpIcon,
   Euro as CurrencyEuroIcon,
   User as UserIcon,
   Building as BuildingOfficeIcon,
-  FileText as DocumentTextIcon,
   Tag as TagIcon,
-  FlaskConical as BeakerIcon,
-  CreditCard as CreditCardIcon,
   Calculator as CalculatorIcon,
   Info as InformationCircleIcon,
-  CircleAlert as ExclamationCircleIcon,
   Receipt as ReceiptRefundIcon,
   Copy as DocumentDuplicateIcon,
 } from "@lucide/vue";
@@ -372,29 +368,14 @@ const onSelectedItem = (item) => {
 </script>
 
 <template>
-    <div class="commercial-document-page commercial-document-create min-w-0 space-y-5 overflow-x-clip pb-10" :class="commercialDocumentThemeClasses">
+    <div class="pl-page commercial-document-page commercial-document-create space-y-5" :class="commercialDocumentThemeClasses">
         <!-- Header -->
-        <header class="commercial-document-header px-0 pb-5 pt-1">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <ReceiptRefundIcon class="h-7 w-7 text-blue-900" />
-                        {{ $t('gestlab.general.labels.credit_notes.page_title') }}
-                    </h1>
-                    <p class="mt-2 text-gray-600">
-                        {{ $t('gestlab.general.labels.credit_notes.page_create_description') }}
-                        <span v-if="form.customer_id?.label" class="font-semibold text-blue-900">
-                            {{ form.customer_id.label }}
-                        </span>
-                    </p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10">
-                        {{ form.items.length }} {{ $t('gestlab.general.labels.credit_notes.items') }}
-                    </span>
-                </div>
-            </div>
-        </header>
+      <PageHeader :trail="[{ title: 'Notas de crédito', url: route('creditnotes.index') }, { title: 'Novo documento' }]" :title="$t('gestlab.general.labels.credit_notes.page_title')" :lede="$t('gestlab.general.labels.credit_notes.page_create_description')">
+        <template #badges>
+          <span v-if="form.customer_id?.label" class="ds-chip ds-chip-neutral">{{ form.customer_id.label }}</span>
+          <span class="ds-chip">{{ form.items.length }} {{ $t('gestlab.general.labels.credit_notes.items') }}</span>
+        </template>
+      </PageHeader>
 
         <!-- Credit Note Settings Card -->
         <section class="ds-panel commercial-document-section overflow-hidden">
@@ -820,12 +801,7 @@ const onSelectedItem = (item) => {
                     type="button"
                     @click="showDeleteConfirmation = true"
                     :disabled="form.processing || form.items.length === 0"
-                    :class="[
-                        'ds-button px-6 py-3',
-                        form.processing || form.items.length === 0
-                            ? 'cursor-not-allowed bg-[var(--ds-border)] text-[var(--ds-muted)]'
-                            : 'ds-button-primary'
-                    ]"
+                    class="ds-button ds-button-primary px-6 py-3"
                 >
                     <ReceiptRefundIcon class="h-5 w-5" />
                     {{ form.processing ? $t('gestlab.general.buttons.processing') : $t('gestlab.general.buttons.submit') }}

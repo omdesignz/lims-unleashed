@@ -38,7 +38,7 @@ const removeSample = (index) => {
   <div class="container">
     <h2 class="title">Calculadora de contagem microbiana</h2>
 
-    <DataTable>
+    <DataTable :stack="false">
       <thead>
         <tr>
           <th>D1</th>

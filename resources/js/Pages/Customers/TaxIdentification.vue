@@ -1,8 +1,7 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { Link } from "@inertiajs/vue3";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import {
-  ArrowLeft as ArrowLeftIcon,
   RefreshCw as ArrowPathIcon,
   Building2 as BuildingOffice2Icon,
   CircleCheck as CheckCircleIcon,
@@ -89,33 +88,15 @@ function clearSearch() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <nav aria-label="Breadcrumb">
-        <Link :href="route('customers.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Clientes
-        </Link>
-      </nav>
-
-      <div class="mt-5 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex min-w-0 items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <DocumentMagnifyingGlassIcon class="h-5 w-5" />
-          </span>
-          <div class="min-w-0">
-            <p class="ds-kicker">Validação fiscal</p>
-            <h1 class="ds-heading mt-1 text-2xl">Consulta de NIF</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Confirme a identidade legal e o regime fiscal antes de concluir o registo ou emitir documentos comerciais.</p>
-          </div>
-        </div>
-
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Clientes', url: route('customers.index') }, { title: 'Consulta de NIF' }]" title="Consulta de NIF" lede="Confirme a identidade legal e o regime fiscal antes de concluir o registo ou emitir documentos comerciais.">
+      <template #actions>
         <span :class="['ds-chip', status.className]">
           <component :is="status.icon" :class="['h-4 w-4', isLoading ? 'animate-spin' : '']" />
           {{ status.label }}
         </span>
-      </div>
-    </section>
+      </template>
+    </PageHeader>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
       <div class="min-w-0 space-y-6">

@@ -1,5 +1,6 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import confirmDialog from '@/Components/confirm-dialog.vue'
 import ArchiveMutationFeedback from '@/Components/archive-mutation-feedback.vue'
 import VapTable from '@/Components/vap-table/table.vue'
@@ -9,7 +10,6 @@ import { trans } from 'laravel-vue-i18n'
 import { Trash2 as TrashIcon, Pencil as PencilIcon, Repeat as ArrowPathRoundedSquareIcon, Eye as EyeIcon } from '@lucide/vue'
 import { usePermission } from '@/Composables/usePermissions'
 import { useRecordArchive } from '@/Composables/useRecordArchive'
-import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
 const { hasPermission } = usePermission()
 const props = defineProps({
@@ -74,10 +74,8 @@ function confirmAction() {
 </script>
 
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
-    <div class="border-b border-gray-200 pb-5">
-      <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.proposal_templates.page_title') }}</h3>
-    </div>
+  <div class="pl-page space-y-6">
+    <PageHeader :title="$t('gestlab.general.labels.proposal_templates.page_title')" />
     <ArchiveMutationFeedback :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="router.reload()" />
     <vap-table
       :key="tableRevision" :model="props.model" :abilities="props.abilities" :data="props.record.data"

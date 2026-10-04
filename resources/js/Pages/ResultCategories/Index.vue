@@ -1,5 +1,4 @@
 <script setup>
-import { Tag as TagIcon } from '@lucide/vue'
 import ReferenceCatalogManager from '@/Components/catalogs/ReferenceCatalogManager.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 
@@ -33,6 +32,6 @@ const props = defineProps({
     form-description="Use uma designação curta e descreva quando esta classificação deve ser aplicada."
     :supports-name="true"
     :supports-code="false"
-    :icon="TagIcon"
+
   />
 </template>

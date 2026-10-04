@@ -1,47 +1,32 @@
 <template>
-  <div class="space-y-6">
-    <section class="ds-command-surface overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Configuração de cálculo</p>
-          <div class="mt-2 flex items-start gap-3">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))]">
-              <VariableIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-xl sm:text-2xl">Variáveis de fórmula</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Constantes reutilizáveis associadas às fórmulas controladas do laboratório.</p>
-            </div>
-          </div>
-        </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Variáveis de fórmula" lede="Constantes reutilizáveis associadas às fórmulas controladas do laboratório.">
+      <template #actions>
+        <Link :href="route('formulas.index')" class="ds-button ds-button-secondary">
+          <CalculatorIcon class="h-4 w-4" />
+          Biblioteca de fórmulas
+        </Link>
+        <button v-if="hasPermission('add_variables')" type="button" class="ds-button ds-button-primary" @click="openCreatePanel">
+          <PlusIcon class="h-4 w-4" />
+          Nova variável
+        </button>
+      </template>
+    </PageHeader>
 
-        <div class="flex shrink-0 flex-wrap gap-2">
-          <Link :href="route('formulas.index')" class="ds-button ds-button-secondary">
-            <CalculatorIcon class="h-4 w-4" />
-            Biblioteca de fórmulas
-          </Link>
-          <button v-if="hasPermission('add_variables')" type="button" class="ds-button ds-button-primary" @click="openCreatePanel">
-            <PlusIcon class="h-4 w-4" />
-            Nova variável
-          </button>
-        </div>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Registos</dt>
+        <dd class="pl-cell-value">{{ totalRecords }}</dd>
       </div>
-
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
-        <div class="px-5 py-4 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Registos</dt>
-          <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ totalRecords }}</dd>
-        </div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Activas nesta página</dt>
-          <dd class="mt-1 text-2xl font-bold tabular-nums text-emerald-700 dark:text-emerald-300">{{ activeRecords }}</dd>
-        </div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Fórmulas representadas</dt>
-          <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ representedFormulas }}</dd>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Activas nesta página</dt>
+        <dd class="pl-cell-value">{{ activeRecords }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Fórmulas representadas</dt>
+        <dd class="pl-cell-value">{{ representedFormulas }}</dd>
+      </div>
+    </dl>
 
     <RecordsTable
       :record="record"
@@ -118,8 +103,9 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Link, router, useForm } from '@inertiajs/vue3'
-import { Calculator as CalculatorIcon, Plus as PlusIcon, Variable as VariableIcon } from '@lucide/vue'
+import { Calculator as CalculatorIcon, Plus as PlusIcon } from '@lucide/vue'
 import { trans } from 'laravel-vue-i18n'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import RecordsTable from '@/Components/records-table.vue'

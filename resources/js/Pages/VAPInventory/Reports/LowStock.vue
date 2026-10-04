@@ -66,7 +66,7 @@
           <span class="pl-k pl-faint">{{ severityMixTotal }} itens em atenção</span>
         </div>
         <div class="min-h-72 p-4">
-          <apexchart type="bar" height="288" :options="severityMixChartOptions" :series="severityMixChartSeries" />
+          <PlanoChart kind="bar" label="Itens por severidade" :categories="charts?.severity_mix?.labels || []" :series="severityMixChartSeries" empty-text="Nenhum item abaixo do mínimo." />
         </div>
       </section>
       <section class="pl-panel min-w-0" aria-labelledby="low-stock-warehouses">
@@ -75,7 +75,7 @@
           <span class="pl-k pl-faint">{{ warehouseExposureTotal }} locais</span>
         </div>
         <div class="min-h-64 p-4">
-          <apexchart type="donut" height="256" :options="warehouseExposureChartOptions" :series="warehouseExposureChartSeries" />
+          <PlanoChart kind="donut" label="Itens em falta por armazém" :categories="charts?.warehouse_exposure?.labels || []" :series="[{ name: 'Itens', data: warehouseExposureChartSeries }]" />
         </div>
       </section>
       <section class="pl-panel min-w-0" aria-labelledby="low-stock-gap">
@@ -84,7 +84,7 @@
           <span class="pl-k pl-faint">Maiores distâncias</span>
         </div>
         <div class="min-h-56 p-4">
-          <apexchart type="bar" height="224" :options="replenishmentGapChartOptions" :series="replenishmentGapChartSeries" />
+          <PlanoChart kind="bar" label="Cobertura do ponto de encomenda" :categories="charts?.replenishment_coverage?.labels || []" :series="charts?.replenishment_coverage?.series || []" format="percent" empty-text="Sem pontos de encomenda definidos." />
         </div>
       </section>
     </div>
@@ -193,13 +193,14 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import Pagination from '@/Components/pagination.vue'
 import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import PageHeader from '@/Components/plano/PageHeader.vue'
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
 import StatusChip from '@/Components/plano/StatusChip.vue'
 import {
   Eye as EyeIcon,
@@ -242,12 +243,6 @@ const filters = reactive({
   sort_by: props.filters?.sort_by ?? 'severity',
 })
 
-const isDarkMode = ref(false)
-let themeObserver
-
-const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
-const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
 const inventoryRows = computed(() => props.inventory?.data || [])
 
@@ -306,7 +301,6 @@ const severityMixChartSeries = computed(() => [{
 const severityMixTotal = computed(() => (props.charts?.severity_mix?.series || []).reduce((total, value) => total + Number(value || 0), 0))
 const warehouseExposureChartSeries = computed(() => props.charts?.warehouse_exposure?.series || [])
 const warehouseExposureTotal = computed(() => props.charts?.warehouse_exposure?.labels?.length || 0)
-const replenishmentGapChartSeries = computed(() => props.charts?.replenishment_gap?.series || [])
 
 const recommendedOrders = computed(() => inventoryRows.value.map((item) => {
   const recommendedQuantity = Math.max(
@@ -329,61 +323,6 @@ const recommendedOrders = computed(() => inventoryRows.value.map((item) => {
 const topRecommendedOrders = computed(() => recommendedOrders.value.slice(0, 8))
 const recommendedUnitTotal = computed(() => recommendedOrders.value.reduce((total, item) => total + item.recommended_qty, 0))
 const recommendedValueTotal = computed(() => recommendedOrders.value.reduce((total, item) => total + (item.recommended_qty * item.unit_price), 0))
-
-const severityMixChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  colors: ['#e5484d'],
-  dataLabels: { enabled: false },
-  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
-  xaxis: {
-    categories: props.charts?.severity_mix?.labels || [],
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value } },
-  },
-  yaxis: { labels: { style: { colors: chartTextColor.value } } },
-  tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false },
-}))
-
-const warehouseExposureChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  labels: props.charts?.warehouse_exposure?.labels || [],
-  colors: ['#e0902b', '#e5484d', '#14a3a8', '#7c5ce0', '#047857', '#6b7482'],
-  legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
-  dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
-  stroke: { width: 0 },
-  tooltip: { theme: chartTooltipTheme.value },
-}))
-
-const replenishmentGapChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  colors: ['#14a3a8'],
-  dataLabels: { enabled: false },
-  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 0, columnWidth: '48%' } },
-  xaxis: {
-    categories: props.charts?.replenishment_gap?.labels || [],
-    labels: { rotate: -25, trim: true, style: { colors: chartTextColor.value } },
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-  },
-  yaxis: { labels: { style: { colors: chartTextColor.value } } },
-  tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false },
-}))
-
-function syncDarkMode() {
-  if (typeof document === 'undefined') return
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
 
 function statusText(item) {
   if (Number(item.qty_available) <= 0) return 'Sem existências'
@@ -465,15 +404,4 @@ watch(
   { deep: true },
 )
 
-onMounted(() => {
-  syncDarkMode()
-  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
-    themeObserver = new MutationObserver(syncDarkMode)
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  }
-})
-
-onBeforeUnmount(() => {
-  themeObserver?.disconnect()
-})
 </script>

@@ -2,9 +2,10 @@
 import { computed } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
-import { Check, ChevronsUpDown, X } from '@lucide/vue'
+import { Check, ChevronsUpDown, Plus, X } from '@lucide/vue'
 import sideNav from './side-nav.vue'
 import { contrastingText } from '@/Utils/brandingPalette'
+import { usePermission } from '@/Composables/usePermissions'
 
 /**
  * The area column: text only. The active laboratory sits on top with its own
@@ -20,6 +21,9 @@ const props = defineProps({
 const emit = defineEmits(['navigate', 'close'])
 
 const page = usePage()
+const { hasPermission } = usePermission()
+// Phones have no room for the primary action in the area bar; the menu carries it.
+const canReceiveSamples = computed(() => props.mobile && hasPermission('add_samples'))
 const laboratory = computed(() => page.props.laboratory ?? { labs: [], active_lab: null })
 const activeLab = computed(() => laboratory.value.active_lab)
 const activeArea = computed(() => props.areas.find((area) => area.key === props.activeAreaKey) ?? props.areas[0] ?? null)
@@ -51,6 +55,10 @@ function switchLab(lab) {
       <span class="pl-k">{{ activeArea?.label || 'Menu' }}</span>
       <button type="button" class="ds-icon-button" aria-label="Fechar menu" @click="emit('close')"><X aria-hidden="true" /></button>
     </div>
+
+    <Link v-if="canReceiveSamples" :href="route('vap_samples.index')" class="ds-button ds-button-primary pl-side-receive" @click="emit('navigate')">
+      <span>Receber amostra</span><Plus aria-hidden="true" />
+    </Link>
 
     <nav v-if="props.mobile" class="pl-side-areas" aria-label="Áreas">
       <Link

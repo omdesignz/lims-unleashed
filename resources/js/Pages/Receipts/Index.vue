@@ -97,31 +97,12 @@ function confirmAction() {
 }
 </script>
 <template>
-<div class="space-y-6" :class="commercialDocumentThemeClasses">
+<div class="pl-page space-y-6" :class="commercialDocumentThemeClasses">
 <ModuleHero
   :eyebrow="$t('gestlab.general.labels.commercial_documents.treasury_area')"
   :title="$t('gestlab.general.labels.receipts.page_title')"
   :description="$t('gestlab.general.labels.receipts.index_description')"
->
-  <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-    <article class="ds-card bg-[var(--ds-panel-raised)] p-4">
-      <p class="ds-kicker text-[0.64rem]">
-        {{ $t('gestlab.general.labels.commercial_documents.records') }}
-      </p>
-      <p class="mt-2 text-2xl font-black tabular-nums text-[var(--ds-text)]">
-        {{ props.record?.total ?? props.record?.data?.length ?? 0 }}
-      </p>
-    </article>
-    <article class="ds-card bg-[var(--ds-panel-raised)] p-4">
-      <p class="ds-kicker text-[0.64rem]">
-        {{ $t('gestlab.general.labels.commercial_documents.flow') }}
-      </p>
-      <p class="mt-2 text-sm font-black text-[var(--ds-text)]">
-        {{ $t('gestlab.general.labels.receipts.index_flow') }}
-      </p>
-    </article>
-  </div>
-</ModuleHero>
+/>
 
 <ArchiveMutationFeedback :processing="archive.processing.value" :message="archive.message.value" :failed="archive.failed.value" @refresh="router.reload()" />
 <records-table :action-processing="archive.processing.value" :archive-handler="archiveRecord" :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="requestArchive" @create-record="handleEdit">

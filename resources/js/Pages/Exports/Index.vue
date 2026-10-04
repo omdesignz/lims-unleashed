@@ -1,5 +1,6 @@
 <script setup>
 import BaseInput from "@/Components/base/BaseInput.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
@@ -196,25 +197,27 @@ function formatDate(value) {
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex min-w-0 items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><ArrowDownTrayIcon class="h-5 w-5" /></span>
-          <div class="min-w-0">
-            <p class="ds-kicker">Governação e portabilidade</p>
-            <h1 class="ds-heading mt-1 text-2xl">Central de exportações</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Registos mestres, comerciais e operacionais com filtros, permissões e estrutura Excel consistente.</p>
-          </div>
-        </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Central de exportações" lede="Registos mestres, comerciais e operacionais com filtros, permissões e estrutura Excel consistente.">
+      <template #badges>
         <span class="ds-chip shrink-0"><span class="lims-status-dot lims-status-dot-release" />{{ datasets.length }} conjuntos autorizados</span>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Conjuntos disponíveis</dt>
+        <dd class="pl-cell-value">{{ datasets.length }}</dd>
       </div>
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3">
-        <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:border-b-0 sm:border-r"><dt class="ds-table-heading">Conjuntos disponíveis</dt><dd class="ds-heading mt-2 text-xl tabular-nums">{{ datasets.length }}</dd></div>
-        <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:border-b-0 sm:border-r"><dt class="ds-table-heading">Linhas catalogadas</dt><dd class="ds-heading mt-2 text-xl tabular-nums">{{ totalRows.toLocaleString("pt-PT") }}</dd></div>
-        <div class="px-5 py-4"><dt class="ds-table-heading">Selecção actual</dt><dd class="mt-2 truncate text-sm font-bold text-[var(--ds-text)]">{{ selected?.title || "Visão geral" }}</dd></div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Linhas catalogadas</dt>
+        <dd class="pl-cell-value">{{ totalRows.toLocaleString("pt-PT") }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Selecção actual</dt>
+        <dd class="pl-cell-text">{{ selected?.title || "Visão geral" }}</dd>
+      </div>
+    </dl>
 
     <div class="grid min-w-0 gap-6 xl:grid-cols-5">
       <section class="ds-panel min-w-0 overflow-hidden xl:col-span-2">

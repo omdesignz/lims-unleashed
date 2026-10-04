@@ -1,14 +1,12 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import {
-  ArrowLeft as ArrowLeftIcon,
-  ArrowLeftRight as ArrowsRightLeftIcon,
   CalendarDays as CalendarDaysIcon,
   Box as CubeIcon,
   MapPin as MapPinIcon,
   CircleUser as UserCircleIcon,
 } from "@lucide/vue";
-import { Link } from "@inertiajs/vue3";
 import { computed } from "vue";
 
 defineOptions({ layout: Layout });
@@ -32,43 +30,27 @@ function formatDate(value) {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <ArrowsRightLeftIcon class="h-5 w-5" />
-          </span>
-          <div>
-            <p class="ds-kicker">Movimento #{{ movement.id }}</p>
-            <div class="mt-1 flex flex-wrap items-center gap-2">
-              <h1 class="ds-heading text-2xl">{{ movement.item || "Movimento de inventário" }}</h1>
-              <span class="rounded-full bg-[var(--ds-panel-muted)] px-2.5 py-1 text-xs font-bold text-[var(--ds-text-muted)]">{{ movement.type || "Sem classificação" }}</span>
-            </div>
-            <p class="ds-copy mt-1 text-sm">Registo individual do livro de movimentos de materiais e consumíveis.</p>
-          </div>
-        </div>
-        <Link :href="route('itransactions.index')" class="ds-button ds-button-secondary">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Voltar ao livro
-        </Link>
-      </div>
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Movimentos', url: route('itransactions.index') }, { title: movement.item || 'Movimento de inventário' }]" :title="movement.item || 'Movimento de inventário'" lede="Registo individual do livro de movimentos de materiais e consumíveis.">
+      <template #badges>
+        <span class="rounded-full bg-[var(--ds-panel-muted)] px-2.5 py-1 text-xs font-bold text-[var(--ds-text-muted)]">{{ movement.type || "Sem classificação" }}</span>
+      </template>
+    </PageHeader>
 
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
-        <div class="border-b border-[var(--ds-border)] px-4 py-4 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Quantidade</dt>
-          <dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ movement.qty ?? "—" }}</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-4 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Tipo</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ movement.type || "—" }}</dd>
-        </div>
-        <div class="px-4 py-4">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Registado em</dt>
-          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatDate(movement.created_at) }}</dd>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Quantidade</dt>
+        <dd class="pl-cell-value">{{ movement.qty ?? "—" }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Tipo</dt>
+        <dd class="pl-cell-text">{{ movement.type || "—" }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Registado em</dt>
+        <dd class="pl-cell-text">{{ formatDate(movement.created_at) }}</dd>
+      </div>
+    </dl>
 
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">

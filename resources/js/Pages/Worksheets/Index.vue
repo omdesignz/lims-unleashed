@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
   ArrowRight as ArrowRightIcon,
@@ -115,53 +116,38 @@ function formatDate(date) {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Execução analítica</p>
-          <div class="mt-3 flex items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <DocumentTextIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-2xl">Worksheets laboratoriais</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm"> Folhas de bancada geradas a partir do âmbito analítico, com progresso e lacunas técnicas visíveis. </p>
-            </div>
-          </div>
-        </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Worksheets laboratoriais" lede="Folhas de bancada geradas a partir do âmbito analítico, com progresso e lacunas técnicas visíveis.">
+      <template #badges>
+        <span class="ds-chip">
+          <Squares2X2Icon class="h-3.5 w-3.5" />
+          {{ summary.total }} folhas
+        </span>
+        <span class="ds-chip">
+          <CheckBadgeIcon class="h-3.5 w-3.5" />
+          {{ summary.completionRate }}% completas
+        </span>
+      </template>
+    </PageHeader>
 
-        <div class="flex flex-wrap gap-2">
-          <span class="ds-chip">
-            <Squares2X2Icon class="h-3.5 w-3.5" />
-            {{ summary.total }} folhas
-          </span>
-          <span class="ds-chip">
-            <CheckBadgeIcon class="h-3.5 w-3.5" />
-            {{ summary.completionRate }}% completas
-          </span>
-        </div>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Total</dt>
+        <dd class="pl-cell-value">{{ summary.total }}</dd>
       </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-r xl:border-b-0">
-          <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Total</dt>
-          <dd class="mt-2 text-xl font-black text-[var(--ds-text)]">{{ summary.total }}</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 xl:border-b-0 xl:border-r">
-          <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Pendentes</dt>
-          <dd class="mt-2 text-xl font-black text-[var(--ds-text)]">{{ summary.pending }}</dd>
-        </div>
-        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Parciais</dt>
-          <dd class="mt-2 text-xl font-black text-amber-700 dark:text-amber-200">{{ summary.partial }}</dd>
-        </div>
-        <div class="px-4 py-3">
-          <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Completas</dt>
-          <dd class="mt-2 text-xl font-black text-emerald-700 dark:text-emerald-200">{{ summary.complete }}</dd>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Pendentes</dt>
+        <dd class="pl-cell-value">{{ summary.pending }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Parciais</dt>
+        <dd class="pl-cell-value">{{ summary.partial }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Completas</dt>
+        <dd class="pl-cell-value">{{ summary.complete }}</dd>
+      </div>
+    </dl>
 
     <section class="ds-table-shell">
       <nav class="flex flex-wrap gap-2 border-b border-[var(--ds-border)] px-4 py-3" aria-label="Arquivo das folhas de trabalho">

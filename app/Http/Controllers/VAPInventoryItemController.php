@@ -726,6 +726,16 @@ class VAPInventoryItemController extends Controller
             ->sortByDesc('count')
             ->values();
 
+        $replenishmentCoverage = $inventory
+            ->filter(fn ($item) => (float) $item->reorder_point > 0)
+            ->map(fn ($item) => [
+                'label' => $item->item?->code ?: $item->item?->name ?: "Item #{$item->item_id}",
+                'coverage' => round(max((float) $item->qty_available, 0) / (float) $item->reorder_point * 100, 1),
+            ])
+            ->sortBy('coverage')
+            ->take(8)
+            ->values();
+
         $replenishmentGap = $inventory
             ->map(fn ($item) => [
                 'label' => $item->item?->code ?: $item->item?->name ?: "Item #{$item->item_id}",
@@ -749,6 +759,11 @@ class VAPInventoryItemController extends Controller
                 'warehouse_exposure' => [
                     'labels' => $warehouseExposure->pluck('label')->all(),
                     'series' => $warehouseExposure->pluck('count')->map(fn ($value) => (int) $value)->all(),
+                ],
+                // Coverage of the reorder point is unit-free, so items compare fairly.
+                'replenishment_coverage' => [
+                    'labels' => $replenishmentCoverage->pluck('label')->all(),
+                    'series' => [['name' => 'Cobertura do ponto de encomenda', 'data' => $replenishmentCoverage->pluck('coverage')->all()]],
                 ],
                 'replenishment_gap' => [
                     'labels' => $replenishmentGap->pluck('label')->all(),

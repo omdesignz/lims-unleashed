@@ -1,42 +1,17 @@
 <template>
-  <div class="space-y-6">
-    <section class="ds-command-surface overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Motor de cálculo</p>
-          <div class="mt-2 flex items-start gap-3">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))]">
-              <CalculatorIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-xl sm:text-2xl">Biblioteca de fórmulas</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Definições versionáveis usadas para transformar dados brutos em resultados calculados e reportáveis.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex shrink-0 flex-wrap gap-2">
-          <Link v-if="hasPermission('view_variables')" :href="route('variables.index')" class="ds-button ds-button-secondary">
-            <VariableIcon class="h-4 w-4" />
-            Variáveis globais
-          </Link>
-          <Link v-if="hasPermission('add_formulas')" :href="route('formulas.create')" class="ds-button ds-button-primary">
-            <PlusIcon class="h-4 w-4" />
-            Nova fórmula
-          </Link>
-        </div>
-      </div>
-
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
-        <div v-for="metric in metrics" :key="metric.label" class="border-b border-[var(--ds-border)] px-5 py-4 sm:[&:nth-child(odd)]:border-r xl:border-b-0 xl:[&:nth-child(odd)]:border-r-0">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-          <dd class="mt-1 flex items-baseline gap-2">
-            <span class="text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ metric.value }}</span>
-            <span class="text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.detail }}</span>
-          </dd>
-        </div>
-      </dl>
-    </section>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Biblioteca de fórmulas" lede="Definições versionáveis usadas para transformar dados brutos em resultados calculados e reportáveis.">
+      <template #actions>
+        <Link v-if="hasPermission('view_variables')" :href="route('variables.index')" class="ds-button ds-button-secondary">
+          <VariableIcon class="h-4 w-4" />
+          Variáveis globais
+        </Link>
+        <Link v-if="hasPermission('add_formulas')" :href="route('formulas.create')" class="ds-button ds-button-primary">
+          <PlusIcon class="h-4 w-4" />
+          Nova fórmula
+        </Link>
+      </template>
+    </PageHeader>
 
     <section class="ds-command-surface overflow-hidden">
       <div class="grid gap-3 border-b border-[var(--ds-border)] p-4 sm:grid-cols-[minmax(0,1fr)_13rem] sm:p-5">
@@ -150,6 +125,7 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Link, router } from '@inertiajs/vue3'
 import debounce from 'lodash/debounce'
 import {
@@ -186,12 +162,6 @@ const query = reactive({
 const actionRecord = ref(null)
 
 const records = computed(() => props.record.data || [])
-const metrics = computed(() => [
-  { label: 'Registos', value: props.record.meta?.total ?? records.value.length, detail: 'na biblioteca' },
-  { label: 'Activas nesta página', value: records.value.filter((formula) => formula.is_active && !formula.deleted).length, detail: 'disponíveis' },
-  { label: 'Categorias', value: new Set(records.value.map((formula) => formula.category).filter(Boolean)).size, detail: 'representadas' },
-  { label: 'Parâmetros ligados', value: records.value.reduce((total, formula) => total + (formula.parameters_count || 0), 0), detail: 'nesta página' },
-])
 
 const categoryLabels = {
   general: 'Geral',

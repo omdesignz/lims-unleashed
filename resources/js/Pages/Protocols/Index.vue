@@ -1,7 +1,6 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ClipboardCheck as ClipboardDocumentCheckIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 
@@ -27,6 +26,6 @@ const props = defineProps({
     new-entity-label="Nova metodologia"
     :code-label="$t('gestlab.general.labels.protocols.code')"
     :description-label="$t('gestlab.general.labels.protocols.description')"
-    :icon="ClipboardDocumentCheckIcon"
+
   />
 </template>

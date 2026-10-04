@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import ApproveResultComponent from "@/Components/results/ApproveResultComponent.vue";
 import CalculationModal from "@/Components/results/CalculationModal.vue";
 import InsertResultComponent from "@/Components/results/InsertResultComponent.vue";
@@ -473,71 +474,57 @@ defineExpose({
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0 max-w-3xl">
-          <Link
-            :href="route('analysis.index', { category: action === 'analyze' ? 'insert' : action })"
-            class="ds-table-action -ml-2 mb-3"
-          >
-            <QueueListIcon class="h-4 w-4" />
-            Voltar à fila
-          </Link>
-          <div class="flex flex-wrap items-center gap-2">
-            <p class="ds-kicker">{{ workflowKindLabel }} controlada</p>
-            <span class="ds-chip">
-              <span
-                class="lims-status-dot"
-                :class="hasScopeDrift ? 'lims-status-dot-hold' : 'lims-status-dot-release'"
-              />
-              {{ hasScopeDrift ? "Rever âmbito" : "Âmbito consistente" }}
-            </span>
-          </div>
-          <h1 class="ds-heading mt-2 text-2xl">{{ workflowTitle }}</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Execute a decisão analítica com rastreabilidade da recepção, do perfil, dos cálculos e da folha de trabalho.
-          </p>
-          <p class="mt-3 font-mono text-xs font-bold text-[var(--ds-text-muted)]">
-            {{ record?.cl_id?.label || "Sem código" }} / {{ record?.department_id?.label || "Sem departamento" }}
-          </p>
-        </div>
-
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <button
-            v-if="action === 'analyze' && hasCalculatedParameters"
-            type="button"
-            class="ds-button ds-button-primary"
-            @click="openCalculationModal"
-          >
-            <CalculatorIcon class="h-4 w-4" />
-            Calcular parâmetros
-          </button>
-          <Link
-            v-if="record?.links?.sample_entry_show_path"
-            :href="record.links.sample_entry_show_path"
-            class="ds-button ds-button-secondary"
-          >
-            <ClipboardDocumentCheckIcon class="h-4 w-4" />
-            Entrada de amostra
-          </Link>
-        </div>
-      </div>
-
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
-        <div
-          v-for="card in workflowStatusCards"
-          :key="card.label"
-          class="border-b border-[var(--ds-border)] px-5 py-4 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0"
+  <div class="pl-page space-y-6">
+    <PageHeader :title="workflowTitle" lede="Execute a decisão analítica com rastreabilidade da recepção, do perfil, dos cálculos e da folha de trabalho.">
+      <template #badges>
+        <span class="ds-chip">
+          <span
+            class="lims-status-dot"
+            :class="hasScopeDrift ? 'lims-status-dot-hold' : 'lims-status-dot-release'"
+          />
+          {{ hasScopeDrift ? "Rever âmbito" : "Âmbito consistente" }}
+        </span>
+      </template>
+      <template #actions>
+        <button
+          v-if="action === 'analyze' && hasCalculatedParameters"
+          type="button"
+          class="ds-button ds-button-primary"
+          @click="openCalculationModal"
         >
-          <dt class="flex items-center gap-2 text-xs font-bold text-[var(--ds-text-muted)]">
-            <span class="lims-status-dot" :class="card.dot" />
-            {{ card.label }}
-          </dt>
-          <dd class="ds-heading mt-2 text-xl">{{ card.value }}</dd>
-        </div>
-      </dl>
-    </section>
+          <CalculatorIcon class="h-4 w-4" />
+          Calcular parâmetros
+        </button>
+        <Link
+          v-if="record?.links?.sample_entry_show_path"
+          :href="record.links.sample_entry_show_path"
+          class="ds-button ds-button-secondary"
+        >
+          <ClipboardDocumentCheckIcon class="h-4 w-4" />
+          Entrada de amostra
+        </Link>
+      </template>
+    </PageHeader>
+
+    <Link
+      :href="route('analysis.index', { category: action === 'analyze' ? 'insert' : action })"
+      class="ds-table-action -ml-2 mb-3"
+    >
+      <QueueListIcon class="h-4 w-4" />
+      Voltar à fila
+    </Link>
+
+    <p class="mt-3 font-mono text-xs font-bold text-[var(--ds-text-muted)]">
+      {{ record?.cl_id?.label || "Sem código" }} / {{ record?.department_id?.label || "Sem departamento" }}
+    </p>
+
+    <dl class="pl-cells">
+      <div v-for="card in workflowStatusCards" :key="card.label" class="pl-cell">
+        <dt class="pl-k pl-muted"><span class="lims-status-dot" :class="card.dot" />
+            {{ card.label }}</dt>
+        <dd class="pl-cell-value">{{ card.value }}</dd>
+      </div>
+    </dl>
 
     <nav class="ds-command-surface overflow-hidden" aria-label="Progresso analítico">
       <ol class="grid sm:grid-cols-4">

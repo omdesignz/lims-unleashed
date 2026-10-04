@@ -1,7 +1,8 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import { ArrowLeft as ArrowLeftIcon, Send as PaperAirplaneIcon, Paperclip as PaperClipIcon, User as UserIcon } from '@lucide/vue'
+import { Send as PaperAirplaneIcon, Paperclip as PaperClipIcon, User as UserIcon } from '@lucide/vue'
 import { computed } from 'vue'
 
 defineOptions({ layout: Layout })
@@ -14,13 +15,8 @@ const submit = () => form.post(route('messages.store'))
 </script>
 
 <template>
-  <div class="space-y-5">
-    <section class="ds-panel overflow-hidden">
-      <header class="flex flex-col gap-4 border-b border-[var(--ds-border)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div class="flex items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><PaperAirplaneIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Comunicação interna</p><h1 class="ds-heading mt-1 text-xl sm:text-2xl">Nova mensagem</h1><p class="ds-copy mt-1 text-sm">Envie uma instrução curta e associe evidência quando necessário.</p></div></div>
-        <Link :href="route('messages.index')" class="ds-button ds-button-secondary"><ArrowLeftIcon class="h-4 w-4" />Voltar</Link>
-      </header>
-    </section>
+  <div class="pl-page space-y-5">
+    <PageHeader :trail="[{ title: 'Mensagens', url: route('messages.index') }, { title: 'Nova mensagem' }]" title="Nova mensagem" lede="Envie uma instrução curta e associe evidência quando necessário." />
 
     <form class="grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]" @submit.prevent="submit">
       <section class="ds-panel overflow-hidden">

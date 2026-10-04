@@ -189,3 +189,27 @@
   box-shadow: none;
   color: var(--ds-text);
 }
+
+/* The command bar carries the document's primary action: like the Plano next-step
+   bar it stays within reach at the foot of the screen, and its actions wrap on
+   phones instead of pushing the page sideways. */
+.commercial-document-page .commercial-document-command {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: var(--pl-bg);
+}
+
+.commercial-document-page .commercial-document-command > div:last-child {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+  .commercial-document-page .commercial-document-command {
+    bottom: var(--bottombar-height);
+  }
+
+  .commercial-document-page .commercial-document-command > div:last-child > * {
+    flex: 1 1 auto;
+  }
+}

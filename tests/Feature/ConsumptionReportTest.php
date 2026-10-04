@@ -40,6 +40,10 @@ class ConsumptionReportTest extends TestCase
                 ->has('charts.user_consumption.series')
                 ->has('charts.daily_consumption.labels')
                 ->has('charts.daily_consumption.series')
+                ->has('charts.item_records.labels')
+                ->where('charts.item_records.series.0.name', 'Registos de consumo')
+                ->has('charts.user_records.series')
+                ->has('charts.daily_records.series.0.data')
             );
     }
 }

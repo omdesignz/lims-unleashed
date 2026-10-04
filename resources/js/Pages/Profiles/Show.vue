@@ -1,5 +1,6 @@
 <script setup>
 import { usePermission } from "@/Composables/usePermissions";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link } from "@inertiajs/vue3";
 import {
@@ -137,64 +138,38 @@ function isCounted(parameter) {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <nav aria-label="Breadcrumb">
-          <Link :href="route('profiles.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
-            <ArrowLeftIcon class="h-4 w-4" /> Perfis analíticos </Link>
-        </nav>
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Perfis analíticos', url: route('profiles.index') }, { title: profile.name }]" :title="profile.name" lede="Âmbito controlado de ensaios, métodos, critérios de referência e composição comercial.">
+      <template #badges>
+        <span v-if="profile.code" class="ds-chip font-mono">{{ profile.code }}</span>
+        <span class="ds-chip">{{ category.code || profile.category || "Sem categoria" }}</span>
+        <span v-if="category.department" class="ds-chip">{{ category.department }}</span>
+        <span v-if="profile.deleted" class="ds-chip bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20">
+          Arquivado
+        </span>
+      </template>
+      <template #actions>
+        <Link :href="route('profiles.index')" class="ds-button ds-button-secondary">
+          <ArrowLeftIcon class="h-4 w-4" />
+          Voltar
+        </Link>
+        <Link v-if="hasPermission('add_profiles')" :href="route('profiles.create')" class="ds-button ds-button-secondary">
+          <PlusIcon class="h-4 w-4" />
+          Novo perfil
+        </Link>
+        <Link v-if="hasPermission('edit_profiles')" :href="route('profiles.edit', { profile: profile.id })" class="ds-button ds-button-primary">
+          <PencilSquareIcon class="h-4 w-4" />
+          Editar perfil
+        </Link>
+      </template>
+    </PageHeader>
 
-        <div class="mt-5 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <ClipboardDocumentCheckIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <p class="ds-kicker">Perfil analítico #{{ profile.id }}</p>
-              <h1 class="ds-heading mt-1 break-words text-2xl">{{ profile.name }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm"> Âmbito controlado de ensaios, métodos, critérios de referência e composição comercial. </p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span v-if="profile.code" class="ds-chip font-mono">{{ profile.code }}</span>
-                <span class="ds-chip">{{ category.code || profile.category || "Sem categoria" }}</span>
-                <span v-if="category.department" class="ds-chip">{{ category.department }}</span>
-                <span v-if="profile.deleted" class="ds-chip bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20">
-                  Arquivado
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap gap-2 lg:justify-end">
-            <Link :href="route('profiles.index')" class="ds-button ds-button-secondary">
-              <ArrowLeftIcon class="h-4 w-4" />
-              Voltar
-            </Link>
-            <Link v-if="hasPermission('add_profiles')" :href="route('profiles.create')" class="ds-button ds-button-secondary">
-              <PlusIcon class="h-4 w-4" />
-              Novo perfil
-            </Link>
-            <Link v-if="hasPermission('edit_profiles')" :href="route('profiles.edit', { profile: profile.id })" class="ds-button ds-button-primary">
-              <PencilSquareIcon class="h-4 w-4" />
-              Editar perfil
-            </Link>
-          </div>
-        </div>
+    <dl class="pl-cells">
+      <div v-for="metric in metrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
       </div>
-
-      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
-        <div v-for="metric in metrics" :key="metric.label" class="bg-[var(--ds-panel)] p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-              <dd class="mt-3 break-words text-2xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
-              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
-            </div>
-            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+    </dl>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
       <main class="min-w-0">

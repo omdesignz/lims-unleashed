@@ -1,67 +1,22 @@
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+  <div class="pl-page space-y-6" :class="commercialDocumentThemeClasses">
     <Head title="Manutenção e calibração" />
     <p v-if="completionError || completionRequest.hasErrors || downloadError" class="ds-field-error" role="alert">{{ completionError || Object.values(completionRequest.errors).flat().join(' ') || downloadError }}</p>
     <p v-if="downloading" class="ds-copy text-sm" role="status">A preparar o ficheiro…</p>
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:flex sm:items-start sm:justify-between sm:gap-6 lg:px-6">
-        <div class="min-w-0">
-          <p class="ds-kicker">Metrologia e manutenção</p>
-          <div class="mt-2 flex flex-wrap items-center gap-3">
-            <h1 class="ds-heading text-2xl">Gestão de manutenção e calibração</h1>
-            <span
-              :class="[
-                'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ring-1',
-                stats.overdue > 0
-                  ? 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20'
-                  : 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20',
-              ]"
-            >
-              {{ stats.overdue > 0 ? `${stats.overdue} atrasadas` : 'Agenda em dia' }}
-            </span>
-          </div>
-          <p class="ds-copy mt-2 max-w-3xl text-sm">
-            Monitorize calibrações, manutenção preventiva, custos e equipamentos críticos com uma vista operacional densa e auditável.
-          </p>
-        </div>
-
-        <div class="mt-4 flex flex-wrap items-center gap-2 sm:mt-0 sm:justify-end">
-          <span class="ds-chip">
-            {{ stats.total_tasks }} tarefas totais
-          </span>
-          <Link
-            v-if="can.create"
-            :href="route('vap-maintenance.tasks.create')"
-            class="ds-button ds-button-primary"
-          >
-            <PlusIcon class="h-4 w-4" />
-            Nova tarefa
-          </Link>
-        </div>
-      </div>
-
-      <div class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
-        <article
-          v-for="card in statCards"
-          :key="card.label"
-          class="bg-[var(--ds-panel)] p-5"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
-              <p class="mt-3 text-3xl font-bold text-[var(--ds-text)]">{{ card.value }}</p>
-              <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ card.caption }}</p>
-            </div>
-            <span :class="['inline-flex h-10 w-10 items-center justify-center rounded-lg ring-1', card.tone]">
-              <component :is="card.icon" class="h-5 w-5" />
-            </span>
-          </div>
-        </article>
-      </div>
-    </section>
+    <PageHeader title="Gestão de manutenção e calibração" lede="Calibrações, manutenção preventiva, custos e equipamentos críticos, ordenados por vencimento.">
+      <template #badges>
+        <StatusChip :tone="stats.overdue > 0 ? 'bad' : 'ok'">{{ stats.overdue > 0 ? `${stats.overdue} atrasadas` : 'Agenda em dia' }}</StatusChip>
+      </template>
+      <template #actions>
+        <Link v-if="can.create" :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary">
+          Nova tarefa<PlusIcon aria-hidden="true" />
+        </Link>
+      </template>
+      <StateCells class="mt-8" :items="statusCells" :model-value="filterState.status || 'all'" label="Filtrar tarefas por estado" @update:model-value="filterByStatus" />
+    </PageHeader>
 
     <section class="ds-command-surface p-4">
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div class="grid gap-4 md:grid-cols-3">
         <label class="ds-field-group">
           <span class="ds-field-label">
             <TagIcon class="mr-1 inline h-4 w-4" />
@@ -72,20 +27,6 @@
             <option v-for="category in categories" :key="category.id" :value="category.id">
               {{ category.name }}
             </option>
-          </BaseSelect>
-        </label>
-
-        <label class="ds-field-group">
-          <span class="ds-field-label">
-            <CheckCircleIcon class="mr-1 inline h-4 w-4" />
-            Estado
-          </span>
-          <BaseSelect v-model="filterState.status" class="ds-field" @change="applyFilters">
-            <option value="">Todos os estados</option>
-            <option value="overdue">Atrasadas</option>
-            <option value="due_soon">Vencendo em breve</option>
-            <option value="executed">Executadas</option>
-            <option value="planned">Planeadas</option>
           </BaseSelect>
         </label>
 
@@ -244,32 +185,24 @@
       </div>
     </section>
 
-    <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-      <article class="ds-card p-5">
-        <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
-              <ChartBarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
-              Distribuição de tarefas
-            </h3>
-            <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Estado actual das tarefas criadas no período, com os filtros desta página.</p>
-          </div>
-          <BaseSelect v-model="chartPeriod" class="ds-field w-48" @change="loadChartData">
-            <option value="month">Este mês</option>
-            <option value="quarter">Últimos 3 meses</option>
-            <option value="year">Últimos 12 meses</option>
-          </BaseSelect>
-        </div>
-
-        <p v-if="chartError" class="ds-field-error" role="alert">{{ chartError }}</p>
-        <simpleChart
-          v-else-if="!chartLoading && chartData.status_stats"
-          type="bar"
-          :height="300"
-          :chart-data="chartData"
-        />
-        <div v-else class="ds-empty-state flex h-64 items-center justify-center text-sm font-semibold text-[var(--ds-text-muted)]" role="status">
-          A carregar dados...
+    <section class="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <article class="pl-panel min-w-0">
+        <header class="pl-panel-head">
+          <h2 class="pl-k">Tarefas por estado</h2>
+          <div class="w-44"><BaseSelect v-model="chartPeriod" :options="[{ value: 'month', label: 'Este mês' }, { value: 'quarter', label: 'Últimos 3 meses' }, { value: 'year', label: 'Últimos 12 meses' }]" aria-label="Período do gráfico" @update:model-value="loadChartData" /></div>
+        </header>
+        <div class="p-4">
+          <p v-if="chartError" class="pl-banner pl-banner-bad" role="alert">{{ chartError }}</p>
+          <PlanoChart
+            v-else
+            kind="bar"
+            label="Tarefas criadas no período, por estado"
+            :categories="['Atrasadas', 'Vencem em 30 dias', 'Planeadas', 'Executadas']"
+            :series="[{ name: 'Tarefas', data: [chartData.status_stats?.overdue ?? 0, chartData.status_stats?.due_soon ?? 0, chartData.status_stats?.scheduled ?? 0, chartData.status_stats?.executed ?? 0] }]"
+            :loading="chartLoading"
+            :height="220"
+            empty-text="Sem tarefas criadas neste período."
+          />
         </div>
       </article>
 
@@ -349,6 +282,9 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StateCells from '@/Components/plano/StateCells.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Head, Link, router, useHttp } from '@inertiajs/vue3'
 import { useFileDownload } from '@/Composables/useFileDownload'
@@ -356,7 +292,6 @@ import {
   Wrench as WrenchScrewdriverIcon,
   Plus as PlusIcon,
   TriangleAlert as ExclamationTriangleIcon,
-  Clock as ClockIcon,
   Calendar as CalendarIcon,
   CircleCheck as CheckCircleIcon,
   Tag as TagIcon,
@@ -368,11 +303,10 @@ import {
   Zap as BoltIcon,
   ChevronRight as ChevronRightIcon,
   Download as ArrowDownTrayIcon,
-  ChartColumn as ChartBarIcon,
 } from '@lucide/vue'
 import Pagination from '@/Components/pagination.vue'
 import { debounce } from 'lodash'
-import simpleChart from '@/Components/apex-chart/simple-chart.vue'
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
 
 const props = defineProps({
   tasks: Object,
@@ -424,36 +358,19 @@ const chartData = ref(props.initialChartData || {
 
 const taskItems = computed(() => props.tasks?.data ?? [])
 
-const statCards = computed(() => [
-  {
-    label: 'Atrasadas',
-    value: props.stats?.overdue ?? 0,
-    caption: 'Tarefas com data ultrapassada.',
-    icon: ExclamationTriangleIcon,
-    tone: 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20',
-  },
-  {
-    label: 'Vencendo em breve',
-    value: props.stats?.due_soon ?? 0,
-    caption: 'Dentro dos próximos 30 dias.',
-    icon: ClockIcon,
-    tone: 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20',
-  },
-  {
-    label: 'Planeadas',
-    value: props.stats?.planned ?? 0,
-    caption: 'Intervenções programadas.',
-    icon: CalendarIcon,
-    tone: 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-200 dark:ring-sky-400/20',
-  },
-  {
-    label: 'Executadas',
-    value: props.stats?.executed ?? 0,
-    caption: 'Tarefas concluídas e registadas.',
-    icon: CheckCircleIcon,
-    tone: 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20',
-  },
+// The counts are also the status filter: choosing a cell narrows the task list.
+const statusCells = computed(() => [
+  { key: 'all', label: 'Todas', value: props.stats?.total_tasks ?? 0 },
+  { key: 'overdue', label: 'Atrasadas', value: props.stats?.overdue ?? 0, tone: (props.stats?.overdue ?? 0) > 0 ? 'bad' : null },
+  { key: 'due_soon', label: 'Vencem em 30 dias', value: props.stats?.due_soon ?? 0 },
+  { key: 'planned', label: 'Planeadas', value: props.stats?.planned ?? 0 },
+  { key: 'executed', label: 'Executadas', value: props.stats?.executed ?? 0 },
 ])
+
+function filterByStatus(key) {
+  filterState.status = key === 'all' ? '' : key
+  applyFilters()
+}
 
 const costCards = computed(() => [
   {

@@ -15,6 +15,11 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  // The panel is as wide as its form needs: 'narrow' for a handful of fields.
+  size: {
+    type: String,
+    default: 'wide',
+  },
 })
 
 const open = ref(true)
@@ -55,9 +60,8 @@ const close = () => {
               leave-from="translate-x-0"
               leave-to="translate-x-full opacity-0 motion-reduce:translate-x-0"
             >
-              <DialogPanel class="pointer-events-auto w-screen max-w-4xl">
+              <DialogPanel class="pointer-events-auto w-screen" :class="size === 'narrow' ? 'max-w-xl' : 'max-w-4xl'">
                 <div class="ds-slideover-panel flex h-full flex-col overflow-hidden border-y-0 border-r-0">
-                  <div class="pl-strip">Painel lateral</div>
                   <!-- Header -->
                   <div class="ds-slideover-header relative flex-shrink-0 border-b px-6 py-5">
                     <div class="flex items-start justify-between gap-x-3">

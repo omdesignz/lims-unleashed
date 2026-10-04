@@ -1,12 +1,11 @@
 <script setup>
 import ReferenceCatalogManager from '@/Components/catalogs/ReferenceCatalogManager.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { ClipboardList as ClipboardDocumentListIcon } from '@lucide/vue'
 
 defineOptions({ layout: Layout })
 defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) }, fields: { type: Array, default: () => [] }, model: String, abilities: { type: Array, default: () => [] }, query: { type: Object, default: () => ({}) }, slideOverEdit: { type: Boolean, default: false } })
 </script>
 
 <template>
-  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="collectionreasons" route-parameter="reason" permission-key="collection_reasons" title="Motivos de recolha" kicker="Pre-analítica" description="Vocabulario controlado para justificar recolhas, recolhas adicionais e reamostragens." entity-label="Motivo de recolha" new-entity-label="Novo motivo" name-label="Nome" code-label="Código" description-label="Critério de utilização" :supports-name="true" :icon="ClipboardDocumentListIcon" />
+  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="collectionreasons" route-parameter="reason" permission-key="collection_reasons" title="Motivos de recolha" kicker="Pre-analítica" description="Vocabulario controlado para justificar recolhas, recolhas adicionais e reamostragens." entity-label="Motivo de recolha" new-entity-label="Novo motivo" name-label="Nome" code-label="Código" description-label="Critério de utilização" :supports-name="true" />
 </template>

@@ -59,6 +59,17 @@ class MaintenanceCategoryOwnershipTest extends TestCase
         return $category;
     }
 
+    public function test_maintenance_dashboard_path_names_the_section_in_portuguese(): void
+    {
+        $this->get(route('vap-maintenance.dashboard'))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('VAPMaintenance/Dashboard')
+            ->where('breadcrumbs.0.title', 'Manutenção')
+            ->where('breadcrumbs.1.title', 'Painel'));
+        $this->get(route('vap-maintenance.tasks'))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('breadcrumbs.0.title', 'Manutenção')
+            ->where('breadcrumbs.1.title', 'Tarefas'));
+    }
+
     public function test_lists_and_all_authoring_choices_only_expose_shared_and_owned_categories(): void
     {
         $this->get(route('vap-maintenance.categories'))->assertOk()->assertInertia(fn (Assert $page) => $page

@@ -1,39 +1,25 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="min-w-0 max-w-3xl">
-            <p class="ds-kicker">ISO 17025 · garantia da validade dos resultados</p>
-            <h1 class="ds-heading mt-2 text-2xl">
-              Ensaios de proficiência e comparações interlaboratoriais
-            </h1>
-            <p class="ds-copy mt-2 max-w-2xl text-sm">
-              Planeie rondas externas, acompanhe prazos, registe z-score, gere acções correctivas e mantenha evidência pronta para auditorias.
-            </p>
-          </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Ensaios de proficiência e comparações interlaboratoriais" lede="Planeie rondas externas, acompanhe prazos, registe z-score, gere acções correctivas e mantenha evidência pronta para auditorias.">
+      <template #actions>
+        <button
+          v-if="permissions.add"
+          type="button"
+          class="ds-button ds-button-primary"
+          @click="openCreate"
+        >
+          <PlusIcon class="h-4 w-4" />
+          Novo programa
+        </button>
+      </template>
+    </PageHeader>
 
-          <button
-            v-if="permissions.add"
-            type="button"
-            class="ds-button ds-button-primary"
-            @click="openCreate"
-          >
-            <PlusIcon class="h-4 w-4" />
-            Novo programa
-          </button>
-        </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div v-for="card in summaryCards" :key="card.label" class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0">
-          <div class="flex items-center justify-between gap-3">
-            <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ card.label }}</dt>
-            <component :is="card.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-          <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.caption }}</p>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div v-for="card in summaryCards" :key="card.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ card.label }}</dt>
+        <dd class="pl-cell-value">{{ card.value }}</dd>
+      </div>
+    </dl>
 
     <section class="ds-command-surface p-5">
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr),16rem,16rem,auto]">
@@ -81,18 +67,27 @@
       </div>
     </section>
 
-    <section class="grid gap-5 xl:grid-cols-3">
-      <article class="ds-panel overflow-hidden p-5">
-        <h3 class="ds-heading text-base">Estado das rondas</h3>
-        <ChartWrapper class="mt-4" type="bar" height="260" :series="statusChartSeries" :options="statusChartOptions" />
+    <section class="grid gap-6 xl:grid-cols-3" aria-label="Indicadores das rondas">
+      <article class="pl-panel min-w-0">
+        <header class="pl-panel-head"><h2 class="pl-k">Estado das rondas</h2></header>
+        <div class="p-4">
+          <PlanoChart kind="bar" label="Rondas por estado" :categories="charts?.status?.labels ?? []" :series="[{ name: 'Rondas', data: charts?.status?.series ?? [] }]" :height="220" />
+        </div>
       </article>
-      <article class="ds-panel overflow-hidden p-5">
-        <h3 class="ds-heading text-base">Resultados</h3>
-        <ChartWrapper class="mt-4" type="donut" height="260" :series="outcomeChartSeries" :options="outcomeChartOptions" />
+      <article class="pl-panel min-w-0">
+        <header class="pl-panel-head"><h2 class="pl-k">Resultados</h2></header>
+        <div class="p-4">
+          <PlanoChart kind="donut" label="Rondas por resultado" :categories="charts?.outcome?.labels ?? []" :series="[{ name: 'Rondas', data: charts?.outcome?.series ?? [] }]" :tones="{ Pendente: 'neutral', Satisfatório: 'ok', Questionável: 'warn', Insatisfatório: 'bad' }" />
+        </div>
       </article>
-      <article class="ds-panel overflow-hidden p-5">
-        <h3 class="ds-heading text-base">Papel do laboratório</h3>
-        <ChartWrapper class="mt-4" type="donut" height="260" :series="roleChartSeries" :options="roleChartOptions" />
+      <article class="pl-panel min-w-0">
+        <header class="pl-panel-head"><h2 class="pl-k">Papel do laboratório</h2></header>
+        <dl class="pl-cells border-0">
+          <div v-for="(label, index) in charts?.role?.labels ?? []" :key="label" class="pl-cell">
+            <dt class="pl-k pl-muted">{{ label }}</dt>
+            <dd class="pl-cell-value">{{ charts?.role?.series?.[index] ?? 0 }}</dd>
+          </div>
+        </dl>
       </article>
     </section>
 
@@ -421,7 +416,8 @@
 
 <script setup>
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
-import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
 import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import DatePickerEnhanced from '@/Components/date-picker-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
@@ -547,31 +543,6 @@ const selectedFormRole = optionProxy('role', roleFormOptions, form)
 const selectedFormStatus = optionProxy('status', statusFormOptions, form)
 const selectedFormOutcome = optionProxy('outcome', outcomeFormOptions, form)
 const editorTitle = computed(() => editingRecordId.value ? 'Editar programa' : 'Novo programa')
-
-const chartTheme = computed(() => ({
-  chart: { toolbar: { show: false }, foreColor: isDarkMode.value ? '#d7dbe0' : '#6b7482' },
-  grid: { borderColor: isDarkMode.value ? '#334155' : '#eef0f3' },
-  legend: { labels: { colors: isDarkMode.value ? '#d7dbe0' : '#6b7482' } },
-}))
-
-const statusChartSeries = computed(() => [{ name: 'Programas', data: props.charts?.status?.series ?? [] }])
-const statusChartOptions = computed(() => ({
-  ...chartTheme.value,
-  xaxis: { categories: props.charts?.status?.labels ?? [] },
-  colors: ['#087cf0'],
-}))
-const outcomeChartSeries = computed(() => props.charts?.outcome?.series ?? [])
-const outcomeChartOptions = computed(() => ({
-  ...chartTheme.value,
-  labels: props.charts?.outcome?.labels ?? [],
-  colors: ['#98a1ae', '#22a45d', '#e0902b', '#e5484d'],
-}))
-const roleChartSeries = computed(() => props.charts?.role?.series ?? [])
-const roleChartOptions = computed(() => ({
-  ...chartTheme.value,
-  labels: props.charts?.role?.labels ?? [],
-  colors: ['#7c5ce0', '#14a3a8'],
-}))
 
 function schemeLabel(value) {
   return {

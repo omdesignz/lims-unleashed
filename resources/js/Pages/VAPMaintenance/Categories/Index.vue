@@ -1,56 +1,26 @@
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+  <div class="pl-page space-y-6" :class="commercialDocumentThemeClasses">
     <Head title="Categorias de manutenção" />
     <p v-if="mutationError" class="ds-field-error" role="alert">{{ mutationError }}</p>
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-        <div class="min-w-0">
-          <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--ds-text-soft)]">
-            Biblioteca metrologica
-          </p>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <TagIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]"> Categorias de manutenção </h1>
-              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]"> Controle os tipos de manutenção, calibração e verificação usados nos planos de equipamento. </p>
-            </div>
-          </div>
-        </div>
-
+    <PageHeader title="Categorias de manutenção" lede="Controle os tipos de manutenção, calibração e verificação usados nos planos de equipamento.">
+      <template #actions>
         <button
           v-if="can.create && !archived"
           type="button"
           class="ds-button ds-button-primary"
           @click="showCreateModal = true"
         >
-          <PlusIcon class="h-4 w-4" />
-          Nova categoria
+          Nova categoria<PlusIcon aria-hidden="true" />
         </button>
-      </div>
-
-      <div class="mt-6 grid gap-3 sm:grid-cols-3">
-        <article
-          v-for="stat in statsCards"
-          :key="stat.label"
-          class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4"
-        >
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
-            {{ stat.label }}
-          </p>
-          <div class="mt-3 flex items-end justify-between gap-3">
-            <p class="text-2xl font-black text-[var(--ds-text)]">
-              {{ stat.value }}
-            </p>
-            <component :is="stat.icon" :class="['h-5 w-5', stat.tone]" />
-          </div>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
-            {{ stat.detail }}
-          </p>
-        </article>
-      </div>
-    </section>
+      </template>
+      <dl class="pl-cells mt-8">
+        <div v-for="stat in statsCards" :key="stat.label" class="pl-cell">
+          <dt class="pl-k pl-muted">{{ stat.label }}</dt>
+          <dd class="pl-cell-value">{{ stat.value }}</dd>
+          <dd class="text-sm text-[var(--pl-muted)]">{{ stat.detail }}</dd>
+        </div>
+      </dl>
+    </PageHeader>
 
     <section class="ds-command-surface p-5 sm:p-6">
       <div class="grid gap-4 lg:grid-cols-[minmax(18rem,32rem)_minmax(0,1fr)] lg:items-end">
@@ -273,6 +243,7 @@
 
 <script setup>
 import { computed, ref, watch, onUnmounted } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Head, Link, router, useForm } from '@inertiajs/vue3'
 import {
   Check as CheckIcon,

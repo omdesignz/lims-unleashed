@@ -137,7 +137,7 @@ class PortalDocumentBoundaryTest extends TestCase
             'missing_invoice' => $collection->forceFill(['invoice_id' => null])->saveQuietly(),
             'archived_invoice' => $invoice->deleteQuietly(),
             'foreign_invoice' => $collection->forceFill(['invoice_id' => $foreign->collection->invoice_id])->saveQuietly(),
-            'foreign_collection' => $certificate->forceFill(['collection_id' => $foreign->collection_id])->saveQuietly(),
+            'foreign_collection' => $this->moveToForeignCollection($certificate, $foreign),
             'foreign_code' => $certificate->forceFill(['cl_id' => $foreign->cl_id])->saveQuietly(),
             'foreign_entry' => $entry->forceFill(['customer_id' => $foreign->customer_id])->saveQuietly(),
             'archived_entry' => $entry->deleteQuietly(),
@@ -152,6 +152,17 @@ class PortalDocumentBoundaryTest extends TestCase
             $this->get(route('portal.qualitycertificates', ['search' => $certificate->code]))
                 ->assertOk()->assertInertia(fn (Assert $page) => $page->has('record.data', 0));
         }
+    }
+
+    /**
+     * Points the certificate at another site's collection. A collection holds one live
+     * certificate at most, so the foreign certificate is archived first.
+     */
+    private function moveToForeignCollection(QualityCertificate $certificate, QualityCertificate $foreign): bool
+    {
+        $foreign->deleteQuietly();
+
+        return $certificate->forceFill(['collection_id' => $foreign->collection_id])->saveQuietly();
     }
 
     private function foreignResult(QualityCertificate $certificate, QualityCertificate $foreign): int

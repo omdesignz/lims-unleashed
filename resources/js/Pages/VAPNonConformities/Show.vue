@@ -1,77 +1,49 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
+  <div class="pl-page space-y-6">
     <Head title="Não conformidades" />
     <p v-if="downloads.error.value" role="alert" class="ds-alert ds-alert-danger">{{ downloads.error.value }}</p>
     <p v-if="downloads.processing.value" role="status">A preparar exportação…</p>
     <p v-if="archive.failed.value" role="alert" class="ds-alert ds-alert-danger">{{ archive.message.value }}</p>
     <p v-if="archive.processing.value" role="status">A guardar…</p>
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-        <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">CAPA dossier</span>
-            <span :class="['inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-black ring-1 ring-inset', statusClasses]">
-              <span :class="['h-2 w-2 rounded-full', statusDotClass]"></span>
-              {{ $t(`gestlab.general.labels.vap_non_conformities.status.${nonConformity.status}`) }}
-            </span>
-          </div>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-rose-700 dark:text-rose-300">
-              <ExclamationTriangleIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">
-                {{ $t('gestlab.general.labels.vap_non_conformities.details_title') }}
-              </h1>
-              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                {{ $t('gestlab.general.labels.vap_non_conformities.details_description') }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
-          <button type="button" :disabled="downloads.processing.value" @click="downloads.download(route('vap_non_conformities.export.details.pdf', nonConformity.id))" class="ds-button ds-button-secondary">
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            PDF
-          </button>
-          <button type="button" :disabled="downloads.processing.value" @click="downloads.download(route('vap_non_conformities.export.details.excel', nonConformity.id))" class="ds-button ds-button-secondary">
-            <DocumentArrowDownIcon class="h-4 w-4" />
-            Excel
-          </button>
-          <Link v-if="can.edit && !nonConformity.deleted_at" :href="route('vap_non_conformities.edit', nonConformity.id)" class="ds-button ds-button-primary">
-            <PencilSquareIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.vap_non_conformities.buttons.edit') }}
-          </Link>
-        </div>
-      </div>
-
-      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <article v-for="card in summaryCards" :key="card.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
-              <p class="mt-3 text-xl font-black" :class="card.valueClass">{{ card.value }}</p>
-            </div>
-            <component :is="card.icon" :class="['h-5 w-5', card.tone]" />
-          </div>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
-        </article>
-      </div>
-
-      <nav class="mt-5 flex overflow-x-auto border-t border-[var(--ds-border)] pt-1" aria-label="Secções do dossier CAPA">
-        <button
-          v-for="section in dossierSections"
-          :key="section.value"
-          type="button"
-          class="-mb-px min-h-12 shrink-0 border-b-2 px-4 text-sm font-bold transition"
-          :class="activeDossierSection === section.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
-          @click="activeDossierSection = section.value"
-        >
-          {{ section.label }}
+    <PageHeader :title="$t('gestlab.general.labels.vap_non_conformities.details_title')" :lede="$t('gestlab.general.labels.vap_non_conformities.details_description')">
+      <template #badges>
+        <span :class="['inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-black ring-1 ring-inset', statusClasses]">
+          <span :class="['h-2 w-2 rounded-full', statusDotClass]"></span>
+          {{ $t(`gestlab.general.labels.vap_non_conformities.status.${nonConformity.status}`) }}
+        </span>
+      </template>
+      <template #actions>
+        <button type="button" :disabled="downloads.processing.value" @click="downloads.download(route('vap_non_conformities.export.details.pdf', nonConformity.id))" class="ds-button ds-button-secondary">
+          PDF<ArrowDownTrayIcon aria-hidden="true" />
         </button>
-      </nav>
-    </section>
+        <button type="button" :disabled="downloads.processing.value" @click="downloads.download(route('vap_non_conformities.export.details.excel', nonConformity.id))" class="ds-button ds-button-secondary">
+          Excel<DocumentArrowDownIcon aria-hidden="true" />
+        </button>
+        <Link v-if="can.edit && !nonConformity.deleted_at" :href="route('vap_non_conformities.edit', nonConformity.id)" class="ds-button ds-button-primary">
+          {{ $t('gestlab.general.labels.vap_non_conformities.buttons.edit') }}<PencilSquareIcon aria-hidden="true" />
+        </Link>
+      </template>
+      <dl class="pl-cells mt-8">
+        <div v-for="card in summaryCards" :key="card.label" class="pl-cell">
+          <dt class="pl-k pl-muted">{{ card.label }}</dt>
+          <dd class="pl-cell-text" :class="card.valueClass">{{ card.value }}</dd>
+          <dd class="text-sm text-[var(--pl-muted)]">{{ card.detail }}</dd>
+        </div>
+      </dl>
+    </PageHeader>
+
+    <nav class="mt-5 flex overflow-x-auto border-t border-[var(--ds-border)] pt-1" aria-label="Secções do dossier CAPA">
+      <button
+        v-for="section in dossierSections"
+        :key="section.value"
+        type="button"
+        class="-mb-px min-h-12 shrink-0 border-b-2 px-4 text-sm font-bold transition"
+        :class="activeDossierSection === section.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+        @click="activeDossierSection = section.value"
+      >
+        {{ section.label }}
+      </button>
+    </nav>
 
     <NonConformityLifecycle :record="nonConformity" :can="can" />
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
@@ -296,6 +268,7 @@
 
 <script setup>
 import NonConformityLifecycle from '@/Pages/VAPNonConformities/NonConformityLifecycle.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { useFileDownload } from '@/Composables/useFileDownload'
 import { useRecordArchive } from '@/Composables/useRecordArchive'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
@@ -306,7 +279,6 @@ import {
   Clock as ClockIcon,
   FileDown as DocumentArrowDownIcon,
   CircleAlert as ExclamationCircleIcon,
-  TriangleAlert as ExclamationTriangleIcon,
   Info as InformationCircleIcon,
   Link as LinkIcon,
   Paperclip as PaperClipIcon,

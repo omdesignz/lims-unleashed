@@ -1,5 +1,6 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import reportStudioWorkbench from '@/Components/report-studio/studio-workbench.vue'
 import DialogModal from '@/Components/dialog-modal.vue'
 import { previewReplacementsByType } from '@/Support/report-studio-preview-html.mjs'
@@ -751,56 +752,45 @@ const onStudioTypeUpdate = (studioType) => {
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="min-w-0 max-w-3xl">
-          <p class="ds-kicker">{{ $t('gestlab.general.labels.vap_report_studios.index.hero.badge') }}</p>
-          <h1 class="ds-heading mt-2 text-2xl">{{ $t('gestlab.general.labels.vap_report_studios.index.hero.title') }}</h1>
-          <p class="ds-copy mt-2 text-sm">{{ $t('gestlab.general.labels.vap_report_studios.index.hero.description') }}</p>
-        </div>
+  <div class="pl-page space-y-6">
+    <PageHeader :title="$t('gestlab.general.labels.vap_report_studios.index.hero.title')" :lede="$t('gestlab.general.labels.vap_report_studios.index.hero.description')">
+      <template #actions>
         <button type="button" class="ds-button ds-button-primary shrink-0" @click="startNewTemplate">
           <DocumentPlusIcon class="h-4 w-4" />
           {{ $t('gestlab.general.labels.vap_report_studios.index.hero.new_template') }}
         </button>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells">
+      <div v-for="card in studioSummaryCards" :key="card.key" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t(card.labelKey) }}</dt>
+        <dd class="pl-cell-text"><span class="text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</span>
+            <span class="truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ $t(card.hintKey) }}</span></dd>
       </div>
+    </dl>
 
-      <dl class="grid border-y border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-        <div
-          v-for="card in studioSummaryCards"
-          :key="card.key"
-          class="border-b border-[var(--ds-border)] px-5 py-3 sm:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:last:border-r-0"
-        >
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t(card.labelKey) }}</dt>
-          <dd class="mt-1 flex items-baseline gap-2">
-            <span class="text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</span>
-            <span class="truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ $t(card.hintKey) }}</span>
-          </dd>
-        </div>
-      </dl>
-
-      <nav class="grid grid-cols-2 px-3 sm:flex sm:px-6" aria-label="Áreas do estúdio documental">
-        <button
-          type="button"
-          class="-mb-px inline-flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-500-rgb))] focus-visible:ring-inset sm:shrink-0 sm:px-4 sm:text-sm"
-          :class="studioWorkspaceView === 'library' ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
-          @click="studioWorkspaceView = 'library'"
-        >
-          <FolderOpenIcon class="hidden h-4 w-4 sm:block" />
-          Biblioteca de modelos
-          <span class="ds-badge ds-badge-neutral">{{ templates.length }}</span>
-        </button>
-        <button
-          type="button"
-          class="-mb-px inline-flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-500-rgb))] focus-visible:ring-inset sm:shrink-0 sm:px-4 sm:text-sm"
-          :class="studioWorkspaceView === 'editor' ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
-          @click="studioWorkspaceView = 'editor'"
-        >
-          <DocumentPlusIcon class="hidden h-4 w-4 sm:block" />
-          {{ editingTemplate ? 'Editar modelo' : 'Novo modelo' }}
-        </button>
-      </nav>
-    </section>
+    <nav class="grid grid-cols-2 px-3 sm:flex sm:px-6" aria-label="Áreas do estúdio documental">
+      <button
+        type="button"
+        class="-mb-px inline-flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-500-rgb))] focus-visible:ring-inset sm:shrink-0 sm:px-4 sm:text-sm"
+        :class="studioWorkspaceView === 'library' ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+        @click="studioWorkspaceView = 'library'"
+      >
+        <FolderOpenIcon class="hidden h-4 w-4 sm:block" />
+        Biblioteca de modelos
+        <span class="ds-badge ds-badge-neutral">{{ templates.length }}</span>
+      </button>
+      <button
+        type="button"
+        class="-mb-px inline-flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-500-rgb))] focus-visible:ring-inset sm:shrink-0 sm:px-4 sm:text-sm"
+        :class="studioWorkspaceView === 'editor' ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+        @click="studioWorkspaceView = 'editor'"
+      >
+        <DocumentPlusIcon class="hidden h-4 w-4 sm:block" />
+        {{ editingTemplate ? 'Editar modelo' : 'Novo modelo' }}
+      </button>
+    </nav>
 
     <section v-if="studioWorkspaceView === 'library'" class="ds-table-shell">
       <div class="ds-table-summary gap-4 px-5 py-4 sm:px-6">

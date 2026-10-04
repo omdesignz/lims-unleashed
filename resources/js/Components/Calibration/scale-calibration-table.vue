@@ -1,6 +1,6 @@
 <template>
     <div>
-      <DataTable>
+      <DataTable :stack="false">
         <thead>
           <tr>
             <th></th>

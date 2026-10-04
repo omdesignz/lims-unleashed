@@ -6,7 +6,7 @@
         <button @click="undo" class="bg-blue-500 text-white px-4 py-2 rounded">Undo</button>
         <button @click="redo" class="bg-green-500 text-white px-4 py-2 rounded">Redo</button>
       </div>
-      <DataTable class="border-collapse border border-gray-300 w-full">
+      <DataTable :stack="false" class="border-collapse border border-gray-300 w-full">
         <thead>
           <tr>
             <th class="border border-gray-300 bg-gray-200 p-2">&nbsp;</th>

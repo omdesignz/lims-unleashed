@@ -1,16 +1,15 @@
 <script setup>
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import Pagination from '@/Components/pagination.vue'
 import {
   FlaskConical as BeakerIcon,
   Landmark as BuildingLibraryIcon,
-  CircleCheck as CheckCircleIcon,
   Eye as EyeIcon,
   Search as MagnifyingGlassIcon,
   SquarePen as PencilSquareIcon,
   Plus as PlusIcon,
   Trash2 as TrashIcon,
-  Users as UserGroupIcon,
 } from '@lucide/vue'
 import { Link, router } from '@inertiajs/vue3'
 import debounce from 'lodash/debounce'
@@ -53,25 +52,30 @@ function deleteLab() {
 </script>
 
 <template>
-  <div class="space-y-5">
-    <header class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">{{ $t('gestlab.general.labels.vap_labs.title') }}</p>
-          <h1 class="ds-heading mt-1 text-xl">{{ $t('gestlab.general.labels.vap_labs.title') }}</h1>
-          <p class="ds-copy mt-1 max-w-2xl text-sm">{{ $t('gestlab.general.labels.vap_labs.manage_labs_description') }}</p>
-        </div>
+  <div class="pl-page space-y-5">
+    <PageHeader :title="$t('gestlab.general.labels.vap_labs.title')" :lede="$t('gestlab.general.labels.vap_labs.manage_labs_description')">
+      <template #actions>
         <Link :href="route('vap-labs.labs.create')" class="ds-button ds-button-primary shrink-0">
           <PlusIcon class="h-4 w-4" />
           {{ $t('gestlab.general.labels.vap_labs.buttons.add_lab') }}
         </Link>
+      </template>
+    </PageHeader>
+
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.vap_labs.stats.total_labs') }}</dt>
+        <dd class="pl-cell-text">{{ stats.total ?? 0 }}</dd>
       </div>
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
-        <div class="flex items-center gap-3 px-5 py-4"><BuildingLibraryIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" /><div><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_labs.stats.total_labs') }}</dt><dd class="mt-1 text-lg font-black text-[var(--ds-text)]">{{ stats.total ?? 0 }}</dd></div></div>
-        <div class="flex items-center gap-3 border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0"><CheckCircleIcon class="h-5 w-5 text-emerald-600" /><div><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_labs.stats.active_labs') }}</dt><dd class="mt-1 text-lg font-black text-[var(--ds-text)]">{{ stats.active ?? 0 }}</dd></div></div>
-        <div class="flex items-center gap-3 border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0"><UserGroupIcon class="h-5 w-5 text-amber-600" /><div><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_labs.stats.labs_with_supervisor') }}</dt><dd class="mt-1 text-lg font-black text-[var(--ds-text)]">{{ stats.with_supervisor ?? 0 }}</dd></div></div>
-      </dl>
-    </header>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.vap_labs.stats.active_labs') }}</dt>
+        <dd class="pl-cell-text">{{ stats.active ?? 0 }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">{{ $t('gestlab.general.labels.vap_labs.stats.labs_with_supervisor') }}</dt>
+        <dd class="pl-cell-text">{{ stats.with_supervisor ?? 0 }}</dd>
+      </div>
+    </dl>
 
     <section class="ds-panel overflow-hidden">
       <header class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">

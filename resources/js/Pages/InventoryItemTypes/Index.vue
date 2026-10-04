@@ -1,7 +1,6 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { Boxes as CubeTransparentIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 
@@ -35,6 +34,6 @@ defineProps({
     description-label="Definição operacional"
     :supports-name="true"
     :supports-code="false"
-    :icon="CubeTransparentIcon"
+
   />
 </template>

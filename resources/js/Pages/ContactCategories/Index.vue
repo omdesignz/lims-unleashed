@@ -1,7 +1,6 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { Users as UserGroupIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 
@@ -36,7 +35,7 @@ defineProps({
     description-label="Descrição"
     :supports-name="true"
     :code-required="false"
-    :icon="UserGroupIcon"
+
     create-description="Adicione uma funcao de contacto reutilizável nos clientes e locais operacionais."
     form-description="Identifique a responsabilidade do contacto; o código e opcional e pode apoiar integracoes."
   />

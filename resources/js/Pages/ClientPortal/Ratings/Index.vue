@@ -1,5 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import PortalLayout from '@/Shared/Layouts/PortalLayout.vue'
 import Pagination from '@/Components/pagination.vue'
 
@@ -13,10 +14,7 @@ function subjectLabel(invitation) {
 
 <template>
   <section class="ds-card overflow-hidden">
-    <header class="border-b border-[var(--ds-border)] p-5">
-      <h1 class="ds-heading text-xl">Avaliações pendentes</h1>
-      <p class="ds-copy mt-2 text-sm">Convites dos seus laboratórios. Cada convite aceita uma resposta.</p>
-    </header>
+    <PageHeader title="Avaliações pendentes" lede="Convites dos seus laboratórios. Cada convite aceita uma resposta." />
     <div v-if="invitations.data.length" class="divide-y divide-[var(--ds-border)]">
       <article v-for="invitation in invitations.data" :key="invitation.invitation" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>

@@ -57,7 +57,7 @@ const deleteNotification = () => {
 </script>
 
 <template>
-  <div class="space-y-5">
+  <div class="pl-page space-y-5">
     <Head title="Detalhe da notificação" />
     <NotificationAdminHeader
       title="Detalhe da notificacao"

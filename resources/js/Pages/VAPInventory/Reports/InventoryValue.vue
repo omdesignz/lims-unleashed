@@ -55,7 +55,7 @@
           <span class="pl-k pl-faint">{{ categoryValueTotal }} categorias</span>
         </div>
         <div class="min-h-72 p-4">
-          <apexchart type="bar" height="288" :options="categoryValueChartOptions" :series="categoryValueChartSeries" />
+          <PlanoChart kind="bar" label="Valor por categoria" :categories="charts?.category_value_breakdown?.labels || []" :series="categoryValueChartSeries" format="currency" empty-text="Sem existências valorizadas neste recorte." />
         </div>
       </section>
       <section class="pl-panel min-w-0" aria-labelledby="value-warehouse-chart">
@@ -64,7 +64,7 @@
           <span class="pl-k pl-faint">{{ warehouseValueTotal }} locais</span>
         </div>
         <div class="min-h-64 p-4">
-          <apexchart type="donut" height="256" :options="warehouseValueChartOptions" :series="warehouseValueChartSeries" />
+          <PlanoChart kind="donut" label="Exposição por armazém" :categories="charts?.warehouse_value_breakdown?.labels || []" :series="[{ name: 'Valor', data: warehouseValueChartSeries }]" format="currency" />
         </div>
       </section>
       <section class="pl-panel min-w-0" aria-labelledby="value-top-chart">
@@ -72,7 +72,7 @@
           <h2 id="value-top-chart" class="pl-k">Itens de maior valor</h2>
         </div>
         <div class="min-h-56 p-4">
-          <apexchart type="bar" height="224" :options="topItemValueChartOptions" :series="topItemValueChartSeries" />
+          <PlanoChart kind="bar" label="Itens de maior valor" :categories="charts?.top_item_value?.labels || []" :series="topItemValueChartSeries" format="currency" />
         </div>
       </section>
     </div>
@@ -236,7 +236,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
@@ -244,6 +244,7 @@ import BaseSelect from '@/Components/base/BaseSelect.vue'
 import Pagination from '@/Components/pagination.vue'
 import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import PageHeader from '@/Components/plano/PageHeader.vue'
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
 import { Eye as EyeIcon, X as XMarkIcon } from '@lucide/vue'
 
 const props = defineProps({
@@ -259,8 +260,6 @@ const props = defineProps({
 })
 
 const loading = ref(false)
-const isDarkMode = ref(false)
-let themeObserver
 
 const filters = reactive({
   category_id: props.filters?.category_id ?? '',
@@ -271,9 +270,6 @@ const filters = reactive({
 })
 
 const inventoryRows = computed(() => props.inventory?.data || [])
-const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
-const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
 const summaryCards = computed(() => [
   {
@@ -319,75 +315,11 @@ const warehouseValueChartSeries = computed(() => (props.charts?.warehouse_value_
 const warehouseValueTotal = computed(() => props.charts?.warehouse_value_breakdown?.labels?.length || 0)
 const topItemValueChartSeries = computed(() => props.charts?.top_item_value?.series || [])
 
-const categoryValueChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  colors: ['#0f766e'],
-  dataLabels: { enabled: false },
-  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
-  xaxis: {
-    categories: props.charts?.category_value_breakdown?.labels || [],
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-    labels: { formatter: (value) => compactCurrency(value), style: { colors: chartTextColor.value } },
-  },
-  yaxis: { labels: { maxWidth: 220, style: { colors: chartTextColor.value } } },
-  tooltip: { theme: chartTooltipTheme.value, y: { formatter: formatCurrency } },
-  legend: { show: false },
-}))
-
-const warehouseValueChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  labels: props.charts?.warehouse_value_breakdown?.labels || [],
-  colors: ['#14a3a8', '#0f766e', '#7c5ce0', '#e0902b', '#e5484d', '#6b7482'],
-  legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
-  dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
-  stroke: { width: 0 },
-  tooltip: { theme: chartTooltipTheme.value, y: { formatter: formatCurrency } },
-}))
-
-const topItemValueChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  colors: ['#1d4ed8'],
-  dataLabels: { enabled: false },
-  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 0, columnWidth: '48%' } },
-  xaxis: {
-    categories: props.charts?.top_item_value?.labels || [],
-    labels: { rotate: -25, trim: true, style: { colors: chartTextColor.value } },
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-  },
-  yaxis: { labels: { formatter: compactCurrency, style: { colors: chartTextColor.value } } },
-  tooltip: { theme: chartTooltipTheme.value, y: { formatter: formatCurrency } },
-  legend: { show: false },
-}))
-
-function syncDarkMode() {
-  if (typeof document === 'undefined') return
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
-
 function formatCurrency(value) {
   return new Intl.NumberFormat('pt-AO', {
     style: 'currency',
     currency: 'AOA',
     maximumFractionDigits: 2,
-  }).format(Number(value || 0))
-}
-
-function compactCurrency(value) {
-  return new Intl.NumberFormat('pt-AO', {
-    style: 'currency',
-    currency: 'AOA',
-    notation: 'compact',
-    maximumFractionDigits: 1,
   }).format(Number(value || 0))
 }
 
@@ -433,15 +365,4 @@ watch(
   { deep: true },
 )
 
-onMounted(() => {
-  syncDarkMode()
-  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
-    themeObserver = new MutationObserver(syncDarkMode)
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  }
-})
-
-onBeforeUnmount(() => {
-  themeObserver?.disconnect()
-})
 </script>

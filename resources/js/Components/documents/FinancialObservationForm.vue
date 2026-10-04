@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import PageHeader from '@/Components/plano/PageHeader.vue';
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -39,13 +40,9 @@ function submit() {
 </script>
 
 <template>
-  <form class="ds-panel flex flex-col gap-5 p-5 sm:p-6" @submit.prevent="submit">
+  <form class="pl-page ds-panel flex flex-col gap-5" @submit.prevent="submit">
     <Head :title="`${config.title} · Observações`" />
-    <header class="flex flex-col gap-2">
-      <p class="ds-kicker">{{ ['quote', 'import_certificate', 'export_certificate'].includes(kind) ? 'Documento facturado' : 'Documento financeiro emitido' }}</p>
-      <h1 class="ds-heading text-2xl [overflow-wrap:anywhere]">{{ config.title }} · {{ source.document_no || source.cert_no || source.quote_no || `#${source.id}` }}</h1>
-      <p class="ds-copy">Cliente, local, valores, impostos, linhas e identificação emitida estão bloqueados. Apenas as observações podem ser corrigidas aqui.</p>
-    </header>
+    <PageHeader :title="`${config.title} · ${source.document_no || source.cert_no || source.quote_no || `#${source.id}`}`" lede="Cliente, local, valores, impostos, linhas e identificação emitida estão bloqueados. Apenas as observações podem ser corrigidas aqui." />
     <div class="ds-field-group">
       <label for="financial-observations" class="ds-field-label">Observações</label>
       <textarea id="financial-observations" v-model="form.obs" class="ds-field min-h-32 resize-y" rows="6" maxlength="5000" :disabled="form.processing" :aria-invalid="Boolean(form.errors.obs)" :aria-describedby="form.errors.obs ? 'financial-observation-error' : undefined"></textarea>

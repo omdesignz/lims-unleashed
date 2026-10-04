@@ -1,134 +1,88 @@
 <template>
-  <div class="space-y-6">
-    <!-- TABLE COMMAND SURFACE -->
-    <section class="ds-command-surface overflow-hidden">
-      <div class="px-4 py-4 sm:px-5">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div class="min-w-0">
-            <h2 class="ds-heading text-base">
-              {{ $t('gestlab.general.titles.records_list') }}
-            </h2>
-            <p class="mt-0.5 text-[0.8125rem] text-[var(--ds-text-soft)]">
-              {{ props.pagination.total ?? props.data.length }} {{ $t('gestlab.general.labels.records') }}
-            </p>
-          </div>
+  <div class="pl-records">
+    <!-- FILTER ROW -->
+    <div class="pl-filter" role="search">
+      <label :for="searchId" class="pl-filter-prompt">Filtro://</label>
+      <BaseInput
+        :id="searchId"
+        v-model="filters.globalFilter"
+        type="search"
+        data-bare
+        :placeholder="$t('gestlab.general.search_input_placeholder')"
+        class="pl-filter-input"
+        @input="updateQuery"
+      />
 
-          <div class="flex flex-wrap items-center gap-2 xl:justify-end">
-            <span class="ds-badge ds-badge-neutral">
-              {{ resultSummary }}
-            </span>
+      <button
+        type="button"
+        class="ds-button"
+        :class="showFilterPanel ? 'ds-button-primary' : 'ds-button-quiet'"
+        :aria-expanded="showFilterPanel"
+        @click="showFilterPanel = !showFilterPanel"
+      >
+        <FunnelIcon class="h-4 w-4" aria-hidden="true" />
+        {{ $t('gestlab.filter.filters') }}
+        <span v-if="activeFilterCount" class="pl-num">{{ activeFilterCount }}</span>
+      </button>
 
-            <button
-              v-if="props.createAction && hasPermission('add_' + props.model)"
-              type="button"
-              class="ds-button ds-button-primary"
-              @click="$emit('create-record')"
-            >
-              <SquaresPlusIcon class="h-5 w-5" />
-              {{ $t("gestlab.general.buttons.new_record") }}
-            </button>
-          </div>
-        </div>
+      <ColumnVisibilityToggle
+        compact
+        :columns="columns"
+        @update-columns="updateColumns"
+      />
 
-        <div class="mt-3">
-          <div class="grid gap-2 xl:grid-cols-[minmax(18rem,1fr)_auto] xl:items-center">
-          <div class="relative min-w-0">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <MagnifyingGlassIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
-            </div>
-            <BaseInput
-              v-model="filters.globalFilter"
-              type="search"
-              :placeholder="$t('gestlab.general.search_input_placeholder')"
-              class="ds-field pl-10 pr-3"
-              @input="updateQuery"
-            />
-          </div>
+      <div class="w-32">
+        <BaseSelect
+          v-model="perPage"
+          @change="changePerPage"
+          class="ds-field py-0"
+          aria-label="Registos por página"
+        >
+          <option value="10" :selected="props.pagination.per_page == 10">10 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
+          <option value="25" :selected="props.pagination.per_page == 25">25 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
+          <option value="50" :selected="props.pagination.per_page == 50">50 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
+          <option value="100" :selected="props.pagination.per_page == 100">100 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
+        </BaseSelect>
+      </div>
 
-          <div class="flex flex-wrap items-center gap-2 xl:justify-end">
-            <button
-              type="button"
-              class="ds-button h-10"
-              :class="showFilterPanel
-                ? 'ds-button-primary'
-                : 'ds-button-secondary'"
-              :aria-expanded="showFilterPanel"
-              @click="showFilterPanel = !showFilterPanel"
-            >
-              <FunnelIcon class="h-4 w-4" />
-              {{ $t('gestlab.filter.filters') }}
-              <span
-                v-if="activeFilterCount"
-                class="inline-flex min-w-6 items-center justify-center rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-black text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-950-rgb)/0.8)] dark:text-white"
-              >
-                {{ activeFilterCount }}
-              </span>
-            </button>
+      <span class="pl-k pl-muted ml-auto" role="status">{{ resultSummary }}</span>
 
-            <ColumnVisibilityToggle
-              compact
-              :columns="columns"
-              @update-columns="updateColumns"
-            />
-
-            <div class="relative">
-              <BaseSelect
-                v-model="perPage"
-                @change="changePerPage"
-                class="ds-field h-10 min-w-28 py-0"
-                aria-label="Registos por página"
-              >
-                <option value="10" :selected="props.pagination.per_page == 10">10 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
-                <option value="25" :selected="props.pagination.per_page == 25">25 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
-                <option value="50" :selected="props.pagination.per_page == 50">50 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
-                <option value="100" :selected="props.pagination.per_page == 100">100 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
-              </BaseSelect>
-            </div>
-          </div>
-          </div>
-        </div>
+      <button
+        v-if="props.createAction && hasPermission('add_' + props.model)"
+        type="button"
+        class="ds-button ds-button-primary"
+        @click="$emit('create-record')"
+      >
+        <PlusIcon class="h-4 w-4" aria-hidden="true" />
+        {{ $t("gestlab.general.buttons.new_record") }}
+      </button>
+    </div>
 
         <!-- Active Filters -->
-        <div v-if="activeFilterChips.length" class="mt-4 flex flex-wrap items-center gap-2">
-          <div
-            v-for="column in activeFilterChips"
-            :key="column.field"
-            class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--primary-200-rgb)/0.75)] bg-[rgb(var(--primary-50-rgb)/0.75)] px-3 py-1.5 text-xs dark:border-[rgb(var(--primary-300-rgb)/0.2)] dark:bg-[rgb(var(--primary-500-rgb)/0.12)]"
-          >
-            <span class="font-semibold text-[rgb(var(--primary-900-rgb))] dark:text-[rgb(var(--primary-100-rgb))]">{{ $t(column.label) }}:</span>
-            <span class="font-medium text-[var(--ds-text-muted)]">
-              {{ formatFilterValue(column, filters[column.filter_field]) }}
-            </span>
-            <button
-              @click="removeFilter(column.filter_field)"
-              class="rounded-full p-0.5 text-[rgb(var(--primary-700-rgb))] hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)] dark:text-[rgb(var(--primary-200-rgb))]"
-              :title="$t('gestlab.general.buttons.clear')"
-            >
-              <XMarkIcon class="h-3 w-3" />
+        <div v-if="activeFilterChips.length" class="flex flex-wrap items-center gap-2 border border-b-0 border-[var(--pl-line)] px-4 py-2.5">
+          <span v-for="column in activeFilterChips" :key="column.field" class="ds-chip max-w-none">
+            {{ $t(column.label) }}: {{ formatFilterValue(column, filters[column.filter_field]) }}
+            <button type="button" :aria-label="`${$t('gestlab.general.buttons.clear')} ${$t(column.label)}`" @click="removeFilter(column.filter_field)">
+              <XMarkIcon class="h-3 w-3" aria-hidden="true" />
             </button>
-          </div>
+          </span>
 
-          <button
-            type="button"
-            @click="clearActiveFilters"
-            class="ds-badge ds-badge-neutral gap-1.5 transition hover:border-[rgb(var(--primary-400-rgb))] hover:text-[var(--ds-text)]"
-          >
-            <XMarkIcon class="h-3 w-3" />
+          <button type="button" class="ds-table-action" @click="clearActiveFilters">
             {{ $t('gestlab.general.buttons.clear') }}
           </button>
         </div>
 
         <transition
-          enter-active-class="transition duration-200 ease-out"
-          enter-from-class="opacity-0 -translate-y-2"
-          enter-to-class="opacity-100 translate-y-0"
-          leave-active-class="transition duration-150 ease-in"
-          leave-from-class="opacity-100 translate-y-0"
-          leave-to-class="opacity-0 -translate-y-2"
+          enter-active-class="transition-opacity duration-150 ease-out"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-active-class="transition-opacity duration-100 ease-out"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
         >
           <div
             v-show="showFilterPanel"
-            class="mt-4 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 sm:p-5"
+            class="border border-b-0 border-[var(--pl-line)] bg-[var(--pl-layer)] p-4 sm:p-5"
           >
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -143,7 +97,7 @@
               <button
                 v-if="hasActiveFilters"
                 type="button"
-                class="ds-button ds-button-secondary min-h-9 rounded-full px-3 py-2 text-xs"
+                class="ds-button ds-button-quiet"
                 @click="clearActiveFilters"
               >
                 <XMarkIcon class="h-3.5 w-3.5" />
@@ -156,28 +110,22 @@
                 v-for="column in visibleFilterableColumns"
                 :key="column.field"
                 @click="toggleFilter(column.filter_field)"
-                :class="[
-                  'inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]',
-                  isFilterActive(column.filter_field)
-                    ? 'border-[rgb(var(--primary-700-rgb))] bg-[rgb(var(--primary-700-rgb))] text-white dark:border-[rgb(var(--primary-400-rgb))] dark:bg-[rgb(var(--primary-400-rgb))] dark:text-[rgb(var(--primary-950-rgb))]'
-                    : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'
-                ]"
+                type="button"
+                class="ds-chip"
+                :class="isFilterActive(column.filter_field) ? '' : 'ds-chip-neutral'"
+                :aria-pressed="isFilterActive(column.filter_field)"
               >
-                <FunnelIcon class="h-3 w-3" />
                 {{ $t(column.label) }}
               </button>
 
               <button
                 v-if="props.trashedFilter"
                 @click="toggleTrashedFilter"
-                :class="[
-                  'inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-rose-500/25',
-                  filters.trashed
-                    ? 'border-rose-600 bg-rose-600 text-white'
-                    : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'
-                ]"
+                type="button"
+                class="ds-chip"
+                :class="filters.trashed ? 'ds-chip-warning' : 'ds-chip-neutral'"
+                :aria-pressed="Boolean(filters.trashed)"
               >
-                <TrashIcon class="h-3 w-3" />
                 {{ $t('gestlab.general.labels.trashed') }}
               </button>
             </div>
@@ -321,8 +269,6 @@
             </div>
           </div>
         </transition>
-      </div>
-    </section>
 
     <!-- DATA TABLE CARD -->
     <DataTableShell :show-summary="Boolean(props.actions?.length && (allSelected || selectedRows.length))">
@@ -466,10 +412,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, useId, watch } from 'vue';
 import {
-  Search as MagnifyingGlassIcon,
   X as XMarkIcon,
+  Plus as PlusIcon,
   Grid2x2Plus as SquaresPlusIcon,
   Calendar as CalendarIcon,
   Funnel as FunnelIcon,
@@ -496,6 +442,7 @@ import 'v-calendar/dist/style.css';
 const { hasPermission } = usePermission();
 
 const page = usePage();
+const searchId = `table-search-${useId()}`;
 
 const props = defineProps({
   data: {

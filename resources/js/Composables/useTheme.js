@@ -25,11 +25,15 @@ export function resolveInitialDark(userTheme = null, stored = null) {
     return stored === 'dark'
 }
 
+/** The browser chrome (mobile status bar, PWA title bar) matches the shell's canvas. */
+export const THEME_CHROME = { light: '#ffffff', dark: '#070f1c' }
+
 export function applyThemeToDocument(dark) {
     if (typeof document === 'undefined') return
     const root = document.documentElement
     root.classList.toggle(DARK_CLASS, dark)
     root.dataset.theme = dark ? 'dark' : 'light'
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? THEME_CHROME.dark : THEME_CHROME.light)
 }
 
 export function useTheme(userTheme = null, persistToServer = false) {

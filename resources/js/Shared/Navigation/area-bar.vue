@@ -1,5 +1,5 @@
 <script setup>
-import { computed, useId } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import { motion } from 'motion-v'
@@ -41,10 +41,58 @@ const initials = (name) => String(name || '')
 function logout() {
   router.post(route('logout'))
 }
+
+// Below 1280px the eight areas can outgrow the bar: the strip scrolls, keeps the
+// current area in view and marks the edge that has more areas behind it, which
+// the stylesheet fades (`data-more-before` / `data-more-after`).
+const bar = ref(null)
+const areaStrip = () => bar.value?.querySelector('.pl-areas') ?? null
+let stripObserver = null
+
+function measureAreaStrip() {
+  const strip = areaStrip()
+
+  if (!strip) {
+    return
+  }
+
+  strip.toggleAttribute('data-more-before', strip.scrollLeft > 1)
+  strip.toggleAttribute('data-more-after', strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 1)
+}
+
+function revealActiveArea() {
+  const strip = areaStrip()
+  const current = strip?.querySelector('[aria-current="page"]')
+
+  if (strip && current && strip.scrollWidth > strip.clientWidth) {
+    const offset = current.getBoundingClientRect().left - strip.getBoundingClientRect().left
+    strip.scrollLeft += offset - (strip.clientWidth - current.offsetWidth) / 2
+  }
+
+  measureAreaStrip()
+}
+
+onMounted(() => {
+  const strip = areaStrip()
+  revealActiveArea()
+  strip?.addEventListener('scroll', measureAreaStrip, { passive: true })
+
+  if (typeof ResizeObserver !== 'undefined' && strip) {
+    stripObserver = new ResizeObserver(measureAreaStrip)
+    stripObserver.observe(strip)
+  }
+})
+
+onBeforeUnmount(() => {
+  areaStrip()?.removeEventListener('scroll', measureAreaStrip)
+  stripObserver?.disconnect()
+})
+
+watch(() => props.activeAreaKey, () => nextTick(revealActiveArea))
 </script>
 
 <template>
-  <header class="pl-top">
+  <header ref="bar" class="pl-top">
     <button type="button" class="pl-top-menu" aria-controls="area-column" aria-label="Abrir menu da área" @click="emit('open-menu')">
       <MenuIcon aria-hidden="true" /><span>Menu</span>
     </button>
@@ -80,6 +128,17 @@ function logout() {
     <div class="pl-top-end">
       <button type="button" class="pl-find" aria-label="Procurar módulos e registos" @click="emit('open-command-palette')">
         <Search aria-hidden="true" /><span class="pl-find-label">Procurar</span><kbd class="pl-kbd">⌘K</kbd>
+      </button>
+
+      <button
+        type="button"
+        class="ds-icon-button pl-theme"
+        :aria-pressed="props.isDark"
+        :aria-label="props.isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'"
+        :title="`${props.isDark ? 'Tema claro' : 'Tema escuro'} (⇧D)`"
+        @click="emit('toggle-theme')"
+      >
+        <Sun v-if="props.isDark" aria-hidden="true" /><Moon v-else aria-hidden="true" />
       </button>
 
       <Link

@@ -1,9 +1,9 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import { computed, ref } from "vue";
 import { Link, router, useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeft as ArrowLeftIcon,
   Check as CheckIcon,
   FileSearch as DocumentMagnifyingGlassIcon,
   FilePlus as DocumentPlusIcon,
@@ -160,36 +160,25 @@ function submitForm() {
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0 max-w-3xl">
-          <Link
-            :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
-            class="ds-table-action -ml-2 mb-3"
-          >
-            <ArrowLeftIcon class="h-4 w-4" /> Voltar ao histórico </Link>
-          <div class="flex flex-wrap items-center gap-2">
-            <p class="ds-kicker">Nova alteração controlada</p>
-            <span class="ds-chip font-mono">{{ certificate.code || "Sem código" }}</span>
-          </div>
-          <h1 class="ds-heading mt-2 text-2xl">Criar revisão ISO</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm"> Classifique a alteração, identifique os campos afectados e registe a justificação exigida pela cadeia de controlo documental. </p>
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Revisões ISO', url: route('qualitycertificates.iso-revisions.index', certificate.id) }, { title: 'Criar revisão ISO' }]" title="Criar revisão ISO" lede="Classifique a alteração, identifique os campos afectados e registe a justificação exigida pela cadeia de controlo documental.">
+      <template #badges>
+        <span class="ds-chip font-mono">{{ certificate.code || "Sem código" }}</span>
+        <span class="ds-chip">v{{ certificate.current_revision?.version || "1.0" }} actual</span>
+        <span class="ds-chip">{{ selectedFields.length }} campo(s) seleccionado(s)</span>
+      </template>
+      <template #actions>
+        <span class="lims-status-dot lims-status-dot-instrument" />
+        <div>
+          <p class="text-xs font-bold text-[var(--ds-text)]">
+            v{{ certificate.current_revision?.version || "1.0" }} actual
+          </p>
+          <p class="mt-0.5 text-xs font-semibold text-[var(--ds-text-muted)]">
+            {{ selectedFields.length }} campo(s) seleccionado(s)
+          </p>
         </div>
-
-        <div class="lims-status-strip flex items-center gap-3 px-4 py-3">
-          <span class="lims-status-dot lims-status-dot-instrument" />
-          <div>
-            <p class="text-xs font-bold text-[var(--ds-text)]">
-              v{{ certificate.current_revision?.version || "1.0" }} actual
-            </p>
-            <p class="mt-0.5 text-xs font-semibold text-[var(--ds-text-muted)]">
-              {{ selectedFields.length }} campo(s) seleccionado(s)
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
+      </template>
+    </PageHeader>
 
     <form
       class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start"

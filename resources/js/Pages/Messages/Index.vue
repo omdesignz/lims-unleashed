@@ -1,5 +1,6 @@
 <script setup>
 import Pagination from '@/Components/pagination.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, router } from '@inertiajs/vue3'
 import { MessagesSquare as ChatBubbleLeftRightIcon, Eye as EyeIcon, Search as MagnifyingGlassIcon, Send as PaperAirplaneIcon, Paperclip as PaperClipIcon, X as XMarkIcon } from '@lucide/vue'
@@ -20,21 +21,18 @@ const clearSearch = () => { search.value = ''; applySearch() }
 </script>
 
 <template>
-  <div class="space-y-5">
-    <section class="ds-panel overflow-hidden">
-      <header class="flex flex-col gap-4 border-b border-[var(--ds-border)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div class="flex min-w-0 items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><ChatBubbleLeftRightIcon class="h-5 w-5" /></span>
-          <div><p class="ds-kicker">Comunicação interna</p><h1 class="ds-heading mt-1 text-xl sm:text-2xl">Mensagens da equipa</h1><p class="ds-copy mt-1 text-sm">Instruções operacionais e respectivo histórico de comunicação.</p></div>
-        </div>
+  <div class="pl-page space-y-5">
+    <PageHeader title="Mensagens da equipa" lede="Instruções operacionais e respectivo histórico de comunicação.">
+      <template #actions>
         <Link :href="route('messages.create')" class="ds-button ds-button-primary"><PaperAirplaneIcon class="h-4 w-4" />Nova mensagem</Link>
-      </header>
-      <div class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <div class="p-4"><p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Total</p><p class="mt-1 text-xl font-black tabular-nums text-[var(--ds-text)]">{{ record.meta?.total ?? record.data.length }}</p></div>
-        <div class="p-4"><p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Nesta página</p><p class="mt-1 text-xl font-black tabular-nums text-[var(--ds-text)]">{{ record.data.length }}</p></div>
-        <div class="p-4"><p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Anexos visíveis</p><p class="mt-1 text-xl font-black tabular-nums text-[var(--ds-text)]">{{ attachmentCount }}</p></div>
-      </div>
-    </section>
+      </template>
+    </PageHeader>
+
+    <div class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div class="p-4"><p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Total</p><p class="mt-1 text-xl font-black tabular-nums text-[var(--ds-text)]">{{ record.meta?.total ?? record.data.length }}</p></div>
+      <div class="p-4"><p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Nesta página</p><p class="mt-1 text-xl font-black tabular-nums text-[var(--ds-text)]">{{ record.data.length }}</p></div>
+      <div class="p-4"><p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Anexos visíveis</p><p class="mt-1 text-xl font-black tabular-nums text-[var(--ds-text)]">{{ attachmentCount }}</p></div>
+    </div>
 
     <section class="ds-panel overflow-hidden">
       <form class="flex flex-col gap-3 border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 sm:flex-row sm:items-center" @submit.prevent="applySearch">

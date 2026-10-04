@@ -51,7 +51,7 @@ const toggle = (status) => filter(form.status === status ? '' : status)
       <span class="pl-k">{{ lab?.network_name || 'Laboratório' }}</span>
     </div>
     <section class="pl-hero" aria-labelledby="today-title">
-      <div class="flex justify-between gap-4"><span class="pl-k pl-muted">{{ lab?.name || 'Sem laboratório associado' }}</span><span class="pl-k pl-muted">{{ activeCount }} amostras em curso</span></div>
+      <div class="pl-hero-meta flex justify-between gap-4"><span class="pl-k pl-muted">{{ lab?.name || 'Sem laboratório associado' }}</span><span class="pl-k pl-muted">{{ activeCount }} amostras em curso</span></div>
       <div class="pl-hero-row">
         <h1 id="today-title" class="pl-d0">Hoje</h1>
         <p v-if="lab" class="pl-lede max-w-[400px]">{{ lede }}</p>

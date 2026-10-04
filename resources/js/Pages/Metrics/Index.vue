@@ -1,47 +1,30 @@
 <template>
-  <div class="space-y-6">
-    <section class="ds-command-surface overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">Controlo de desempenho</p>
-          <div class="mt-2 flex items-start gap-3">
-            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))]">
-              <ChartBarSquareIcon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="ds-heading text-xl sm:text-2xl">Indicadores laboratoriais</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Volume de amostras, conclusão analítica, tempo de resposta e facturação no período seleccionado.</p>
-            </div>
-          </div>
-        </div>
-
+  <div class="pl-page space-y-6">
+    <PageHeader title="Indicadores laboratoriais" lede="Volume de amostras, conclusão analítica, tempo de resposta e facturação no período seleccionado.">
+      <template #actions>
         <Link :href="route('analysis.index')" class="ds-button ds-button-primary shrink-0">
           <BeakerIcon class="h-4 w-4" />
           Abrir fila analítica
         </Link>
-      </div>
+      </template>
+    </PageHeader>
 
-      <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:px-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Período de referência</p>
-            <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ periodLabel }}</p>
-          </div>
-          <div class="w-full sm:w-auto">
-            <date-picker
-              v-model.range.string="query.date"
-              locale="pt-PT"
-              color="blue"
-              mode="date"
-              range
-              :input-debounce="500"
-              :masks="masks"
-              @update:model-value="(value) => query.date = value"
-            />
-          </div>
-        </div>
+    <div class="pl-filter">
+      <span class="pl-filter-prompt">Período://</span>
+      <span class="text-sm">{{ periodLabel }}</span>
+      <div class="pl-filter-dates ml-auto">
+      <date-picker
+        v-model.range.string="query.date"
+        locale="pt-PT"
+        color="primary"
+        mode="date"
+        range
+        :input-debounce="500"
+        :masks="masks"
+        @update:model-value="(value) => query.date = value"
+      />
       </div>
-    </section>
+    </div>
 
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
@@ -111,12 +94,12 @@
 
 <script setup>
 import { computed, reactive, watch } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Link, router } from '@inertiajs/vue3'
 import debounce from 'lodash/debounce'
 import {
   Banknote as BanknotesIcon,
   FlaskConical as BeakerIcon,
-  ChartColumnBig as ChartBarSquareIcon,
   CircleCheck as CheckCircleIcon,
   Clock as ClockIcon,
   TriangleAlert as ExclamationTriangleIcon,

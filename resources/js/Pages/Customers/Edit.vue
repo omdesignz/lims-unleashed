@@ -1,16 +1,13 @@
 <script setup>
 import CustomerForm from "@/Components/customers/CustomerForm.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import WarehouseComponent from "@/Pages/Warehouses/warehouse-component.vue";
 import { Link, useForm } from "@inertiajs/vue3";
 import {
-  ArrowLeft as ArrowLeftIcon,
-  Building2 as BuildingOffice2Icon,
-  BadgeCheck as CheckBadgeIcon,
   Eye as EyeIcon,
   MapPin as MapPinIcon,
   Plus as PlusIcon,
-  CircleUser as UserCircleIcon,
 } from "@lucide/vue";
 import { computed, ref } from "vue";
 
@@ -66,65 +63,37 @@ function submit() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <nav aria-label="Breadcrumb">
-          <Link :href="route('customers.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
-            <ArrowLeftIcon class="h-4 w-4" />
-            Clientes
-          </Link>
-        </nav>
+  <div class="pl-page space-y-6">
+    <PageHeader :trail="[{ title: 'Clientes', url: route('customers.index') }, { title: `Editar ${form.name}` }]" :title="`Editar ${form.name}`" lede="Mantenha a identidade da conta e os locais operacionais usados na cadeia de amostras e facturação.">
+      <template #badges>
+        <span v-if="form.code" class="ds-chip font-mono">{{ form.code }}</span>
+        <span class="ds-chip">{{ form.category_id?.label || "Sem categoria" }}</span>
+      </template>
+      <template #actions>
+        <Link :href="route('customers.show', { customer: record.id })" class="ds-button ds-button-secondary">
+          <EyeIcon class="h-4 w-4" />
+          Ver dossier
+        </Link>
+        <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty" @click="submit">
+          {{ form.processing ? "A guardar..." : "Guardar cliente" }}
+        </button>
+      </template>
+    </PageHeader>
 
-        <div class="mt-5 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-              <BuildingOffice2Icon class="h-5 w-5" />
-            </span>
-            <div class="min-w-0">
-              <p class="ds-kicker">Cliente #{{ record.id }}</p>
-              <h1 class="ds-heading mt-1 break-words text-2xl">Editar {{ form.name }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Mantenha a identidade da conta e os locais operacionais usados na cadeia de amostras e facturação.</p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span v-if="form.code" class="ds-chip font-mono">{{ form.code }}</span>
-                <span class="ds-chip">{{ form.category_id?.label || "Sem categoria" }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap gap-2 lg:justify-end">
-            <Link :href="route('customers.show', { customer: record.id })" class="ds-button ds-button-secondary">
-              <EyeIcon class="h-4 w-4" />
-              Ver dossier
-            </Link>
-            <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty" @click="submit">
-              {{ form.processing ? "A guardar..." : "Guardar cliente" }}
-            </button>
-          </div>
-        </div>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Locais</dt>
+        <dd class="pl-cell-value">{{ siteCount }}</dd>
       </div>
-
-      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-3">
-        <div class="bg-[var(--ds-panel)] p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div><dt class="ds-field-label">Locais</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ siteCount }}</dd></div>
-            <MapPinIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-        <div class="bg-[var(--ds-panel)] p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div><dt class="ds-field-label">Local principal</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ primarySite?.name || primarySite?.code || "Por definir" }}</dd></div>
-            <CheckBadgeIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-        <div class="bg-[var(--ds-panel)] p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div><dt class="ds-field-label">Pontos focais</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ focalPointCount }}</dd></div>
-            <UserCircleIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Local principal</dt>
+        <dd class="pl-cell-text">{{ primarySite?.name || primarySite?.code || "Por definir" }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Pontos focais</dt>
+        <dd class="pl-cell-value">{{ focalPointCount }}</dd>
+      </div>
+    </dl>
 
     <form class="ds-card overflow-hidden" @submit.prevent="submit">
       <CustomerForm :form="form" />

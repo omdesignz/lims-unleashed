@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import {
   LogOut as ArrowRightStartOnRectangleIcon,
@@ -45,36 +46,28 @@ const navigation = computed(() => [
 <template>
   <Head title="Conta e segurança" />
 
-  <div class="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-    <header class="border-b border-[var(--ds-border)] pb-6">
-      <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div class="max-w-3xl">
-          <p class="ds-kicker">Preferências pessoais</p>
-          <h1 class="ds-heading mt-2 text-2xl sm:text-3xl">Conta e segurança</h1>
-          <p class="ds-copy mt-2 text-sm sm:text-base">
-            Actualize a sua identidade no laboratório e controle os métodos usados para aceder ao LIMS.
-          </p>
-        </div>
-
-        <div class="flex flex-wrap gap-2" aria-label="Estado da conta">
-          <Link :href="route('notification-preferences.edit')" class="ds-button ds-button-secondary">
-            <BellAlertIcon class="h-4 w-4" /> Notificações
-          </Link>
-          <span class="ds-chip" :class="user.email_verified_at ? 'ds-chip-success' : 'ds-chip-warning'">
-            <span class="h-1.5 w-1.5 rounded-full bg-current" />
-            Correio electrónico {{ user.email_verified_at ? 'verificado' : 'por verificar' }}
-          </span>
-          <span class="ds-chip" :class="confirmsTwoFactorAuthentication ? 'ds-chip-success' : 'ds-chip-neutral'">
-            <span class="h-1.5 w-1.5 rounded-full bg-current" />
-            2FA {{ confirmsTwoFactorAuthentication ? 'activo' : 'inactivo' }}
-          </span>
-          <span class="ds-chip ds-chip-neutral">{{ sessions.length }} {{ sessions.length === 1 ? 'sessão' : 'sessões' }}</span>
-        </div>
-      </div>
-    </header>
+  <div class="pl-page w-full space-y-6">
+    <PageHeader title="Conta e segurança" lede="Actualize a sua identidade no laboratório e controle os métodos usados para aceder ao LIMS.">
+      <template #badges>
+        <span class="ds-chip" :class="user.email_verified_at ? 'ds-chip-success' : 'ds-chip-warning'">
+          <span class="h-1.5 w-1.5 rounded-full bg-current" />
+          Correio electrónico {{ user.email_verified_at ? 'verificado' : 'por verificar' }}
+        </span>
+        <span class="ds-chip" :class="confirmsTwoFactorAuthentication ? 'ds-chip-success' : 'ds-chip-neutral'">
+          <span class="h-1.5 w-1.5 rounded-full bg-current" />
+          2FA {{ confirmsTwoFactorAuthentication ? 'activo' : 'inactivo' }}
+        </span>
+        <span class="ds-chip ds-chip-neutral">{{ sessions.length }} {{ sessions.length === 1 ? 'sessão' : 'sessões' }}</span>
+      </template>
+      <template #actions>
+        <Link :href="route('notification-preferences.edit')" class="ds-button ds-button-secondary">
+          <BellAlertIcon class="h-4 w-4" /> Notificações
+        </Link>
+      </template>
+    </PageHeader>
 
     <div class="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:items-start">
-      <aside class="lg:sticky lg:top-20">
+      <aside class="min-w-0 lg:sticky lg:top-20">
         <nav class="overflow-x-auto border-b border-[var(--ds-border)] lg:border-b-0" aria-label="Secções da conta">
           <ul class="flex min-w-max gap-1 pb-3 lg:min-w-0 lg:flex-col lg:pb-0">
             <li v-for="item in navigation" :key="item.id">

@@ -1,54 +1,37 @@
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:flex sm:items-start sm:justify-between sm:gap-6 lg:px-6">
-        <div class="min-w-0">
-          <p class="ds-kicker">Metrologia e manutenção</p>
-          <div class="mt-2 flex flex-wrap items-center gap-3">
-            <h1 class="ds-heading text-2xl">Detalhes da tarefa</h1>
-            <span :class="getStatusClasses(task)">{{ getStatusText(task) }}</span>
-          </div>
-          <p class="ds-copy mt-2 flex flex-wrap items-center gap-2 text-sm">
-            <CalendarIcon class="h-4 w-4" />
-            Criada em {{ formatDateTime(task.created_at) }}
-          </p>
+  <div class="pl-page space-y-6" :class="commercialDocumentThemeClasses">
+    <PageHeader :trail="[{ title: 'Manutenção', url: route('vap-maintenance.tasks') }, { title: task.maintenance_task_no || 'Tarefa' }]" :title="task.name || 'Detalhes da tarefa'" :lede="`Criada em ${formatDateTime(task.created_at)}.`">
+      <template #badges>
+        <span :class="getStatusClasses(task)">{{ getStatusText(task) }}</span>
+      </template>
+      <template #actions>
+        <Link v-if="can.edit" :href="route('vap-maintenance.tasks.edit', task.id)" class="ds-button ds-button-primary">
+          Editar<PencilIcon aria-hidden="true" />
+        </Link>
+      </template>
+      <dl class="pl-cells mt-8">
+        <div class="pl-cell">
+          <dt class="pl-k pl-muted">Vencimento</dt>
+          <dd class="pl-cell-text" :class="getDueDateColor(task)">{{ formatDate(task.due_date) || 'Sem data' }}</dd>
+          <dd class="text-sm text-[var(--pl-muted)]">{{ task.periodicity ? `A cada ${task.periodicity} ${getPeriodicityUnitText(task.periodicity_unit)}` : 'Sem recorrência' }}</dd>
         </div>
-
-        <div class="mt-4 flex flex-wrap items-center gap-2 sm:mt-0 sm:justify-end">
-          <Link :href="route('vap-maintenance.tasks')" class="ds-button ds-button-secondary">
-            <ArrowLeftIcon class="h-4 w-4" />
-            Voltar
-          </Link>
-          <Link v-if="can.edit" :href="route('vap-maintenance.tasks.edit', task.id)" class="ds-button ds-button-primary">
-            <PencilIcon class="h-4 w-4" />
-            Editar
-          </Link>
+        <div class="pl-cell">
+          <dt class="pl-k pl-muted">Equipamento</dt>
+          <dd class="pl-cell-text">{{ task.equipment?.name || 'N/A' }}</dd>
+          <dd class="text-sm text-[var(--pl-muted)]">{{ task.equipment?.internal_code || 'Sem código' }}</dd>
         </div>
-      </div>
-
-      <div class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
-        <article class="bg-[var(--ds-panel)] p-5">
-          <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Vencimento</p>
-          <p :class="['mt-3 text-2xl font-bold', getDueDateColor(task)]">{{ formatDate(task.due_date) || 'Sem data' }}</p>
-          <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ task.periodicity ? `A cada ${task.periodicity} ${getPeriodicityUnitText(task.periodicity_unit)}` : 'Sem recorrência' }}</p>
-        </article>
-        <article class="bg-[var(--ds-panel)] p-5">
-          <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Equipamento</p>
-          <p class="mt-3 truncate text-2xl font-bold text-[var(--ds-text)]">{{ task.equipment?.name || 'N/A' }}</p>
-          <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ task.equipment?.internal_code || 'Sem código' }}</p>
-        </article>
-        <article class="bg-[var(--ds-panel)] p-5">
-          <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Fornecedor</p>
-          <p class="mt-3 truncate text-2xl font-bold text-[var(--ds-text)]">{{ task.supplier?.name || 'Interno' }}</p>
-          <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ task.executed_by_supplier ? 'Execução externa' : 'Execução interna' }}</p>
-        </article>
-        <article class="bg-[var(--ds-panel)] p-5">
-          <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Custo</p>
-          <p class="mt-3 text-2xl font-bold text-[var(--ds-text)]">{{ formatCurrency(task.cost) }}</p>
-          <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ task.calibration_certificate_no || 'Sem certificado' }}</p>
-        </article>
-      </div>
-    </section>
+        <div class="pl-cell">
+          <dt class="pl-k pl-muted">Fornecedor</dt>
+          <dd class="pl-cell-text">{{ task.supplier?.name || 'Interno' }}</dd>
+          <dd class="text-sm text-[var(--pl-muted)]">{{ task.executed_by_supplier ? 'Execução externa' : 'Execução interna' }}</dd>
+        </div>
+        <div class="pl-cell">
+          <dt class="pl-k pl-muted">Custo</dt>
+          <dd class="pl-cell-text">{{ formatCurrency(task.cost) }}</dd>
+          <dd class="text-sm text-[var(--pl-muted)]">{{ task.calibration_certificate_no || 'Sem certificado' }}</dd>
+        </div>
+      </dl>
+    </PageHeader>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <main class="space-y-6">
@@ -420,16 +403,15 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { Link, useForm, useHttp } from '@inertiajs/vue3'
 import { useRecordArchive } from '@/Composables/useRecordArchive'
 import {
   Wrench as WrenchScrewdriverIcon,
-  ArrowLeft as ArrowLeftIcon,
   Copy as DocumentDuplicateIcon,
   Tag as TagIcon,
   Cog as CogIcon,
-  Calendar as CalendarIcon,
   Repeat as ArrowPathRoundedSquareIcon,
   FileText as DocumentTextIcon,
   Euro as CurrencyEuroIcon,

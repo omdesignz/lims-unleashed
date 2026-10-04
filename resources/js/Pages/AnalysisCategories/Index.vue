@@ -1,7 +1,6 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { FlaskConical as BeakerIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 
@@ -32,6 +31,6 @@ const props = defineProps({
     :department-label="$t('gestlab.general.labels.analysis_categories.department_id')"
     :supports-name="true"
     :supports-department="true"
-    :icon="BeakerIcon"
+
   />
 </template>

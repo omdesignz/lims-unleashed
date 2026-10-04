@@ -1,43 +1,21 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
+  <div class="pl-page space-y-6">
     <Head title="Editar não conformidade" />
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">CAPA dossier</span>
-            <span :class="['inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-black ring-1 ring-inset', statusChipClass]">
-              <span :class="['h-2 w-2 rounded-full', statusDotClass]"></span>
-              {{ $t(`gestlab.general.labels.vap_non_conformities.status.${nonConformity.status}`) }}
-            </span>
-          </div>
-          <div class="mt-3 flex items-start gap-3">
-            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-rose-700 dark:text-rose-300">
-              <ExclamationTriangleIcon class="h-5 w-5" />
-            </span>
-            <div>
-              <h1 class="ds-heading text-2xl">{{ $t('gestlab.general.labels.vap_non_conformities.edit_title') }}</h1>
-              <p class="ds-copy mt-2 text-sm">
-                {{ $t('gestlab.general.labels.vap_non_conformities.edit_description') }}
-                <span class="font-bold text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]">#{{ nonConformity.nc_number }}</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <Link :href="route('vap_non_conformities.show', nonConformity.id)" class="ds-button ds-button-secondary">
-            <EyeIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.vap_non_conformities.buttons.view') }}
-          </Link>
-          <Link :href="route('vap_non_conformities.index')" class="ds-button ds-button-secondary">
-            <ArrowLeftIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.vap_non_conformities.buttons.back_to_list') }}
-          </Link>
-        </div>
-      </div>
-
-    </section>
+    <PageHeader :trail="[{ title: 'Não conformidades', url: route('vap_non_conformities.index') }, { title: $t('gestlab.general.labels.vap_non_conformities.edit_title') }]" :title="$t('gestlab.general.labels.vap_non_conformities.edit_title')">
+      <template #lede>{{ $t('gestlab.general.labels.vap_non_conformities.edit_description') }} <span class="font-bold text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]">#{{ nonConformity.nc_number }}</span></template>
+      <template #badges>
+        <span :class="['inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-black ring-1 ring-inset', statusChipClass]">
+          <span :class="['h-2 w-2 rounded-full', statusDotClass]"></span>
+          {{ $t(`gestlab.general.labels.vap_non_conformities.status.${nonConformity.status}`) }}
+        </span>
+      </template>
+      <template #actions>
+        <Link :href="route('vap_non_conformities.show', nonConformity.id)" class="ds-button ds-button-secondary">
+          <EyeIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.vap_non_conformities.buttons.view') }}
+        </Link>
+      </template>
+    </PageHeader>
 
     <NonConformityObservations v-if="nonConformity.status === 'closed'" :record="nonConformity" />
     <NonConformityForm v-else
@@ -51,9 +29,10 @@
 
 <script setup>
 import NonConformityForm from '@/Pages/VAPNonConformities/NonConformityForm.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import NonConformityObservations from '@/Pages/VAPNonConformities/NonConformityObservations.vue'
 import { Head, Link } from '@inertiajs/vue3'
-import { ArrowLeft as ArrowLeftIcon, TriangleAlert as ExclamationTriangleIcon, Eye as EyeIcon } from '@lucide/vue'
+import { Eye as EyeIcon } from '@lucide/vue'
 import { computed } from 'vue'
 
 const props = defineProps({

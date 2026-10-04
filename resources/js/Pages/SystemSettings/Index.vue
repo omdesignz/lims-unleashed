@@ -1,58 +1,44 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
+  <div class="pl-page space-y-6">
     <Head title="Configurações gerais" />
     <fieldset :disabled="form.processing" :aria-busy="form.processing" class="min-w-0 space-y-6 border-0 p-0">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div class="max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Configuração operacional</span>
-            <span class="ds-chip">
-              <span class="lims-status-dot" :class="editSettings ? 'lims-status-dot-hold' : 'lims-status-dot-release'" />
-              {{ editSettings ? 'Edição em curso' : 'Configuração publicada' }}
-            </span>
-          </div>
-          <h1 class="ds-heading mt-3 text-2xl">{{ form.app_name || settings.app_name || 'Configurações gerais' }}</h1>
-          <p class="ds-copy mt-2 text-sm">
-            Centralize identidade institucional, comunicação e assinatura documental para manter certificados, propostas, portal e relatórios coerentes.
-          </p>
-        </div>
+    <PageHeader :title="form.app_name || settings.app_name || 'Configurações gerais'" lede="Centralize identidade institucional, comunicação e assinatura documental para manter certificados, propostas, portal e relatórios coerentes.">
+      <template #badges>
+        <span class="ds-chip">
+          <span class="lims-status-dot" :class="editSettings ? 'lims-status-dot-hold' : 'lims-status-dot-release'" />
+          {{ editSettings ? 'Edição em curso' : 'Configuração publicada' }}
+        </span>
+      </template>
+      <template #actions>
+        <button v-if="canEdit" type="button" class="ds-button ds-button-secondary" @click="toggleEdit">
+          <PencilSquareIcon class="h-4 w-4" />
+          {{ editSettings ? 'Cancelar edição' : 'Editar definições' }}
+        </button>
+        <button v-if="editSettings" type="button" class="ds-button ds-button-primary" :disabled="form.processing || Boolean(form.errors.settings_revision)" @click="submit">
+          <ArrowUpOnSquareIcon class="h-4 w-4" />
+          {{ form.processing ? 'A guardar...' : 'Guardar alterações' }}
+        </button>
+      </template>
+    </PageHeader>
 
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <button v-if="canEdit" type="button" class="ds-button ds-button-secondary" @click="toggleEdit">
-            <PencilSquareIcon class="h-4 w-4" />
-            {{ editSettings ? 'Cancelar edição' : 'Editar definições' }}
-          </button>
-          <button v-if="editSettings" type="button" class="ds-button ds-button-primary" :disabled="form.processing || Boolean(form.errors.settings_revision)" @click="submit">
-            <ArrowUpOnSquareIcon class="h-4 w-4" />
-            {{ form.processing ? 'A guardar...' : 'Guardar alterações' }}
-          </button>
-        </div>
+    <dl class="pl-cells">
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Marca</dt>
+        <dd class="pl-cell-text">{{ settings.app_name || 'Não configurada' }}</dd>
       </div>
-
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Marca</dt>
-          <dd class="mt-2 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ settings.app_name || 'Não configurada' }}</dd>
-          <p class="mt-1 text-xs text-[color:var(--ds-text-muted)]">{{ settings.app_version || 'Sem versão' }}</p>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Assinatura</dt>
-          <dd class="mt-2 text-sm font-bold text-[color:var(--ds-text)]">{{ securitySummary.private_key_configured && securitySummary.public_key_configured ? 'Pronta' : 'Pendente' }}</dd>
-          <p class="mt-1 text-xs text-[color:var(--ds-text-muted)]">Chaves documental e pública</p>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Validação</dt>
-          <dd class="mt-2 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ settings.app_agt_validation_number || 'Sem número' }}</dd>
-          <p class="mt-1 truncate text-xs text-[color:var(--ds-text-muted)]">{{ settings.app_agt_valid_name || 'Entidade pendente' }}</p>
-        </div>
-        <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Acesso forte</dt>
-          <dd class="mt-2 text-sm font-bold text-[color:var(--ds-text)]">{{ securitySummary.two_factor_supported ? 'MFA disponível' : 'MFA indisponível' }}</dd>
-          <p class="mt-1 text-xs text-[color:var(--ds-text-muted)]">Gerido no perfil do utilizador</p>
-        </div>
-      </dl>
-    </section>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Assinatura</dt>
+        <dd class="pl-cell-text">{{ securitySummary.private_key_configured && securitySummary.public_key_configured ? 'Pronta' : 'Pendente' }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Validação</dt>
+        <dd class="pl-cell-text">{{ settings.app_agt_validation_number || 'Sem número' }}</dd>
+      </div>
+      <div class="pl-cell">
+        <dt class="pl-k pl-muted">Acesso forte</dt>
+        <dd class="pl-cell-text">{{ securitySummary.two_factor_supported ? 'MFA disponível' : 'MFA indisponível' }}</dd>
+      </div>
+    </dl>
 
     <div class="grid grid-cols-1 gap-4 xl:grid-cols-[17rem_minmax(0,1fr)]">
       <aside class="min-w-0 xl:sticky xl:top-24 xl:self-start">
@@ -431,6 +417,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import { ColorPicker } from 'vue3-colorpicker'
 import {

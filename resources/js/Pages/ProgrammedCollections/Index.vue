@@ -1,12 +1,12 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
   Archive as ArchiveBoxIcon,
   Download as ArrowDownTrayIcon,
-  CalendarDays as CalendarDaysIcon,
   ClipboardList as ClipboardDocumentListIcon,
   Eye as EyeIcon,
   Plus as PlusIcon,
@@ -34,14 +34,6 @@ const isSubmitting = ref(false);
 const rows = computed(() => props.record?.data ?? []);
 const selectedRecordIds = computed(() => rows.value.filter((row) => row.selected).map((row) => row.id));
 const activeCategory = computed(() => props.query?.category ?? "pending");
-const totalRecords = computed(() => props.record?.meta?.total ?? rows.value.length);
-const withScheduledDate = computed(() => rows.value.filter((row) => row.collection_date).length);
-const withSampleEntry = computed(() => rows.value.filter((row) => row.sample_entry || row.entry_origin?.is_sample_entry_first).length);
-const metrics = computed(() => [
-  { label: "Na fila", value: totalRecords.value, detail: activeCategory.value === "pending" ? "planeamentos activos" : "registos processados", icon: ClipboardDocumentListIcon },
-  { label: "Com data", value: withScheduledDate.value, detail: "nesta página", icon: CalendarDaysIcon },
-  { label: "Via entrada de amostra", value: withSampleEntry.value, detail: "linhagem preservada", icon: ArchiveBoxIcon },
-]);
 const actions = [
   { id: null, label: "gestlab.actions.bulk_actions_text" },
   { id: "delete", label: "gestlab.actions.delete" },
@@ -113,43 +105,22 @@ function executeBulkAction() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <CalendarDaysIcon class="h-5 w-5" />
-          </span>
-          <div>
-            <p class="ds-kicker">Planeamento de campo</p>
-            <h1 class="ds-heading mt-1 text-2xl">Colheitas programadas</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Agenda de colheitas externas com destino, data prevista e linhagem para a recepção laboratorial.</p>
-          </div>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Colheitas programadas" lede="Agenda de colheitas externas com destino, data prevista e linhagem para a recepção laboratorial.">
+      <template #actions>
+        <div class="inline-flex overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-1">
+          <button type="button" class="ds-button min-h-0 border-0 px-3 py-2 shadow-none" :class="activeCategory === 'pending' ? 'ds-button-primary' : 'ds-button-secondary'" @click="changeCategory('pending')">
+            <ClipboardDocumentListIcon class="h-4 w-4" /> Pendentes
+          </button>
+          <button type="button" class="ds-button min-h-0 border-0 px-3 py-2 shadow-none" :class="activeCategory === 'archived' ? 'ds-button-primary' : 'ds-button-secondary'" @click="changeCategory('archived')">
+            <ArchiveBoxIcon class="h-4 w-4" /> Processadas
+          </button>
         </div>
-        <div class="flex flex-wrap gap-3">
-          <div class="inline-flex overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-1">
-            <button type="button" class="ds-button min-h-0 border-0 px-3 py-2 shadow-none" :class="activeCategory === 'pending' ? 'ds-button-primary' : 'ds-button-secondary'" @click="changeCategory('pending')">
-              <ClipboardDocumentListIcon class="h-4 w-4" /> Pendentes
-            </button>
-            <button type="button" class="ds-button min-h-0 border-0 px-3 py-2 shadow-none" :class="activeCategory === 'archived' ? 'ds-button-primary' : 'ds-button-secondary'" @click="changeCategory('archived')">
-              <ArchiveBoxIcon class="h-4 w-4" /> Processadas
-            </button>
-          </div>
-          <Link :href="entrypoint.create_sample_url || route('vap_samples.index', { collection_type: 'programmed' })" class="ds-button ds-button-primary">
-            <PlusIcon class="h-4 w-4" /> Nova entrada de amostra
-          </Link>
-        </div>
-      </div>
-
-      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
-        <div v-for="metric in metrics" :key="metric.label" class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r sm:last:border-r-0">
-          <div class="flex items-start justify-between gap-3">
-            <div><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt><dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p></div>
-            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
-          </div>
-        </div>
-      </dl>
-    </section>
+        <Link :href="entrypoint.create_sample_url || route('vap_samples.index', { collection_type: 'programmed' })" class="ds-button ds-button-primary">
+          <PlusIcon class="h-4 w-4" /> Nova entrada de amostra
+        </Link>
+      </template>
+    </PageHeader>
 
     <section class="ds-command-surface px-5 py-4 sm:px-6">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

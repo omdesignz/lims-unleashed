@@ -14,7 +14,7 @@
     </label>
 
     <!-- Input Table -->
-    <DataTable>
+    <DataTable :stack="false">
       <tr>
         <td>Top Left</td>
         <td><BaseInput v-model.number="readings.topLeft" @input="updateReading('topLeft', readings.topLeft)" /></td>

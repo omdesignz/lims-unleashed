@@ -1,11 +1,11 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { ref, computed } from "vue";
 import { Link, router } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Eye as EyeIcon } from "@lucide/vue";
 
 
@@ -100,11 +100,8 @@ const showDeleteConfirmation = ref(false);
 }  
 </script>
 <template>
-<div class="space-y-6" :class="commercialDocumentThemeClasses">
-<div class="border-b border-gray-200 pb-5">
-    <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.iorders.page_title') }}</h3>
-    <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
-</div>
+<div class="pl-page space-y-6">
+<PageHeader :title="$t('gestlab.general.labels.iorders.page_title')" />
 
 <records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="handleEdit">
     <template #actions="{ id }">
@@ -115,7 +112,7 @@ const showDeleteConfirmation = ref(false);
                   <EyeIcon class="h-4 w-4" />
             </Link>
     </template>
-</records-table> <br>
+</records-table>
 
 <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
 </div>

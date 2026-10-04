@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import SelectInput from "@/Components/select-input.vue";
 import VapTable from "@/Components/vap-table/table.vue";
@@ -311,59 +312,44 @@ function handleBulkAction(event) {
 </script>
 
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
-        <div class="min-w-0 max-w-3xl">
-          <div class="flex flex-wrap items-center gap-2">
-            <p class="ds-kicker">Bancada analítica</p>
-            <span class="ds-chip">
-              <span class="lims-status-dot" :class="selectedResultAction.dot" />
-              {{ selectedResultAction.description }}
-            </span>
-          </div>
-          <h1 class="ds-heading mt-2 text-2xl">Fila de análises</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Registe, verifique e aprove resultados com o departamento, a origem da amostra e a decisão actual sempre visíveis.
-          </p>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Fila de análises" lede="Registe, verifique e aprove resultados com o departamento, a origem da amostra e a decisão actual sempre visíveis.">
+      <template #badges>
+        <span class="ds-chip">
+          <span class="lims-status-dot" :class="selectedResultAction.dot" />
+          {{ selectedResultAction.description }}
+        </span>
+      </template>
+      <template #actions>
+        <div class="w-full min-w-0 sm:w-64">
+          <label class="ds-field-label" for="analysis-department">Departamento</label>
+          <SelectInput
+            id="analysis-department"
+            v-model="department"
+            :options="departments"
+            :selected="department"
+            placeholder="Todos os departamentos"
+            class="mt-1 w-full"
+            @update:model-value="changeAnalysisDepartment"
+          />
         </div>
+        <Link :href="route('analysis.data-exports.index')" class="ds-button ds-button-secondary">
+          <ClipboardDocumentCheckIcon class="h-4 w-4" aria-hidden="true" />
+          Folha diária
+        </Link>
+        <button type="button" class="ds-button ds-button-primary" @click="handleCreateAnalysis">
+          <DocumentPlusIcon class="h-4 w-4" aria-hidden="true" />
+          Receber amostra
+        </button>
+      </template>
+    </PageHeader>
 
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div class="w-full min-w-0 sm:w-64">
-            <label class="ds-field-label" for="analysis-department">Departamento</label>
-            <SelectInput
-              id="analysis-department"
-              v-model="department"
-              :options="departments"
-              :selected="department"
-              placeholder="Todos os departamentos"
-              class="mt-1 w-full"
-              @update:model-value="changeAnalysisDepartment"
-            />
-          </div>
-          <Link :href="route('analysis.data-exports.index')" class="ds-button ds-button-secondary">
-            <ClipboardDocumentCheckIcon class="h-4 w-4" aria-hidden="true" />
-            Folha diária
-          </Link>
-          <button type="button" class="ds-button ds-button-primary" @click="handleCreateAnalysis">
-            <DocumentPlusIcon class="h-4 w-4" aria-hidden="true" />
-            Receber amostra
-          </button>
-        </div>
+    <dl class="pl-cells">
+      <div v-for="metric in queueMetrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-text">{{ metric.value }}</dd>
       </div>
-
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
-        <div
-          v-for="metric in queueMetrics"
-          :key="metric.label"
-          class="min-w-0 border-b border-[var(--ds-border)] px-5 py-4 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0"
-        >
-          <dt class="ds-table-heading">{{ metric.label }}</dt>
-          <dd class="ds-heading mt-2 truncate text-lg">{{ metric.value }}</dd>
-          <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.note }}</p>
-        </div>
-      </dl>
-    </section>
+    </dl>
 
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-4 sm:px-5">

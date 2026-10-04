@@ -67,7 +67,7 @@
           <span class="pl-k pl-faint">{{ itemConsumptionTotal }} reagentes</span>
         </div>
         <div class="min-h-72 p-4">
-          <apexchart type="bar" height="288" :options="itemConsumptionChartOptions" :series="itemConsumptionChartSeries" />
+          <PlanoChart kind="bar" :label="singleItem ? 'Quantidade consumida' : 'Registos de consumo por reagente'" :categories="(singleItem ? charts?.item_consumption?.labels : charts?.item_records?.labels) || []" :series="(singleItem ? charts?.item_consumption?.series : charts?.item_records?.series) || []" :format="singleItem ? 'decimal' : 'count'" />
         </div>
       </section>
       <section class="pl-panel min-w-0" aria-labelledby="consumption-users-chart">
@@ -76,7 +76,7 @@
           <span class="pl-k pl-faint">{{ userConsumptionTotal }} utilizadores</span>
         </div>
         <div class="min-h-64 p-4">
-          <apexchart type="donut" height="256" :options="userConsumptionChartOptions" :series="userConsumptionChartSeries" />
+          <PlanoChart kind="donut" label="Registos de consumo por utilizador" :categories="charts?.user_records?.labels || []" :series="[{ name: 'Registos', data: charts?.user_records?.series || [] }]" />
         </div>
       </section>
       <section class="pl-panel min-w-0" aria-labelledby="consumption-daily-chart">
@@ -85,7 +85,7 @@
           <span class="pl-k pl-faint">{{ filterPeriod || 'Período completo' }}</span>
         </div>
         <div class="min-h-56 p-4">
-          <apexchart type="line" height="224" :options="dailyConsumptionChartOptions" :series="dailyConsumptionChartSeries" />
+          <PlanoChart :kind="singleItem ? 'area' : 'column'" :label="singleItem ? 'Quantidade consumida por dia' : 'Registos de consumo por dia'" :categories="((singleItem ? charts?.daily_consumption?.labels : charts?.daily_records?.labels) || []).map(dayLabel)" :series="(singleItem ? charts?.daily_consumption?.series : charts?.daily_records?.series) || []" :format="singleItem ? 'decimal' : 'count'" :height="224" />
         </div>
       </section>
     </div>
@@ -232,7 +232,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
@@ -241,6 +241,7 @@ import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Pagination from '@/Components/pagination.vue'
 import InventoryReportExportButton from '@/Components/vap-inventory/InventoryReportExportButton.vue'
 import PageHeader from '@/Components/plano/PageHeader.vue'
+import PlanoChart from '@/Components/plano/PlanoChart.vue'
 import { X as XMarkIcon } from '@lucide/vue'
 
 const props = defineProps({
@@ -257,8 +258,6 @@ const props = defineProps({
 })
 
 const loading = ref(false)
-const isDarkMode = ref(false)
-let themeObserver
 
 const filters = reactive({
   date_from: props.filters?.date_from ?? '',
@@ -277,9 +276,6 @@ const itemOptions = computed(() => props.items.map((item) => ({
 })))
 const selectedItem = ref(itemOptions.value.find((option) => String(option.value) === String(filters.item_id)) || null)
 const consumptionRows = computed(() => props.consumptions?.data || [])
-const chartTextColor = computed(() => isDarkMode.value ? '#d7dbe0' : '#6b7482')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#eef0f3')
-const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
 const summaryCards = computed(() => [
   {
@@ -335,68 +331,12 @@ const activeFilterPills = computed(() => {
 })
 
 const hasActiveFilters = computed(() => activeFilterPills.value.length > 0)
-const itemConsumptionChartSeries = computed(() => props.charts?.item_consumption?.series || [])
+// Quantities only add up within one reagent; across reagents the charts count records.
+const singleItem = computed(() => Boolean(props.filters?.item_id))
+const dayLabel = (date) => (/^\d{4}-\d{2}-\d{2}/.test(String(date)) ? `${String(date).slice(8, 10)}/${String(date).slice(5, 7)}` : date)
 const itemConsumptionTotal = computed(() => props.charts?.item_consumption?.labels?.length || 0)
-const userConsumptionChartSeries = computed(() => props.charts?.user_consumption?.series || [])
 const userConsumptionTotal = computed(() => props.charts?.user_consumption?.labels?.length || 0)
-const dailyConsumptionChartSeries = computed(() => props.charts?.daily_consumption?.series || [])
 const peakDayLabel = computed(() => props.stats?.peak_consumption_day?.date ? formatDate(props.stats.peak_consumption_day.date) : 'Sem dados')
-
-const itemConsumptionChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  colors: ['#e5484d'],
-  dataLabels: { enabled: false },
-  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  plotOptions: { bar: { borderRadius: 0, horizontal: true } },
-  xaxis: {
-    categories: props.charts?.item_consumption?.labels || [],
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value } },
-  },
-  yaxis: { labels: { maxWidth: 220, style: { colors: chartTextColor.value } } },
-  tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false },
-}))
-
-const userConsumptionChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  labels: props.charts?.user_consumption?.labels || [],
-  colors: ['#0f766e', '#1d4ed8', '#7c5ce0', '#e0902b', '#e5484d', '#6b7482'],
-  legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
-  dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
-  stroke: { width: 0 },
-  tooltip: { theme: chartTooltipTheme.value },
-}))
-
-const dailyConsumptionChartOptions = computed(() => ({
-  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
-  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
-  foreColor: chartTextColor.value,
-  colors: ['#14a3a8'],
-  dataLabels: { enabled: false },
-  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
-  stroke: { curve: 'straight', width: 3 },
-  markers: { size: 3 },
-  xaxis: {
-    categories: props.charts?.daily_consumption?.labels || [],
-    labels: { rotate: -20, trim: true, style: { colors: chartTextColor.value } },
-    axisBorder: { color: chartGridColor.value },
-    axisTicks: { color: chartGridColor.value },
-  },
-  yaxis: { labels: { style: { colors: chartTextColor.value } } },
-  tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false },
-}))
-
-function syncDarkMode() {
-  if (typeof document === 'undefined') return
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
 
 function formatDate(value) {
   if (!value) return 'N/D'
@@ -448,15 +388,4 @@ watch(
   { deep: true },
 )
 
-onMounted(() => {
-  syncDarkMode()
-  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
-    themeObserver = new MutationObserver(syncDarkMode)
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  }
-})
-
-onBeforeUnmount(() => {
-  themeObserver?.disconnect()
-})
 </script>

@@ -1,28 +1,20 @@
 <template>
-  <section class="ds-panel relative p-5 sm:p-6">
-    <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-      <div class="max-w-4xl">
-        <p v-if="eyebrow" class="ds-kicker">
-          {{ eyebrow }}
-        </p>
-        <h1 class="mt-2 text-2xl font-medium tracking-[-0.03em] text-[var(--ds-text)] sm:text-[1.75rem] sm:leading-tight">
-          {{ title }}
-        </h1>
-        <p v-if="description" class="ds-copy mt-2 max-w-3xl text-sm">
-          {{ description }}
-        </p>
-      </div>
-      <div v-if="$slots.actions" class="flex flex-wrap gap-2">
-        <slot name="actions" />
-      </div>
-    </div>
-    <div v-if="$slots.default" class="mt-6">
-      <slot />
-    </div>
-  </section>
+  <PageHeader :trail="eyebrow ? [{ title: eyebrow }, { title }] : []" :title="title" :lede="description">
+    <template v-if="$slots.actions" #actions>
+      <slot name="actions" />
+    </template>
+    <slot />
+  </PageHeader>
 </template>
 
 <script setup>
+import PageHeader from '@/Components/plano/PageHeader.vue'
+
+/**
+ * The header of a module screen. It is the Plano page header: `eyebrow` names
+ * the section in the path line, and anything in the default slot (tabs, state
+ * cells) follows the title.
+ */
 defineProps({
   eyebrow: {
     type: String,

@@ -1,10 +1,10 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import PageHeader from "@/Components/plano/PageHeader.vue";
 import RecordsTable from "@/Components/records-table.vue";
 import SlideOver from "@/Components/slide-over.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
 import {
-  Store as BuildingStorefrontIcon,
   Check as CheckIcon,
   ClipboardCheck as ClipboardDocumentCheckIcon,
 } from "@lucide/vue";
@@ -114,31 +114,18 @@ function confirmAction() {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div class="flex items-start gap-3">
-          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
-            <BuildingStorefrontIcon class="h-5 w-5" aria-hidden="true" />
-          </span>
-          <div>
-            <p class="ds-kicker">Cadeia de fornecimento</p>
-            <h1 class="ds-heading mt-1 text-2xl">Fornecedores de inventário</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Diretório controlado de entidades que fornecem reagentes, consumíveis, equipamentos e serviços críticos.</p>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-          <span class="inline-flex items-center rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-xs font-bold text-[var(--ds-text-muted)]">
-            {{ totalRecords }} fornecedores
-          </span>
-          <Link :href="route('supplier-assessments.index')" class="ds-button ds-button-secondary">
-            <ClipboardDocumentCheckIcon class="h-4 w-4" aria-hidden="true" />
-            Avaliações
-          </Link>
-        </div>
-      </div>
-    </section>
+  <div class="pl-page space-y-6">
+    <PageHeader title="Fornecedores de inventário" lede="Diretório controlado de entidades que fornecem reagentes, consumíveis, equipamentos e serviços críticos.">
+      <template #actions>
+        <span class="inline-flex items-center rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-xs font-bold text-[var(--ds-text-muted)]">
+          {{ totalRecords }} fornecedores
+        </span>
+        <Link :href="route('supplier-assessments.index')" class="ds-button ds-button-secondary">
+          <ClipboardDocumentCheckIcon class="h-4 w-4" aria-hidden="true" />
+          Avaliações
+        </Link>
+      </template>
+    </PageHeader>
 
     <RecordsTable
       :record="record"

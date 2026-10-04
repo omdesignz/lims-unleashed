@@ -1,5 +1,5 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
+  <div class="pl-page space-y-6">
     <ModuleHero
       :eyebrow="$t('gestlab.general.labels.vap_proposal_templates.surface.library')"
       :title="$t('gestlab.general.labels.vap_proposal_templates.title')"

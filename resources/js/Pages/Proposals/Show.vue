@@ -1,6 +1,7 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { computed } from "vue";
+import PlanoChart from "@/Components/plano/PlanoChart.vue";
 import { usePermission } from "@/Composables/usePermissions";
 import { Repeat as ArrowPathRoundedSquareIcon, ChartColumnBig as ChartBarSquareIcon, File as DocumentIcon, FileText as DocumentTextIcon, Paperclip as PaperClipIcon, Pencil as PencilIcon, Tag as TagIcon, Trash2 as TrashIcon } from "@lucide/vue";
 import sampleStatus from '@/Components/sample-status.vue';
@@ -24,103 +25,13 @@ const financialBreakdownChartSeries = computed(() => [
 ]);
 
 const itemCompositionChartSeries = computed(() => props.charts?.item_composition?.series || []);
-const workflowSummaryChartSeries = computed(() => [
-    {
-        name: 'Indicadores',
-        data: props.charts?.workflow_summary?.series || [],
-    }
-]);
+;
 
-const financialBreakdownChartOptions = computed(() => ({
-    chart: {
-        toolbar: { show: false },
-        fontFamily: 'inherit',
-    },
-    plotOptions: {
-        bar: {
-            horizontal: true,
-            borderRadius: 8,
-            barHeight: '58%',
-            distributed: true,
-        },
-    },
-    dataLabels: { enabled: false },
-    xaxis: {
-        categories: props.charts?.financial_breakdown?.labels || [],
-        labels: {
-            style: { colors: '#6b7280' },
-        },
-    },
-    grid: {
-        borderColor: '#eef0f3',
-        strokeDashArray: 4,
-    },
-    colors: ['#1d4ed8', '#e0902b', '#087cf0', '#e5484d', '#22a45d'],
-    legend: { show: false },
-}));
+;
 
-const itemCompositionChartOptions = computed(() => ({
-    chart: {
-        toolbar: { show: false },
-        fontFamily: 'inherit',
-    },
-    labels: props.charts?.item_composition?.labels || [],
-    colors: ['#087cf0', '#e0902b', '#e5484d', '#6b7482'],
-    stroke: {
-        colors: ['#ffffff'],
-    },
-    legend: {
-        position: 'bottom',
-        labels: { colors: '#334155' },
-    },
-    dataLabels: {
-        enabled: true,
-        formatter: (value) => `${Math.round(value)}%`,
-    },
-    plotOptions: {
-        pie: {
-            donut: {
-                size: '68%',
-            },
-        },
-    },
-}));
+;
 
-const workflowSummaryChartOptions = computed(() => ({
-    chart: {
-        toolbar: { show: false },
-        fontFamily: 'inherit',
-    },
-    plotOptions: {
-        bar: {
-            borderRadius: 10,
-            columnWidth: '48%',
-            distributed: true,
-        },
-    },
-    dataLabels: { enabled: false },
-    xaxis: {
-        categories: props.charts?.workflow_summary?.labels || [],
-        axisBorder: { show: false },
-        axisTicks: { show: false },
-        labels: {
-            style: { colors: '#6b7280' },
-        },
-    },
-    yaxis: {
-        min: 0,
-        forceNiceScale: true,
-        labels: {
-            style: { colors: '#6b7280' },
-        },
-    },
-    grid: {
-        borderColor: '#eef0f3',
-        strokeDashArray: 4,
-    },
-    colors: ['#7c5ce0', '#1d4ed8', '#0f766e', '#e0902b'],
-    legend: { show: false },
-}));
+;
 
 defineOptions({
   layout: Layout
@@ -149,7 +60,7 @@ defineOptions({
         </div>
 
         <div class="mt-6">
-          <apexchart type="bar" height="300" :options="financialBreakdownChartOptions" :series="financialBreakdownChartSeries" />
+          <PlanoChart kind="bar" label="Resumo financeiro da proposta" :categories="charts?.financial_breakdown?.labels || []" :series="financialBreakdownChartSeries" format="currency" />
         </div>
       </article>
 
@@ -164,7 +75,7 @@ defineOptions({
           </div>
 
           <div class="mt-6">
-            <apexchart type="donut" height="300" :options="itemCompositionChartOptions" :series="itemCompositionChartSeries" />
+            <PlanoChart kind="donut" label="Composição dos itens" :categories="charts?.item_composition?.labels || []" :series="[{ name: 'Itens', data: itemCompositionChartSeries }]" />
           </div>
         </article>
 
@@ -177,7 +88,13 @@ defineOptions({
           </div>
 
           <div class="mt-6">
-            <apexchart type="bar" height="250" :options="workflowSummaryChartOptions" :series="workflowSummaryChartSeries" />
+            <!-- Revisions, days and items are different units: they read as facts, not as bars on one axis. -->
+            <dl class="pl-cells">
+              <div v-for="(label, index) in charts?.workflow_summary?.labels || []" :key="label" class="pl-cell">
+                <dt class="pl-k pl-muted">{{ label }}</dt>
+                <dd class="pl-cell-value">{{ charts?.workflow_summary?.series?.[index] ?? 0 }}</dd>
+              </div>
+            </dl>
           </div>
         </article>
       </div>

@@ -1,5 +1,7 @@
 <script setup>
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import DataTableShell from '@/Components/tables/DataTableShell.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
@@ -10,7 +12,6 @@ import {
   Zap as BoltIcon,
   CircleCheck as CheckCircleIcon,
   ChevronRight as ChevronRightIcon,
-  Database as CircleStackIcon,
   ClipboardCopy as ClipboardDocumentIcon,
   CloudDownload as CloudArrowDownIcon,
   CloudUpload as CloudArrowUpIcon,
@@ -20,11 +21,9 @@ import {
   KeyRound as KeyIcon,
   Link as LinkIcon,
   Search as MagnifyingGlassIcon,
-  Send as PaperAirplaneIcon,
   Plus as PlusIcon,
   Rows3 as QueueListIcon,
   Server as ServerStackIcon,
-  ShieldCheck as ShieldCheckIcon,
   Signal as SignalIcon,
   X as XMarkIcon,
 } from '@lucide/vue'
@@ -452,48 +451,25 @@ function relativeTime(value) {
 <template>
   <Head title="Integration Hub" />
 
-  <div class="space-y-5">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div class="min-w-0">
-            <div class="flex items-center gap-2.5">
-              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--brand-secondary)] text-white">
-                <ArrowsRightLeftIcon class="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div>
-                <p class="ds-kicker">Interoperabilidade laboratorial</p>
-                <h1 class="mt-1 text-2xl font-semibold text-[var(--ds-text)]">Integration Hub</h1>
-              </div>
-            </div>
-            <p class="mt-3 max-w-3xl text-sm leading-6 text-[var(--ds-text-muted)]">Equipamentos, mensagens normalizadas e partilha externa sob uma única trilha de auditoria.</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 text-xs font-semibold text-[var(--ds-text-muted)]">
-              <span :class="(summary.delivery_failures ?? 0) > 0 ? 'bg-amber-500' : 'bg-emerald-500'" class="h-2 w-2 rounded-full" />
-              {{ (summary.delivery_failures ?? 0) > 0 ? 'Operação com alertas' : 'Operação estável' }}
-            </span>
-            <button v-if="canManage" type="button" class="ds-button ds-button-primary" @click="openCreateConnector">
-              <PlusIcon class="h-4 w-4" aria-hidden="true" />
-              Novo conector
-            </button>
-          </div>
-        </div>
-      </div>
+  <div class="pl-page space-y-5">
+    <PageHeader title="Integrações" lede="Equipamentos, mensagens normalizadas e partilha externa sob uma única trilha de auditoria.">
+      <template #badges>
+        <StatusChip :tone="(summary.delivery_failures ?? 0) > 0 ? 'wait' : 'ok'">{{ (summary.delivery_failures ?? 0) > 0 ? 'Operação com alertas' : 'Operação estável' }}</StatusChip>
+      </template>
+      <template #actions>
+        <button v-if="canManage" type="button" class="ds-button ds-button-primary" @click="openCreateConnector">
+          <PlusIcon class="h-4 w-4" aria-hidden="true" />
+          Novo conector
+        </button>
+      </template>
+    </PageHeader>
 
-      <dl class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-5">
-        <div v-for="metric in headlineMetrics" :key="metric.label" class="min-w-0 px-5 py-4 sm:px-6">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <dt class="truncate text-xs font-semibold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
-              <dd class="mt-2 text-2xl font-semibold tabular-nums text-[var(--ds-text)]">{{ metric.value }}</dd>
-              <p class="mt-1 truncate text-xs text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
-            </div>
-            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
-          </div>
-        </div>
-      </dl>
-    </section>
+    <dl class="pl-cells">
+      <div v-for="metric in headlineMetrics" :key="metric.label" class="pl-cell">
+        <dt class="pl-k pl-muted">{{ metric.label }}</dt>
+        <dd class="pl-cell-value">{{ metric.value }}</dd>
+      </div>
+    </dl>
 
     <nav class="flex max-w-full gap-1 overflow-x-auto border-b border-[var(--ds-border)]" aria-label="Áreas do Integration Hub">
       <button

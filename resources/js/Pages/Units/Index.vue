@@ -1,7 +1,6 @@
 <script setup>
 import ReferenceCatalogManager from "@/Components/catalogs/ReferenceCatalogManager.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { Scale as ScaleIcon } from "@lucide/vue";
 
 defineOptions({ layout: Layout });
 
@@ -28,6 +27,6 @@ const props = defineProps({
     new-entity-label="Nova unidade"
     :code-label="$t('gestlab.general.labels.units.code')"
     :description-label="$t('gestlab.general.labels.units.description')"
-    :icon="ScaleIcon"
+
   />
 </template>

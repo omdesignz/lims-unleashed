@@ -1,5 +1,6 @@
 <script setup>
 import confirmDialog from '@/Components/confirm-dialog.vue'
+import PageHeader from '@/Components/plano/PageHeader.vue'
 import IconPicker from '@/Components/icon-picker.vue'
 import Pagination from '@/Components/pagination.vue'
 import slideOver from '@/Components/slide-over.vue'
@@ -124,14 +125,9 @@ function deleteBoard() {
 </script>
 
 <template>
-  <div class="space-y-5">
-    <header class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
-        <div class="min-w-0">
-          <p class="ds-kicker">{{ $t('gestlab.general.labels.kanban.page_title') }}</p>
-          <h1 class="ds-heading mt-1 text-xl">{{ $t('gestlab.general.labels.kanban.page_title') }}</h1>
-          <p class="ds-copy mt-1 max-w-2xl text-sm">{{ $t('gestlab.general.labels.kanban.page_description') }}</p>
-        </div>
+  <div class="pl-page space-y-5">
+    <PageHeader :title="$t('gestlab.general.labels.kanban.page_title')" :lede="$t('gestlab.general.labels.kanban.page_description')">
+      <template #actions>
         <button
           v-if="hasPermission('add_' + props.model)"
           type="button"
@@ -141,42 +137,42 @@ function deleteBoard() {
           <PlusIcon class="h-4 w-4" />
           {{ $t('gestlab.general.buttons.new_record') }}
         </button>
-      </div>
+      </template>
+    </PageHeader>
 
-      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
-        <div class="flex items-center gap-3 px-5 py-4">
-          <span class="grid h-9 w-9 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))]">
-            <Squares2X2Icon class="h-4 w-4" />
-          </span>
-          <div>
-            <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.records_found') }}</dt>
-            <dd class="mt-0.5 text-lg font-black tabular-nums text-[var(--ds-text)]">{{ props.record.meta.total ?? 0 }}</dd>
-          </div>
+    <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
+      <div class="flex items-center gap-3 px-5 py-4">
+        <span class="grid h-9 w-9 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))]">
+          <Squares2X2Icon class="h-4 w-4" />
+        </span>
+        <div>
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.records_found') }}</dt>
+          <dd class="mt-0.5 text-lg font-black tabular-nums text-[var(--ds-text)]">{{ props.record.meta.total ?? 0 }}</dd>
         </div>
-        <div class="flex items-center gap-3 border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0">
-          <span class="grid h-9 w-9 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-cyan-700 dark:text-cyan-300">
-            <RectangleStackIcon class="h-4 w-4" />
-          </span>
-          <div>
-            <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.kanban.lists') }}</dt>
-            <dd class="mt-0.5 text-lg font-black tabular-nums text-[var(--ds-text)]">{{ totalLists }}</dd>
-          </div>
+      </div>
+      <div class="flex items-center gap-3 border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0">
+        <span class="grid h-9 w-9 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-cyan-700 dark:text-cyan-300">
+          <RectangleStackIcon class="h-4 w-4" />
+        </span>
+        <div>
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.kanban.lists') }}</dt>
+          <dd class="mt-0.5 text-lg font-black tabular-nums text-[var(--ds-text)]">{{ totalLists }}</dd>
         </div>
-        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0">
-          <label for="board-search" class="sr-only">{{ $t('gestlab.general.search_input_placeholder') }}</label>
-          <div class="relative">
-            <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-            <BaseInput
-              id="board-search"
-              v-model="query.search"
-              type="search"
-              class="ds-field min-h-10 py-2 pl-9"
-              :placeholder="$t('gestlab.general.search_input_placeholder')"
-            />
-          </div>
+      </div>
+      <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0">
+        <label for="board-search" class="sr-only">{{ $t('gestlab.general.search_input_placeholder') }}</label>
+        <div class="relative">
+          <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
+          <BaseInput
+            id="board-search"
+            v-model="query.search"
+            type="search"
+            class="ds-field min-h-10 py-2 pl-9"
+            :placeholder="$t('gestlab.general.search_input_placeholder')"
+          />
         </div>
-      </dl>
-    </header>
+      </div>
+    </dl>
 
     <section v-if="props.record.data.length" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       <article v-for="board in props.record.data" :key="board.id" class="ds-card group overflow-hidden">
