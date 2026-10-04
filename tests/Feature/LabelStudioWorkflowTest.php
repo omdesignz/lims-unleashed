@@ -905,7 +905,8 @@ class LabelStudioWorkflowTest extends TestCase
         $response->assertHeader('X-Label-Pdf-Renderer', 'mpdf');
         $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
 
-        foreach (['pdf.blade.php', 'preview.blade.php', 'generate.blade.php', 'batch.blade.php'] as $view) {
+        // The views the label renderer loads; `pdf.blade.php` had no caller and was removed.
+        foreach (['preview.blade.php', 'generate.blade.php', 'batch.blade.php', 'chrome-sheet.blade.php'] as $view) {
             $source = file_get_contents(resource_path('views/PDFs/labels/'.$view));
 
             $this->assertIsString($source);

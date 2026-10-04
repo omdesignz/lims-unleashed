@@ -192,7 +192,7 @@ class ControlledDocumentTest extends TestCase
             'PDFs/sample-entry', 'PDFs/collection_term', 'PDFs/parameters_to_analyze', 'PDFs/sample-discard', 'PDFs/contractguide',
             'exports/non-conformities/details-pdf', 'exports/non-conformities/pdf', 'exports/order', 'exports/inventory-need',
             'exports/maintenance/tasks', 'exports/maintenance/calendar', 'exports/revision-history', 'exports/revision-comparison',
-            'exports/chart', 'reports/inventory-export', 'reports/consumption', 'reports/inventory-generic', 'reports/batch_genealogy',
+            'exports/chart', 'reports/inventory-export', 'reports/consumption', 'reports/inventory-generic',
         ];
 
         foreach ($views as $view) {

@@ -164,10 +164,8 @@ use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorksheetController;
 use App\Http\Middleware\EnsureSampleLaboratoryAccess;
 use App\Http\Middleware\UsePortalFortifyConfiguration;
-use App\Models\CollectionProduct;
 use App\Models\CustomerRequest;
 use App\Models\InventoryItem;
-use App\Models\ParameterProfile;
 use App\Models\QualityCertificate;
 use App\Models\VAPSampleEntry;
 use App\Services\ModelsListingService;
@@ -210,26 +208,6 @@ use Laravel\Fortify\RoutePath;
 //         'worksheetData' => []
 //     ]);
 // });
-
-Route::get('/sgs', function () {
-    return view('PDFs.sgs_report_template');
-});
-
-Route::get('/cast', function () {
-    return ParameterProfile::find(12);
-});
-
-Route::get('/labels', function () {
-
-    return view('PDFs.sample_labels', [
-        'qr' => CollectionProduct::first()->Qr,
-    ]);
-});
-
-Route::get('/multiple-sample-analysis', function () {
-
-    return view('PDFs.multiple_sample_analysis');
-});
 
 Route::get('/', function (Request $request, GeneralSettings $settings) {
     if ($request->user()) {
