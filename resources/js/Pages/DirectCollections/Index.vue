@@ -255,7 +255,7 @@ function executeAction() {
         @execute-bulk-action="requestBulkAction"
       >
         <template #column-qr="{ row }">
-          <img :src="row.qr" :alt="`QR da colheita ${row.cl || row.id}`" class="h-16 w-16">
+          <img :src="row.qr" :alt="`QR da colheita ${row.cl || row.id}`" class="aspect-square h-16 w-16 shrink-0 object-contain">
         </template>
 
         <template #column-actions="{ row }">

@@ -3025,7 +3025,7 @@ function canvasBlockContentHtml(block) {
 
     return `
       <div class="flex h-full min-h-24 flex-col items-center justify-center gap-2">
-        <img src="${qrDataUri}" alt="QR code" style="display:block; width:100%; max-width:148px; height:auto;" />
+        <img src="${qrDataUri}" alt="QR code" style="display:block; width:100%; max-width:148px; height:auto; aspect-ratio:1 / 1;" />
         ${block.qr_label ? `<div class="text-center text-[11px] text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.qr_label))}</div>` : ''}
       </div>
     `.trim()
@@ -3877,6 +3877,16 @@ function applyBackgroundImage() {
   applyAssetToDocumentBackground(mediaAssetUrl.value)
 }
 
+// The letterhead, running header and footer of a controlled document carry its
+// identification, revision and page numbering: a theme restyles, it never replaces them.
+function isControlledDocumentSurface(html) {
+  return /class="doc-(?:letterhead|running|footer)\b/.test(String(html || ''))
+}
+
+function themeMayReplaceSurface(html, defaultMarker) {
+  return !html || (!isControlledDocumentSurface(html) && html.includes(defaultMarker))
+}
+
 function applyThemePreset(themeKey) {
   const theme = themeCatalog[themeKey]
 
@@ -3888,15 +3898,15 @@ function applyThemePreset(themeKey) {
   props.layoutSchema.styles_css = theme.styles
   props.layoutSchema.document_font_family = props.layoutSchema.document_font_family || 'Manrope, DejaVu Sans, sans-serif'
 
-  if (!props.layoutSchema.first_page_header_html || props.layoutSchema.first_page_header_html.includes('{{lab_name}}')) {
+  if (themeMayReplaceSurface(props.layoutSchema.first_page_header_html, '{{lab_name}}')) {
     props.layoutSchema.first_page_header_html = theme.firstPageHeaderHtml
   }
 
-  if (!props.layoutSchema.default_header_html || props.layoutSchema.default_header_html.includes('{{document_code}}')) {
+  if (themeMayReplaceSurface(props.layoutSchema.default_header_html, '{{document_code}}')) {
     props.layoutSchema.default_header_html = theme.defaultHeaderHtml
   }
 
-  if (!props.layoutSchema.footer_html || props.layoutSchema.footer_html.includes('{PAGENO}/{nbpg}')) {
+  if (themeMayReplaceSurface(props.layoutSchema.footer_html, '{PAGENO}/{nbpg}')) {
     props.layoutSchema.footer_html = theme.footerHtml
   }
 }
@@ -4690,7 +4700,7 @@ function submit() {
                       </div>
                       <div data-canvas-surface="content" class="relative flex-1 rounded-2xl border border-slate-200 bg-white/85 p-6 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900/80 xl:p-7" :style="previewGridStyle">
                         <div class="pointer-events-none absolute right-4 top-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-slate-400 shadow-sm dark:bg-slate-950/80 dark:text-slate-500">Corpo</div>
-                        <div class="prose max-w-none dark:prose-invert" v-html="editorCanvasPage.content" />
+                        <div class="studio-preview-body" v-html="editorCanvasPage.content" />
                         <div
                           v-for="block in previewContentBlocksForPage(editorCanvasPage.pageNumber)"
                           :key="`editor-content-${block.id}`"
@@ -6396,7 +6406,7 @@ function submit() {
               </div>
             </div>
             <div data-canvas-surface="content" class="relative flex-1 rounded-2xl border border-slate-200 bg-white/85 p-6 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900/80 xl:p-7" :style="previewGridStyle">
-              <div class="prose max-w-none dark:prose-invert" v-html="previewPage.content" />
+              <div class="studio-preview-body" v-html="previewPage.content" />
               <div
                 v-if="!previewContentBlocksForPage(previewPage.pageNumber).length && previewContentBlocks.length"
                 class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-3 text-xs text-slate-500 dark:border-slate-600 dark:bg-slate-950/40 dark:text-slate-400"

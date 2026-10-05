@@ -1372,7 +1372,7 @@ function canvasBlockContentHtml(block) {
     return `
       <div class="flex h-full min-h-24 flex-col items-center justify-center gap-2">
         ${qrDataUri
-          ? `<img src="${qrDataUri}" alt="QR de validação" style="display:block; width:100%; max-width:112px; height:auto;" />`
+          ? `<img src="${qrDataUri}" alt="QR de validação" style="display:block; width:100%; max-width:112px; height:auto; aspect-ratio:1 / 1;" />`
           : '<div class="grid min-h-24 w-full place-items-center rounded-xl border border-dashed border-slate-300 bg-white/80 px-3 text-center text-[11px] text-slate-500">Defina o conteúdo do QR</div>'}
         ${block.qr_label ? `<div class="text-center text-[11px] text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.qr_label))}</div>` : ''}
       </div>

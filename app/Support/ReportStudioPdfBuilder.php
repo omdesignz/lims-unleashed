@@ -31,6 +31,9 @@ class ReportStudioPdfBuilder
     /** @var array<string, string> verification code markup by the text it encodes */
     private array $verificationCodes = [];
 
+    /** @var array<string, mixed>|null what the surfaces are being printed with, while that is recorded */
+    private ?array $recordedSurfaceValues = null;
+
     private const DEFAULT_CHART_PALETTE = ['#143d37', '#d9b05f', '#0f766e', '#475569', '#7c2d12', '#3f6f58'];
 
     public function buildAnalysisReportPayload(
@@ -114,6 +117,30 @@ class ReportStudioPdfBuilder
                 ],
             ],
         ];
+    }
+
+    /**
+     * The values a document is printed with: what each token of its template
+     * stands for. The Studio shows them on its canvas, so the editor and the
+     * printed preview agree.
+     *
+     * @param  callable(): mixed  $build  builds the document's payload
+     * @return array<string, bool|string> by token, braces included
+     */
+    public function valuesPrintedBy(callable $build): array
+    {
+        $this->recordedSurfaceValues = [];
+
+        try {
+            $build();
+
+            return collect($this->recordedSurfaceValues)
+                ->filter(fn (mixed $value): bool => is_scalar($value))
+                ->mapWithKeys(fn (mixed $value, string $key): array => ['{'.$key.'}' => is_bool($value) ? $value : (string) $value])
+                ->all();
+        } finally {
+            $this->recordedSurfaceValues = null;
+        }
     }
 
     public function buildAnalysisStudioPreviewPayload(
@@ -1399,6 +1426,16 @@ class ReportStudioPdfBuilder
     }
 
     /**
+     * @param  array<string, mixed>  $values  by token, without braces
+     */
+    private function recordSurfaceValues(array $values): void
+    {
+        if ($this->recordedSurfaceValues !== null) {
+            $this->recordedSurfaceValues = array_merge($this->recordedSurfaceValues, $values);
+        }
+    }
+
+    /**
      * @param  array<string, mixed>  $values
      * @return array<string, mixed>
      */
@@ -1559,6 +1596,8 @@ class ReportStudioPdfBuilder
      */
     private function renderTemplateHtml(string $template, array $values): string
     {
+        $this->recordSurfaceValues($this->placeholderContextFromValues($values));
+
         return $this->replacePlaceholders(
             $this->resolveConditionalBlocks($template, $values),
             $values
@@ -2697,6 +2736,8 @@ HTML;
     {
         $data = $this->withDocumentControl($data);
 
+        $this->recordSurfaceValues($data);
+
         if ($surface === 'content') {
             return $this->buildContentSurfaceHtml($baseHtml, $canvasBlocks, $data);
         }
@@ -3422,7 +3463,7 @@ SVG;
         )->getString();
         $qrSvg = str_replace(
             '<svg ',
-            '<svg role="img" aria-label="QR code" style="display:block; width:100%; max-width:148px; height:auto;" ',
+            '<svg role="img" aria-label="QR code" style="display:block; width:100%; max-width:148px; height:auto; aspect-ratio:1 / 1;" ',
             $qrSvg
         );
         $label = $this->interpolate((string) ($block['qr_label'] ?? ''), $data);

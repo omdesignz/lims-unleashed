@@ -143,7 +143,9 @@ body.pdf-document {
 
 .doc-letterhead .doc-letterhead-qr img {
     width: 21mm;
-    height: 21mm;
+    height: auto;
+    max-width: none;
+    aspect-ratio: 1 / 1;
 }
 
 .doc-qr-caption {

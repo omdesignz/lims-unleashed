@@ -32,6 +32,8 @@ class ControlledDocument
 
     public const LOGO_MAX_HEIGHT_MM = 18;
 
+    public const VERIFICATION_CODE_MM = 21;
+
     /**
      * The first-page letterhead: laboratory identity, the document control box
      * and, when given, a verification code.
@@ -449,6 +451,16 @@ HTML;
      * A QR code of the document's verification text, as an inline image both
      * renderers can draw.
      */
+    /**
+     * How a QR code is sized wherever one is printed or shown: by its width
+     * alone, so its height always follows and the code stays square, whatever
+     * room the page or the screen leaves it.
+     */
+    public static function squareCodeStyle(float $millimetres): string
+    {
+        return 'width:'.round($millimetres, 1).'mm; height:auto; max-width:none; aspect-ratio:1 / 1;';
+    }
+
     public static function verificationCodeHtml(string $content, string $caption = 'Verificação'): string
     {
         $content = trim($content);
@@ -473,6 +485,6 @@ HTML;
             return '';
         }
 
-        return '<img src="'.$uri.'" alt="'.e($caption).'" style="width:21mm; height:21mm;"><div class="doc-qr-caption">'.e($caption).'</div>';
+        return '<img src="'.$uri.'" alt="'.e($caption).'" style="'.self::squareCodeStyle(self::VERIFICATION_CODE_MM).'"><div class="doc-qr-caption">'.e($caption).'</div>';
     }
 }

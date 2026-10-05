@@ -93,6 +93,62 @@ class ReportStudioWorkflowTest extends TestCase
             );
     }
 
+    public function test_the_canvas_is_given_the_values_every_system_document_is_printed_with(): void
+    {
+        $samples = $this->actingAs($this->verifiedAdmin())
+            ->get(route('report-studios.index'))
+            ->assertOk()
+            ->viewData('page')['props']['canvasSampleValues'];
+
+        // What every type shares, the logo among them, is sent once.
+        foreach (['{lab_name}', '{lab_logo}', '{lab_identity}', '{document_revision}'] as $token) {
+            $this->assertArrayHasKey($token, $samples['shared']);
+        }
+
+        foreach (ReportStudioDefaultTemplates::presets() as $preset) {
+            $type = $preset['category'];
+            $values = $samples['types'][$type] + $samples['shared'];
+            $surfaces = implode(' ', array_map(
+                fn (string $surface): string => (string) data_get($preset, 'layout_schema.'.$surface),
+                ['first_page_header_html', 'default_header_html', 'footer_html', 'body_html']
+            ));
+
+            $this->assertSame([], array_intersect_key($samples['types'][$type], $samples['shared']), $type);
+
+            preg_match_all('/\{\{?\s*(?:(?:if|ifnot|endif):)?([\w.\/-]+)\s*\}?\}/', $surfaces, $tokens);
+
+            foreach (array_diff(array_unique($tokens[1]), ['PAGENO', 'nbpg']) as $token) {
+                $this->assertArrayHasKey('{'.$token.'}', $values, $type.' has nothing to show for {'.$token.'}');
+            }
+        }
+
+        // The test report: its blocks as printed, from the fictional preview and never a customer's record.
+        $analysis = $samples['types']['analysis'];
+        $this->assertSame('BA-2026-001', $analysis['{document_code}']);
+        $this->assertStringContainsString('doc-kv', $analysis['{customer_block}']);
+        $this->assertStringContainsString('doc-results', $analysis['{results_block}']);
+        $this->assertStringContainsString('src="data:image/', $analysis['{verification_qr}']);
+        $this->assertIsBool($samples['types']['invoice']['{is_paid}']);
+    }
+
+    public function test_a_new_model_started_from_the_system_document_previews_as_a_pdf(): void
+    {
+        $preset = collect(ReportStudioDefaultTemplates::presets())->firstWhere('category', 'analysis');
+
+        $response = $this->actingAs($this->verifiedAdmin())->post(route('report-studios.preview-draft-pdf'), [
+            'name' => null,
+            'studio_type' => 'analysis',
+            'renderer' => 'internal',
+            'status' => 'draft',
+            'theme_preset' => $preset['theme_preset'],
+            'layout_schema' => $preset['layout_schema'],
+            'export_settings' => $preset['export_settings'],
+        ]);
+
+        $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+    }
+
     public function test_system_presets_include_typed_variable_catalogs(): void
     {
         $presets = collect(ReportStudioDefaultTemplates::presets())->keyBy('category');

@@ -43,6 +43,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  canvasSampleValues: {
+    type: Object,
+    default: () => ({ shared: {}, types: {} }),
+  },
 })
 
 const editingTemplate = ref(null)
@@ -120,33 +124,35 @@ const rendererLabel = (renderer) => {
   }[renderer] || renderer
 }
 
+// Last-resort values, used only if the server sent no system document for a type.
+// Empty surfaces are filled by the server from that type's default when printing.
 const defaultLayoutSchema = {
-  first_page_header_html: '<div style="border-bottom:1px solid #143d37; padding-bottom:10px;"><h2 style="margin:0;color:#143d37;">{{lab_name}}</h2><p style="margin-top:6px;color:#475a53;">{{document_code}}</p></div>',
-  default_header_html: '<div style="font-size:10px;color:#475a53;">{{document_code}} · {{issue_date}}</div>',
-  footer_html: '<div style="font-size:9px; color:#475a53;">Documento controlado · Página {PAGENO}/{nbpg}</div>',
-  body_html: '<h1>{report_title}</h1><p><strong>Código:</strong> {certificate_code}</p><p><strong>Cliente:</strong> {customer_name}</p><p><strong>Entrada de amostra:</strong> {sample_entry_code}</p><p><strong>Código laboratorial:</strong> {lab_code}</p><section style="margin:18px 0;">{sample_details}</section><section style="margin:18px 0;">{collection_details}</section><section style="margin:18px 0;">{analytical_scope}</section><section style="margin:18px 0;">{results_table}</section><section style="margin:18px 0;">{analysis_chart_card}</section><p>{uncertainty_statement}</p><p>{decision_rule}</p><div style="margin-top:24px;">{signature_block}</div>',
-  styles_css: 'table { width: 100%; border-collapse: collapse; } th, td { padding: 6px; border: 1px solid #ded3bf; }',
+  first_page_header_html: '',
+  default_header_html: '',
+  footer_html: '',
+  body_html: '',
+  styles_css: '',
   sections: [
-    { key: 'summary', label: 'Resumo', visible: true },
-    { key: 'results', label: 'Tabela de resultados', visible: true },
-    { key: 'interpretation', label: 'Interpretação', visible: true },
+    { key: 'identification', label: 'Identificação', visible: true },
+    { key: 'technical_scope', label: 'Âmbito técnico', visible: true },
+    { key: 'validation', label: 'Validação', visible: true },
   ],
   variable_catalog: [],
   canvas_blocks: [],
-  document_font_family: 'Manrope, DejaVu Sans, sans-serif',
-  page_background_color: '#fffdf7',
+  document_font_family: 'DejaVu Sans, sans-serif',
+  page_background_color: '#ffffff',
   background_image_path: '',
   background_size: 'cover',
   background_position: 'center center',
   background_repeat: 'no-repeat',
-  table_header_background: '#143d37',
-  table_header_text_color: '#ffffff',
-  table_border_color: '#ded3bf',
+  table_header_background: '#f3f4f6',
+  table_header_text_color: '#111827',
+  table_border_color: '#d1d5db',
   table_font_size: 10,
-  table_cell_padding: 8,
-  table_summary_background: '#fffdf7',
-  table_summary_text_color: '#15231f',
-  table_summary_muted_color: '#64748b',
+  table_cell_padding: 5,
+  table_summary_background: '#ffffff',
+  table_summary_text_color: '#111827',
+  table_summary_muted_color: '#4b5563',
   show_canvas_grid: true,
   show_canvas_rulers: true,
   snap_to_grid: true,
@@ -527,101 +533,26 @@ const exportSettingsDefaults = {
     custom_page_width: null,
     custom_page_height: null,
     orientation: 'P',
-    margin_top: 20,
-    margin_bottom: 24,
-    margin_left: 14,
-    margin_right: 14,
-    first_page_margin_top: 58,
-  },
-  executive: {
-    paper_size: 'A4',
-    custom_page_width: null,
-    custom_page_height: null,
-    orientation: 'P',
-    margin_top: 20,
+    margin_top: 16,
     margin_bottom: 20,
-    margin_left: 14,
-    margin_right: 14,
-    first_page_margin_top: 42,
-  },
-  export_certificate: {
-    paper_size: 'A4',
-    custom_page_width: null,
-    custom_page_height: null,
-    orientation: 'P',
-    margin_top: 20,
-    margin_bottom: 20,
-    margin_left: 14,
-    margin_right: 14,
-    first_page_margin_top: 52,
-  },
-  import_certificate: {
-    paper_size: 'A4',
-    custom_page_width: null,
-    custom_page_height: null,
-    orientation: 'P',
-    margin_top: 20,
-    margin_bottom: 20,
-    margin_left: 14,
-    margin_right: 14,
-    first_page_margin_top: 52,
-  },
-  quote: {
-    paper_size: 'A4',
-    custom_page_width: null,
-    custom_page_height: null,
-    orientation: 'P',
-    margin_top: 20,
-    margin_bottom: 22,
-    margin_left: 14,
-    margin_right: 14,
-    first_page_margin_top: 56,
-  },
-  invoice: {
-    paper_size: 'A4',
-    custom_page_width: null,
-    custom_page_height: null,
-    orientation: 'P',
-    margin_top: 20,
-    margin_bottom: 22,
-    margin_left: 14,
-    margin_right: 14,
-    first_page_margin_top: 56,
-  },
-  receipt: {
-    paper_size: 'A4',
-    custom_page_width: null,
-    custom_page_height: null,
-    orientation: 'P',
-    margin_top: 20,
-    margin_bottom: 22,
-    margin_left: 14,
-    margin_right: 14,
-    first_page_margin_top: 56,
-  },
-  credit_note: {
-    paper_size: 'A4',
-    custom_page_width: null,
-    custom_page_height: null,
-    orientation: 'P',
-    margin_top: 20,
-    margin_bottom: 22,
-    margin_left: 14,
-    margin_right: 14,
-    first_page_margin_top: 56,
-  },
-  proposal: {
-    paper_size: 'A4',
-    custom_page_width: null,
-    custom_page_height: null,
-    orientation: 'P',
-    margin_top: 20,
-    margin_bottom: 22,
-    margin_left: 14,
-    margin_right: 14,
-    first_page_margin_top: 56,
+    margin_left: 15,
+    margin_right: 15,
+    first_page_margin_top: 40,
   },
 }
+
+// A new model starts from the system document of its type: the one the server
+// prints while no template is saved, so the editor never opens on another design.
+const plainCopy = (value) => (value ? JSON.parse(JSON.stringify(value)) : {})
+const systemPresetFor = (studioType) => props.systemPresets.find((preset) => preset.category === studioType) ?? null
+const startingLayoutFor = (studioType) => ({
+  ...structuredClone(defaultLayoutSchema),
+  ...plainCopy(systemPresetFor(studioType)?.layout_schema),
+})
+const startingExportSettingsFor = (studioType) => ({
+  ...structuredClone(exportSettingsDefaults.analysis),
+  ...plainCopy(systemPresetFor(studioType)?.export_settings),
+})
 
 const form = useForm({
   name: '',
@@ -632,13 +563,20 @@ const form = useForm({
   theme_preset: 'corporate',
   canva_design_url: '',
   description: '',
-  layout_schema: structuredClone(defaultLayoutSchema),
-  export_settings: structuredClone(exportSettingsDefaults.analysis),
+  layout_schema: startingLayoutFor('analysis'),
+  export_settings: startingExportSettingsFor('analysis'),
 })
 
-const previewReplacements = computed(() => {
-  return previewReplacementsByType[form.studio_type] || previewReplacementsByType.analysis
-})
+// The layout a new model was given, to tell an untouched model from an edited one.
+let untouchedLayout = JSON.stringify(form.layout_schema)
+
+// The canvas fills each token with what the server prints in the preview of this
+// type of document; the local samples only cover tokens the server did not send.
+const previewReplacements = computed(() => ({
+  ...(previewReplacementsByType[form.studio_type] || previewReplacementsByType.analysis),
+  ...(props.canvasSampleValues?.shared || {}),
+  ...(props.canvasSampleValues?.types?.[form.studio_type] || {}),
+}))
 
 const previewPdfHref = computed(() => {
   return editingTemplate.value?.preview_pdf_path || ''
@@ -655,8 +593,9 @@ const resetForm = () => {
   form.theme_preset = 'corporate'
   form.canva_design_url = ''
   form.description = ''
-  form.layout_schema = structuredClone(defaultLayoutSchema)
-  form.export_settings = structuredClone(exportSettingsDefaults.analysis)
+  form.layout_schema = startingLayoutFor('analysis')
+  form.export_settings = startingExportSettingsFor('analysis')
+  untouchedLayout = JSON.stringify(form.layout_schema)
 }
 
 const startNewTemplate = () => {
@@ -665,8 +604,13 @@ const startNewTemplate = () => {
 }
 
 const applyDefaultsForStudio = (studioType) => {
-  const defaults = exportSettingsDefaults[studioType] || exportSettingsDefaults.analysis
-  form.export_settings = structuredClone(defaults)
+  form.export_settings = startingExportSettingsFor(studioType)
+
+  // Changing the type of a new, untouched model brings that type's document with it.
+  if (!editingTemplate.value && JSON.stringify(form.layout_schema) === untouchedLayout) {
+    form.layout_schema = startingLayoutFor(studioType)
+    untouchedLayout = JSON.stringify(form.layout_schema)
+  }
 }
 
 const editTemplate = (template) => {
@@ -681,11 +625,11 @@ const editTemplate = (template) => {
   form.canva_design_url = template.canva_design_url || ''
   form.description = template.description || ''
   form.layout_schema = {
-    ...structuredClone(defaultLayoutSchema),
+    ...startingLayoutFor(template.studio_type),
     ...(template.layout_schema || {}),
   }
   form.export_settings = {
-    ...structuredClone(exportSettingsDefaults[template.studio_type] || exportSettingsDefaults.analysis),
+    ...startingExportSettingsFor(template.studio_type),
     ...(template.export_settings || {}),
   }
   studioWorkspaceView.value = 'editor'

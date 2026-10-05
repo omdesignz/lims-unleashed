@@ -504,3 +504,117 @@ test('proposal template preview geometry mirrors custom PDF page settings', () =
     left: '4%',
   })
 })
+
+test('a new studio model starts from the system document of its type', () => {
+  const page = readFileSync(new URL('../../resources/js/Pages/ReportStudios/Index.vue', import.meta.url), 'utf8')
+
+  // New, reset and edited models all take the server's document for the type as their base.
+  assert.match(page, /const systemPresetFor = \(studioType\) => props\.systemPresets\.find\(\(preset\) => preset\.category === studioType\)/)
+  assert.match(page, /layout_schema: startingLayoutFor\('analysis'\),\s*export_settings: startingExportSettingsFor\('analysis'\)/)
+  assert.match(page, /form\.layout_schema = startingLayoutFor\('analysis'\)\s*form\.export_settings = startingExportSettingsFor\('analysis'\)/)
+  assert.match(page, /\.\.\.startingLayoutFor\(template\.studio_type\),\s*\.\.\.\(template\.layout_schema \|\| \{\}\)/)
+  assert.match(page, /form\.layout_schema = startingLayoutFor\(studioType\)/)
+
+  // The last-resort layout carries no document of its own for the server to print.
+  const fallback = page.slice(page.indexOf('const defaultLayoutSchema = {'), page.indexOf('const studioDocumentTokens = {'))
+  for (const surface of ['first_page_header_html', 'default_header_html', 'footer_html', 'body_html', 'styles_css']) {
+    assert.match(fallback, new RegExp(`${surface}: '',`), surface)
+  }
+  assert.doesNotMatch(fallback, /#143d37|#fffdf7|report_title/)
+})
+
+test('the studio canvas shows the values the server prints the preview with', () => {
+  const page = readFileSync(new URL('../../resources/js/Pages/ReportStudios/Index.vue', import.meta.url), 'utf8')
+  const replacements = page.slice(page.indexOf('const previewReplacements = computed('), page.indexOf('const previewPdfHref'))
+
+  // Server values come last, so they win over the local samples.
+  assert.ok(replacements.indexOf('previewReplacementsByType[form.studio_type]') < replacements.indexOf('props.canvasSampleValues?.shared'))
+  assert.ok(replacements.indexOf('props.canvasSampleValues?.shared') < replacements.indexOf('props.canvasSampleValues?.types?.[form.studio_type]'))
+
+  const merged = normalizeStudioPreviewReplacements({
+    ...previewReplacementsByType.analysis,
+    '{lab_name}': 'Laboratório do servidor',
+    '{customer_block}': '<div class="doc-section">Cliente</div>',
+  })
+  const html = interpolateStudioPreviewHtml('<b>{{lab_name}}</b>{customer_block}{sample_lot}', merged)
+  assert.equal(html, '<b>Laboratório do servidor</b><div class="doc-section">Cliente</div>LT-2026-044')
+})
+
+test('application table styling stays out of the studio document canvas', () => {
+  const css = readFileSync(new URL('../../resources/css/app.css', import.meta.url), 'utf8')
+  const tableRules = css.split('\n').filter((line) => line.includes('table:not(.lab-table, [data-bare]):not(:where('))
+
+  assert.equal(tableRules.length, 3)
+  for (const rule of tableRules) {
+    assert.match(rule, /\.pdf-document, \.studio-preview, \.studio-preview-document, \.report-preview\) \*\)/)
+  }
+})
+
+test('the studio shows the document body with document styles only', () => {
+  const workbench = readFileSync(new URL('../../resources/js/Components/report-studio/studio-workbench.vue', import.meta.url), 'utf8')
+
+  // Application typography forces its own table margins and sizes on a document.
+  assert.doesNotMatch(workbench, /class="prose[^"]*" v-html="(editorCanvasPage|previewPage)\.content"/)
+  assert.equal(workbench.match(/class="studio-preview-body" v-html="(editorCanvasPage|previewPage)\.content"/g)?.length, 2)
+
+  const css = buildReportStudioPreviewCss('ul{margin:0;}', '.doc-kv td{font-size:8.2pt;}')
+  const defaults = css.indexOf(':where(.studio-preview-body) :where(ul){list-style:disc;')
+  const base = css.indexOf('.studio-preview-document .doc-kv td')
+  const own = css.lastIndexOf('.studio-preview-document ul')
+
+  // Print defaults first, then the shared document styles, then the template's own.
+  assert.ok(defaults >= 0 && defaults < base && base < own)
+})
+
+test('a studio theme restyles a controlled document without replacing its letterhead', () => {
+  const workbench = readFileSync(new URL('../../resources/js/Components/report-studio/studio-workbench.vue', import.meta.url), 'utf8')
+  const source = workbench.slice(workbench.indexOf('function isControlledDocumentSurface('), workbench.indexOf('function syncAssetUrlFromBackground('))
+  const themeMayReplaceSurface = new Function(`${source.slice(0, source.indexOf('function applyThemePreset('))}; return themeMayReplaceSurface`)()
+
+  const letterhead = '<table class="doc-letterhead doc-plain"><tr><td>{{lab_name}}</td></tr></table>'
+  const running = '<table class="doc-running doc-plain"><tr><td>{{document_code}}</td></tr></table>'
+  const footer = '<table class="doc-footer doc-plain"><tr><td>Página {PAGENO} de {nbpg}</td></tr></table>'
+
+  // The surfaces that identify, revise and number a controlled document stay.
+  assert.equal(themeMayReplaceSurface(letterhead, '{{lab_name}}'), false)
+  assert.equal(themeMayReplaceSurface(running, '{{document_code}}'), false)
+  assert.equal(themeMayReplaceSurface(footer, '{PAGENO}/{nbpg}'), false)
+
+  // An empty surface, or an earlier theme's own header, is still the theme's to set.
+  assert.equal(themeMayReplaceSurface('', '{{lab_name}}'), true)
+  assert.equal(themeMayReplaceSurface('<div style="color:#143d37">{{lab_name}}</div>', '{{lab_name}}'), true)
+  assert.equal(themeMayReplaceSurface('<div>Cabeçalho próprio</div>', '{{lab_name}}'), false)
+
+  for (const surface of ['first_page_header_html', 'default_header_html', 'footer_html']) {
+    assert.match(source, new RegExp(`if \\(themeMayReplaceSurface\\(props\\.layoutSchema\\.${surface}, `), surface)
+  }
+})
+
+test('QR codes are sized by width alone, so they stay square', () => {
+  const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
+
+  // Studio canvases: the width may give way to the block, the height always follows it.
+  for (const path of ['resources/js/Components/report-studio/studio-workbench.vue', 'resources/js/Components/proposal-template/studio-workbench.vue']) {
+    const elements = read(path).match(/<img src="\$\{qrDataUri\}"[^>]*>/g) ?? []
+
+    assert.ok(elements.length > 0, path)
+    for (const element of elements) {
+      assert.match(element, /width:100%; max-width:\d+px; height:auto; aspect-ratio:1 \/ 1;/, path)
+    }
+  }
+
+  // The letterhead code on the canvas takes the printed rule: no height of its own to be squeezed against.
+  const printed = read('resources/views/PDFs/partials/premium-document-style.blade.php').match(/\.doc-letterhead \.doc-letterhead-qr img \{[^}]*\}/)?.[0] ?? ''
+  const scoped = buildReportStudioPreviewCss('', printed)
+  const rule = scoped.match(/\.studio-preview-document \.doc-letterhead \.doc-letterhead-qr img\s*\{([^}]*)\}/)?.[1] ?? ''
+
+  assert.match(rule, /width: 21mm;/)
+  assert.match(rule, /height: auto;/)
+  assert.match(rule, /max-width: none;/)
+  assert.match(rule, /aspect-ratio: 1 \/ 1;/)
+
+  // Screens that show a record's code keep it undistorted in a tight row.
+  for (const path of ['resources/js/Pages/DirectCollections/Index.vue', 'resources/js/Pages/Proposals/Show.vue']) {
+    assert.match(read(path), /<img :src="[^"]*qr"[^>]*class="aspect-square h-16 w-16 shrink-0 object-contain"/, path)
+  }
+})

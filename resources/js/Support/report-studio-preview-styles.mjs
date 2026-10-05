@@ -1,12 +1,25 @@
 import { scopeReportStudioPreviewCss } from './report-studio-css.mjs'
 
 /**
- * The stylesheet of the on-screen document preview: the shared controlled-document
- * styles the server prints with (`documentBaseCss`), the studio's table controls,
- * then the template's own styles.
+ * What a PDF renderer gives plain markup by default and the application's CSS reset
+ * takes away. Zero-specificity selectors, so any document style wins over them.
+ */
+const printDefaultsCss = [
+  '.studio-preview-document :where(.studio-preview-body) :where(ul){list-style:disc;margin:1em 0;padding-left:40px;}',
+  '.studio-preview-document :where(.studio-preview-body) :where(ol){list-style:decimal;margin:1em 0;padding-left:40px;}',
+  '.studio-preview-document :where(.studio-preview-body) :where(h4,h5,h6){font-weight:bold;margin:1.33em 0;}',
+  '.studio-preview-document :where(.studio-preview-body) :where(blockquote){margin:1em 40px;}',
+].join('\n')
+
+/**
+ * The stylesheet of the on-screen document preview: print defaults, the shared
+ * controlled-document styles the server prints with (`documentBaseCss`), the
+ * studio's table controls, then the template's own styles. The document is shown
+ * with these alone; the application's own typography stays out of it.
  */
 export function buildReportStudioPreviewCss(layoutStylesCss = '', documentBaseCss = '') {
   return `
+${printDefaultsCss}
 ${scopeReportStudioPreviewCss(documentBaseCss)}
 .studio-preview-document{background-color:var(--studio-page-background-color);font-family:var(--studio-document-font);}
 .studio-preview-document table{width:100% !important;font-size:var(--studio-table-font-size) !important;}

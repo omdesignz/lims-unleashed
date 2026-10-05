@@ -1411,6 +1411,18 @@ Basis: ISO/IEC 17025:2017 clause 7.8 (reporting of results) and the Portuguese a
   - **When it runs:** on approval (`FeedControlCharts` listens to `AnalysisResultsApproved` and `CounterAnalysisResultsApproved` after commit; a failure is reported and never undoes the approval), when the chart is saved, and from "Trazer resultados aprovados".
   - **Each result plotted once:** points keep `result_id` / `paired_result_id` / `sample_entry_id`, unique per chart, so a result is plotted once and an excluded point does not come back. Manual entry stays available.
 
+### Report Studio canvas checked in the browser — 2026-10-05
+
+Checked signed in as an administrator, on a new model of the test report and of the invoice, with and without a theme.
+
+- **A new model starts from the system document of its type.** The editor used to open on an older hard-coded template, so saving a new model as default brought the old report back. New, reset and edited models now take the server's document for the type as their base, and changing the type of an untouched model brings that type's document with it.
+- **The canvas shows what the preview prints.** The server sends the values each type's fictional preview is printed with (`canvasSampleValues`; never a customer's record, shared values such as the logo once), so every token of every system document is filled on the canvas: letterhead, control box, verification code and the test-report sections.
+- **Application styling stays out of the document.** The application's table rule (14 px, 46 px rows) and its typography wrapper (28 px table margins) reached into the canvas and bloated the letterhead. The document is now shown with the document styles alone.
+- **A theme restyles, it does not replace the letterhead.** One click on a theme used to swap the controlled letterhead for a decorative header and leave an unfilled token. A theme now keeps the controlled letterhead, running header and footer; with a theme applied the PDF is still the controlled document.
+- **QR codes are always square.** The letterhead code had a fixed height, so on a narrow canvas its width was squeezed and it showed 63 × 79 px. Every QR code is now sized by its width alone (`ControlledDocument::squareCodeStyle`: height follows, `aspect-ratio: 1 / 1`), on documents, proposals, both Studio canvases and the two record screens. Measured in the PDFs of the test report, invoice and proposal: 21.0 × 21.0 mm in mPDF, 20.9 × 20.9 mm in Chrome.
+- **Known limit:** the canvas shows one page per `<pagebreak>`; a body longer than a page is cut at the page edge there. "Pré-visualizar PDF" shows the real pagination.
+- **Tests:** `ReportStudioWorkflowTest` (canvas values for every token of every system document; a draft from the system document previews as a PDF) and `report-studio-css.test.mjs` (starting document, value order, table rule, body wrapper, themes).
+
 ### Open items
 
 - User visual approval of the representative screens in light and dark, desktop and mobile (exit gate).

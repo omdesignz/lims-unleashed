@@ -83,6 +83,7 @@ class ReportStudioController extends Controller
             ],
             'systemPresets' => ReportStudioDefaultTemplates::presets(),
             'documentBaseCss' => view('PDFs.partials.premium-document-style')->render(),
+            'canvasSampleValues' => $this->canvasSampleValues(app(ReportStudioPdfBuilder::class), app(GeneralSettings::class)),
             'studioAssets' => app(ReportStudioAssetLibrary::class)->assets(),
             'rendererCapabilities' => [
                 'mpdf' => [
@@ -209,6 +210,38 @@ class ReportStudioController extends Controller
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
         ]);
+    }
+
+    /**
+     * What the canvas shows in place of each token: the values the preview of
+     * each type of document is printed with. Always the fictional preview,
+     * never a customer's record. Values every type shares, the logo among
+     * them, are sent once.
+     *
+     * @return array{shared: array<string, bool|string>, types: array<string, array<string, bool|string>>}
+     */
+    private function canvasSampleValues(ReportStudioPdfBuilder $reportStudioPdfBuilder, GeneralSettings $settings): array
+    {
+        $types = collect(ReportStudioDefaultTemplates::presets())
+            ->pluck('category')
+            ->mapWithKeys(function (string $studioType) use ($reportStudioPdfBuilder, $settings): array {
+                $studio = new ReportStudioTemplate(['studio_type' => $studioType]);
+
+                return [$studioType => $reportStudioPdfBuilder->valuesPrintedBy(
+                    fn (): array => $studioType === 'analysis'
+                        ? $reportStudioPdfBuilder->buildAnalysisStudioPreviewPayload($studio, $settings)
+                        : $this->previewPayloadFor($studio, $reportStudioPdfBuilder, $settings)
+                )];
+            });
+
+        $shared = $types->count() > 1 ? array_intersect_assoc(...$types->map(
+            fn (array $values): array => array_filter($values, 'is_string')
+        )->values()->all()) : [];
+
+        return [
+            'shared' => $shared,
+            'types' => $types->map(fn (array $values): array => array_diff_key($values, $shared))->all(),
+        ];
     }
 
     private function previewPayloadFor(

@@ -4057,8 +4057,9 @@ tr:hover .pl-row-go,
     font-weight: 600 !important;
   }
 
-  /* Tables: mono headers on a strong hairline, 46px rows. */
-  :where(.lims-app-shell, [id^="headlessui-dialog-panel"]) table:not(.lab-table, [data-bare]):not(:where(.ProseMirror, .tiptap, .vc-container, [data-native-controls], .pdf-document, .studio-preview, .report-preview) *) :is(thead th, thead td) {
+  /* Tables: mono headers on a strong hairline, 46px rows. Documents shown on screen
+     (editors, PDF markup, the Report Studio canvas) keep their own table styles. */
+  :where(.lims-app-shell, [id^="headlessui-dialog-panel"]) table:not(.lab-table, [data-bare]):not(:where(.ProseMirror, .tiptap, .vc-container, [data-native-controls], .pdf-document, .studio-preview, .studio-preview-document, .report-preview) *) :is(thead th, thead td) {
     height: 40px;
     border-bottom: 1px solid var(--pl-line-strong) !important;
     background-color: transparent !important;
@@ -4073,7 +4074,7 @@ tr:hover .pl-row-go,
     white-space: nowrap;
   }
 
-  :where(.lims-app-shell, [id^="headlessui-dialog-panel"]) table:not(.lab-table, [data-bare]):not(:where(.ProseMirror, .tiptap, .vc-container, [data-native-controls], .pdf-document, .studio-preview, .report-preview) *) tbody td {
+  :where(.lims-app-shell, [id^="headlessui-dialog-panel"]) table:not(.lab-table, [data-bare]):not(:where(.ProseMirror, .tiptap, .vc-container, [data-native-controls], .pdf-document, .studio-preview, .studio-preview-document, .report-preview) *) tbody td {
     height: 46px;
     border-color: var(--pl-line) !important;
     padding: 8px 12px !important;
@@ -4081,7 +4082,7 @@ tr:hover .pl-row-go,
     line-height: 1.4 !important;
   }
 
-  :where(.lims-app-shell, [id^="headlessui-dialog-panel"]) table:not(.lab-table, [data-bare]):not(:where(.ProseMirror, .tiptap, .vc-container, [data-native-controls], .pdf-document, .studio-preview, .report-preview) *) tbody tr {
+  :where(.lims-app-shell, [id^="headlessui-dialog-panel"]) table:not(.lab-table, [data-bare]):not(:where(.ProseMirror, .tiptap, .vc-container, [data-native-controls], .pdf-document, .studio-preview, .studio-preview-document, .report-preview) *) tbody tr {
     border-color: var(--pl-line) !important;
   }
 

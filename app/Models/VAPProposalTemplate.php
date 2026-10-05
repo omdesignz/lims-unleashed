@@ -310,6 +310,7 @@ class VAPProposalTemplate extends Model
         $escapedStatus = e($status);
         $escapedShortHash = e($shortHash);
         $escapedVerificationUrl = e($verificationUrl);
+        $qrStyle = ControlledDocument::squareCodeStyle(ControlledDocument::VERIFICATION_CODE_MM);
 
         return <<<HTML
 <table class="doc-plain" style="width:100%; border-collapse:collapse;">
@@ -319,7 +320,7 @@ class VAPProposalTemplate extends Model
             <div class="doc-party-lines">Documento verificável por código QR e ligação pública segura.<br>Estado: <strong>{$escapedStatus}</strong><br>Código de controlo: <strong>{$escapedShortHash}</strong><br><span style="font-size:6.6pt; word-break:break-all;">{$escapedVerificationUrl}</span></div>
         </td>
         <td style="border:0; padding:0; width:24mm; vertical-align:top; text-align:right;">
-            <img src="{$qrDataUri}" alt="QR de verificação da proposta" style="width:21mm; height:21mm;" />
+            <img src="{$qrDataUri}" alt="QR de verificação da proposta" style="{$qrStyle}" />
         </td>
     </tr>
 </table>

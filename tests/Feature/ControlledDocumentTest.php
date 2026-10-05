@@ -129,6 +129,35 @@ class ControlledDocumentTest extends TestCase
         $this->assertNull(ControlledDocument::laboratoryAddress($settings));
     }
 
+    public function test_a_qr_code_is_sized_by_its_width_alone_so_it_is_always_square(): void
+    {
+        $style = ControlledDocument::squareCodeStyle(ControlledDocument::VERIFICATION_CODE_MM);
+
+        // No height of its own to disagree with the width when the page or screen squeezes it.
+        $this->assertSame('width:21mm; height:auto; max-width:none; aspect-ratio:1 / 1;', $style);
+        $this->assertStringContainsString('style="'.$style.'"', ControlledDocument::verificationCodeHtml('AM-2026-1'));
+
+        $stylesheet = file_get_contents(resource_path('views/PDFs/partials/premium-document-style.blade.php'));
+        preg_match('/\.doc-letterhead \.doc-letterhead-qr img \{([^}]*)\}/', $stylesheet, $rule);
+        $this->assertStringContainsString('height: auto;', $rule[1]);
+        $this->assertStringContainsString('aspect-ratio: 1 / 1;', $rule[1]);
+
+        // Every place that writes a QR code element: none gives it a fixed height.
+        foreach ([
+            app_path('Support/ControlledDocument.php'),
+            app_path('Support/ReportStudioPdfBuilder.php'),
+            app_path('Models/VAPProposalTemplate.php'),
+            resource_path('js/Components/report-studio/studio-workbench.vue'),
+            resource_path('js/Components/proposal-template/studio-workbench.vue'),
+        ] as $file) {
+            preg_match_all('/<(?:img|svg)\b[^>]*\bQR\b[^>]*>/i', file_get_contents($file), $elements);
+
+            foreach ($elements[0] as $element) {
+                $this->assertDoesNotMatchRegularExpression('/height:\s*[\d.]+(?:mm|px|pt|%)/', $element, basename($file));
+            }
+        }
+    }
+
     public function test_only_small_local_images_are_embedded(): void
     {
         $directory = sys_get_temp_dir().'/controlled-document-'.bin2hex(random_bytes(6));
