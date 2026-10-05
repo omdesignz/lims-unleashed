@@ -6,6 +6,7 @@ import FileList from "@/Components/vap-filemanager/file-list.vue";
 import ArchivedItems from "@/Components/vap-filemanager/archived-items.vue";
 import WorkflowPanel from "@/Components/vap-filemanager/workflow-panel.vue";
 import DocumentCompliancePanel from "@/Components/vap-filemanager/document-compliance-panel.vue";
+import FolderTree from "@/Components/vap-filemanager/folder-tree.vue";
 import { useFileStore } from "@/Stores/fileStore";
 import {
   Archive as ArchiveBoxIcon,
@@ -13,50 +14,27 @@ import {
   CloudUpload as CloudArrowUpIcon,
   Folder as FolderIcon,
   FolderPlus as FolderPlusIcon,
-  X as XMarkIcon,
 } from "@lucide/vue";
-import {
-  Dialog,
-  DialogPanel,
-  DialogTitle,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-  TransitionChild,
-  TransitionRoot,
-} from "@headlessui/vue";
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
 
 defineOptions({
   layout: Layout,
 });
 
 /**
- * Document manager (Plano page). The library itself (state cells, filter, register,
- * uploads, versions, sharing) lives in FileList; this page owns the header, the
- * register facts, the archive and the compliance/workflow side panels.
+ * Document manager (Plano page) in three panes: the folder tree, the library
+ * (state cells, filter, register, uploads, versions, sharing; in FileList) and
+ * the inspector of the selected document (its control data and its workflow).
  */
 const fileStore = useFileStore();
 const fileList = ref<InstanceType<typeof FileList> | null>(null);
 const showArchivedItems = ref(false);
-const activeSidePanel = ref<"compliance" | "workflow" | null>(null);
+const inspectorTab = ref<"compliance" | "workflow">("compliance");
 
 const isUploading = computed(() => Boolean(fileList.value?.isUploading));
 
 const activeFiles = computed(() => {
   return fileStore.files.filter((file) => !file.archived);
-});
-
-const archivedFileCount = computed(() => {
-  return fileStore.files.filter((file) => file.archived).length;
-});
-
-const controlledDocumentCount = computed(() => {
-  return activeFiles.value.filter((file) => file.type === "file" && file.is_controlled).length;
-});
-
-const effectiveDocumentCount = computed(() => {
-  return activeFiles.value.filter((file) => file.type === "file" && file.status === "effective").length;
 });
 
 const pendingApprovalCount = computed(() => {
@@ -81,14 +59,6 @@ const restrictedAccessCount = computed(() => {
   ).length;
 });
 
-/** Register-wide counts. They describe the whole library, so they are facts, not filters. */
-const registerFacts = computed(() => [
-  { label: "Itens activos", value: activeFiles.value.length },
-  { label: "Documentos controlados", value: controlledDocumentCount.value },
-  { label: "Documentos efectivos", value: effectiveDocumentCount.value },
-  { label: "No arquivo", value: archivedFileCount.value },
-]);
-
 const lede = computed(() => {
   const attention = [
     pendingApprovalCount.value ? `${pendingApprovalCount.value} por decidir (rascunho, revisão ou aprovação)` : "",
@@ -101,13 +71,12 @@ const lede = computed(() => {
     : "Biblioteca controlada com revisão, aprovação, retenção e rastreabilidade no mesmo registo.";
 });
 
-function openSidePanel(panel: "compliance" | "workflow"): void {
-  activeSidePanel.value = panel;
-}
+/** The one document the inspector describes: a single selected file. */
+const selectedDocument = computed(() => {
+  const ids = Array.from(fileStore.selectedItems);
 
-function closeSidePanel(): void {
-  activeSidePanel.value = null;
-}
+  return ids.length === 1 ? fileStore.files.find((file) => file.id === ids[0] && file.type === "file") ?? null : null;
+});
 </script>
 
 <template>
@@ -119,24 +88,22 @@ function closeSidePanel(): void {
       data-testid="document-manager-overview"
     >
       <template #actions>
-        <button type="button" class="ds-button ds-button-quiet" @click="openSidePanel('compliance')">Controlo documental</button>
-        <button type="button" class="ds-button ds-button-quiet" @click="openSidePanel('workflow')">Fluxo e tarefas</button>
         <Menu as="div" class="relative">
           <MenuButton class="ds-button ds-button-secondary">
             Mais acções
             <ChevronDownIcon class="h-4 w-4" aria-hidden="true" />
           </MenuButton>
           <MenuItems class="ds-floating-panel absolute right-0 z-30 mt-1 w-56 origin-top-right focus:outline-none">
-            <MenuItem v-slot="{ active, disabled }" :disabled="isUploading">
-              <button type="button" class="pl-menu-item" :data-active="active" :disabled="disabled" @click="fileList?.triggerFolderUpload()">
-                <FolderPlusIcon aria-hidden="true" />
-                Importar pasta
-              </button>
-            </MenuItem>
             <MenuItem v-slot="{ active }">
               <button type="button" class="pl-menu-item" :data-active="active" @click="fileList?.startCreateFolder()">
                 <FolderIcon aria-hidden="true" />
                 Criar pasta
+              </button>
+            </MenuItem>
+            <MenuItem v-slot="{ active, disabled }" :disabled="isUploading">
+              <button type="button" class="pl-menu-item" :data-active="active" :disabled="disabled" @click="fileList?.triggerFolderUpload()">
+                <FolderPlusIcon aria-hidden="true" />
+                Importar pasta
               </button>
             </MenuItem>
             <div class="pl-menu-sep" />
@@ -161,82 +128,30 @@ function closeSidePanel(): void {
       </template>
     </PageHeader>
 
-    <dl class="pl-panel pl-facts pl-facts-2 mb-10" aria-label="Registo documental">
-      <div v-for="fact in registerFacts" :key="fact.label" class="pl-fact">
-        <dt>{{ fact.label }}</dt>
-        <dd class="pl-num">{{ fact.value }}</dd>
-      </div>
-    </dl>
+    <div class="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] 2xl:grid-cols-[15rem_minmax(0,1fr)_24rem]">
+      <FolderTree class="lg:self-start lg:sticky lg:top-6" />
 
-    <FileList ref="fileList" />
+      <FileList ref="fileList" />
+
+      <aside class="pl-panel lg:col-start-2 2xl:col-start-auto 2xl:self-start 2xl:sticky 2xl:top-6" aria-label="Documento seleccionado" data-testid="document-inspector">
+        <header class="border-b border-[var(--pl-line)] px-4 pt-3">
+          <p class="pl-k pl-muted">Documento seleccionado</p>
+          <p class="mt-1 truncate text-sm font-bold text-[var(--pl-fg)]">{{ selectedDocument?.name || "Nenhum" }}</p>
+          <div class="pl-tabs mt-2 border-b-0" role="tablist" aria-label="Painel do documento">
+            <button type="button" role="tab" class="pl-tab" :aria-selected="inspectorTab === 'compliance'" @click="inspectorTab = 'compliance'">Controlo documental</button>
+            <button type="button" role="tab" class="pl-tab" :aria-selected="inspectorTab === 'workflow'" @click="inspectorTab = 'workflow'">Fluxo e tarefas</button>
+          </div>
+        </header>
+        <div class="p-4">
+          <DocumentCompliancePanel v-if="inspectorTab === 'compliance'" />
+          <WorkflowPanel v-else />
+        </div>
+      </aside>
+    </div>
 
     <ArchivedItems
       :is-open="showArchivedItems"
       @close="showArchivedItems = false"
     />
-
-    <TransitionRoot as="template" :show="Boolean(activeSidePanel)">
-      <Dialog class="relative z-50" @close="closeSidePanel">
-        <TransitionChild
-          as="template"
-          enter="ease-out duration-200"
-          enter-from="opacity-0"
-          enter-to="opacity-100"
-          leave="ease-out duration-150"
-          leave-from="opacity-100"
-          leave-to="opacity-0"
-        >
-          <div class="ds-modal-backdrop fixed inset-0" />
-        </TransitionChild>
-
-        <div class="fixed inset-0 overflow-hidden">
-          <div class="absolute inset-0 overflow-hidden">
-            <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-4 sm:pl-6">
-              <TransitionChild
-                as="template"
-                enter="transform transition ease-out duration-300"
-                enter-from="translate-x-full"
-                enter-to="translate-x-0"
-                leave="transform transition ease-out duration-150"
-                leave-from="translate-x-0"
-                leave-to="translate-x-full"
-              >
-                <DialogPanel class="pointer-events-auto w-screen max-w-2xl">
-                  <div class="ds-slideover-panel flex h-full flex-col overflow-y-auto border-l">
-                    <div class="border-b border-[var(--pl-line)] px-5 pt-5 sm:px-6">
-                      <div class="flex items-start justify-between gap-4">
-                        <div class="grid gap-1">
-                          <DialogTitle class="pl-d3">
-                            {{ activeSidePanel === 'compliance' ? 'Controlo documental' : 'Fluxo e tarefas' }}
-                          </DialogTitle>
-                          <p class="text-sm text-[var(--pl-muted)]">
-                            {{ activeSidePanel === 'compliance'
-                              ? 'Metadados ISO, revisão, retenção e efectividade do documento seleccionado.'
-                              : 'Estado operacional, tarefas e seguimento do fluxo documental.' }}
-                          </p>
-                        </div>
-                        <button type="button" class="ds-icon-button" aria-label="Fechar painel" @click="closeSidePanel">
-                          <XMarkIcon class="h-5 w-5" aria-hidden="true" />
-                        </button>
-                      </div>
-
-                      <div class="pl-tabs mt-3 border-b-0" role="tablist" aria-label="Painel lateral">
-                        <button type="button" role="tab" class="pl-tab" :aria-selected="activeSidePanel === 'compliance'" @click="openSidePanel('compliance')">Controlo documental</button>
-                        <button type="button" role="tab" class="pl-tab" :aria-selected="activeSidePanel === 'workflow'" @click="openSidePanel('workflow')">Fluxo e tarefas</button>
-                      </div>
-                    </div>
-
-                    <div class="flex-1 overflow-y-auto p-4 sm:p-6">
-                      <DocumentCompliancePanel v-if="activeSidePanel === 'compliance'" />
-                      <WorkflowPanel v-else />
-                    </div>
-                  </div>
-                </DialogPanel>
-              </TransitionChild>
-            </div>
-          </div>
-        </div>
-      </Dialog>
-    </TransitionRoot>
   </div>
 </template>
