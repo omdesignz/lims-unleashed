@@ -3373,6 +3373,7 @@ return [
                     'add_label' => 'Add Label',
                     'create_first_label' => 'Create First Label',
                     'create_template' => 'Create Label Template',
+                    'update_template' => 'Save template changes',
                     'create_first_template' => 'Create First Label Template',
                     'save_label' => 'Save Label',
                     'update_label' => 'Update Label',

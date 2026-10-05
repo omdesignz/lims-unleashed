@@ -120,7 +120,7 @@ class VAPLabelController extends Controller
             'source_type' => 'nullable|in:sample_entry,sample,equipment,reagent,collection_product',
             'source_id' => 'nullable|integer',
             'template_id' => 'nullable|exists:label_templates,id',
-        ]);
+        ], [], $this->labelAttributes());
 
         if ($validated['template_id'] ?? null) {
             $this->availableTemplates()->where('is_active', true)->findOrFail($validated['template_id']);
@@ -162,9 +162,9 @@ class VAPLabelController extends Controller
             'previewData' => [
                 'sample_text' => $sourcePreview
                     ? $resolver->renderContent($label->content, $sourcePreview)
-                    : __('gestlab.general.labels.vap_labels.sample_label_content'),
-                'sample_qr' => data_get($sourcePreview, 'qr_content', 'LAB-'.strtoupper(Str::random(8))),
-                'sample_barcode' => data_get($sourcePreview, 'barcode_content', 'BAR-'.strtoupper(Str::random(6))),
+                    : (string) $label->content,
+                'sample_qr' => $renderer->codeContent($label, 'qr', $sourcePreview, $resolver) ?? 'LAB-'.strtoupper(Str::random(8)),
+                'sample_barcode' => $renderer->codeContent($label, 'barcode', $sourcePreview, $resolver) ?? 'BAR-'.strtoupper(Str::random(6)),
             ],
             'templates' => $templates,
             'sourcePreview' => $sourcePreview,
@@ -233,7 +233,7 @@ class VAPLabelController extends Controller
             'source_type' => 'nullable|in:sample_entry,sample,equipment,reagent,collection_product',
             'source_id' => 'nullable|integer',
             'template_id' => 'nullable|exists:label_templates,id',
-        ]);
+        ], [], $this->labelAttributes());
 
         if ($validated['template_id'] ?? null) {
             $this->availableTemplates()->where('is_active', true)->findOrFail($validated['template_id']);
@@ -259,7 +259,7 @@ class VAPLabelController extends Controller
     {
         $this->ensureLaboratoryOwns($label);
         $duplicate = $label->replicate();
-        $duplicate->name = $label->name.' (Copy)';
+        $duplicate->name = $label->name.' (cópia)';
         $duplicate->tenant_id = auth()->user()->tenant_id;
         $duplicate->user_id = auth()->id();
         $duplicate->save();
@@ -445,6 +445,7 @@ class VAPLabelController extends Controller
             'lab_id' => $labId,
             'department_id' => $validated['department_id'] ?? null,
             'template_data' => array_merge($templateData, [
+                'content_template' => (string) data_get($templateData, 'content', '{name}'),
                 'template_id' => $template->id,
                 'source_type' => $validated['source_type'],
                 'source_id' => $validated['source_id'],
@@ -479,6 +480,9 @@ class VAPLabelController extends Controller
         }
 
         if ($sourcePayload) {
+            // The label prints its source's values; the text as written, with its
+            // placeholders, is kept so a later edit can fill it from another record.
+            $templateData['content_template'] = $validated['content'];
             $validated['content'] = $resolver->renderContent($validated['content'], $sourcePayload);
             $validated['qr_code_content'] = $validated['qr_code_content'] ?? data_get($sourcePayload, 'qr_content');
             $validated['barcode_content'] = $validated['barcode_content'] ?? data_get($sourcePayload, 'barcode_content');
@@ -493,6 +497,39 @@ class VAPLabelController extends Controller
         unset($validated['source_type'], $validated['source_id'], $validated['template_id']);
 
         return $validated;
+    }
+
+    /**
+     * The fields of a label as the editor names them, for validation messages.
+     *
+     * @return array<string, string>
+     */
+    private function labelAttributes(): array
+    {
+        return [
+            'name' => 'nome',
+            'type' => 'tipo',
+            'content' => 'conteúdo',
+            'width' => 'largura',
+            'height' => 'altura',
+            'background_color' => 'cor de fundo',
+            'text_color' => 'cor do texto',
+            'font_size' => 'tamanho da letra',
+            'border_width' => 'largura do contorno',
+            'border_color' => 'cor do contorno',
+            'text_alignment' => 'alinhamento do texto',
+            'department_id' => 'departamento',
+            'logo_path' => 'logótipo',
+            'logo_size' => 'tamanho do logótipo',
+            'qr_code_content' => 'conteúdo do QR',
+            'qr_code_size' => 'tamanho do QR',
+            'barcode_content' => 'conteúdo do código de barras',
+            'barcode_width' => 'largura do código de barras',
+            'barcode_height' => 'altura do código de barras',
+            'source_type' => 'tipo de origem',
+            'source_id' => 'registo de origem',
+            'template_id' => 'modelo',
+        ];
     }
 
     private function normalizeSourceLabelType(string $sourceType): string

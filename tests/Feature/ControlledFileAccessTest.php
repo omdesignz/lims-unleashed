@@ -215,7 +215,7 @@ class ControlledFileAccessTest extends TestCase
             'file_id' => $file->id,
             'type' => 'review',
             'assigned_to' => $admin->id,
-        ])->assertCreated()->json('data.id');
+        ])->assertCreated()->assertJsonPath('data.status', 'pending')->json('data.id');
         $task = WorkflowTask::query()->findOrFail($taskId);
         $this->get(route('workflow.tasks.index'))->assertOk()->assertJsonCount(1, 'data');
 

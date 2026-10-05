@@ -126,7 +126,7 @@
                             'text-[var(--pl-ok)]': change.added,
                             'text-[var(--pl-muted)]': !change.added && !change.removed,
                           }"
-                        >{{ change.added ? '+ ' : change.removed ? '- ' : '' }}{{ change.value }}</pre>
+                        >{{ markedDiffLines(change) }}</pre>
                       </div>
                     </section>
                   </div>
@@ -252,6 +252,14 @@ function closeComparison(): void {
   diffResult.value = []
   oldContent.value = ''
   newContent.value = ''
+}
+
+// Every added or removed line carries its mark, not only the first of a run;
+// unchanged lines are indented to stay in column with them.
+function markedDiffLines(change: { added?: boolean; removed?: boolean; value: string }): string {
+  const mark = change.added ? '+ ' : change.removed ? '- ' : '  '
+
+  return change.value.replace(/\n$/, '').split('\n').map((line) => mark + line).join('\n')
 }
 
 function restoreVersion(versionId: string): void {

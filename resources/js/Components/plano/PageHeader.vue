@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject, onBeforeUnmount } from 'vue'
+import { computed, inject, onBeforeUnmount, watch } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import { planoShellKey } from '@/Support/planoShell'
 
@@ -22,6 +22,9 @@ const props = defineProps({
 const shell = inject(planoShellKey, null)
 shell?.claim()
 onBeforeUnmount(() => shell?.release())
+
+// The header's title is the page's name: the shell puts it on the browser tab.
+watch(() => props.title, (title) => shell?.setTitle?.(title), { immediate: true })
 
 const path = computed(() => {
   if (props.crumbs.length) return props.crumbs

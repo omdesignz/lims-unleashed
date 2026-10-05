@@ -24,7 +24,6 @@
         maxlength="100"
         placeholder="nome do documento ou da pasta"
         data-testid="document-search"
-        @input="debouncedSearch(searchQuery)"
       />
       <button type="button" class="ds-button ds-button-quiet" @click="showFilterDialog = true">
         <FunnelIcon class="h-4 w-4" aria-hidden="true" />
@@ -277,7 +276,7 @@
       <span>{{ selectedCount }} {{ selectedCount > 1 ? 'itens seleccionados' : 'item seleccionado' }}</span>
       <button type="button" @click="archiveSelected">Arquivar</button>
       <button v-if="singleSelectedFile?.type === 'file'" type="button" @click="fileStore.downloadFile(singleSelectedFile.id)">Transferir</button>
-      <button type="button" @click="deleteSelected">Eliminar</button>
+      <button type="button" @click="showBulkDeleteDialog = true">Eliminar</button>
       <button type="button" aria-label="Limpar selecção" @click="clearSelection"><XMarkIcon class="h-4 w-4" aria-hidden="true" /></button>
     </div>
 
@@ -491,7 +490,7 @@
             <p class="pl-banner pl-banner-bad text-sm" role="alert">
               <ExclamationTriangleIcon aria-hidden="true" />
               <span>
-                {{ $t('gestlab.general.labels.vap_filemanager.prompts.delete') }}
+                Tem a certeza de que pretende eliminar {{ itemToDelete?.type === 'folder' ? 'a pasta' : 'o documento' }}
                 <strong>{{ itemToDelete?.name }}</strong>?
                 {{ $t('gestlab.general.labels.vap_filemanager.prompts.action_cannot_be_undone') }}.
               </span>
@@ -538,11 +537,33 @@
         </DialogPanel>
       </div>
     </Dialog>
+    <!-- Deleting is permanent, for one item or for a selection: it is always confirmed first. -->
+    <ConfirmDialog
+      v-if="showBulkDeleteDialog"
+      :title="selectedCount > 1 ? `Eliminar ${selectedCount} itens` : 'Eliminar o item seleccionado'"
+      description="Os documentos seleccionados, as suas revisões e os ficheiros guardados são eliminados de forma permanente. Para os retirar de uso mantendo o registo, arquive-os."
+      cancel="Cancelar"
+      confirm="Eliminar permanentemente"
+      variant="danger"
+      @confirmed="confirmDeleteSelected"
+      @canceled="showBulkDeleteDialog = false"
+    />
+    <!-- An upload whose name already exists in the folder becomes a new revision only when confirmed. -->
+    <ConfirmDialog
+      v-if="fileStore.showOverrideDialog && fileStore.pendingFile"
+      title="Este ficheiro já existe"
+      :description="`Já existe «${fileStore.pendingFile.file.name}» nesta pasta. Substituir guarda o ficheiro carregado como nova revisão; as revisões anteriores ficam no histórico de versões.`"
+      cancel="Cancelar"
+      confirm="Guardar como nova revisão"
+      variant="question"
+      @confirmed="fileStore.confirmOverride()"
+      @canceled="fileStore.cancelOverride()"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import {
   Folder as FolderIcon,
@@ -564,6 +585,7 @@ import {
   CloudUpload as CloudArrowUpIcon,
   ArrowLeftRight as ArrowsRightLeftIcon,
 } from '@lucide/vue'
+import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import StateCells from '@/Components/plano/StateCells.vue'
 import StatusChip from '@/Components/plano/StatusChip.vue'
 import FilePreview from './file-preview.vue'
@@ -594,6 +616,7 @@ const showPreviewDialog = ref(false)
 const showFilterDialog = ref(false)
 const showVersionHistoryDialog = ref(false)
 const showDeleteDialog = ref(false)
+const showBulkDeleteDialog = ref(false)
 const showTagDialog = ref(false)
 const tagFileId = ref<string | null>(null)
 const versionHistoryFileId = ref('')
@@ -632,6 +655,10 @@ const lastSelectedId = ref<string | null>(null)
 
 // Search and filter state
 const searchQuery = ref(fileStore.searchQuery)
+
+// The search follows the box itself. Reading it from an input event gave the
+// text before the last keystroke, so results ran one step behind the box.
+watch(searchQuery, (query) => debouncedSearch(query))
 const sortField = ref<'name' | 'size' | 'modifiedAt'>('name')
 const sortDirection = ref<'asc' | 'desc'>('asc')
 const filterType = ref<string[]>([])
@@ -844,7 +871,8 @@ async function archiveSelected() {
   clearSelection()
 }
 
-async function deleteSelected() {
+async function confirmDeleteSelected() {
+  showBulkDeleteDialog.value = false
   await Promise.all(selectedFiles.value.map((file) => fileStore.permanentlyDeleteItem(file.id)))
   clearSelection()
 }
@@ -1457,10 +1485,8 @@ function loadFolders(query, setOptions) {
 }
 
 function loadUsers(query, setOptions) {
-  return loadSelectOptions('/users/getUser', query, setOptions, result => ({
-    value: result.id,
-    label: `${result.name} (${result.email})`,
-  }));
+  // The search returns colleagues of this laboratory by name only; addresses are not exposed.
+  return loadSelectOptions('/users/getUser', query, setOptions, optionMappers.name)
 }
 
 defineExpose({ triggerFileUpload, triggerFolderUpload, startCreateFolder, isUploading })

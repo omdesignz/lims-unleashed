@@ -27,7 +27,8 @@
 
           <div class="ds-field-group sm:col-span-2">
             <span class="ds-field-label">Responsável</span>
-            <comboboxEnhanced v-model="newTask.assignedTo" :load-options="loadUsers" />
+            <comboboxEnhanced v-model="newTask.assignedTo" :load-options="loadUsers" :has-error="Boolean(taskError)" />
+            <p v-if="taskError" class="ds-field-error" role="alert">{{ taskError }}</p>
           </div>
 
           <div class="sm:col-span-2">
@@ -152,8 +153,14 @@ function selectedAssigneeId() {
   return newTask.value.assignedTo.value
 }
 
+// Why a task could not be created, shown under the form instead of doing nothing.
+const taskError = ref('')
+
 async function createTask() {
   const assignedTo = selectedAssigneeId()
+  taskError.value = !selectedFile.value
+    ? 'Seleccione um único documento na lista.'
+    : !assignedTo ? 'Escolha o responsável pela tarefa.' : ''
 
   if (selectedFile.value && assignedTo) {
     await workflowStore.createTask({

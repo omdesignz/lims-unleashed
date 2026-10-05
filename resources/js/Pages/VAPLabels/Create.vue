@@ -336,7 +336,8 @@ const commonSizes = [
 const form = useForm({
   name: props.label?.name || '',
   type: props.label?.type || 'custom',
-  content: props.label?.content || '',
+  // A saved label holds its source's values; the editor works on the text as written.
+  content: props.label?.template_data?.content_template || props.label?.content || '',
   width: props.label?.width || props.defaultSettings?.width || 50,
   height: props.label?.height || props.defaultSettings?.height || 25,
   background_color: props.label?.background_color || props.label?.template_data?.background_color || '#ffffff',

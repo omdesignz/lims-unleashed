@@ -58,7 +58,9 @@ class WorkflowController extends Controller
             ->findOrFail($validated['file_id']);
         abort_unless($file->canBeWrittenBy($request->user()), 403);
 
-        $task = WorkflowTask::query()->create($validated);
+        // A new task starts pending; it is read back so the response carries
+        // the status the database gave it.
+        $task = WorkflowTask::query()->create($validated)->refresh();
 
         return new WorkflowTaskResource($task->load(['comments', 'assignee', 'file']));
     }

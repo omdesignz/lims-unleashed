@@ -107,6 +107,7 @@ import {
   Trash2 as TrashIcon,
 } from '@lucide/vue'
 import BaseInput from '@/Components/base/BaseInput.vue'
+import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import LabelPreview from '@/Components/labels/LabelPreview.vue'
 import { labelExampleValues } from '@/Support/label-codes.mjs'
 import Pagination from '@/Components/pagination.vue'

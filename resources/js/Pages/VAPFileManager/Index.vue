@@ -81,6 +81,7 @@ const selectedDocument = computed(() => {
 
 <template>
   <div class="pl-page" data-template="page">
+    <Head title="Gestor documental" />
     <PageHeader
       :crumbs="[{ title: 'Admin' }, { title: 'Gestor documental' }]"
       title="Gestor documental"

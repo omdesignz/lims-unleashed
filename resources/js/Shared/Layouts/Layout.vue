@@ -1,5 +1,7 @@
 <template>
   <div class="lims-app-shell pl-shell" :data-theme-preset="themePreset">
+    <!-- The page header names the browser tab; a page's own Head, rendered after this one, still wins. -->
+    <Head v-if="headerTitle" :title="headerTitle" />
     <backend-modal />
     <ToastList />
 
@@ -157,7 +159,7 @@ import {
 } from '@headlessui/vue'
 import { Menu as MenuIcon, Search as MagnifyingGlassIcon } from '@lucide/vue'
 import { areaGlyphs, bottomBarAreas } from '@/Support/navigationAreas'
-import { Link, router, usePage, useForm } from '@inertiajs/vue3'
+import { Head, Link, router, usePage, useForm } from '@inertiajs/vue3'
 import { animate } from 'motion-v'
 import { usePermission } from '@/Composables/usePermissions'
 import { isThemeShortcut, useTheme } from '@/Composables/useTheme'
@@ -756,10 +758,16 @@ const pageTemplate = computed(() => planoTemplates[page.component] ?? 'page')
 // line and gutter, so the shell stops adding the ones older screens rely on.
 const pageHeaders = ref(0)
 const ownsCanvas = computed(() => planoPages.includes(page.component) || pageHeaders.value > 0)
+// The title of the page header on screen, which also names the browser tab.
+const headerTitle = ref('')
 provide(planoShellKey, {
   crumbs,
   claim: () => { pageHeaders.value++ },
-  release: () => { pageHeaders.value = Math.max(0, pageHeaders.value - 1) },
+  release: () => {
+    pageHeaders.value = Math.max(0, pageHeaders.value - 1)
+    if (pageHeaders.value === 0) headerTitle.value = ''
+  },
+  setTitle: (title) => { headerTitle.value = String(title || '') },
 })
 
 const openCommandPalette = () => {

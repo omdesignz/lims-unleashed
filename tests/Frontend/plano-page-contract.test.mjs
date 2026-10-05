@@ -94,17 +94,21 @@ test('the page header claims the canvas and the shell steps back', () => {
 
   // Claim and release balance, so the shell returns to older screens after a visit.
   const body = layout.match(/const pageHeaders = ref\(0\)[\s\S]*?\n\}\)\n/)[0]
-  const state = { value: 0 }
-  const shell = new Function('ref', 'computed', 'provide', 'planoShellKey', 'planoPages', 'page', 'crumbs', `${body}; return { pageHeaders, ownsCanvas }`)
+  const shell = new Function('ref', 'computed', 'provide', 'planoShellKey', 'planoPages', 'page', 'crumbs', `${body}; return { pageHeaders, ownsCanvas, headerTitle }`)
   let provided
-  const { pageHeaders, ownsCanvas } = shell(() => state, (getter) => ({ get value() { return getter() } }), (_, api) => { provided = api }, Symbol('shell'), [], { component: 'Countries/Index' }, { value: [] })
+  const { pageHeaders, ownsCanvas, headerTitle } = shell((value) => ({ value }), (getter) => ({ get value() { return getter() } }), (_, api) => { provided = api }, Symbol('shell'), [], { component: 'Countries/Index' }, { value: [] })
   assert.equal(ownsCanvas.value, false)
   provided.claim()
   assert.equal(ownsCanvas.value, true)
+
+  // The header names the page; the name leaves with the header.
+  provided.setTitle('Países')
+  assert.equal(headerTitle.value, 'Países')
   provided.release()
   provided.release()
   assert.equal(pageHeaders.value, 0)
   assert.equal(ownsCanvas.value, false)
+  assert.equal(headerTitle.value, '')
 })
 
 test('the header path keeps the shell area and never repeats it', () => {

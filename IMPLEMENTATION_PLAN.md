@@ -1423,6 +1423,22 @@ Checked signed in as an administrator, on a new model of the test report and of 
 - **Known limit:** the canvas shows one page per `<pagebreak>`; a body longer than a page is cut at the page edge there. "Pré-visualizar PDF" shows the real pagination.
 - **Tests:** `ReportStudioWorkflowTest` (canvas values for every token of every system document; a draft from the system document previews as a PDF) and `report-studio-css.test.mjs` (starting document, value order, table rule, body wrapper, themes).
 
+### Label Studio and document manager workflows checked — 2026-10-05
+
+Every workflow was driven in the browser on the development install, with test records marked "(teste)".
+
+- **Label Studio (checked: templates create/edit/feature/activate/delete, "usar modelo", record as data source, save, edit, duplicate, activate, delete, preview, single and batch print).** Fixed: editing a label with a source lost its text as written, so a new source could not refill it (the text with its markers is now kept); print used the source's codes instead of the label's own QR and barcode content; validation messages named fields in English; the copy was named "(Copy)"; a missing translation on the template editor's save button; the delete confirmation of the label list was not rendered.
+- **Document manager (checked: upload, new revision, version history, restore, compare, preview, download, metadata, review, approval, tasks and comments, rename, move, share, tags, archive and its view, search, state filters, sorting, delete prompts).** Fixed:
+  - **New revision wiped the document's control data.** Uploading a file of the same name reset number, type, category, confidentiality, retention and owner. A new or restored revision now keeps them, returns to draft and drops the approval of the revision before it.
+  - **"Replace file?" never appeared.** The upload was refused and nothing was shown. The confirmation is now mounted: confirming saves the upload as the next revision.
+  - **Deleting a folder deleted every document inside it, unrecorded.** A folder with anything in it, archived items included, is now refused with the reason.
+  - **Bulk "Eliminar" deleted permanently without asking.** It is confirmed first, like the single delete.
+  - **Search ran one keystroke behind**, so clearing the box could leave old results on screen. It follows the box's value.
+  - Task creation without an assignee did nothing; it now says why. A created task did not list until reload. Share recipients showed "(undefined)". Version notes were in English (notes already kept are shown in Portuguese). The comparison marked only the first changed line.
+- **Browser tab titles.** 144 of 173 pages with a page header had none ("- LIMS"). The page header's title now names the tab, unless the page sets its own.
+- **Not checked:** importing a folder, the type/date/size filter dialog, drag and drop, and permanent deletion in the browser (covered by tests instead: `DocumentControlTest`).
+- **Known limits:** a second name conflict in one multi-file upload replaces the first pending confirmation; restoring a version asks for no confirmation (it is a new revision, nothing is lost).
+
 ### Open items
 
 - User visual approval of the representative screens in light and dark, desktop and mobile (exit gate).

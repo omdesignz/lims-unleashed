@@ -343,7 +343,13 @@ async function initializeStore() {
       if (context !== activeContextKey.value) return
       replaceFileCollection(response.data)
 
-      if (currentFolder.value) {
+      // A folder kept from an earlier visit may have been archived or deleted
+      // since: the library opens at its root instead of uploading into nothing.
+      if (currentFolder.value && !files.value.some((file) => file.id === currentFolder.value && file.type === 'folder')) {
+        currentFolder.value = null
+        if (folderStorageKey.value) localStorage.removeItem(folderStorageKey.value)
+        breadcrumbs.value = []
+      } else if (currentFolder.value) {
         loadBreadcrumbs(currentFolder.value)
       }
 
@@ -585,9 +591,11 @@ async function confirmOverride() {
       files.value = files.value.filter(f => f.id !== id)
       // toast.success('Item deleted permanently')
       toast.success(trans('gestlab.general.labels.vap_filemanager.notifications.item_deleted'))
-    } catch (error) {
-      // toast.error('Failed to delete item')
-      toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_deleting_item'))
+    } catch (error: any) {
+      // A refusal carries its reason (a folder that still has documents): show it.
+      toast.error(error.response?.status === 422 && error.response?.data?.message
+        ? error.response.data.message
+        : trans('gestlab.general.labels.vap_filemanager.notifications.error_deleting_item'))
       reportDevError('Error deleting item:', error)
     }
   }

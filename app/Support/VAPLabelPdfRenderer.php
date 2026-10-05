@@ -50,6 +50,28 @@ class VAPLabelPdfRenderer
     }
 
     /**
+     * What a label's QR code or barcode encodes: the label's own content (a
+     * URL, a fixed code, or placeholders filled from its source), otherwise
+     * the source's code. Null when neither gives a value.
+     *
+     * @param  'qr'|'barcode'  $code
+     * @param  array<string, mixed>|null  $source
+     */
+    public function codeContent(VAPLabel $label, string $code, ?array $source, LabelStudioSourceResolver $resolver): ?string
+    {
+        $own = trim((string) ($code === 'qr' ? $label->qr_code_content : $label->barcode_content));
+        $own = $own !== '' && $source ? $resolver->renderContent($own, $source) : $own;
+
+        if ($own !== '' && preg_match('/\{[a-z_]+\}/', $own) !== 1) {
+            return $own;
+        }
+
+        $fromSource = data_get($source, $code === 'qr' ? 'qr_content' : 'barcode_content');
+
+        return filled($fromSource) ? (string) $fromSource : null;
+    }
+
+    /**
      * @return array{content: string, renderer: string}
      */
     public function renderPreview(VAPLabel $label, LabelStudioSourceResolver $resolver): array
@@ -59,11 +81,11 @@ class VAPLabelPdfRenderer
             data_get($label->template_data, 'source_id'),
             (int) $label->lab_id
         );
-        $sampleQr = data_get($sourcePreview, 'qr_content', 'LAB-'.strtoupper(Str::random(8)));
-        $sampleBarcode = data_get($sourcePreview, 'barcode_content', 'BAR-'.strtoupper(Str::random(6)));
+        $sampleQr = $this->codeContent($label, 'qr', $sourcePreview, $resolver) ?? 'LAB-'.strtoupper(Str::random(8));
+        $sampleBarcode = $this->codeContent($label, 'barcode', $sourcePreview, $resolver) ?? 'BAR-'.strtoupper(Str::random(6));
         $sampleText = $sourcePreview
             ? $resolver->renderContent($label->content, $sourcePreview)
-            : 'Exemplo de Etiqueta';
+            : (string) $label->content;
 
         $items = [
             $this->prepareItem($label, [
@@ -110,8 +132,8 @@ class VAPLabelPdfRenderer
 
                 return $this->prepareItem($label, [
                     'content' => $content,
-                    'qr_content' => $item['qr_content'] ?? data_get($sourcePreview, 'qr_content'),
-                    'barcode_content' => $item['barcode_content'] ?? data_get($sourcePreview, 'barcode_content'),
+                    'qr_content' => filled($item['qr_content'] ?? null) ? $item['qr_content'] : $this->codeContent($label, 'qr', $sourcePreview, $resolver),
+                    'barcode_content' => filled($item['barcode_content'] ?? null) ? $item['barcode_content'] : $this->codeContent($label, 'barcode', $sourcePreview, $resolver),
                 ]);
             })
             ->values()

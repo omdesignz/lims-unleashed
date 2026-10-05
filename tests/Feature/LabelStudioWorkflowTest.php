@@ -12,6 +12,8 @@ use App\Models\VAPLab;
 use App\Models\VAPLabel;
 use App\Models\VAPLabelTemplate;
 use App\Models\VAPSampleEntry;
+use App\Support\LabelStudioSourceResolver;
+use App\Support\VAPLabelPdfRenderer;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -396,7 +398,7 @@ class LabelStudioWorkflowTest extends TestCase
             ->first();
 
         $this->assertNotNull($duplicate);
-        $this->assertSame('Etiqueta Original (Copy)', $duplicate->name);
+        $this->assertSame('Etiqueta Original (cópia)', $duplicate->name);
         $this->assertSame($label->content, $duplicate->content);
         $this->assertSame($label->type, $duplicate->type);
         $this->assertEquals($label->template_data, $duplicate->template_data);
@@ -1027,5 +1029,88 @@ class LabelStudioWorkflowTest extends TestCase
         $this->assertSame(2, data_get($label->template_data, 'print_settings.columns'));
         $this->assertSame(4, data_get($label->template_data, 'print_settings.rows'));
         $this->assertSame(4, data_get($label->template_data, 'print_settings.spacing'));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function labelPayload(array $overrides = []): array
+    {
+        return [
+            'name' => 'Etiqueta de recepção',
+            'type' => 'sample',
+            'content' => '{name} · {code}',
+            'width' => 50,
+            'height' => 25,
+            'background_color' => '#ffffff',
+            'text_color' => '#000000',
+            'font_size' => 10,
+            'border_width' => 1,
+            'border_color' => '#000000',
+            'text_alignment' => 'center',
+            'has_qr_code' => true,
+            'qr_code_content' => null,
+            'has_barcode' => false,
+            'is_active' => true,
+            ...$overrides,
+        ];
+    }
+
+    public function test_a_label_keeps_its_text_as_written_so_another_source_can_fill_it(): void
+    {
+        $user = $this->verifiedAdmin();
+        $first = VAPSampleEntry::factory()->create(['lab_id' => $this->lab->id, 'name' => 'Primeira amostra']);
+        $second = VAPSampleEntry::factory()->create(['lab_id' => $this->lab->id, 'name' => 'Segunda amostra']);
+
+        $this->actingAs($user)->post(route('vap_labels.labels.store'), $this->labelPayload(['source_type' => 'sample_entry', 'source_id' => $first->id]))
+            ->assertRedirect();
+        $label = VAPLabel::query()->latest('id')->firstOrFail();
+
+        $this->assertStringStartsWith('Primeira amostra · ', $label->content);
+        $this->assertSame('{name} · {code}', data_get($label->template_data, 'content_template'));
+        $this->actingAs($user)->get(route('vap_labels.labels.edit', $label))
+            ->assertInertia(fn (Assert $page) => $page->where('label.template_data.content_template', '{name} · {code}'));
+
+        // The editor sends the text as written with the new record.
+        $this->actingAs($user)->put(route('vap_labels.labels.update', $label), $this->labelPayload(['source_type' => 'sample_entry', 'source_id' => $second->id]))
+            ->assertRedirect();
+
+        $label->refresh();
+        $this->assertStringStartsWith('Segunda amostra · ', $label->content);
+        $this->assertSame($second->id, data_get($label->template_data, 'source_id'));
+    }
+
+    public function test_a_label_without_a_source_prints_its_own_text_and_its_own_code_content(): void
+    {
+        $user = $this->verifiedAdmin();
+        $label = $this->createLabel([
+            'user_id' => $user->id,
+            ...collect($this->labelPayload(['content' => 'Frágil — manter refrigerado', 'qr_code_content' => 'https://lims.test/v/42']))
+                ->except(['is_active'])->all(),
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)->get(route('vap_labels.labels.show', $label))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('previewData.sample_text', 'Frágil — manter refrigerado')
+                ->where('previewData.sample_qr', 'https://lims.test/v/42'));
+    }
+
+    public function test_code_content_is_filled_from_the_source_and_falls_back_to_its_code(): void
+    {
+        $user = $this->verifiedAdmin();
+        $sample = VAPSampleEntry::factory()->create(['lab_id' => $this->lab->id, 'name' => 'Amostra QR']);
+        $renderer = app(VAPLabelPdfRenderer::class);
+        $resolver = app(LabelStudioSourceResolver::class);
+        $source = $resolver->resolve('sample_entry', $sample->id, $this->lab->id);
+        $label = $this->createLabel(['user_id' => $user->id, ...$this->labelPayload(['qr_code_content' => 'https://lims.test/v/{code}'])]);
+
+        $this->assertSame('https://lims.test/v/'.$source['code'], $renderer->codeContent($label, 'qr', $source, $resolver));
+
+        $label->qr_code_content = null;
+        $this->assertSame($source['qr_content'], $renderer->codeContent($label, 'qr', $source, $resolver));
+
+        $label->qr_code_content = '{code}';
+        $this->assertNull($renderer->codeContent($label, 'qr', null, $resolver), 'an unfilled placeholder is never encoded');
     }
 }

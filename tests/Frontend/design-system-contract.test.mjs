@@ -3218,3 +3218,15 @@ test('white-label fallbacks remain neutral across the application and generated 
   }
   assert.equal(existsSync(new URL('../../resources/views/PDFs/partials/controlled-layout.blade.php', import.meta.url)), true)
 })
+
+test('every page with a page header names its browser tab', () => {
+  const layoutSource = readFileSync(new URL('../../resources/js/Shared/Layouts/Layout.vue', import.meta.url), 'utf8')
+  const pageHeaderSource = readFileSync(new URL('../../resources/js/Components/plano/PageHeader.vue', import.meta.url), 'utf8')
+
+  // The header hands its title to the shell, which renders it before the page: a page's own Head still wins.
+  assert.match(pageHeaderSource, /watch\(\(\) => props\.title, \(title\) => shell\?\.setTitle\?\.\(title\), \{ immediate: true \}\)/)
+  assert.match(layoutSource, /setTitle: \(title\) => \{ headerTitle\.value = String\(title \|\| ''\) \}/)
+  assert.match(layoutSource, /<div class="lims-app-shell pl-shell"[^>]*>\s*<!--[^>]*-->\s*<Head v-if="headerTitle" :title="headerTitle" \/>/)
+  // Leaving a page clears the title it gave, so the next page never inherits it.
+  assert.match(layoutSource, /if \(pageHeaders\.value === 0\) headerTitle\.value = ''/)
+})

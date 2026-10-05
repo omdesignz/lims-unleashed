@@ -107,7 +107,7 @@ class VAPFileController extends Controller
 
         $storagePath = $this->storeUploadedFile($uploadedFile, $fileName);
         $checksum = hash_file('sha256', $uploadedFile->getRealPath());
-        $changeReason = $validated['change_reason'] ?? ($existingFile ? 'Content updated' : 'Initial issue');
+        $changeReason = $validated['change_reason'] ?? ($existingFile ? 'Conteúdo actualizado' : 'Primeira emissão');
 
         if ($existingFile) {
             DB::transaction(function () use ($existingFile, $uploadedFile, $storagePath, $checksum, $changeReason, $validated, $request) {
@@ -121,12 +121,12 @@ class VAPFileController extends Controller
                     'size' => $uploadedFile->getSize(),
                     'checksum' => $checksum,
                     'created_by' => $request->user()->id,
-                    'comment' => 'File updated',
+                    'comment' => 'Ficheiro actualizado',
                     'change_reason' => $changeReason,
                 ]);
 
                 $existingFile->update(array_merge(
-                    $this->buildMetadataPayload($validated, $request),
+                    $this->revisionMetadataPayload($validated),
                     [
                         'size' => $uploadedFile->getSize(),
                         'mime_type' => $uploadedFile->getMimeType(),
@@ -179,7 +179,7 @@ class VAPFileController extends Controller
                 'size' => $uploadedFile->getSize(),
                 'checksum' => $checksum,
                 'created_by' => $request->user()->id,
-                'comment' => 'Initial version',
+                'comment' => 'Versão inicial',
                 'change_reason' => $changeReason,
             ]);
 
@@ -434,6 +434,14 @@ class VAPFileController extends Controller
     {
         $this->authorizeApprove($request, $file);
 
+        // Deleting a folder never deletes what is inside it: each document is
+        // deleted, or moved, on its own, so each leaves its own record.
+        if ($file->type === 'folder' && VAPFile::withoutGlobalScopes()->where('parent_id', $file->id)->exists()) {
+            return response()->json([
+                'message' => 'A pasta ainda tem documentos ou pastas, incluindo os arquivados. Mova-os ou elimine-os primeiro.',
+            ], 422);
+        }
+
         if ($file->content) {
             Storage::delete($file->content);
         }
@@ -554,8 +562,8 @@ class VAPFileController extends Controller
                 'size' => $restoredVersion->size,
                 'checksum' => $restoredVersion->checksum,
                 'created_by' => $request->user()->id,
-                'comment' => 'Version restored',
-                'change_reason' => $request->input('change_reason', 'Version restored for controlled use'),
+                'comment' => 'Versão restaurada a partir da revisão '.$restoredVersion->revision_code,
+                'change_reason' => $request->input('change_reason', 'Versão restaurada para uso controlado'),
             ]);
 
             $file->update([
@@ -564,8 +572,12 @@ class VAPFileController extends Controller
                 'size' => $restoredVersion->size,
                 'modified_at' => now(),
                 'revision_code' => $revisionCode,
-                'change_reason' => $request->input('change_reason', 'Version restored for controlled use'),
+                'change_reason' => $request->input('change_reason', 'Versão restaurada para uso controlado'),
+                // Like any new revision, a restored one is a draft until it is approved again.
                 'status' => 'draft',
+                'effective_at' => null,
+                'approved_at' => null,
+                'approved_by' => null,
             ]);
         });
 
@@ -855,6 +867,31 @@ class VAPFileController extends Controller
                     $permissionQuery->where('user_id', $user->id);
                 });
         });
+    }
+
+    /**
+     * What a new revision changes on its document. The document keeps its
+     * number, type and the rest of its control data unless the upload states
+     * them again. The revision itself is a draft: not yet effective, and
+     * without the approval given to the revision before it.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function revisionMetadataPayload(array $validated): array
+    {
+        $stated = array_intersect_key($validated, array_flip([
+            'document_number', 'document_type', 'category', 'confidentiality_level', 'is_controlled',
+            'requires_periodic_review', 'retention_period_days', 'review_due_at', 'owner_id', 'meta',
+        ]));
+
+        return array_merge($stated, [
+            'status' => $validated['status'] ?? 'draft',
+            'effective_at' => $validated['effective_at'] ?? null,
+            'approved_at' => null,
+            'approved_by' => null,
+            'change_reason' => $validated['change_reason'] ?? null,
+        ]);
     }
 
     private function buildMetadataPayload(array $validated, Request $request, bool $defaultDraft = true): array

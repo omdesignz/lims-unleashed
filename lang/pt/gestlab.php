@@ -3497,6 +3497,7 @@ return [
                     'add_label' => 'Adicionar Etiqueta',
                     'create_first_label' => 'Criar Primeira Etiqueta',
                     'create_template' => 'Criar Modelo de Etiqueta',
+                    'update_template' => 'Guardar alterações ao modelo',
                     'create_first_template' => 'Criar Primeiro Modelo de Etiqueta',
                     'create_label' => 'Criar Etiqueta',
                     'save_label' => 'Guardar Etiqueta',
