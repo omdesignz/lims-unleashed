@@ -11,6 +11,8 @@ import {
 } from '@/Support/report-studio-preview-html.mjs'
 import { escapePreviewHtmlAttribute, escapePreviewHtmlText, safePreviewCssUrl, safePreviewMediaUrl } from '@/Support/report-studio-preview-safety.mjs'
 import { buildReportStudioPreviewCss } from '@/Support/report-studio-preview-styles.mjs'
+import { flowPages } from '@/Support/report-studio-pagination.mjs'
+import StudioFlowMeasure from '@/Components/report-studio/studio-flow-measure.vue'
 import { generatedStudioQrCodeDataUri } from '@/Support/report-studio-qr-code.mjs'
 import { uploadedStudioAssetKind } from '@/Support/report-studio-media-assets.mjs'
 import axios from 'axios'
@@ -229,6 +231,11 @@ const studioLabels = computed(() => ({
     plural: studioCopy('document_labels.credit_note.plural', {}, 'notas de crédito'),
     badge: studioCopy('document_labels.credit_note.badge', {}, 'Estúdio de rectificação multi-página'),
   },
+  custom: {
+    singular: studioCopy('document_labels.custom.singular', {}, 'documento'),
+    plural: studioCopy('document_labels.custom.plural', {}, 'documentos'),
+    badge: studioCopy('document_labels.custom.badge', {}, 'Documento livre com campos próprios'),
+  },
   proposal: {
     singular: studioCopy('document_labels.proposal.singular', {}, 'proposta'),
     plural: studioCopy('document_labels.proposal.plural', {}, 'propostas'),
@@ -251,6 +258,7 @@ function studioTypeLabel(type) {
     invoice: studioCopy('document_types.invoice', {}, 'Factura'),
     receipt: studioCopy('document_types.receipt', {}, 'Recibo'),
     credit_note: studioCopy('document_types.credit_note', {}, 'Nota de crédito'),
+    custom: studioCopy('document_types.custom', {}, 'Documento livre'),
   }[type] || studioCopy('document_types.default', {}, 'Documento')
 }
 
@@ -305,7 +313,7 @@ const themePresetOptions = [
 ]
 
 const studioFontOptions = [
-  { value: 'Manrope, DejaVu Sans, sans-serif', label: studioCopy('fonts.brand.label', {}, 'Marca GestLab / Manrope'), description: studioCopy('fonts.brand.description', {}, 'A fonte principal da aplicação, limpa e séria para documentos premium.') },
+  { value: 'Manrope, DejaVu Sans, sans-serif', label: studioCopy('fonts.brand.label', {}, 'Marca LIMS / Manrope'), description: studioCopy('fonts.brand.description', {}, 'A fonte principal da aplicação, limpa e séria para documentos premium.') },
   { value: 'Century Gothic, CenturyGothic, AppleGothic, DejaVu Sans, sans-serif', label: studioCopy('fonts.century_gothic.label', {}, 'Century Gothic'), description: studioCopy('fonts.century_gothic.description', {}, 'Geometria limpa para relatórios, propostas e capas com presença editorial.') },
   { value: 'DejaVu Sans, sans-serif', label: studioCopy('fonts.pdf_safe.label', {}, 'PDF seguro / DejaVu Sans'), description: studioCopy('fonts.pdf_safe.description', {}, 'Fallback mais compatível com mPDF e servidores sem fontes instaladas.') },
   { value: 'Georgia, serif', label: studioCopy('fonts.editorial_serif.label', {}, 'Editorial serifado'), description: studioCopy('fonts.editorial_serif.description', {}, 'Bom para capas institucionais e documentos mais formais.') },
@@ -799,6 +807,11 @@ const translatedPlaceholders = computed(() => {
     })
   }
 
+  if (isCustomDocument.value) {
+    customFields.value.filter((field) => fieldKeyPattern.test(field?.key || ''))
+      .forEach((field) => addPlaceholder(`{${field.key}}`, field.label || field.key))
+  }
+
   props.placeholders.forEach((placeholder) => addPlaceholder(placeholder))
 
   return entries
@@ -957,10 +970,7 @@ const mediaPickerTargetLabel = computed(() => {
   return studioCopy('media_picker.target.selected')
 })
 
-const editorCanvasPage = computed(() => ({
-  pageNumber: currentPreviewPage.value,
-  content: previewPages.value[currentPreviewPage.value - 1] ?? '',
-}))
+const editorCanvasPage = computed(() => previewPageAt(currentPreviewPage.value))
 
 const selectedThemePreset = computed(() => {
   return themeCatalog[props.form.theme_preset] ?? themeCatalog.corporate
@@ -1026,12 +1036,57 @@ const contentPreview = computed(() => {
   return interpolatePreviewHtml(props.layoutSchema.body_html || '')
 })
 
-const previewPages = computed(() => {
+// The body between explicit page breaks. A segment longer than a page flows on to the next ones.
+const previewSegments = computed(() => {
   return contentPreview.value
     .split(pageBreakTagPattern)
     .map((segment) => segment.trim())
     .filter((segment) => segment.length > 0)
 })
+
+// Where each segment breaks across pages, as measured in the frame on screen:
+// the full preview when it is open, the editor canvas otherwise.
+const flowBreaksBySource = ref({ editor: null, preview: null })
+const flowBreaks = computed(() => flowBreaksBySource.value.preview ?? flowBreaksBySource.value.editor ?? [])
+
+function recordFlowBreaks(source, breaks) {
+  if (JSON.stringify(flowBreaksBySource.value[source]) !== JSON.stringify(breaks)) {
+    flowBreaksBySource.value = { ...flowBreaksBySource.value, [source]: breaks }
+  }
+}
+
+// Every page the document shows: each a window on its segment's body.
+const previewPages = computed(() => flowPages(previewSegments.value, flowBreaks.value))
+
+function previewPageAt(pageNumber) {
+  return {
+    content: '',
+    segmentNumber: 1,
+    flowIndex: 0,
+    offset: 0,
+    limit: null,
+    ...previewPages.value[pageNumber - 1],
+    pageNumber,
+  }
+}
+
+// The window always clips: it hides what belongs to the pages before, and keeps
+// the body's negative offset from pulling the window itself up the page.
+function flowWindowStyle(page) {
+  return page.limit === null ? { overflow: 'hidden' } : { height: `${page.limit}px`, overflow: 'hidden' }
+}
+
+function flowBodyStyle(page) {
+  return page.offset > 0 ? { marginTop: `-${page.offset}px` } : {}
+}
+
+// Blocks placed on the body belong to an explicit page (a segment), as in the
+// generated PDF, and show where that page begins.
+function contentBlocksOnFlowPage(page) {
+  return page.flowIndex === 0 ? previewContentBlocksForPage(page.segmentNumber) : []
+}
+
+const currentPreviewSegment = computed(() => previewPageAt(currentPreviewPage.value).segmentNumber)
 
 const currentPreviewPage = computed(() => {
   return clamp(activePreviewPage.value, 1, Math.max(previewPages.value.length, 1))
@@ -1039,23 +1094,13 @@ const currentPreviewPage = computed(() => {
 
 const visiblePreviewPages = computed(() => {
   if (previewDisplayMode.value === 'all') {
-    return previewPages.value.map((content, index) => ({
-      pageNumber: index + 1,
-      content,
-    }))
+    return previewPages.value.map((_page, index) => previewPageAt(index + 1))
   }
 
-  const pageNumber = currentPreviewPage.value
-
-  return [
-    {
-      pageNumber,
-      content: previewPages.value[pageNumber - 1] ?? '',
-    },
-  ]
+  return [previewPageAt(currentPreviewPage.value)]
 })
 
-function normalizeCanvasBlockPlacement(block, fallbackPageNumber = currentPreviewPage.value || 1) {
+function normalizeCanvasBlockPlacement(block, fallbackPageNumber = currentPreviewSegment.value || 1) {
   if (!block) {
     return
   }
@@ -1098,7 +1143,7 @@ watch(() => [
   selectedCanvasBlock.value?.surface,
   selectedCanvasBlock.value?.page_scope,
   selectedCanvasBlock.value?.page_number,
-  currentPreviewPage.value,
+  currentPreviewSegment.value,
 ], () => normalizeSelectedCanvasBlockPlacement(), { immediate: true })
 
 const previewPageStyle = computed(() => {
@@ -1359,7 +1404,7 @@ const documentHasSignature = computed(() => {
 })
 
 const documentBenefitsFromSignature = computed(() => {
-  return ['analysis', 'export_certificate', 'import_certificate', 'quote', 'invoice', 'receipt', 'credit_note', 'proposal'].includes(props.form.studio_type)
+  return ['analysis', 'export_certificate', 'import_certificate', 'quote', 'invoice', 'receipt', 'credit_note', 'proposal', 'custom'].includes(props.form.studio_type)
 })
 
 const studioQualityIssues = computed(() => {
@@ -2047,7 +2092,7 @@ function addMediaCanvasBlockFromAsset(asset, options = {}) {
 
   const surface = options.surface || currentCanvasSurface()
   const blockKind = canvasBlockKindForAsset(asset, options.blockKind)
-  const pageNumber = currentPreviewPage.value
+  const pageNumber = currentPreviewSegment.value
   const pageScope = surface === 'content'
     ? (pageNumber > 1 ? 'specific' : 'first')
     : 'all'
@@ -3852,6 +3897,61 @@ function insertPlaceholder(placeholder) {
   appendSnippet(placeholder)
 }
 
+// A free-form document declares its own fields: each is a {token} of the body,
+// typed in by whoever issues the document.
+const fieldKeyPattern = /^[a-z][a-z0-9_]{1,39}$/
+const isCustomDocument = computed(() => props.form.studio_type === 'custom')
+const customFields = computed(() => (Array.isArray(props.layoutSchema.custom_fields) ? props.layoutSchema.custom_fields : []))
+const customFieldTypes = [
+  { value: 'text', label: 'Texto curto' },
+  { value: 'long_text', label: 'Texto longo' },
+  { value: 'date', label: 'Data' },
+  { value: 'number', label: 'Número' },
+]
+
+function fieldKeyFrom(label) {
+  const key = String(label || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 40)
+
+  return /^[a-z]/.test(key) ? key : `campo_${key}`.slice(0, 40)
+}
+
+function addCustomField() {
+  if (!Array.isArray(props.layoutSchema.custom_fields)) {
+    props.layoutSchema.custom_fields = []
+  }
+
+  let index = props.layoutSchema.custom_fields.length + 1
+  while (props.layoutSchema.custom_fields.some((field) => field.key === `campo_${index}`)) {
+    index += 1
+  }
+
+  props.layoutSchema.custom_fields.push({ key: `campo_${index}`, label: `Campo ${index}`, type: 'text', sample: '', required: false })
+}
+
+function removeCustomField(index) {
+  props.layoutSchema.custom_fields.splice(index, 1)
+}
+
+// A field named before its key was touched takes its key from the name.
+function renameCustomField(field, label) {
+  const derivedFromOldLabel = !field.key || field.key === fieldKeyFrom(field.label) || /^campo_\d+$/.test(field.key)
+  field.label = label
+
+  if (derivedFromOldLabel) {
+    field.key = fieldKeyFrom(label)
+  }
+}
+
+function customFieldError(index, attribute) {
+  return props.form.errors?.[`layout_schema.custom_fields.${index}.${attribute}`] || ''
+}
+
 function insertImageSnippet() {
   if (!mediaAssetUrl.value) {
     return
@@ -4177,6 +4277,7 @@ function submit() {
                     <option value="receipt">Recibo</option>
                     <option value="credit_note">Nota de crédito</option>
                     <option value="proposal">Proposta</option>
+                    <option value="custom">Documento livre (carta, declaração, impresso)</option>
                   </BaseSelect>
                 </label>
                 <label class="studio-setup-field md:col-span-2">Descrição operacional
@@ -4625,6 +4726,15 @@ function submit() {
                     class="studio-preview-document relative mx-auto w-full rounded-[32px] border border-slate-200 bg-white shadow-2xl shadow-primary-950/15 dark:border-slate-700 dark:bg-slate-900"
                     :style="editorPageFrameStyle"
                   >
+                    <StudioFlowMeasure
+                      :segments="previewSegments"
+                      :first-page-style="previewContentPaddingStyleForPage(1)"
+                      :next-page-style="previewContentPaddingStyleForPage(2)"
+                      :first-header-html="previewHeaderHtmlForPage(1)"
+                      :next-header-html="previewHeaderHtmlForPage(2)"
+                      :footer-html="previewFooterHtmlForPage(1, previewPages.length || 1)"
+                      @measured="recordFlowBreaks('editor', $event)"
+                    />
                     <div v-if="showCanvasRulers" class="pointer-events-none absolute left-10 right-10 top-10 z-20 h-5 border-t border-slate-200/80 dark:border-slate-700/80">
                       <span
                         v-for="mark in canvasRulerMarks"
@@ -4698,11 +4808,13 @@ function submit() {
                           />
                         </div>
                       </div>
-                      <div data-canvas-surface="content" class="relative flex-1 rounded-2xl border border-slate-200 bg-white/85 p-6 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900/80 xl:p-7" :style="previewGridStyle">
+                      <div data-canvas-surface="content" class="relative min-h-0 flex-1 rounded-2xl border border-slate-200 bg-white/85 p-6 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900/80 xl:p-7" :style="previewGridStyle">
                         <div class="pointer-events-none absolute right-4 top-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-slate-400 shadow-sm dark:bg-slate-950/80 dark:text-slate-500">Corpo</div>
-                        <div class="studio-preview-body" v-html="editorCanvasPage.content" />
+                        <div class="studio-preview-flow" :style="flowWindowStyle(editorCanvasPage)">
+                          <div class="studio-preview-body" :style="flowBodyStyle(editorCanvasPage)" v-html="editorCanvasPage.content" />
+                        </div>
                         <div
-                          v-for="block in previewContentBlocksForPage(editorCanvasPage.pageNumber)"
+                          v-for="block in contentBlocksOnFlowPage(editorCanvasPage)"
                           :key="`editor-content-${block.id}`"
                           class="group overflow-hidden border border-white/40 transition"
                           :class="selectedCanvasBlockId === block.id ? 'ring-2 ring-primary-400/80' : 'hover:ring-2 hover:ring-primary-300/70'"
@@ -5235,6 +5347,53 @@ function submit() {
                 Usar como fundo
               </button>
             </div>
+          </div>
+
+          <div v-if="isCustomDocument" class="mt-6 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-950/50">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">Campos do documento</h3>
+                <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                  Cada campo é preenchido por quem emite o documento e aparece no texto onde estiver o seu marcador, por exemplo <code>{recipient}</code>.
+                </p>
+              </div>
+              <button type="button" class="ds-button ds-button-secondary shrink-0" :disabled="customFields.length >= 40" @click="addCustomField">Adicionar campo</button>
+            </div>
+
+            <ul v-if="customFields.length" class="mt-4 space-y-3">
+              <li
+                v-for="(field, index) in customFields"
+                :key="`custom-field-${index}`"
+                class="grid gap-3 rounded-2xl border border-slate-200 p-3 dark:border-slate-700 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_9rem_minmax(0,1.4fr)_auto] md:items-end"
+              >
+                <label class="studio-setup-field">Nome
+                  <BaseInput :model-value="field.label" type="text" maxlength="120" @update:model-value="renameCustomField(field, $event)" />
+                  <span v-if="customFieldError(index, 'label')" class="studio-setup-field__error">{{ customFieldError(index, 'label') }}</span>
+                </label>
+                <label class="studio-setup-field">Marcador
+                  <BaseInput v-model="field.key" type="text" maxlength="40" class="font-mono" />
+                  <span v-if="customFieldError(index, 'key')" class="studio-setup-field__error">{{ customFieldError(index, 'key') }}</span>
+                  <span v-else-if="!fieldKeyPattern.test(field.key || '')" class="studio-setup-field__error">Letras minúsculas, números e _; começa por letra.</span>
+                </label>
+                <label class="studio-setup-field">Tipo
+                  <BaseSelect v-model="field.type">
+                    <option v-for="type in customFieldTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
+                  </BaseSelect>
+                </label>
+                <label class="studio-setup-field">Exemplo na pré-visualização
+                  <BaseInput v-model="field.sample" type="text" maxlength="2000" />
+                </label>
+                <div class="flex flex-wrap items-center gap-2 pb-1">
+                  <label class="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    <CheckboxInput v-model="field.required" />
+                    Obrigatório
+                  </label>
+                  <button type="button" class="ds-table-action" :disabled="!fieldKeyPattern.test(field.key || '')" :title="`Inserir {${field.key}} no texto`" @click="insertPlaceholder(`{${field.key}}`)">Inserir</button>
+                  <button type="button" class="ds-table-action ds-table-action-danger" :title="`Remover ${field.label}`" @click="removeCustomField(index)">Remover</button>
+                </div>
+              </li>
+            </ul>
+            <p v-else class="mt-4 text-sm text-slate-600 dark:text-slate-400">Sem campos: o documento é emitido com o texto do modelo tal como está.</p>
           </div>
 
           <div class="mt-6 flex flex-wrap gap-2">
@@ -6328,11 +6487,21 @@ function submit() {
 
       <div class="studio-preview-stage">
         <div
-          v-for="previewPage in visiblePreviewPages"
+          v-for="(previewPage, previewPageIndex) in visiblePreviewPages"
           :key="`preview-page-${previewPage.pageNumber}`"
           class="studio-preview-document relative mx-auto w-full rounded-[32px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
           :style="previewPageFrameStyle"
         >
+          <StudioFlowMeasure
+            v-if="previewPageIndex === 0"
+            :segments="previewSegments"
+            :first-page-style="previewContentPaddingStyleForPage(1)"
+            :next-page-style="previewContentPaddingStyleForPage(2)"
+            :first-header-html="previewHeaderHtmlForPage(1)"
+            :next-header-html="previewHeaderHtmlForPage(2)"
+            :footer-html="previewFooterHtmlForPage(1, previewPages.length || 1)"
+            @measured="recordFlowBreaks('preview', $event)"
+          />
           <div v-if="showCanvasRulers" class="pointer-events-none absolute left-10 right-10 top-10 z-20 h-5 border-t border-slate-200/80 dark:border-slate-700/80">
             <span
               v-for="mark in canvasRulerMarks"
@@ -6405,16 +6574,18 @@ function submit() {
                 />
               </div>
             </div>
-            <div data-canvas-surface="content" class="relative flex-1 rounded-2xl border border-slate-200 bg-white/85 p-6 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900/80 xl:p-7" :style="previewGridStyle">
-              <div class="studio-preview-body" v-html="previewPage.content" />
+            <div data-canvas-surface="content" class="relative min-h-0 flex-1 rounded-2xl border border-slate-200 bg-white/85 p-6 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900/80 xl:p-7" :style="previewGridStyle">
+              <div class="studio-preview-flow" :style="flowWindowStyle(previewPage)">
+                <div class="studio-preview-body" :style="flowBodyStyle(previewPage)" v-html="previewPage.content" />
+              </div>
               <div
-                v-if="!previewContentBlocksForPage(previewPage.pageNumber).length && previewContentBlocks.length"
+                v-if="!contentBlocksOnFlowPage(previewPage).length && previewContentBlocks.length"
                 class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-3 text-xs text-slate-500 dark:border-slate-600 dark:bg-slate-950/40 dark:text-slate-400"
               >
                 Nenhum bloco do corpo está configurado para esta página. Ajuste o âmbito do bloco para primeira página, páginas seguintes, todas ou uma página específica.
               </div>
               <div
-                v-for="block in previewContentBlocksForPage(previewPage.pageNumber)"
+                v-for="block in contentBlocksOnFlowPage(previewPage)"
                 :key="block.id"
                 class="group overflow-hidden border border-white/40 transition"
                 :class="selectedCanvasBlockId === block.id ? 'ring-2 ring-primary-400/80' : 'hover:ring-2 hover:ring-primary-300/70'"

@@ -7,6 +7,7 @@ use App\Actions\SaveGeneralSettings;
 use App\Http\Requests\GeneralSettingsRequest;
 use App\Http\Resources\GeneralSettingsResource;
 use App\Settings\GeneralSettings;
+use App\Support\BrandTheme;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -24,6 +25,7 @@ class SystemGeneralSettingsController extends Controller
             'settings' => GeneralSettingsResource::make($settings)->resolve(),
             'settingsRevision' => $settings->revision(),
             'canEdit' => auth()->user()->can('edit_settings'),
+            'brandPalettes' => BrandTheme::palettes(),
             'documentLogoUrl' => filled($settings->app_document_logo) && Storage::disk(SaveDocumentLogo::DISK)->exists($settings->app_document_logo)
                 ? Storage::disk(SaveDocumentLogo::DISK)->url($settings->app_document_logo)
                 : null,

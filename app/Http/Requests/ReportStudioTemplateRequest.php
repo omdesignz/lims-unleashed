@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\ReportStudioDefaultTemplates;
 use HeadlessChromium\BrowserFactory;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -42,7 +43,7 @@ class ReportStudioTemplateRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'studio_type' => ['required', Rule::in(['analysis', 'executive', 'proposal', 'export_certificate', 'import_certificate', 'quote', 'invoice', 'receipt', 'credit_note'])],
+            'studio_type' => ['required', Rule::in(ReportStudioDefaultTemplates::supportedTypes())],
             'renderer' => ['required', Rule::in(['internal', 'chrome', 'browsershot', 'canva'])],
             'status' => ['required', Rule::in(['draft', 'active', 'archived'])],
             'is_default' => ['sometimes', 'boolean'],
@@ -59,6 +60,13 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.variable_catalog' => ['nullable', 'array'],
             'layout_schema.variable_catalog.*.value' => ['nullable', 'string', 'max:255'],
             'layout_schema.variable_catalog.*.label' => ['nullable', 'string', 'max:255'],
+            // The fields of a free-form document: each key is a token of its template.
+            'layout_schema.custom_fields' => ['nullable', 'array', 'max:40'],
+            'layout_schema.custom_fields.*.key' => ['required', 'string', 'regex:/\A[a-z][a-z0-9_]{1,39}\z/', 'distinct', Rule::notIn(ReportStudioDefaultTemplates::reservedCustomTokens())],
+            'layout_schema.custom_fields.*.label' => ['required', 'string', 'max:120'],
+            'layout_schema.custom_fields.*.type' => ['required', Rule::in(['text', 'long_text', 'date', 'number'])],
+            'layout_schema.custom_fields.*.sample' => ['nullable', 'string', 'max:2000'],
+            'layout_schema.custom_fields.*.required' => ['nullable', 'boolean'],
             'layout_schema.canvas_blocks' => ['nullable', 'array'],
             'layout_schema.document_font_family' => ['nullable', 'string', 'max:150'],
             'layout_schema.canvas_blocks.*.id' => ['nullable', 'string', 'max:100'],

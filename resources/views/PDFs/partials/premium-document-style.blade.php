@@ -11,7 +11,8 @@
             : $fallback;
     };
 
-    $documentPrimaryColor = $resolveDocumentColor($documentBrandSettings?->app_primary_color, '#0f766e');
+    // The laboratory's primary colour, darkened if needed to be read on white paper.
+    $documentPrimaryColor = \App\Support\BrandTheme::documentAccent($documentBrandSettings);
     $documentSecondaryColor = $resolveDocumentColor($documentBrandSettings?->app_secondary_color, '#17202a');
     $documentAccentColor = $resolveDocumentColor($documentBrandSettings?->app_accent_color, '#0e7490');
 @endphp

@@ -7,8 +7,8 @@ import { MotionConfig, motion } from 'motion-v'
 import { easeOut } from '@/Support/motion'
 
 /**
- * Plano sign-in: a flat VAP Blue band with an ink panel cut into it. The panel
- * always carries the dark tokens; the sample's journey runs along the foot.
+ * Plano sign-in: a white page with an ink panel set on it. The panel always
+ * carries the dark tokens; the sample's journey runs along the foot.
  */
 const props = defineProps({
   title: { type: String, required: true },
@@ -65,7 +65,10 @@ const lifecycle = [
   >
     <header class="auth-bar">
       <img v-if="brandLogoUrl" :src="brandLogoUrl" :alt="brandAppName" :data-initials="brandInitials" />
-      <img v-else src="/brand/svg/VAP_Small_Black.svg" alt="VAP Sistemas" :data-initials="brandInitials" />
+      <template v-else>
+        <img class="auth-logo-light" src="/brand/svg/VAP_Small.svg" alt="VAP Sistemas" :data-initials="brandInitials" />
+        <img class="auth-logo-dark" src="/brand/svg/VAP_Small_White.svg" alt="VAP Sistemas" :data-initials="brandInitials" />
+      </template>
       <p class="pl-k auth-bar-label">LIMS · {{ brandLabName }}</p>
       <div class="auth-bar-end">
         <a v-if="portalHref" :href="portalHref" class="auth-portal">Portal do cliente<ArrowUpRightIcon aria-hidden="true" /></a>

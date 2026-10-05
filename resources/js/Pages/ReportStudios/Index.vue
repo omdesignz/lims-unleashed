@@ -3,6 +3,7 @@ import Layout from '@/Shared/Layouts/Layout.vue'
 import PageHeader from '@/Components/plano/PageHeader.vue'
 import reportStudioWorkbench from '@/Components/report-studio/studio-workbench.vue'
 import DialogModal from '@/Components/dialog-modal.vue'
+import IssueDocumentDialog from '@/Components/report-studio/issue-document-dialog.vue'
 import { previewReplacementsByType } from '@/Support/report-studio-preview-html.mjs'
 import { computed, ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
@@ -25,7 +26,7 @@ const props = defineProps({
   },
   summary: {
     type: Object,
-    default: () => ({ total: 0, analysis: 0, executive: 0, proposal: 0, export_certificate: 0, import_certificate: 0, quote: 0, invoice: 0, receipt: 0, credit_note: 0, canva: 0, chrome: 0 }),
+    default: () => ({ total: 0, analysis: 0, executive: 0, proposal: 0, export_certificate: 0, import_certificate: 0, quote: 0, invoice: 0, receipt: 0, credit_note: 0, custom: 0, canva: 0, chrome: 0 }),
   },
   rendererCapabilities: {
     type: Object,
@@ -96,6 +97,7 @@ const documentTypeCards = computed(() => [
   { key: 'invoice', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.invoice', value: props.summary.invoice, accent: 'bg-[rgb(var(--accent-500-rgb))]' },
   { key: 'receipt', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.receipt', value: props.summary.receipt, accent: 'bg-lime-500' },
   { key: 'credit_note', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.credit_note', value: props.summary.credit_note, accent: 'bg-rose-500' },
+  { key: 'custom', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.custom', value: props.summary.custom, accent: 'bg-[var(--pl-faint)]' },
   { key: 'canva', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.canva', value: props.summary.canva, accent: 'bg-[rgb(var(--accent-500-rgb))]' },
   { key: 'chrome', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.chrome', value: props.summary.chrome, accent: 'bg-orange-500' },
 ])
@@ -570,12 +572,27 @@ const form = useForm({
 // The layout a new model was given, to tell an untouched model from an edited one.
 let untouchedLayout = JSON.stringify(form.layout_schema)
 
+// A free-form document shows its own title and the sample of each field it declares.
+const customFieldSamples = computed(() => {
+  if (form.studio_type !== 'custom') {
+    return {}
+  }
+
+  return {
+    '{document_title}': form.name || 'Documento livre',
+    ...Object.fromEntries((form.layout_schema.custom_fields || [])
+      .filter((field) => /^[a-z][a-z0-9_]{1,39}$/.test(field?.key || ''))
+      .map((field) => [`{${field.key}}`, String(field.sample || field.label || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')])),
+  }
+})
+
 // The canvas fills each token with what the server prints in the preview of this
 // type of document; the local samples only cover tokens the server did not send.
 const previewReplacements = computed(() => ({
   ...(previewReplacementsByType[form.studio_type] || previewReplacementsByType.analysis),
   ...(props.canvasSampleValues?.shared || {}),
   ...(props.canvasSampleValues?.types?.[form.studio_type] || {}),
+  ...customFieldSamples.value,
 }))
 
 const previewPdfHref = computed(() => {
@@ -694,6 +711,9 @@ const formatDate = (value) => {
   return new Date(value).toLocaleString()
 }
 
+// The free-form template whose document is being issued.
+const issuingTemplate = ref(null)
+
 const onStudioTypeUpdate = (studioType) => {
   applyDefaultsForStudio(studioType)
 }
@@ -789,6 +809,7 @@ const onStudioTypeUpdate = (studioType) => {
               </td>
               <td class="px-5 py-4">
                 <div class="flex justify-end gap-1">
+                  <button v-if="template.issue_path" type="button" class="ds-button ds-button-secondary" @click="issuingTemplate = template">Emitir</button>
                   <a :href="template.preview_pdf_path" target="_blank" class="ds-table-action" title="Pré-visualizar PDF"><PhotoIcon class="h-4 w-4" /></a>
                   <button type="button" class="ds-table-action" title="Editar modelo" @click="editTemplate(template)"><DocumentPlusIcon class="h-4 w-4" /></button>
                   <button type="button" class="ds-table-action ds-table-action-danger" title="Arquivar modelo" @click="destroyTemplate(template)">×</button>
@@ -809,6 +830,7 @@ const onStudioTypeUpdate = (studioType) => {
             <span :class="['ds-badge', template.status === 'active' ? 'ds-badge-success' : 'ds-badge-warning']">{{ template.status }}</span>
           </div>
           <div class="flex flex-wrap gap-2">
+            <button v-if="template.issue_path" type="button" class="ds-button ds-button-primary" @click="issuingTemplate = template">Emitir</button>
             <a :href="template.preview_pdf_path" target="_blank" class="ds-button ds-button-secondary">PDF</a>
             <button type="button" class="ds-button ds-button-secondary" @click="editTemplate(template)">Editar</button>
             <button type="button" class="ds-button ds-button-danger" @click="destroyTemplate(template)">Arquivar</button>
@@ -879,5 +901,7 @@ const onStudioTypeUpdate = (studioType) => {
         </button>
       </template>
     </DialogModal>
+
+    <IssueDocumentDialog :show="Boolean(issuingTemplate)" :template="issuingTemplate" @close="issuingTemplate = null" />
   </div>
 </template>

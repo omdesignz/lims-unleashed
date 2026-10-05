@@ -17,7 +17,7 @@ import FileInput from "./Components/base/FileInput.vue";
 import RadioInput from "./Components/base/RadioInput.vue";
 import RangeInput from "./Components/base/RangeInput.vue";
 import DataTable from "./Components/tables/DataTable.vue";
-import { createInertiaApp, Link, Head } from "@inertiajs/vue3";
+import { createInertiaApp, Link, Head, router } from "@inertiajs/vue3";
 import { usePopstate } from "./Composables/usePopstate";
 import Vue3ColorPicker from "vue3-colorpicker";
 import "vue3-colorpicker/style.css";
@@ -95,6 +95,19 @@ createInertiaApp({
     if (typeof window !== 'undefined') {
       window.route = routeWithConfig;
       window.Ziggy = ziggyConfig;
+    }
+
+    // The laboratory's colours arrive with the first page; after a visit that
+    // changes them (saving Settings), bring the stylesheet in step without a reload.
+    if (typeof document !== 'undefined') {
+      router.on('success', (event) => {
+        const brandTheme = document.getElementById('brand-theme')
+        const brandCss = event.detail.page.props?.settings?.brand_css
+
+        if (brandTheme && typeof brandCss === 'string' && brandTheme.textContent !== brandCss) {
+          brandTheme.textContent = brandCss
+        }
+      })
     }
 
     createApp({ render: () => h(App, props) })

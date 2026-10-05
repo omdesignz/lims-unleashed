@@ -3201,7 +3201,7 @@ test('white-label fallbacks remain neutral across the application and generated 
   assert.doesNotMatch(controlledDocumentSource, /sncqa_logo|brandLogoInitials/)
   assert.match(controlledDocumentSource, /public static function laboratoryLogoHtml\(GeneralSettings \$settings\): string/)
 
-  assert.match(premiumDocumentStyleSource, /app_primary_color/)
+  assert.match(premiumDocumentStyleSource, /BrandTheme::documentAccent\(\$documentBrandSettings\)/)
   assert.match(premiumDocumentStyleSource, /app_secondary_color/)
   assert.match(premiumDocumentStyleSource, /app_accent_color/)
   // The earlier per-document PDF views, with their own letterheads and logos, are gone:

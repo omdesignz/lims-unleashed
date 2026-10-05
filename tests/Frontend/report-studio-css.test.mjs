@@ -22,6 +22,7 @@ import {
 } from '../../resources/js/Support/report-studio-preview-html.mjs'
 import { escapePreviewHtmlAttribute, escapePreviewHtmlText, safePreviewCssUrl, safePreviewMediaUrl } from '../../resources/js/Support/report-studio-preview-safety.mjs'
 import { buildReportStudioPreviewCss } from '../../resources/js/Support/report-studio-preview-styles.mjs'
+import { collectFlowBlocks, flowPages, paginateFlow } from '../../resources/js/Support/report-studio-pagination.mjs'
 import {
   generatedStudioQrCodeDataUri,
   studioQrCodeErrorCorrectionLevel,
@@ -451,7 +452,8 @@ test('document studios share preview interpolation instead of duplicating condit
 
 test('document studios normalize canvas block placement before PDF preview and save', () => {
   for (const source of [reportStudioWorkbenchSource, proposalStudioWorkbenchSource]) {
-    assert.match(source, /function normalizeCanvasBlockPlacement\(block, fallbackPageNumber = currentPreviewPage\.value \|\| 1\)/)
+    // The report studio counts explicit pages (segments); a flowed page is not a page a block can be pinned to.
+    assert.match(source, /function normalizeCanvasBlockPlacement\(block, fallbackPageNumber = current(PreviewSegment|PreviewPage)\.value \|\| 1\)/)
     assert.match(source, /function normalizeSelectedCanvasBlockPlacement/)
     assert.match(source, /function normalizeCanvasBlockPlacements\(\)[\s\S]*canvasBlocks\.value\.forEach\(\(block\) => normalizeCanvasBlockPlacement\(block\)\)/)
     assert.match(source, /canvasSurfaceOptions\.some\(\(option\) => option\.value === block\.surface\)/)
@@ -555,7 +557,7 @@ test('the studio shows the document body with document styles only', () => {
 
   // Application typography forces its own table margins and sizes on a document.
   assert.doesNotMatch(workbench, /class="prose[^"]*" v-html="(editorCanvasPage|previewPage)\.content"/)
-  assert.equal(workbench.match(/class="studio-preview-body" v-html="(editorCanvasPage|previewPage)\.content"/g)?.length, 2)
+  assert.equal(workbench.match(/class="studio-preview-body" :style="flowBodyStyle\((editorCanvasPage|previewPage)\)" v-html="(editorCanvasPage|previewPage)\.content"/g)?.length, 2)
 
   const css = buildReportStudioPreviewCss('ul{margin:0;}', '.doc-kv td{font-size:8.2pt;}')
   const defaults = css.indexOf(':where(.studio-preview-body) :where(ul){list-style:disc;')
@@ -617,4 +619,97 @@ test('QR codes are sized by width alone, so they stay square', () => {
   for (const path of ['resources/js/Pages/DirectCollections/Index.vue', 'resources/js/Pages/Proposals/Show.vue']) {
     assert.match(read(path), /<img :src="[^"]*qr"[^>]*class="aspect-square h-16 w-16 shrink-0 object-contain"/, path)
   }
+})
+
+test('the canvas breaks a long body between blocks, never through one', () => {
+  const rows = (count, height, from = 0) => Array.from({ length: count }, (_value, index) => ({ top: from + index * height, bottom: from + (index + 1) * height }))
+
+  // Ten 40px rows, 150px on the first page and 200px after: breaks fall on row edges.
+  assert.deepEqual(paginateFlow(rows(10, 40), 400, 150, 200), [0, 120, 320])
+
+  // A body that fits stays on one page, sub-pixel overshoot included.
+  assert.deepEqual(paginateFlow(rows(5, 40), 200, 200, 200), [0])
+  assert.deepEqual(paginateFlow([{ top: 0, bottom: 200.4 }], 200.4, 200, 200), [0])
+
+  // A heading is not left alone at the foot of a page: it moves on with what it introduces.
+  const withHeading = [...rows(3, 40), { top: 120, bottom: 140, heading: true }, { top: 140, bottom: 220 }]
+  assert.deepEqual(paginateFlow(withHeading, 220, 180, 200), [0, 120])
+
+  // Only a block taller than a whole page is cut through, at the page edge.
+  assert.deepEqual(paginateFlow([{ top: 0, bottom: 30 }, { top: 30, bottom: 530 }], 530, 200, 200), [0, 30, 230, 430])
+
+  // Bare text has nothing to break between: one page per page height.
+  assert.deepEqual(paginateFlow([], 450, 200, 200), [0, 200, 400])
+
+  // No room measured yet (frame not laid out): one page, nothing guessed.
+  assert.deepEqual(paginateFlow(rows(10, 40), 400, 0, 0), [0])
+})
+
+test('explicit page breaks and flowed pages number as one document', () => {
+  const pages = flowPages(['<p>A</p>', '<p>B</p>'], [[0, 120, 320], [0]])
+
+  assert.deepEqual(pages.map((page) => [page.content, page.segmentNumber, page.flowIndex, page.offset, page.limit]), [
+    ['<p>A</p>', 1, 0, 0, 120],
+    ['<p>A</p>', 1, 1, 120, 200],
+    ['<p>A</p>', 1, 2, 320, null],
+    ['<p>B</p>', 2, 0, 0, null],
+  ])
+
+  // Before anything is measured each segment is one page, as it always was.
+  assert.deepEqual(flowPages(['<p>A</p>', '<p>B</p>']).map((page) => page.offset), [0, 0])
+  assert.deepEqual(flowPages([]), [])
+})
+
+test('blocks that must stay whole are measured as one piece', () => {
+  const element = (rect, { matches = [], children = [] } = {}) => ({
+    children,
+    matches: (selector) => selector.split(',').some((part) => matches.includes(part.trim())),
+    getBoundingClientRect: () => rect,
+  })
+  const root = element({ top: 100, bottom: 400, height: 300 }, {
+    children: [
+      element({ top: 100, bottom: 120, height: 20 }, { matches: ['.doc-section-title'] }),
+      element({ top: 120, bottom: 220, height: 100 }, {
+        children: [
+          element({ top: 120, bottom: 170, height: 50 }, { matches: ['tr'], children: [element({ top: 120, bottom: 170, height: 50 })] }),
+          element({ top: 170, bottom: 220, height: 50 }, { matches: ['tr'] }),
+        ],
+      }),
+      element({ top: 220, bottom: 400, height: 180 }, { matches: ['.doc-keep'], children: [element({ top: 220, bottom: 300, height: 80 }, { matches: ['tr'] })] }),
+      element({ top: 400, bottom: 400, height: 0 }),
+    ],
+  })
+
+  assert.deepEqual(collectFlowBlocks(root), [
+    { top: 0, bottom: 20, heading: true },
+    { top: 20, bottom: 70, heading: false },
+    { top: 70, bottom: 120, heading: false },
+    { top: 120, bottom: 300, heading: false },
+  ])
+  assert.deepEqual(collectFlowBlocks(null), [])
+})
+
+test('the studio pages the body on both canvases and keeps the footer on the page', () => {
+  const workbench = readFileSync(new URL('../../resources/js/Components/report-studio/studio-workbench.vue', import.meta.url), 'utf8')
+  const measure = readFileSync(new URL('../../resources/js/Components/report-studio/studio-flow-measure.vue', import.meta.url), 'utf8')
+
+  assert.equal(workbench.match(/<StudioFlowMeasure/g)?.length, 2)
+  assert.match(workbench, /@measured="recordFlowBreaks\('editor', \$event\)"/)
+  assert.match(workbench, /@measured="recordFlowBreaks\('preview', \$event\)"/)
+  assert.match(workbench, /const previewPages = computed\(\(\) => flowPages\(previewSegments\.value, flowBreaks\.value\)\)/)
+  assert.equal(workbench.match(/class="studio-preview-flow" :style="flowWindowStyle\((editorCanvasPage|previewPage)\)"/g)?.length, 2)
+  assert.equal(workbench.match(/data-canvas-surface="content" class="relative min-h-0 flex-1 /g)?.length, 2)
+
+  // The window always clips, so a page never shows what belongs to the one before.
+  assert.match(workbench, /page\.limit === null \? \{ overflow: 'hidden' \}/)
+
+  // The skeleton measures with the spacing the canvas surfaces have.
+  assert.match(measure, /headerSurfaceStyle = \{ minHeight: '104px' \}/)
+  assert.match(measure, /footerSurfaceStyle = \{ minHeight: '96px' \}/)
+  assert.match(measure, /emit\('measured', null\)/)
+  for (const [surface, minHeight] of [['header', '104px'], ['footer', '96px']]) {
+    assert.match(workbench, new RegExp(`data-canvas-surface="${surface}"[^>]*minHeight: '${minHeight}'`), surface)
+  }
+
+  assert.match(buildReportStudioPreviewCss('', ''), /\.studio-preview-document \.studio-preview-body\{display:flow-root;\}/)
 })

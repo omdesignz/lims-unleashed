@@ -295,6 +295,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::put('/report-studios/{reportStudio}', [ReportStudioController::class, 'update'])->name('report-studios.update');
     Route::delete('/report-studios/{reportStudio}', [ReportStudioController::class, 'destroy'])->name('report-studios.destroy');
     Route::get('/report-studios/{reportStudio}/preview-pdf', [ReportStudioController::class, 'previewPdf'])->name('report-studios.preview-pdf');
+    Route::post('/report-studios/{reportStudio}/issue', [ReportStudioController::class, 'issue'])->name('report-studios.issue');
     Route::get('/qms', [QMSController::class, 'index'])->middleware('can:view_activity_log')->name('qms.index');
     Route::get('/supplier-assessments', [SupplierAssessmentController::class, 'index'])->name('supplier-assessments.index');
     Route::post('/supplier-assessments', [SupplierAssessmentController::class, 'store'])->name('supplier-assessments.store');

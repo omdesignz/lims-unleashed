@@ -13,8 +13,8 @@
 
 return [
     'app' => [
-        'name' => 'GestLab',
-        'copyright' => '© 2025 GestLab',
+        'name' => 'LIMS',
+        'copyright' => '© 2025 LIMS',
         'version' => 'Versão 3.0.0',
     ],
     'greeting' => 'Bem-vindo(a)',
@@ -1247,6 +1247,7 @@ return [
                         'invoice' => 'Facturas',
                         'receipt' => 'Recibos',
                         'credit_note' => 'Notas de crédito',
+                        'custom' => 'Documentos livres',
                         'canva' => 'Canva',
                         'chrome' => 'Chrome PDF',
                     ],
@@ -1291,6 +1292,7 @@ return [
                         'invoice' => 'Factura fiscal',
                         'receipt' => 'Recibo de tesouraria',
                         'credit_note' => 'Nota de crédito financeira',
+                        'custom' => 'Documento livre',
                     ],
                     'descriptions' => [
                         'analysis' => 'Relatório multi-página com amostra, cadeia de custódia, âmbito, resultados, incerteza, regra de decisão, gráfico e assinatura.',
@@ -1302,6 +1304,7 @@ return [
                         'invoice' => 'Factura com cliente, vencimento, itens, impostos, dados bancários, paginação e validação fiscal.',
                         'receipt' => 'Recibo com liquidação, forma de pagamento, confirmação do pagamento e assinatura de tesouraria.',
                         'credit_note' => 'Nota de crédito com motivo de rectificação, itens corrigidos, impacto financeiro e validação.',
+                        'custom' => 'Documento controlado de formato livre: cartas, declarações, actas, procedimentos e impressos, com os campos que definir.',
                     ],
                 ],
                 'studio' => [
@@ -1426,6 +1429,7 @@ return [
                         'invoice' => 'Factura',
                         'receipt' => 'Recibo',
                         'credit_note' => 'Nota de crédito',
+                        'custom' => 'Documento livre',
                         'default' => 'Documento',
                     ],
                     'surfaces' => [
@@ -1472,7 +1476,7 @@ return [
                     ],
                     'fonts' => [
                         'brand' => [
-                            'label' => 'Marca GestLab / Manrope',
+                            'label' => 'Marca LIMS / Manrope',
                             'description' => 'A fonte principal da aplicação, limpa e séria para documentos premium.',
                         ],
                         'century_gothic' => [
@@ -5630,7 +5634,7 @@ return [
                     'general' => [
                         'system' => [
                             'title' => 'Sistema',
-                            'description' => 'Informações relacionadas ao sistema GESTLAB',
+                            'description' => 'Informações relacionadas ao sistema LIMS',
                         ],
                         'customer' => [
                             'title' => 'Cliente',
@@ -5956,10 +5960,10 @@ return [
             'or_continue_with' => 'Ou continue com',
             'invalid_credentials' => 'Credenciais inválidas',
             'secured_by' => 'Protegido por',
-            'copyright' => '© :year GestLab',
+            'copyright' => '© :year LIMS',
             'version' => 'Versão 3.0.0',
             'welcome_back' => 'Bem-vindo de volta!',
-            'welcome_description' => 'Bem-vindo ao GestLab. Acompanhe clientes, amostras, resultados e evidências com rigor técnico.',
+            'welcome_description' => 'Bem-vindo ao LIMS. Acompanhe clientes, amostras, resultados e evidências com rigor técnico.',
             'email_placeholder' => 'E-mail',
             'password_placeholder' => 'Palavra-passe',
             'sign_in' => 'Inicie sessão na sua conta',

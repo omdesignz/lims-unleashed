@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Support\BrandTheme;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class GeneralSettingsRequest extends FormRequest
 {
@@ -51,7 +53,7 @@ class GeneralSettingsRequest extends FormRequest
             'app_primary_color' => ['nullable', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
             'app_secondary_color' => ['nullable', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
             'app_accent_color' => ['nullable', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
-            'app_theme_preset' => ['nullable', 'string', 'in:corporate,clinical,executive,vibrant'],
+            'app_theme_preset' => ['nullable', 'string', Rule::in(BrandTheme::presetValues())],
             'app_operation_mode' => ['nullable', 'string', 'in:client_only,internal_only,hybrid'],
             'app_logo_url' => ['nullable', 'string', 'max:500'],
             'app_login_headline' => ['nullable', 'string', 'max:255'],

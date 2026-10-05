@@ -10,6 +10,9 @@ class ReportStudioDefaultTemplates
     /** The text colour of every controlled document. */
     private const INK = '#111827';
 
+    /** A document of free form: its title, text and fields are the template's own. */
+    public const CUSTOM = 'custom';
+
     /**
      * @return array<int, string>
      */
@@ -25,6 +28,40 @@ class ReportStudioDefaultTemplates
             'invoice',
             'receipt',
             'credit_note',
+            self::CUSTOM,
+        ];
+    }
+
+    /**
+     * The fields a free-form document starts with. Each is a token of the
+     * template, filled in by whoever issues the document.
+     *
+     * @return array<int, array{key: string, label: string, type: string, sample: string, required: bool}>
+     */
+    public static function customFields(): array
+    {
+        return [
+            ['key' => 'recipient', 'label' => 'Destinatário', 'type' => 'text', 'sample' => 'Cliente laboratorial de referência', 'required' => false],
+            ['key' => 'document_subject', 'label' => 'Assunto', 'type' => 'text', 'sample' => 'Declaração de prestação de serviços de ensaio', 'required' => true],
+            ['key' => 'document_body', 'label' => 'Texto', 'type' => 'long_text', 'sample' => "Para os devidos efeitos, declara-se que o laboratório realizou os ensaios solicitados, de acordo com os métodos acordados com o cliente.\n\nA presente declaração é emitida a pedido do interessado.", 'required' => true],
+            ['key' => 'signatory_name', 'label' => 'Assinado por', 'type' => 'text', 'sample' => 'Direcção técnica', 'required' => false],
+            ['key' => 'signatory_role', 'label' => 'Função', 'type' => 'text', 'sample' => 'Responsável pelo laboratório', 'required' => false],
+        ];
+    }
+
+    /**
+     * Tokens every free-form document has without declaring them, so a field
+     * of the same name could never be told apart from them.
+     *
+     * @return list<string>
+     */
+    public static function reservedCustomTokens(): array
+    {
+        return [
+            'document_title', 'document_code', 'document_revision', 'issue_date', 'signature_block', 'end_of_document',
+            'lab_name', 'lab_logo', 'lab_identity', 'lab_details', 'verification_qr', 'customer_name',
+            'brand_primary_color', 'brand_secondary_color', 'brand_accent_color', 'app_primary_color', 'app_secondary_color', 'app_accent_color',
+            'PAGENO', 'nbpg',
         ];
     }
 
@@ -127,6 +164,7 @@ class ReportStudioDefaultTemplates
             'invoice' => 'Factura fiscal padrão',
             'receipt' => 'Recibo de tesouraria padrão',
             'credit_note' => 'Nota de crédito padrão',
+            self::CUSTOM => 'Documento livre',
             default => 'Relatório analítico padrão',
         };
     }
@@ -142,6 +180,7 @@ class ReportStudioDefaultTemplates
             'invoice' => 'Factura fiscal com cliente, vencimento, itens, impostos, dados bancários e paginação.',
             'receipt' => 'Recibo de tesouraria com liquidação, forma de pagamento, confirmação e assinatura.',
             'credit_note' => 'Nota de crédito com motivo de rectificação, impacto financeiro e validação.',
+            self::CUSTOM => 'Documento controlado de formato livre: cartas, declarações, actas, procedimentos e impressos, com os campos que definir.',
             default => 'Relatório analítico com amostra, cadeia de custódia, resultados, incerteza, decisão e assinatura.',
         };
     }
@@ -187,7 +226,8 @@ class ReportStudioDefaultTemplates
                 ['key' => 'validation', 'label' => 'Validação', 'visible' => true],
             ],
             'variable_catalog' => self::variableCatalogFor($studioType),
-            'canvas_blocks' => self::canvasBlocksFor($studioType, self::INK),
+            'custom_fields' => $studioType === self::CUSTOM ? self::customFields() : [],
+            'canvas_blocks' => $studioType === self::CUSTOM ? [] : self::canvasBlocksFor($studioType, self::INK),
             'document_font_family' => 'DejaVu Sans, sans-serif',
             'page_background_color' => '#ffffff',
             'background_image_path' => '',
@@ -220,7 +260,7 @@ class ReportStudioDefaultTemplates
         $number = ['N.º', self::numberTokenFor($studioType)];
 
         return match ($studioType) {
-            'analysis', 'export_certificate', 'import_certificate' => [$number, ['Revisão', '{{document_revision}}'], ['Emissão', '{{issue_date}}']],
+            'analysis', 'export_certificate', 'import_certificate', self::CUSTOM => [$number, ['Revisão', '{{document_revision}}'], ['Emissão', '{{issue_date}}']],
             'invoice' => [$number, ['Emissão', '{{issue_date}}'], ['Vencimento', '{{due_date}}']],
             'quote' => [$number, ['Emissão', '{{issue_date}}'], ['Validade', '{{expiry_date}}']],
             'proposal' => [$number, ['Emissão', '{{issue_date}}'], ['Validade', '{{expiry_date}}']],
@@ -388,6 +428,11 @@ class ReportStudioDefaultTemplates
             'credit_note' => array_merge($common, self::commercialVariableCatalog(), [
                 '{reason_label}' => 'Motivo da rectificação',
             ]),
+            self::CUSTOM => array_merge($common, [
+                '{document_title}' => 'Título do documento',
+                '{signature_block}' => 'Assinatura (campos «Assinado por» e «Função»)',
+                '{end_of_document}' => 'Marca de fim do documento',
+            ], collect(self::customFields())->mapWithKeys(fn (array $field): array => ['{'.$field['key'].'}' => $field['label']])->all()),
             default => $common,
         };
 
@@ -448,9 +493,26 @@ CSS;
             'quote' => self::commercialBodyHtml('Condições', 'Emissão: {issue_date}<br>Validade: {expiry_date}{if:service_location}<br>Local do serviço: {service_location}{endif:service_location}'),
             'invoice' => '{payment_status_badge}'.self::commercialBodyHtml('Condições', 'Emissão: {issue_date}<br>Vencimento: {due_date}{if:service_location}<br>Local do serviço: {service_location}{endif:service_location}'),
             'receipt' => self::commercialBodyHtml('Recebimento', 'Data: {issue_date}<br>Forma de pagamento: {payment_type}{if:service_location}<br>Local do serviço: {service_location}{endif:service_location}'),
+            self::CUSTOM => self::customBodyHtml(),
             'credit_note' => self::commercialBodyHtml('Motivo', '{reason_label}<br>Data: {issue_date}{if:service_location}<br>Local do serviço: {service_location}{endif:service_location}'),
             default => self::analysisBodyHtml(),
         };
+    }
+
+    /**
+     * A free-form document: who it is addressed to, its subject, its text, who
+     * signs it and a marked end. Every part is a field the template may rename,
+     * remove or add to.
+     */
+    private static function customBodyHtml(): string
+    {
+        return <<<'HTML'
+{if:recipient}<p class="doc-text"><strong>Destinatário:</strong> {recipient}</p>{endif:recipient}
+{if:document_subject}<p class="doc-text"><strong>Assunto:</strong> {document_subject}</p>{endif:document_subject}
+<div class="doc-text">{document_body}</div>
+{signature_block}
+{end_of_document}
+HTML;
     }
 
     /**
@@ -873,6 +935,7 @@ HTML;
             'invoice' => 'Factura fiscal',
             'receipt' => 'Recibo de tesouraria',
             'credit_note' => 'Nota de crédito',
+            self::CUSTOM => '{{document_title}}',
             default => TestReportContent::TITLE,
         };
     }

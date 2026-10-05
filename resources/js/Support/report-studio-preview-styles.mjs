@@ -5,6 +5,8 @@ import { scopeReportStudioPreviewCss } from './report-studio-css.mjs'
  * takes away. Zero-specificity selectors, so any document style wins over them.
  */
 const printDefaultsCss = [
+  // The body keeps its children's margins inside itself, so the offset that pages it is exact.
+  '.studio-preview-document .studio-preview-body{display:flow-root;}',
   '.studio-preview-document :where(.studio-preview-body) :where(ul){list-style:disc;margin:1em 0;padding-left:40px;}',
   '.studio-preview-document :where(.studio-preview-body) :where(ol){list-style:decimal;margin:1em 0;padding-left:40px;}',
   '.studio-preview-document :where(.studio-preview-body) :where(h4,h5,h6){font-weight:bold;margin:1.33em 0;}',

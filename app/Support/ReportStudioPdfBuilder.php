@@ -1734,6 +1734,11 @@ class ReportStudioPdfBuilder
             }
         }
 
+        // A free-form template that declares no fields at all takes the default ones; an empty list is its own choice.
+        if (! array_key_exists('custom_fields', $layout)) {
+            $layout['custom_fields'] = $defaults['custom_fields'] ?? [];
+        }
+
         return $layout;
     }
 
@@ -2400,6 +2405,136 @@ HTML;
                 ],
             ],
         ];
+    }
+
+    /**
+     * A free-form document, issued from its template with the values typed for
+     * its fields. The values are text: they are printed as written, never as markup.
+     *
+     * @param  array{document_code?: ?string, document_revision?: ?string, issue_date?: ?string, fields?: array<string, mixed>}  $input
+     * @return array{view: string, data: array<string, mixed>}
+     */
+    public function buildCustomDocumentPayload(ReportStudioTemplate $studio, array $input, GeneralSettings $settings): array
+    {
+        $layout = $this->layoutWithDefaults($studio);
+        $export = $studio->export_settings ?? [];
+        $fields = $this->customFieldsOf($layout);
+        $values = (array) ($input['fields'] ?? []);
+        $title = trim((string) $studio->name) ?: 'Documento';
+        $documentCode = trim((string) ($input['document_code'] ?? '')) ?: ControlledDocument::NOT_RECORDED;
+        $issueDate = $this->analysisDateValue($input['issue_date'] ?? null) ?: now()->format('d/m/Y');
+
+        $placeholders = [
+            '{document_title}' => e($title),
+            '{document_code}' => e($documentCode),
+            '{document_revision}' => e(trim((string) ($input['document_revision'] ?? '')) ?: '0'),
+            '{issue_date}' => e($issueDate),
+            '{lab_details}' => $this->labDetailsHtml($settings),
+        ];
+
+        foreach ($fields as $field) {
+            $placeholders['{'.$field['key'].'}'] = $this->customFieldHtml($field, $values[$field['key']] ?? null);
+        }
+
+        $placeholders['{signature_block}'] = ControlledDocument::authorisation([[
+            'name' => filled($values['signatory_name'] ?? null) ? (string) $values['signatory_name'] : null,
+            'role' => filled($values['signatory_role'] ?? null) ? (string) $values['signatory_role'] : null,
+            'date' => $issueDate,
+        ]]);
+        $placeholders['{end_of_document}'] = ControlledDocument::endMark('documento');
+
+        $surfaceContext = $this->buildSurfaceContext([
+            'lab_name' => ControlledDocument::laboratoryName($settings),
+            'customer_name' => filled($values['recipient'] ?? null) ? e((string) $values['recipient']) : '',
+        ], $placeholders, $settings);
+        $bodyHtml = $this->renderTemplateHtml((string) data_get($layout, 'body_html'), $placeholders);
+        $canvasBlocks = data_get($layout, 'canvas_blocks', []);
+
+        return [
+            'view' => 'PDFs.studios.document',
+            'data' => [
+                'documentTitle' => $title,
+                'firstPageHeader' => $this->buildSurfaceHtml((string) data_get($layout, 'first_page_header_html'), $canvasBlocks, 'first_page_header_html', $surfaceContext),
+                'defaultHeader' => $this->buildSurfaceHtml((string) data_get($layout, 'default_header_html'), $canvasBlocks, 'default_header_html', $surfaceContext),
+                'footerHtml' => $this->buildSurfaceHtml((string) data_get($layout, 'footer_html'), $canvasBlocks, 'footer_html', $surfaceContext),
+                'bodyHtml' => $this->buildSurfaceHtml($bodyHtml, $canvasBlocks, 'content', $surfaceContext),
+                'styles' => $this->stylesCss($layout),
+                'backgroundImage' => data_get($layout, 'background_image_path'),
+                'backgroundSize' => data_get($layout, 'background_size', 'cover'),
+                'backgroundPosition' => data_get($layout, 'background_position', 'center center'),
+                'backgroundRepeat' => data_get($layout, 'background_repeat', 'no-repeat'),
+                'orientation' => data_get($export, 'orientation', 'P'),
+                'format' => data_get($export, 'paper_size', 'A4'),
+                'customPageWidth' => data_get($export, 'custom_page_width'),
+                'customPageHeight' => data_get($export, 'custom_page_height'),
+                'margins' => [
+                    'top' => data_get($export, 'margin_top', 16),
+                    'bottom' => data_get($export, 'margin_bottom', 20),
+                    'left' => data_get($export, 'margin_left', 15),
+                    'right' => data_get($export, 'margin_right', 15),
+                    'first_top' => data_get($export, 'first_page_margin_top', 40),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * The same document with each field's sample value, clearly fictional.
+     *
+     * @return array{view: string, data: array<string, mixed>}
+     */
+    public function buildCustomStudioPreviewPayload(ReportStudioTemplate $studio, GeneralSettings $settings): array
+    {
+        $fields = $this->customFieldsOf($this->layoutWithDefaults($studio));
+
+        return $this->buildCustomDocumentPayload($studio, [
+            'document_code' => 'DOC-'.now()->format('Y').'-001',
+            'document_revision' => '0',
+            'issue_date' => now()->toDateString(),
+            'fields' => collect($fields)->mapWithKeys(fn (array $field): array => [$field['key'] => $field['sample'] !== '' ? $field['sample'] : $field['label']])->all(),
+        ], $settings);
+    }
+
+    /**
+     * The fields a free-form template declares, well-formed ones only.
+     *
+     * @param  array<string, mixed>  $layout
+     * @return array<int, array{key: string, label: string, type: string, sample: string, required: bool}>
+     */
+    public function customFieldsOf(array $layout): array
+    {
+        return collect($layout['custom_fields'] ?? [])
+            ->filter(fn (mixed $field): bool => is_array($field)
+                && preg_match('/\A[a-z][a-z0-9_]{1,39}\z/', (string) ($field['key'] ?? '')) === 1
+                && ! in_array($field['key'], ReportStudioDefaultTemplates::reservedCustomTokens(), true))
+            ->unique('key')
+            ->map(fn (array $field): array => [
+                'key' => (string) $field['key'],
+                'label' => trim((string) ($field['label'] ?? '')) ?: (string) $field['key'],
+                'type' => in_array($field['type'] ?? null, ['text', 'long_text', 'date', 'number'], true) ? $field['type'] : 'text',
+                'sample' => (string) ($field['sample'] ?? ''),
+                'required' => (bool) ($field['required'] ?? false),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array{key: string, label: string, type: string, sample: string, required: bool}  $field
+     */
+    private function customFieldHtml(array $field, mixed $value): string
+    {
+        $text = is_scalar($value) ? trim((string) $value) : '';
+
+        if ($text === '') {
+            return '';
+        }
+
+        return match ($field['type']) {
+            'date' => e($this->analysisDateValue($text) ?: $text),
+            'long_text' => nl2br(e($text), false),
+            default => e($text),
+        };
     }
 
     private function analysisPlaceholderValues(QualityCertificate $certificate, GeneralSettings $settings): array

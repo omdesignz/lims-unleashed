@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ReportStudioDraftPreviewRequest;
+use App\Http\Requests\ReportStudioIssueRequest;
 use App\Http\Requests\ReportStudioTemplateRequest;
 use App\Models\QualityCertificate;
 use App\Models\ReportStudioTemplate;
@@ -13,6 +14,7 @@ use App\Support\ReportStudioPdfBuilder;
 use App\Support\ReportStudioPdfRenderer;
 use HeadlessChromium\BrowserFactory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use RuntimeException;
 use Spatie\Browsershot\Browsershot;
@@ -56,6 +58,10 @@ class ReportStudioController extends Controller
                     'updated_by' => $template->updatedBy?->name,
                     'updated_at' => optional($template->updated_at)?->toIso8601String(),
                     'preview_pdf_path' => route('report-studios.preview-pdf', $template),
+                    // A free-form document is issued from its template, once the template is in use.
+                    'issue_path' => $template->studio_type === ReportStudioDefaultTemplates::CUSTOM && $template->status === 'active'
+                        ? route('report-studios.issue', $template)
+                        : null,
                 ];
             });
 
@@ -78,6 +84,7 @@ class ReportStudioController extends Controller
                 'invoice' => $templates->where('studio_type', 'invoice')->count(),
                 'receipt' => $templates->where('studio_type', 'receipt')->count(),
                 'credit_note' => $templates->where('studio_type', 'credit_note')->count(),
+                'custom' => $templates->where('studio_type', ReportStudioDefaultTemplates::CUSTOM)->count(),
                 'canva' => $templates->where('renderer', 'canva')->count(),
                 'chrome' => $templates->whereIn('renderer', ['chrome', 'browsershot'])->count(),
             ],
@@ -244,6 +251,35 @@ class ReportStudioController extends Controller
         ];
     }
 
+    /**
+     * Issues a free-form document from its template, with the values typed for its fields.
+     */
+    public function issue(
+        ReportStudioIssueRequest $request,
+        ReportStudioTemplate $reportStudio,
+        ReportStudioPdfBuilder $reportStudioPdfBuilder,
+        ReportStudioPdfRenderer $reportStudioPdfRenderer,
+        GeneralSettings $settings
+    ) {
+        abort_unless($reportStudio->studio_type === ReportStudioDefaultTemplates::CUSTOM, 404);
+        abort_unless($reportStudio->status === 'active', 422, 'Só um modelo activo pode emitir documentos.');
+
+        $payload = $reportStudioPdfBuilder->buildCustomDocumentPayload($reportStudio, $request->validated(), $settings);
+        $filename = Str::slug($reportStudio->name.' '.$request->validated('document_code')).'.pdf';
+
+        try {
+            $renderedPdf = $reportStudioPdfRenderer->renderPreview($reportStudio, $payload, $filename);
+        } catch (RuntimeException $exception) {
+            abort(422, $exception->getMessage());
+        }
+
+        return response($renderedPdf['content'], 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
+        ]);
+    }
+
     private function previewPayloadFor(
         ReportStudioTemplate $reportStudio,
         ReportStudioPdfBuilder $reportStudioPdfBuilder,
@@ -259,6 +295,10 @@ class ReportStudioController extends Controller
             'invoice' => $this->invoicePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
             'receipt' => $this->receiptPreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
             'credit_note' => $this->creditNotePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
+            ReportStudioDefaultTemplates::CUSTOM => [
+                $reportStudioPdfBuilder->buildCustomStudioPreviewPayload($reportStudio, $settings),
+                'report-studio-'.$reportStudio->id.'-custom-preview.pdf',
+            ],
             default => abort(422, 'Tipo de estúdio não suportado para pré-visualização PDF.'),
         };
     }

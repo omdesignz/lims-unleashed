@@ -7,7 +7,7 @@ return new class extends SettingsMigration
 {
     public function up(): void
     {
-        $this->migrator->add('general.app_name', 'GESTLAB');
+        $this->migrator->add('general.app_name', 'LIMS');
         $this->migrator->add('general.app_version', '3.0');
         $this->migrator->add('general.app_slogan', 'Fazemos o certo quando ninguém está olhando.');
         $this->migrator->add('general.app_contact', '924577457');

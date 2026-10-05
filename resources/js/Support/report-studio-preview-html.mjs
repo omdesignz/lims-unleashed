@@ -239,7 +239,7 @@ export const previewReplacementsByType = {
   executive: {
     '{document_code}': 'EXEC-2026-05',
     '{issue_date}': '04/05/2026',
-    '{lab_name}': 'GestLab Analytics',
+    '{lab_name}': 'LIMS Analytics',
     '{customer_name}': 'Comité Executivo',
     '{period_label}': 'Maio de 2026',
     '{executive_summary}': 'Leitura executiva de capacidade, prazos, risco técnico e pressão operacional para decisão da direcção.',

@@ -101,19 +101,6 @@
                 :error="form.errors[field.key]"
               />
 
-              <div class="ds-field-group md:col-span-2">
-                <label class="ds-field-label">Cor principal</label>
-                <div v-if="editSettings" class="ds-command-toolbar flex flex-wrap items-center gap-4 p-3">
-                  <ColorPicker v-model:pure-color="form.app_primary_color" format="hex" shape="circle" lang="Pt" picker-type="chrome" disable-history="true" disable-alpha="true" />
-                  <span class="h-9 w-9 border border-[color:var(--ds-border-strong)]" :style="{ backgroundColor: form.app_primary_color || '#1f87e8' }"></span>
-                  <span class="font-mono text-sm font-bold text-[color:var(--ds-text)]">{{ form.app_primary_color || '#1f87e8' }}</span>
-                </div>
-                <div v-else class="flex min-h-11 items-center gap-3 border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-3 py-2.5">
-                  <span class="h-7 w-7 border border-[color:var(--ds-border-strong)]" :style="{ backgroundColor: settings.app_primary_color || '#1f87e8' }"></span>
-                  <span class="font-mono text-sm font-bold text-[color:var(--ds-text)]">{{ settings.app_primary_color || '#1f87e8' }}</span>
-                </div>
-                <p v-if="form.errors.app_primary_color" class="ds-field-error">{{ form.errors.app_primary_color }}</p>
-              </div>
             </div>
           </section>
 
@@ -200,10 +187,10 @@
                     <p class="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--ds-text-soft)]">{{ form.app_slogan || settings.app_slogan || 'Rastreabilidade e conformidade laboratorial.' }}</p>
                   </div>
                 </div>
-                <div class="mt-4 border-l-4 border-white/50 p-4 text-white" :style="themePreviewStyle">
-                  <p class="text-xs font-bold uppercase text-white/75">Área interna</p>
+                <div class="mt-4 border-l-4 p-4" :style="brandPreview.band">
+                  <p class="text-xs font-bold uppercase opacity-75">Área interna</p>
                   <h3 class="mt-2 text-lg font-bold">{{ form.app_login_headline || settings.app_login_headline || 'Bem-vindo de volta' }}</h3>
-                  <p class="mt-2 text-xs leading-5 text-white/85">{{ form.app_login_subheadline || settings.app_login_subheadline || 'Aceda à operação e mantenha o laboratório sob controlo.' }}</p>
+                  <p class="mt-2 text-xs leading-5 opacity-85">{{ form.app_login_subheadline || settings.app_login_subheadline || 'Aceda à operação e mantenha o laboratório sob controlo.' }}</p>
                 </div>
               </div>
             </div>
@@ -226,6 +213,58 @@
               <div class="ds-command-toolbar p-4">
                 <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Formato de data</p>
                 <p class="mt-2 font-mono text-sm font-bold text-[color:var(--ds-text)]">DD-MM-YYYY</p>
+              </div>
+
+              <div class="ds-field-group md:col-span-2">
+                <label class="ds-field-label">Paleta da marca</label>
+                <p class="text-xs leading-5 text-[color:var(--ds-text-soft)]">Escolha uma paleta pronta ou defina as cores do laboratório. Botões, ligações e destaques da aplicação, do início de sessão, do portal e dos documentos passam a usá-las; o contraste é ajustado automaticamente nos temas claro e escuro.</p>
+                <div v-if="editSettings" class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3" role="radiogroup" aria-label="Paleta da marca">
+                  <button
+                    v-for="palette in props.brandPalettes"
+                    :key="palette.value"
+                    type="button"
+                    role="radio"
+                    :aria-checked="activeBrandPalette === palette.value"
+                    class="flex items-center gap-3 border px-3 py-2.5 text-left transition"
+                    :class="activeBrandPalette === palette.value ? 'border-[color:var(--pl-accent)] bg-[color:var(--ds-panel-subtle)]' : 'border-[color:var(--ds-border)] hover:border-[color:var(--ds-border-strong)]'"
+                    @click="applyBrandPalette(palette)"
+                  >
+                    <span class="flex shrink-0" aria-hidden="true">
+                      <span v-for="colour in [palette.primary, palette.secondary, palette.accent]" :key="colour" class="h-7 w-5 border-y border-r border-[color:var(--ds-border-strong)] first:border-l" :style="{ backgroundColor: colour }"></span>
+                    </span>
+                    <span class="text-sm font-semibold text-[color:var(--ds-text)]">{{ palette.label }}</span>
+                  </button>
+                  <div
+                    class="flex items-center gap-3 border px-3 py-2.5"
+                    :class="activeBrandPalette === 'custom' ? 'border-[color:var(--pl-accent)] bg-[color:var(--ds-panel-subtle)]' : 'border-dashed border-[color:var(--ds-border)]'"
+                  >
+                    <span class="flex shrink-0" aria-hidden="true">
+                      <span v-for="(colour, index) in brandColours" :key="index" class="h-7 w-5 border-y border-r border-[color:var(--ds-border-strong)] first:border-l" :style="{ backgroundColor: colour }"></span>
+                    </span>
+                    <span class="text-sm font-semibold text-[color:var(--ds-text)]">Cores próprias</span>
+                  </div>
+                </div>
+                <div v-else class="mt-3 flex min-h-11 items-center gap-3 border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-3 py-2.5">
+                  <span class="flex shrink-0" aria-hidden="true">
+                    <span v-for="(colour, index) in brandColours" :key="index" class="h-7 w-5 border-y border-r border-[color:var(--ds-border-strong)] first:border-l" :style="{ backgroundColor: colour }"></span>
+                  </span>
+                  <span class="text-sm font-semibold text-[color:var(--ds-text)]">{{ selectedThemePreset }}</span>
+                </div>
+                <p v-if="form.errors.app_theme_preset" class="ds-field-error">{{ form.errors.app_theme_preset }}</p>
+              </div>
+
+              <div class="ds-field-group md:col-span-2">
+                <label class="ds-field-label">Cor principal</label>
+                <div v-if="editSettings" class="ds-command-toolbar flex flex-wrap items-center gap-4 p-3">
+                  <ColorPicker v-model:pure-color="form.app_primary_color" format="hex" shape="circle" lang="Pt" picker-type="chrome" disable-history="true" disable-alpha="true" />
+                  <span class="h-9 w-9 border border-[color:var(--ds-border-strong)]" :style="{ backgroundColor: form.app_primary_color || '#1f87e8' }"></span>
+                  <span class="font-mono text-sm font-bold text-[color:var(--ds-text)]">{{ form.app_primary_color || '#1f87e8' }}</span>
+                </div>
+                <div v-else class="flex min-h-11 items-center gap-3 border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-3 py-2.5">
+                  <span class="h-7 w-7 border border-[color:var(--ds-border-strong)]" :style="{ backgroundColor: settings.app_primary_color || '#1f87e8' }"></span>
+                  <span class="font-mono text-sm font-bold text-[color:var(--ds-text)]">{{ settings.app_primary_color || '#1f87e8' }}</span>
+                </div>
+                <p v-if="form.errors.app_primary_color" class="ds-field-error">{{ form.errors.app_primary_color }}</p>
               </div>
 
               <div class="ds-field-group">
@@ -255,15 +294,6 @@
               </div>
 
               <div class="ds-field-group">
-                <label class="ds-field-label">Predefinição visual</label>
-                <BaseSelect v-if="editSettings" v-model="form.app_theme_preset" class="ds-field">
-                  <option v-for="preset in themePresets" :key="preset.value" :value="preset.value">{{ preset.label }}</option>
-                </BaseSelect>
-                <div v-else class="min-h-11 border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-3 py-2.5 text-sm font-semibold text-[color:var(--ds-text)]">{{ selectedThemePreset }}</div>
-                <p v-if="form.errors.app_theme_preset" class="ds-field-error">{{ form.errors.app_theme_preset }}</p>
-              </div>
-
-              <div class="ds-field-group">
                 <label class="ds-field-label">Modo operacional</label>
                 <BaseSelect v-if="editSettings" v-model="form.app_operation_mode" class="ds-field">
                   <option v-for="mode in operationModes" :key="mode.value" :value="mode.value">{{ mode.label }}</option>
@@ -274,17 +304,13 @@
             </div>
 
             <div class="border-t border-[color:var(--ds-border)] p-5">
-              <div class="flex flex-col gap-4 p-5 text-white sm:flex-row sm:items-center sm:justify-between" :style="themePreviewStyle">
-                <div>
-                  <p class="text-xs font-bold uppercase text-white/75">{{ form.app_theme_preset || 'corporate' }}</p>
-                  <h3 class="mt-2 text-lg font-bold">{{ form.app_name || 'LIMS Unleashed' }}</h3>
-                  <p class="mt-1 text-xs text-white/85">{{ form.app_slogan || 'Rastreabilidade e operação laboratorial robusta.' }}</p>
-                </div>
-                <div class="border-l-4 border-white/50 px-4 py-2">
-                  <p class="text-xs font-bold uppercase text-white/70">Modo</p>
-                  <p class="mt-1 text-sm font-bold">{{ selectedOperationMode }}</p>
-                </div>
+              <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Pré-visualização · {{ selectedThemePreset }}</p>
+              <div class="mt-3 flex flex-wrap items-center gap-4 border border-[color:var(--ds-border)] bg-[color:var(--ds-panel)] p-4">
+                <span class="inline-flex min-h-10 items-center px-4 text-sm font-semibold" :style="brandPreview.button">Guardar</span>
+                <span class="text-sm font-semibold underline" :style="brandPreview.link">Ligação de exemplo</span>
+                <span class="inline-flex min-h-10 flex-1 items-center px-4 text-xs font-bold uppercase" :style="brandPreview.band">{{ form.app_name || 'LIMS Unleashed' }} · {{ selectedOperationMode }}</span>
               </div>
+              <p class="mt-2 text-xs leading-5 text-[color:var(--ds-text-soft)]">As cores aplicam-se a toda a aplicação depois de guardar.</p>
             </div>
           </section>
         </template>
@@ -423,7 +449,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { contrastingText } from '@/Utils/brandingPalette'
 import PageHeader from '@/Components/plano/PageHeader.vue'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import { ColorPicker } from 'vue3-colorpicker'
@@ -447,6 +474,7 @@ import { generalSettingsFormData, generalSettingsPayload } from '@/Composables/u
 
 const props = defineProps({
   canEdit: { type: Boolean, default: false },
+  brandPalettes: { type: Array, default: () => [] },
   settingsRevision: { type: String, required: true },
   documentLogoUrl: { type: String, default: null },
   settings: {
@@ -538,13 +566,6 @@ const bankingFields = [
 
 const form = useForm(generalSettingsFormData(props.settings, props.settingsRevision))
 
-const themePresets = [
-  { value: 'corporate', label: 'Corporate' },
-  { value: 'clinical', label: 'Clinical' },
-  { value: 'executive', label: 'Executive' },
-  { value: 'vibrant', label: 'Vibrant' },
-]
-
 const operationModes = [
   { value: 'client_only', label: 'Apenas clientes' },
   { value: 'internal_only', label: 'Apenas interno' },
@@ -562,17 +583,50 @@ const settingsFallback = computed(() => ({
   app_operation_mode: props.settings.app_operation_mode || 'client_only',
 }))
 
-const selectedThemePreset = computed(() => {
-  return themePresets.find(preset => preset.value === (form.app_theme_preset || settingsFallback.value.app_theme_preset))?.label ?? 'Corporate'
+const brandColours = computed(() => [
+  form.app_primary_color || props.settings.app_primary_color || '#0757b5',
+  form.app_secondary_color || props.settings.app_secondary_color || '#061f46',
+  form.app_accent_color || props.settings.app_accent_color || '#087cf0',
+])
+
+// The palette whose three colours are the ones in the form; any other combination is the laboratory's own.
+const activeBrandPalette = computed(() => {
+  const [primary, secondary, accent] = brandColours.value.map((colour) => String(colour).toLowerCase())
+
+  return props.brandPalettes.find((palette) => palette.primary === primary && palette.secondary === secondary && palette.accent === accent)?.value ?? 'custom'
 })
+
+const selectedThemePreset = computed(() => {
+  return props.brandPalettes.find((palette) => palette.value === activeBrandPalette.value)?.label ?? 'Cores próprias'
+})
+
+// The saved palette name follows the colours: choosing a colour by hand makes it the laboratory's own.
+watch(activeBrandPalette, (palette) => {
+  if (editSettings.value) {
+    form.app_theme_preset = palette
+  }
+})
+
+const applyBrandPalette = (palette) => {
+  form.app_primary_color = palette.primary
+  form.app_secondary_color = palette.secondary
+  form.app_accent_color = palette.accent
+  form.app_theme_preset = palette.value
+}
 
 const selectedOperationMode = computed(() => {
   return operationModes.find(mode => mode.value === (form.app_operation_mode || settingsFallback.value.app_operation_mode))?.label ?? 'Apenas clientes'
 })
 
-const themePreviewStyle = computed(() => ({
-  background: `linear-gradient(135deg, ${form.app_secondary_color || props.settings.app_secondary_color || '#0f172a'} 0%, ${form.app_primary_color || props.settings.app_primary_color || '#1f87e8'} 60%, ${form.app_accent_color || props.settings.app_accent_color || '#14b8a6'} 100%)`,
-}))
+const brandPreview = computed(() => {
+  const [primary, secondary, accent] = brandColours.value
+
+  return {
+    button: { backgroundColor: primary, color: contrastingText(primary) },
+    link: { color: primary },
+    band: { backgroundColor: secondary, borderColor: accent, color: contrastingText(secondary) },
+  }
+})
 
 const securityCards = computed(() => [
   {

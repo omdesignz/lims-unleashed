@@ -3,9 +3,11 @@
         $whiteLabelSettings = app(\App\Settings\GeneralSettings::class);
         $whiteLabelAppName = $whiteLabelSettings->app_name ?: config('app.name', 'LIMS Unleashed');
         $whiteLabelLogoUrl = $whiteLabelSettings->app_logo_url ?: null;
+        $brandThemeCss = \App\Support\BrandTheme::css($whiteLabelSettings);
     } catch (\Throwable) {
         $whiteLabelAppName = config('app.name', 'LIMS Unleashed');
         $whiteLabelLogoUrl = null;
+        $brandThemeCss = '';
     }
 @endphp
 <!DOCTYPE html>
@@ -42,6 +44,8 @@
         })();
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- The laboratory's own colours over the default palette; built from validated hex values only. --}}
+    <style id="brand-theme">{!! $brandThemeCss !!}</style>
     @inertiaHead
 </head>
 <body class="h-full">

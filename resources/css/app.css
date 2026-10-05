@@ -3652,15 +3652,15 @@ tr:hover .pl-row-go,
 }
 
 /* ============================================================
-   20B. Authentication — "Entrar": a flat blue band with an ink
-   panel cut into it, the sample's journey along the foot.
+   20B. Authentication — "Entrar": a white page with an ink panel
+   set on it, the sample's journey along the foot.
    ============================================================ */
 .auth-canvas {
   display: grid;
   min-height: 100dvh;
   grid-template-rows: auto 1fr auto;
-  background: var(--pl-band);
-  color: var(--pl-band-ink);
+  background: var(--pl-bg);
+  color: var(--pl-fg);
 }
 
 .auth-bar {
@@ -3672,6 +3672,9 @@ tr:hover .pl-row-go,
 }
 
 .auth-bar img { height: 32px; width: auto; max-width: 160px; object-fit: contain; }
+.auth-logo-dark { display: none; }
+:root[data-theme='dark'] .auth-logo-light, .dark .auth-logo-light { display: none; }
+:root[data-theme='dark'] .auth-logo-dark, .dark .auth-logo-dark { display: block; }
 .auth-bar-end { display: flex; align-items: center; gap: 24px; }
 .auth-bar-end a:not(.auth-portal) { opacity: 0.6; }
 .auth-bar-end a[aria-current="true"] { opacity: 1; }
@@ -3732,6 +3735,8 @@ tr:hover .pl-row-go,
   --color-text-secondary: #8c9cb3;
   --color-text-tertiary: #5c6e88;
   color-scheme: dark;
+  /* The hairline keeps the panel's edge when the page itself is dark. */
+  border: 1px solid var(--pl-line);
   background: var(--pl-bg);
   color: var(--pl-fg);
   padding: 64px 66px;
@@ -3751,7 +3756,7 @@ tr:hover .pl-row-go,
 .auth-trace {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  border-top: 1px solid color-mix(in srgb, var(--pl-band-ink) 18%, transparent);
+  border-top: 1px solid var(--pl-line);
   padding: 0 100px;
 }
 

@@ -7,6 +7,7 @@ use App\Lang\Lang;
 use App\Services\LabNetworkAccess;
 use App\Services\LaboratoryWorkflowOwnership;
 use App\Settings\GeneralSettings;
+use App\Support\BrandTheme;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Laravel\Fortify\Features;
@@ -180,6 +181,7 @@ class HandleInertiaRequests extends Middleware
                 'app_secondary_color' => $settings->app_secondary_color ?? '#061f46',
                 'app_accent_color' => $settings->app_accent_color ?? '#087cf0',
                 'app_theme_preset' => $settings->app_theme_preset ?? 'corporate',
+                'brand_css' => BrandTheme::css($settings),
                 'operation_mode' => $settings->app_operation_mode ?? 'client_only',
                 'logo_url' => $settings->app_logo_url ?? null,
                 'app_logo_url' => $settings->app_logo_url ?? null,

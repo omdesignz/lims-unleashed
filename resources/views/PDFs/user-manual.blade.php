@@ -1,5 +1,5 @@
 @php
-    $appName = $settings->app_name ?: 'GestLab';
+    $appName = $settings->app_name ?: 'LIMS';
     $labName = $settings->app_client_lab_name ?: $appName;
     $generatedBy = auth()->user()?->name ?: 'Sistema';
     $generatedAtText = $generatedAt->format('d/m/Y H:i');
@@ -578,7 +578,7 @@
 <body class="pdf-document">
 <htmlpagefooter name="manualFooter">
     <div class="footer-line">
-        {{ $labName }} | Manual operacional do GestLab | Documento controlado | Página {PAGENO}/{nbpg}
+        {{ $labName }} | Manual operacional do LIMS | Documento controlado | Página {PAGENO}/{nbpg}
     </div>
 </htmlpagefooter>
 
@@ -683,7 +683,7 @@
 <section>
     <div class="page-title-block">
         <span class="section-kicker">Princípios de governação</span>
-        <h2 class="section-heading">O GestLab deve reforçar confiança, não apenas registar dados.</h2>
+        <h2 class="section-heading">O LIMS deve reforçar confiança, não apenas registar dados.</h2>
         <p class="section-lead">
             O valor do sistema depende da forma como as decisões são preparadas, documentadas, verificadas, aprovadas e comunicadas. Estes princípios devem orientar todos os perfis.
         </p>
