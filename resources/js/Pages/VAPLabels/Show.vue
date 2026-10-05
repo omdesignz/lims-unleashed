@@ -1,22 +1,22 @@
 <template>
   <div class="pl-page space-y-6">
-    <ModuleHero
-      :eyebrow="$t('gestlab.general.labels.vap_labels.show.eyebrow')"
+    <PageHeader
+      :trail="[{ title: 'Etiquetas', url: route('vap_labels.labels.index') }, { title: label.name }]"
       :title="label.name"
-      :description="heroDescription"
+      :lede="heroDescription"
     >
-      <template #actions>
-        <span :class="statusBadgeClass(label.is_active)">
+      <template #badges>
+        <StatusChip :tone="label.is_active ? 'ok' : 'neutral'">
           {{ label.is_active ? $t('gestlab.general.labels.vap_labels.active') : $t('gestlab.general.labels.vap_labels.inactive') }}
-        </span>
-        <span :class="typeBadgeClass(label.type)">
-          {{ $t('gestlab.general.labels.vap_labels.types.' + label.type) }}
-        </span>
+        </StatusChip>
+        <StatusChip>{{ $t('gestlab.general.labels.vap_labels.types.' + label.type) }}</StatusChip>
+      </template>
+      <template #actions>
         <Link
           :href="route('vap_labels.labels.edit', label.id)"
           class="ds-button ds-button-secondary"
         >
-          <PencilIcon class="h-5 w-5" />
+          <PencilIcon class="h-4 w-4" />
           {{ $t('gestlab.general.labels.vap_labels.buttons.edit') }}
         </Link>
         <button
@@ -24,11 +24,11 @@
           class="ds-button ds-button-primary"
           @click="previewPDF"
         >
-          <EyeIcon class="h-5 w-5" />
+          <EyeIcon class="h-4 w-4" />
           {{ $t('gestlab.general.labels.vap_labels.preview_pdf') }}
         </button>
       </template>
-    </ModuleHero>
+    </PageHeader>
 
     <section class="ds-panel overflow-hidden">
       <dl class="grid border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
@@ -79,37 +79,10 @@
             </div>
           </div>
 
-          <div class="mt-6 rounded-[1.7rem] border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-5 sm:p-8">
-            <div
-              class="relative mx-auto flex items-center justify-center overflow-hidden rounded-[1.1rem] shadow-2xl shadow-black/10 ring-1 ring-black/5 dark:shadow-black/35"
-              :style="labelPreviewStyle"
-            >
-              <div
-                v-if="label.has_qr_code"
-                class="absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-900 bg-white text-[0.62rem] font-black text-slate-900"
-              >
-                QR
-              </div>
-
-              <div
-                v-if="label.has_barcode"
-                class="absolute bottom-3 left-3 flex h-7 w-24 items-center justify-center rounded-lg border border-slate-900 bg-white text-[0.56rem] font-black tracking-[0.16em] text-slate-900"
-              >
-                {{ $t('gestlab.general.labels.vap_labels.barcode') }}
-              </div>
-
-              <div
-                v-if="label.logo_path"
-                class="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-xl border border-dashed border-slate-400 bg-white/80 text-[0.58rem] font-black text-slate-700"
-              >
-                {{ $t('gestlab.general.labels.vap_labels.logo') }}
-              </div>
-
-              <div class="w-full whitespace-pre-line px-3">
-                {{ previewData?.sample_text || label.content }}
-              </div>
-            </div>
+          <div class="label-stage mt-6 min-h-[16rem] p-8">
+            <LabelPreview :label="label" :values="previewValues" :scale="previewScale" :title="label.name" />
           </div>
+          <p class="mt-2 text-center text-xs text-[var(--pl-muted)]">{{ label.width }} × {{ label.height }} mm · como será impressa</p>
 
           <div class="mt-5 grid gap-3 md:grid-cols-3">
             <div class="rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-3">
@@ -444,7 +417,10 @@ import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import LabelPrintSettings from '@/Components/LabelPrintSettings.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
+import LabelPreview from '@/Components/labels/LabelPreview.vue'
+import { labelExampleValues } from '@/Support/label-codes.mjs'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 
 const props = defineProps({
   label: {
@@ -454,6 +430,10 @@ const props = defineProps({
   previewData: {
     type: Object,
     default: () => ({}),
+  },
+  sourcePreview: {
+    type: Object,
+    default: null,
   },
   templates: {
     type: Array,
@@ -516,20 +496,14 @@ const traceabilitySummary = computed(() => [
   props.label.logo_path ? trans('gestlab.general.labels.vap_labels.logo') : null,
 ].filter(Boolean).join(' + ') || trans('gestlab.general.labels.vap_labels.content'))
 
-const labelPreviewStyle = computed(() => ({
-  width: `${Math.min(Number(props.label.width || 50) * 3, 420)}px`,
-  minHeight: `${Math.min(Number(props.label.height || 25) * 3, 260)}px`,
-  backgroundColor: props.label.background_color,
-  color: props.label.text_color,
-  fontSize: `${props.label.font_size}px`,
-  border: `${props.label.border_width}px solid ${props.label.border_color}`,
-  textAlign: props.label.text_alignment,
-  justifyContent: props.label.text_alignment === 'left'
-    ? 'flex-start'
-    : props.label.text_alignment === 'right'
-      ? 'flex-end'
-      : 'center',
+// The label as it prints, filled from its source record when it has one.
+const previewValues = computed(() => ({
+  ...(props.sourcePreview ? {} : labelExampleValues()),
+  qr_content: props.previewData?.sample_qr,
+  barcode_content: props.previewData?.sample_barcode,
+  ...Object.fromEntries(Object.entries(props.sourcePreview || {}).filter(([, value]) => value !== null && value !== '')),
 }))
+const previewScale = computed(() => Math.max(1, Math.min(520 / (Number(props.label.width) || 50), 300 / (Number(props.label.height) || 25), 16)))
 
 const labelDetails = computed(() => [
   { label: trans('gestlab.general.labels.vap_labels.created_at'), value: formatDate(props.label.created_at) },
@@ -576,23 +550,6 @@ const confirmationConfirm = computed(() => {
 })
 
 const confirmationVariant = computed(() => confirmationAction.value === 'delete' ? 'danger' : 'question')
-
-const statusBadgeClass = (isActive) => {
-  return isActive
-    ? 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200'
-    : 'inline-flex items-center rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-1 text-xs font-black text-[var(--ds-text-muted)]'
-}
-
-const typeBadgeClass = (type) => {
-  const classes = {
-    equipment: 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200',
-    material: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200',
-    sample: 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800 dark:border-fuchsia-400/20 dark:bg-fuchsia-500/10 dark:text-fuchsia-200',
-    custom: 'border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)]',
-  }
-
-  return `inline-flex items-center rounded-full border px-3 py-1 text-xs font-black ${classes[type] || classes.custom}`
-}
 
 const featureBadgeClass = (hasFeature) => {
   return hasFeature

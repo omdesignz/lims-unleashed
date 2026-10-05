@@ -681,6 +681,15 @@ select {
 .pl-builder-colours li:last-child { border-bottom: 0; }
 
 /* The 1px gap shows the container's line colour, so wrapped rows keep their dividers. */
+/* Label Studio: a label drawn at a chosen scale, laid out like the print sheet. */
+.label-preview { position: relative; flex: none; box-sizing: border-box; overflow: hidden; font-family: "DejaVu Sans", "Noto Sans", Arial, sans-serif; }
+.label-preview-text { position: absolute; inset: 0; display: flex; align-items: center; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.18; }
+.label-preview-part { position: absolute; z-index: 2; object-fit: contain; }
+.label-preview-code, .label-preview-code > svg { display: block; width: 100%; height: 100%; }
+.label-preview-empty { opacity: 0.35; font-style: italic; }
+.label-preview-missing { display: grid; place-items: center; width: 100%; height: 100%; overflow: hidden; border: 1px dashed currentColor; font-size: 8px; opacity: 0.6; }
+.label-stage { display: grid; place-items: center; overflow: auto; background-color: var(--pl-layer); background-image: var(--pl-tex-dots); }
+
 .pl-segmented { display: flex; flex-wrap: wrap; gap: 1px; border: 1px solid var(--pl-line-strong); background: var(--pl-line); }
 .pl-segmented > button { min-height: 36px; flex: 1 1 auto; background: var(--pl-bg); padding: 0 12px; color: var(--pl-muted); font: 500 10.5px/1 var(--pl-mono); letter-spacing: 0.08em; text-transform: uppercase; transition: background-color 120ms var(--pl-ease), color 120ms var(--pl-ease); }
 .pl-segmented > button:hover:not(:disabled):not([aria-checked="true"]) { background: var(--pl-layer); color: var(--pl-fg); }

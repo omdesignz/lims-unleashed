@@ -173,7 +173,7 @@ class VAPLabelController extends Controller
         ]);
     }
 
-    public function edit(VAPLabel $label, LabelStudioSourceResolver $resolver)
+    public function edit(Request $request, VAPLabel $label, LabelStudioSourceResolver $resolver)
     {
         $this->ensureLaboratoryOwns($label);
         $templates = $this->availableTemplates()->where('is_active', true)
@@ -189,9 +189,10 @@ class VAPLabelController extends Controller
             'selectedTemplateId' => data_get($label->template_data, 'template_id'),
             'labs' => $labs,
             'departments' => $departments,
+            // A record chosen in the editor shows in the preview before it is saved.
             'sourcePreview' => $resolver->resolve(
-                data_get($label->template_data, 'source_type'),
-                data_get($label->template_data, 'source_id'),
+                $request->filled('source_type') ? $request->string('source_type')->value() : data_get($label->template_data, 'source_type'),
+                $request->filled('source_id') ? $request->input('source_id') : data_get($label->template_data, 'source_id'),
                 (int) $label->lab_id
             ),
             'supportedPlaceholders' => $resolver->supportedPlaceholders(),

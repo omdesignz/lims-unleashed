@@ -1,589 +1,234 @@
 <template>
   <div class="pl-page space-y-6">
-    <ModuleHero
-      :eyebrow="$t('gestlab.general.labels.vap_labels.index.eyebrow')"
-      :title="pageTitle"
-      :description="pageDescription"
+    <PageHeader
+      :trail="[{ title: 'Etiquetas', url: route('vap_labels.labels.index') }, { title: pageTitle }]"
+      :title="form.name || pageTitle"
+      :lede="pageDescription"
     >
       <template #actions>
-        <span class="ds-chip">
-          {{ templatesList.length }} {{ $t('gestlab.general.labels.vap_labels.available_templates') }}
-        </span>
+        <Link
+          :href="props.label ? route('vap_labels.labels.show', props.label.id) : route('vap_labels.labels.index')"
+          class="ds-button ds-button-secondary"
+        >
+          <ArrowLeftIcon class="h-4 w-4" aria-hidden="true" />
+          {{ $t('gestlab.general.labels.vap_labels.buttons.cancel') }}
+        </Link>
+        <button type="button" class="ds-button ds-button-primary" :disabled="form.processing" @click="submit">
+          <CheckIcon class="h-4 w-4" aria-hidden="true" />
+          {{ form.processing ? $t('gestlab.general.labels.vap_labels.buttons.processing') : submitLabel }}
+        </button>
       </template>
+    </PageHeader>
 
-      <div
-        v-if="selectedTemplate"
-        class="ds-card bg-[var(--ds-panel-raised)] p-4"
-      >
-        <p class="ds-kicker text-[0.64rem]">
-          {{ $t('gestlab.general.labels.vap_labels.index.stats_scope') }}
-        </p>
-        <p class="mt-2 text-sm font-black text-[var(--ds-text)]">
-          {{ selectedTemplate.name }}
-        </p>
-      </div>
-    </ModuleHero>
-
-    <nav class="ds-panel flex overflow-x-auto px-3 sm:px-5" aria-label="Etapas do editor de etiquetas">
-      <button
-        v-for="section in editorSections"
-        :key="section.value"
-        type="button"
-        class="-mb-px min-h-12 shrink-0 border-b-2 px-4 text-sm font-bold transition"
-        :class="editorSection === section.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
-        @click="editorSection = section.value"
-      >
-        {{ section.label }}
-      </button>
-    </nav>
-
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_25rem]">
-      <div class="space-y-6">
-        <section v-show="editorSection === 'identity'" class="ds-panel p-5 sm:p-6">
-          <div class="flex items-start gap-3">
-            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
-              <Cog6ToothIcon class="h-5 w-5" />
-            </span>
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
+      <div class="min-w-0 space-y-6">
+        <!-- The label itself, first and widest. -->
+        <section class="pl-panel min-w-0" aria-label="Etiqueta">
+          <header class="pl-panel-head flex-wrap gap-3">
             <div>
-              <p class="ds-kicker">
-                {{ $t('gestlab.general.labels.vap_labels.basic_settings') }}
-              </p>
-              <h2 class="ds-heading mt-1 text-xl">
-                {{ $t('gestlab.general.labels.vap_labels.editor.identity_title') }}
-              </h2>
-              <p class="ds-copy mt-1 text-sm">
-                {{ $t('gestlab.general.labels.vap_labels.editor.identity_description') }}
-              </p>
+              <h2 class="pl-k">{{ $t('gestlab.general.labels.vap_labels.editor.preview_title') }}</h2>
+              <p class="mt-1 text-xs text-[var(--pl-muted)]">{{ labelWidth }} × {{ labelHeight }} mm · {{ zoomCaption }}</p>
             </div>
-          </div>
-
-          <div class="mt-5 grid gap-4 md:grid-cols-2">
-            <BaseInput
-              v-model="form.name"
-              :label="$t('gestlab.general.labels.vap_labels.name')"
-              :placeholder="$t('gestlab.general.labels.vap_labels.name_placeholder')"
-              :error="form.errors.name"
-              required
-            >
-              <template #leading>
-                <TagIcon class="h-5 w-5" />
-              </template>
-            </BaseInput>
-
-            <BaseSelect
-              v-model="form.type"
-              :label="$t('gestlab.general.labels.vap_labels.type')"
-              :error="form.errors.type"
-              required
-            >
-              <option value="equipment">
-                {{ $t('gestlab.general.labels.vap_labels.types.equipment') }}
-              </option>
-              <option value="material">
-                {{ $t('gestlab.general.labels.vap_labels.types.material') }}
-              </option>
-              <option value="sample">
-                {{ $t('gestlab.general.labels.vap_labels.types.sample') }}
-              </option>
-              <option value="custom">
-                {{ $t('gestlab.general.labels.vap_labels.types.custom') }}
-              </option>
-            </BaseSelect>
-
-            <BaseInput
-              v-model="form.width"
-              type="number"
-              step="0.1"
-              min="1"
-              max="1000"
-              :label="$t('gestlab.general.labels.vap_labels.width')"
-              :placeholder="$t('gestlab.general.labels.vap_labels.width_placeholder')"
-              :error="form.errors.width"
-              required
-            >
-              <template #leading>
-                <ArrowsPointingOutIcon class="h-5 w-5" />
-              </template>
-              <template #trailing>
-                <span class="text-xs font-black uppercase tracking-[0.14em]">mm</span>
-              </template>
-            </BaseInput>
-
-            <BaseInput
-              v-model="form.height"
-              type="number"
-              step="0.1"
-              min="1"
-              max="1000"
-              :label="$t('gestlab.general.labels.vap_labels.height')"
-              :placeholder="$t('gestlab.general.labels.vap_labels.height_placeholder')"
-              :error="form.errors.height"
-              required
-            >
-              <template #leading>
-                <ArrowsPointingOutIcon class="h-5 w-5 rotate-90" />
-              </template>
-              <template #trailing>
-                <span class="text-xs font-black uppercase tracking-[0.14em]">mm</span>
-              </template>
-            </BaseInput>
-          </div>
-
-          <div class="mt-5">
-            <p class="ds-field-label">
-              {{ $t('gestlab.general.labels.vap_labels.editor.source_title') }}
-            </p>
-            <div class="mt-2 grid gap-3 md:grid-cols-3">
-              <button
-                v-for="option in sourceTypeOptions"
-                :key="option.value"
-                type="button"
-                :class="[
-                  'rounded-[1.35rem] border p-4 text-left transition duration-200',
-                  form.source_type === option.value
-                    ? 'border-[rgb(var(--primary-300-rgb)/0.8)] bg-[rgb(var(--primary-50-rgb)/0.82)] text-[rgb(var(--primary-900-rgb))] shadow-[var(--ds-shadow-control)] dark:border-[rgb(var(--accent-200-rgb)/0.38)] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-100-rgb))]'
-                    : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text)] hover:border-[rgb(var(--primary-300-rgb)/0.58)] hover:bg-[var(--ds-panel-subtle)]'
-                ]"
-                @click="selectSourceType(option.value)"
-              >
-                <span class="text-sm font-black">{{ option.label }}</span>
-                <span class="mt-1 block text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ option.description }}</span>
+            <div class="pl-segmented" role="radiogroup" aria-label="Escala da etiqueta">
+              <button v-for="option in zoomOptions" :key="option.value" type="button" role="radio" :aria-checked="zoom === option.value" @click="zoom = option.value">
+                {{ option.label }}
               </button>
             </div>
+          </header>
+
+          <div ref="stage" class="label-stage min-h-[22rem] p-8">
+            <LabelPreview :label="form" :values="previewValues" :scale="stageScale" :title="form.name" empty-text="Escreva o conteúdo da etiqueta" />
           </div>
 
-          <div
-            v-if="availableSources.length"
-            class="mt-5"
-          >
-            <BaseSelect
-              v-model="form.source_id"
-              :label="$t('gestlab.general.labels.vap_labels.editor.source_record')"
-            >
-              <option value="">
-                {{ $t('gestlab.general.labels.vap_labels.editor.select_source') }}
-              </option>
-              <option
-                v-for="source in availableSources"
-                :key="source.id"
-                :value="source.id"
+          <footer class="border-t border-[var(--pl-line)] px-4 py-3 text-xs text-[var(--pl-muted)]">
+            <template v-if="props.sourcePreview">
+              Marcadores preenchidos com <strong class="text-[var(--pl-fg)]">{{ props.sourcePreview.code || props.sourcePreview.name }}</strong>.
+            </template>
+            <template v-else>
+              Marcadores preenchidos com valores de exemplo. Escolha um registo de origem para os ver com dados reais.
+            </template>
+          </footer>
+        </section>
+
+        <!-- Where the label comes from: the record it labels and a model to start from. -->
+        <div class="grid gap-6 lg:grid-cols-2" aria-label="Origem e modelo">
+          <section class="pl-panel">
+            <header class="pl-panel-head"><h2 class="pl-k">{{ $t('gestlab.general.labels.vap_labels.editor.source_title') }}</h2></header>
+            <div class="space-y-4 p-4">
+              <div class="grid gap-2">
+                <button
+                  v-for="option in sourceTypeOptions"
+                  :key="option.value"
+                  type="button"
+                  class="border px-3 py-2.5 text-left"
+                  :class="form.source_type === option.value ? 'border-[var(--pl-accent)] bg-[var(--pl-layer)]' : 'border-[var(--pl-line)] hover:bg-[var(--pl-layer)]'"
+                  :aria-pressed="form.source_type === option.value"
+                  @click="selectSourceType(option.value)"
+                >
+                  <span class="block text-sm font-bold text-[var(--pl-fg)]">{{ option.label }}</span>
+                  <span class="mt-0.5 block text-xs text-[var(--pl-muted)]">{{ option.description }}</span>
+                </button>
+              </div>
+              <BaseSelect
+                v-if="availableSources.length"
+                v-model="form.source_id"
+                :label="$t('gestlab.general.labels.vap_labels.editor.source_record')"
+                @update:model-value="loadSourcePreview"
               >
-                {{ source.label }}
-              </option>
+                <option value="">{{ $t('gestlab.general.labels.vap_labels.editor.select_source') }}</option>
+                <option v-for="source in availableSources" :key="source.id" :value="source.id">{{ source.label }}</option>
+              </BaseSelect>
+              <p v-else-if="form.source_type" class="text-xs text-[var(--pl-muted)]">Sem registos deste tipo neste laboratório.</p>
+            </div>
+          </section>
+
+          <section class="pl-panel">
+            <header class="pl-panel-head">
+              <h2 class="pl-k">{{ $t('gestlab.general.labels.vap_labels.editor.template_title') }}</h2>
+              <span class="text-xs text-[var(--pl-muted)]">{{ templatesList.length }}</span>
+            </header>
+            <ul v-if="templatesList.length" class="max-h-80 divide-y divide-[var(--pl-line)] overflow-y-auto">
+              <li v-for="template in templatesList" :key="template.id">
+                <button
+                  type="button"
+                  class="w-full px-4 py-3 text-left hover:bg-[var(--pl-layer)]"
+                  :aria-pressed="selectedTemplate?.id === template.id"
+                  :class="selectedTemplate?.id === template.id ? 'bg-[var(--pl-layer)]' : ''"
+                  @click="applyTemplate(template)"
+                >
+                  <span class="flex items-start justify-between gap-2">
+                    <span class="text-sm font-bold text-[var(--pl-fg)]">{{ template.name }}</span>
+                    <StatusChip v-if="template.is_featured" tone="wait">{{ $t('gestlab.general.labels.vap_labels.featured') }}</StatusChip>
+                  </span>
+                  <span v-if="template.description" class="mt-1 block text-xs text-[var(--pl-muted)]">{{ template.description }}</span>
+                </button>
+              </li>
+            </ul>
+            <p v-else class="px-4 py-3 text-sm text-[var(--pl-muted)]">Sem modelos activos.</p>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- Everything the label prints, in the order a person reads it. -->
+      <aside class="pl-panel divide-y divide-[var(--pl-line)] xl:self-start" aria-label="Propriedades da etiqueta">
+        <section class="space-y-4 p-4">
+          <h2 class="pl-k">{{ $t('gestlab.general.labels.vap_labels.editor.identity_title') }}</h2>
+          <BaseInput
+            v-model="form.name"
+            :label="$t('gestlab.general.labels.vap_labels.name')"
+            :placeholder="$t('gestlab.general.labels.vap_labels.name_placeholder')"
+            :error="form.errors.name"
+            required
+          />
+          <BaseSelect v-model="form.type" :label="$t('gestlab.general.labels.vap_labels.type')" :error="form.errors.type" required>
+            <option value="equipment">{{ $t('gestlab.general.labels.vap_labels.types.equipment') }}</option>
+            <option value="material">{{ $t('gestlab.general.labels.vap_labels.types.material') }}</option>
+            <option value="sample">{{ $t('gestlab.general.labels.vap_labels.types.sample') }}</option>
+            <option value="custom">{{ $t('gestlab.general.labels.vap_labels.types.custom') }}</option>
+          </BaseSelect>
+          <div class="grid grid-cols-2 gap-3">
+            <BaseInput v-model="form.width" type="number" step="0.1" min="1" max="1000" :label="`${$t('gestlab.general.labels.vap_labels.width')} (mm)`" :error="form.errors.width" required />
+            <BaseInput v-model="form.height" type="number" step="0.1" min="1" max="1000" :label="`${$t('gestlab.general.labels.vap_labels.height')} (mm)`" :error="form.errors.height" required />
+          </div>
+          <div class="flex flex-wrap gap-2" aria-label="Formatos comuns">
+            <button
+              v-for="size in commonSizes"
+              :key="size.label"
+              type="button"
+              class="pl-chip"
+              :class="Number(form.width) === size.width && Number(form.height) === size.height ? 'pl-chip-run' : ''"
+              @click="setSize(size)"
+            >
+              {{ size.label }}
+            </button>
+          </div>
+          <div class="grid gap-3 border-t border-[var(--pl-line)] pt-4">
+            <div>
+              <p class="ds-field-label">{{ $t('gestlab.general.labels.vap_labels.lab') }}</p>
+              <p class="mt-1.5 text-sm font-bold text-[var(--pl-fg)]">{{ labsList[0]?.name || 'Laboratório indisponível' }}</p>
+            </div>
+            <BaseSelect v-model="form.department_id" :label="$t('gestlab.general.labels.vap_labels.department')">
+              <option value="">{{ $t('gestlab.general.labels.vap_labels.select_department') }}</option>
+              <option v-for="dept in departmentsList" :key="dept.id" :value="dept.id">{{ dept.name }}</option>
             </BaseSelect>
           </div>
         </section>
 
-        <section v-show="editorSection === 'content'" class="ds-panel p-5 sm:p-6">
-          <div class="flex items-start gap-3">
-            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
-              <DocumentTextIcon class="h-5 w-5" />
-            </span>
-            <div>
-              <p class="ds-kicker">
-                {{ $t('gestlab.general.labels.vap_labels.label_content') }}
-              </p>
-              <h2 class="ds-heading mt-1 text-xl">
-                {{ $t('gestlab.general.labels.vap_labels.editor.content_title') }}
-              </h2>
-              <p class="ds-copy mt-1 text-sm">
-                {{ $t('gestlab.general.labels.vap_labels.editor.content_description') }}
-              </p>
-            </div>
-          </div>
-
+        <section class="space-y-3 p-4">
+          <h2 class="pl-k">{{ $t('gestlab.general.labels.vap_labels.editor.content_title') }}</h2>
           <BaseTextarea
             v-model="form.content"
-            class="mt-5"
-            rows="5"
+            rows="4"
             :label="$t('gestlab.general.labels.vap_labels.content')"
             :placeholder="$t('gestlab.general.labels.vap_labels.content_placeholder')"
             :error="form.errors.content"
             required
           />
-
-          <div class="mt-4 flex flex-wrap items-center gap-2">
-            <span class="text-xs font-black uppercase tracking-[0.16em] text-[var(--ds-text-muted)]">
-              {{ $t('gestlab.general.labels.vap_labels.template_variables') }}
-            </span>
-            <code
+          <div class="flex flex-wrap gap-1.5" :aria-label="$t('gestlab.general.labels.vap_labels.template_variables')">
+            <button
               v-for="placeholder in supportedPlaceholders"
               :key="placeholder"
-              class="rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-2.5 py-1 text-xs font-black text-[var(--ds-text-muted)]"
+              type="button"
+              class="pl-chip pl-chip-plain"
+              :title="`Inserir ${placeholder}`"
+              @click="insertPlaceholder(placeholder)"
             >
               {{ placeholder }}
-            </code>
-          </div>
-
-          <div
-            v-if="sourcePreview"
-            class="mt-4 rounded-[1.35rem] border border-[rgb(var(--primary-200-rgb)/0.72)] bg-[rgb(var(--primary-50-rgb)/0.72)] p-4 text-sm font-semibold leading-6 text-[rgb(var(--primary-900-rgb))] dark:border-[rgb(var(--accent-200-rgb)/0.22)] dark:bg-[rgb(var(--primary-400-rgb)/0.1)] dark:text-[rgb(var(--accent-100-rgb))]"
-          >
-            {{ $t('gestlab.general.labels.vap_labels.editor.source_hint') }}
-          </div>
-        </section>
-
-        <section v-show="editorSection === 'appearance'" class="ds-panel p-5 sm:p-6">
-          <div class="flex items-start gap-3">
-            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
-              <PaintBrushIcon class="h-5 w-5" />
-            </span>
-            <div>
-              <p class="ds-kicker">
-                {{ $t('gestlab.general.labels.vap_labels.appearance') }}
-              </p>
-              <h2 class="ds-heading mt-1 text-xl">
-                {{ $t('gestlab.general.labels.vap_labels.editor.appearance_title') }}
-              </h2>
-            </div>
-          </div>
-
-          <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <div
-              v-for="colorControl in colorControls"
-              :key="colorControl.field"
-              class="ds-card bg-[var(--ds-panel-raised)] p-4"
-            >
-              <label class="ds-field-label">
-                {{ colorControl.label }}
-              </label>
-              <div class="mt-2 flex items-center gap-3">
-                <ColorInput
-                  v-model="form[colorControl.field]"
-                  type="color"
-                  class="h-12 w-16 cursor-pointer rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel)] p-1"
-                />
-                <BaseInput
-                  v-model="form[colorControl.field]"
-                  :placeholder="colorControl.placeholder"
-                  :error="form.errors[colorControl.field]"
-                />
-              </div>
-            </div>
-
-            <div class="ds-card bg-[var(--ds-panel-raised)] p-4">
-              <label class="ds-field-label">
-                {{ $t('gestlab.general.labels.vap_labels.font_size') }}
-              </label>
-              <RangeInput
-                v-model="form.font_size"
-                type="range"
-                min="6"
-                max="72"
-                class="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--ds-panel-muted)] accent-[rgb(var(--primary-700-rgb))]"
-              />
-              <div class="mt-3 flex justify-between text-xs font-black text-[var(--ds-text-muted)]">
-                <span>6px</span>
-                <span>{{ form.font_size }}px</span>
-                <span>72px</span>
-              </div>
-              <p
-                v-if="form.errors.font_size"
-                class="ds-field-error mt-2"
-              >
-                {{ form.errors.font_size }}
-              </p>
-            </div>
-
-            <div class="ds-card bg-[var(--ds-panel-raised)] p-4">
-              <label class="ds-field-label">
-                {{ $t('gestlab.general.labels.vap_labels.border_width') }}
-              </label>
-              <RangeInput
-                v-model="form.border_width"
-                type="range"
-                min="0"
-                max="10"
-                class="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--ds-panel-muted)] accent-[rgb(var(--primary-700-rgb))]"
-              />
-              <div class="mt-3 flex justify-between text-xs font-black text-[var(--ds-text-muted)]">
-                <span>0px</span>
-                <span>{{ form.border_width }}px</span>
-                <span>10px</span>
-              </div>
-              <p
-                v-if="form.errors.border_width"
-                class="ds-field-error mt-2"
-              >
-                {{ form.errors.border_width }}
-              </p>
-            </div>
-
-            <div class="ds-card bg-[var(--ds-panel-raised)] p-4 md:col-span-2 xl:col-span-1">
-              <label class="ds-field-label">
-                {{ $t('gestlab.general.labels.vap_labels.text_alignment') }}
-              </label>
-              <div class="mt-3 grid grid-cols-2 gap-2">
-                <button
-                  v-for="align in alignmentOptions"
-                  :key="align.value"
-                  type="button"
-                  :class="[
-                    'ds-button min-h-0 justify-center px-3 py-2',
-                    form.text_alignment === align.value ? 'ds-button-primary' : 'ds-button-secondary'
-                  ]"
-                  :title="align.label"
-                  @click="form.text_alignment = align.value"
-                >
-                  {{ align.short }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section v-show="editorSection === 'traceability'" class="ds-panel p-5 sm:p-6">
-          <div class="flex items-start gap-3">
-            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
-              <QrCodeIcon class="h-5 w-5" />
-            </span>
-            <div>
-              <p class="ds-kicker">
-                {{ $t('gestlab.general.labels.vap_labels.features') }}
-              </p>
-              <h2 class="ds-heading mt-1 text-xl">
-                {{ $t('gestlab.general.labels.vap_labels.editor.traceability_title') }}
-              </h2>
-              <p class="ds-copy mt-1 text-sm">
-                {{ $t('gestlab.general.labels.vap_labels.editor.traceability_description') }}
-              </p>
-            </div>
-          </div>
-
-          <div class="mt-5 grid gap-4 xl:grid-cols-2">
-            <article
-              v-for="element in advancedElements"
-              :key="element.key"
-              class="ds-card bg-[var(--ds-panel-raised)] p-4"
-            >
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <h3 class="text-sm font-black text-[var(--ds-text)]">
-                    {{ element.label }}
-                  </h3>
-                  <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">
-                    {{ element.description }}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  :class="[
-                    'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]',
-                    form[element.enabledField] ? 'bg-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--accent-200-rgb))]' : 'bg-[var(--ds-panel-muted)]'
-                  ]"
-                  @click="form[element.enabledField] = !form[element.enabledField]"
-                >
-                  <span
-                    :class="[
-                      'inline-block h-5 w-5 transform rounded-full bg-white shadow transition dark:bg-[rgb(var(--primary-950-rgb))]',
-                      form[element.enabledField] ? 'translate-x-6' : 'translate-x-1'
-                    ]"
-                  />
-                </button>
-              </div>
-
-              <div
-                v-if="form[element.enabledField]"
-                class="mt-4 grid gap-3 sm:grid-cols-2"
-              >
-                <BaseInput
-                  v-model="form[element.contentField]"
-                  class="sm:col-span-2"
-                  :label="element.contentLabel"
-                  :placeholder="element.placeholder"
-                />
-                <BaseInput
-                  v-model="form[element.sizeField]"
-                  type="number"
-                  min="1"
-                  max="80"
-                  :label="element.sizeLabel"
-                />
-                <BaseInput
-                  v-if="element.secondarySizeField"
-                  v-model="form[element.secondarySizeField]"
-                  type="number"
-                  min="1"
-                  max="80"
-                  :label="element.secondarySizeLabel"
-                />
-              </div>
-            </article>
-
-            <article class="ds-card bg-[var(--ds-panel-raised)] p-4 xl:col-span-2">
-              <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <h3 class="text-sm font-black text-[var(--ds-text)]">
-                    {{ $t('gestlab.general.labels.vap_labels.editor.logo_title') }}
-                  </h3>
-                  <p class="mt-1 max-w-2xl text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">
-                    {{ $t('gestlab.general.labels.vap_labels.editor.logo_description') }}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  :class="[
-                    'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]',
-                    form.logo_path !== null ? 'bg-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--accent-200-rgb))]' : 'bg-[var(--ds-panel-muted)]'
-                  ]"
-                  @click="form.logo_path = form.logo_path !== null ? null : ''"
-                >
-                  <span
-                    :class="[
-                      'inline-block h-5 w-5 transform rounded-full bg-white shadow transition dark:bg-[rgb(var(--primary-950-rgb))]',
-                      form.logo_path !== null ? 'translate-x-6' : 'translate-x-1'
-                    ]"
-                  />
-                </button>
-              </div>
-              <div
-                v-if="form.logo_path !== null"
-                class="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_10rem]"
-              >
-                <BaseInput
-                  v-model="form.logo_path"
-                  :label="$t('gestlab.general.labels.vap_labels.logo_file')"
-                  placeholder="/storage/media/logo.png"
-                />
-                <BaseInput
-                  v-model="form.logo_size"
-                  type="number"
-                  min="1"
-                  max="80"
-                  :label="$t('gestlab.general.labels.vap_labels.logo_size')"
-                />
-              </div>
-            </article>
-          </div>
-        </section>
-      </div>
-
-      <aside class="space-y-6 xl:sticky xl:top-6 xl:self-start">
-        <nav class="ds-panel flex p-1" aria-label="Ferramentas do editor de etiquetas">
-          <button
-            v-for="section in inspectorSections"
-            :key="section.value"
-            type="button"
-            class="min-h-10 flex-1 rounded-md px-2 text-xs font-bold transition"
-            :class="inspectorSection === section.value ? 'bg-[rgb(var(--primary-800-rgb))] text-white dark:bg-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--primary-950-rgb))]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]'"
-            @click="inspectorSection = section.value"
-          >
-            {{ section.label }}
-          </button>
-        </nav>
-
-        <section v-show="inspectorSection === 'preview'" class="ds-panel p-5 sm:p-6">
-          <p class="ds-kicker">
-            {{ $t('gestlab.general.labels.vap_labels.preview') }}
-          </p>
-          <h2 class="ds-heading mt-1 text-xl">
-            {{ $t('gestlab.general.labels.vap_labels.editor.preview_title') }}
-          </h2>
-
-          <div class="mt-5 rounded-[1.6rem] border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
-            <div
-              class="relative mx-auto flex items-center justify-center overflow-hidden rounded-[1rem] shadow-2xl shadow-black/10 ring-1 ring-black/5 dark:shadow-black/35"
-              :style="previewStyle"
-            >
-              <div class="whitespace-pre-line px-3 text-center">
-                {{ form.content || $t('gestlab.general.labels.vap_labels.preview_text') }}
-              </div>
-            </div>
-          </div>
-          <p class="mt-4 text-center text-sm font-black text-[var(--ds-text-muted)]">
-            {{ form.width }} × {{ form.height }} mm
-          </p>
-        </section>
-
-        <section v-show="inspectorSection === 'templates'" class="ds-panel p-5 sm:p-6">
-          <p class="ds-kicker">
-            {{ $t('gestlab.general.labels.vap_labels.templates.title') }}
-          </p>
-          <h2 class="ds-heading mt-1 text-xl">
-            {{ $t('gestlab.general.labels.vap_labels.editor.template_title') }}
-          </h2>
-
-          <div class="mt-4 max-h-[24rem] space-y-3 overflow-y-auto pr-1">
-            <button
-              v-for="template in templatesList"
-              :key="template.id"
-              type="button"
-              :class="[
-                'w-full rounded-[1.25rem] border p-4 text-left transition duration-200',
-                selectedTemplate?.id === template.id
-                  ? 'border-[rgb(var(--primary-300-rgb)/0.8)] bg-[rgb(var(--primary-50-rgb)/0.82)] dark:border-[rgb(var(--accent-200-rgb)/0.32)] dark:bg-[rgb(var(--primary-400-rgb)/0.12)]'
-                  : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] hover:bg-[var(--ds-panel-subtle)]'
-              ]"
-              @click="applyTemplate(template)"
-            >
-              <span class="flex items-start justify-between gap-3">
-                <span>
-                  <span class="block text-sm font-black text-[var(--ds-text)]">{{ template.name }}</span>
-                  <span class="mt-1 block text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ template.description }}</span>
-                </span>
-                <span
-                  v-if="template.is_featured"
-                  class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200"
-                >
-                  {{ $t('gestlab.general.labels.vap_labels.featured') }}
-                </span>
-              </span>
             </button>
           </div>
         </section>
 
-        <section v-show="inspectorSection === 'assignment'" class="ds-panel p-5 sm:p-6">
-          <p class="ds-kicker">
-            {{ $t('gestlab.general.labels.vap_labels.assignment') }}
-          </p>
-          <div class="mt-4 space-y-4">
-            <div>
-              <p class="ds-field-label">{{ $t('gestlab.general.labels.vap_labels.lab') }}</p>
-              <p class="mt-2 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3 text-sm font-semibold text-[var(--ds-text)]">
-                {{ labsList[0]?.name || 'Laboratório indisponível' }}
-              </p>
+        <section class="space-y-4 p-4">
+          <h2 class="pl-k">{{ $t('gestlab.general.labels.vap_labels.editor.appearance_title') }}</h2>
+          <div class="grid gap-3">
+            <div v-for="colorControl in colorControls" :key="colorControl.field" class="flex items-center gap-3">
+              <ColorInput v-model="form[colorControl.field]" type="color" class="h-9 w-12 shrink-0 cursor-pointer border border-[var(--pl-line)] p-0.5" :aria-label="colorControl.label" />
+              <BaseInput v-model="form[colorControl.field]" class="flex-1" :label="colorControl.label" :placeholder="colorControl.placeholder" :error="form.errors[colorControl.field]" />
             </div>
-
-            <BaseSelect
-              v-model="form.department_id"
-              :label="$t('gestlab.general.labels.vap_labels.department')"
-            >
-              <option value="">
-                {{ $t('gestlab.general.labels.vap_labels.select_department') }}
-              </option>
-              <option
-                v-for="dept in departmentsList"
-                :key="dept.id"
-                :value="dept.id"
-              >
-                {{ dept.name }}
-              </option>
-            </BaseSelect>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="ds-field-label" for="label-font-size">{{ $t('gestlab.general.labels.vap_labels.font_size') }} · {{ form.font_size }} px</label>
+              <RangeInput id="label-font-size" v-model="form.font_size" type="range" min="6" max="72" class="mt-3 w-full" />
+            </div>
+            <div>
+              <label class="ds-field-label" for="label-border-width">{{ $t('gestlab.general.labels.vap_labels.border_width') }} · {{ form.border_width }} px</label>
+              <RangeInput id="label-border-width" v-model="form.border_width" type="range" min="0" max="10" class="mt-3 w-full" />
+            </div>
+          </div>
+          <div>
+            <p class="ds-field-label">{{ $t('gestlab.general.labels.vap_labels.text_alignment') }}</p>
+            <div class="pl-segmented mt-1.5" role="radiogroup" :aria-label="$t('gestlab.general.labels.vap_labels.text_alignment')">
+              <button v-for="align in alignmentOptions" :key="align.value" type="button" role="radio" :aria-checked="form.text_alignment === align.value" @click="form.text_alignment = align.value">
+                {{ align.label }}
+              </button>
+            </div>
           </div>
         </section>
 
-        <section class="ds-panel p-5 sm:p-6">
-          <p class="ds-kicker">
-            {{ $t('gestlab.general.labels.vap_labels.actions.title') }}
-          </p>
-          <div class="mt-4 space-y-3">
-            <button
-              type="button"
-              class="ds-button ds-button-primary w-full"
-              :disabled="form.processing"
-              @click="submit"
-            >
-              <CheckIcon class="h-5 w-5" />
-              {{ form.processing ? $t('gestlab.general.labels.vap_labels.buttons.processing') : submitLabel }}
-            </button>
-
-            <Link
-              :href="props.label ? route('vap_labels.labels.show', props.label.id) : route('vap_labels.labels.index')"
-              class="ds-button ds-button-secondary w-full"
-            >
-              <ArrowLeftIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.vap_labels.buttons.cancel') }}
-            </Link>
+        <section class="space-y-3 p-4">
+          <h2 class="pl-k">{{ $t('gestlab.general.labels.vap_labels.editor.traceability_title') }}</h2>
+          <div v-for="element in advancedElements" :key="element.key" class="border border-[var(--pl-line)]">
+            <ToggleField :id="`label-${element.key}`" v-model="form[element.enabledField]" :label="element.label" :description="element.description" />
+            <div v-if="form[element.enabledField]" class="grid grid-cols-2 gap-3 border-t border-[var(--pl-line)] p-3">
+              <BaseInput v-model="form[element.contentField]" class="col-span-2" :label="element.contentLabel" :placeholder="element.placeholder" />
+              <BaseInput v-model="form[element.sizeField]" type="number" min="1" max="80" :label="`${element.sizeLabel} (mm)`" />
+              <BaseInput v-if="element.secondarySizeField" v-model="form[element.secondarySizeField]" type="number" min="1" max="80" :label="`${element.secondarySizeLabel} (mm)`" />
+            </div>
+          </div>
+          <div class="border border-[var(--pl-line)]">
+            <ToggleField
+              id="label-logo"
+              :model-value="form.logo_path !== null"
+              :label="$t('gestlab.general.labels.vap_labels.editor.logo_title')"
+              :description="$t('gestlab.general.labels.vap_labels.editor.logo_description')"
+              @update:model-value="form.logo_path = $event ? '' : null"
+            />
+            <div v-if="form.logo_path !== null" class="grid grid-cols-[minmax(0,1fr)_6rem] gap-3 border-t border-[var(--pl-line)] p-3">
+              <BaseInput v-model="form.logo_path" :label="$t('gestlab.general.labels.vap_labels.logo_file')" placeholder="/storage/media/logo.png" />
+              <BaseInput v-model="form.logo_size" type="number" min="1" max="80" :label="`${$t('gestlab.general.labels.vap_labels.logo_size')} (mm)`" />
+            </div>
           </div>
         </section>
       </aside>
@@ -592,80 +237,33 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { Link, useForm } from '@inertiajs/vue3'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Link, router, useForm } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
-import {
-  ArrowLeft as ArrowLeftIcon,
-  Maximize2 as ArrowsPointingOutIcon,
-  Check as CheckIcon,
-  Settings as Cog6ToothIcon,
-  FileText as DocumentTextIcon,
-  Paintbrush as PaintBrushIcon,
-  QrCode as QrCodeIcon,
-  Tag as TagIcon,
-} from '@lucide/vue'
+import { ArrowLeft as ArrowLeftIcon, Check as CheckIcon } from '@lucide/vue'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
+import ToggleField from '@/Components/base/ToggleField.vue'
+import LabelPreview from '@/Components/labels/LabelPreview.vue'
+import { labelExampleValues } from '@/Support/label-codes.mjs'
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 
 const props = defineProps({
-  templates: {
-    type: Array,
-    default: () => [],
-  },
-  selectedTemplateId: {
-    type: Number,
-    default: null,
-  },
-  labs: {
-    type: Array,
-    default: () => [],
-  },
-  departments: {
-    type: Array,
-    default: () => [],
-  },
-  defaultSettings: {
-    type: Object,
-    default: () => ({}),
-  },
-  label: {
-    type: Object,
-    default: null,
-  },
-  sourcePreview: {
-    type: Object,
-    default: null,
-  },
-  sourceOptions: {
-    type: Object,
-    default: () => ({}),
-  },
-  supportedPlaceholders: {
-    type: Array,
-    default: () => ['{name}', '{code}', '{lot}'],
-  },
+  templates: { type: Array, default: () => [] },
+  selectedTemplateId: { type: Number, default: null },
+  labs: { type: Array, default: () => [] },
+  departments: { type: Array, default: () => [] },
+  defaultSettings: { type: Object, default: () => ({}) },
+  label: { type: Object, default: null },
+  sourcePreview: { type: Object, default: null },
+  sourceOptions: { type: Object, default: () => ({}) },
+  supportedPlaceholders: { type: Array, default: () => ['{name}', '{code}', '{lot}'] },
 })
 
 const selectedTemplate = ref(null)
-const editorSection = ref('identity')
-const inspectorSection = ref('preview')
 const templatesList = computed(() => Array.isArray(props.templates) ? props.templates : [])
-
-const editorSections = [
-  { value: 'identity', label: 'Identificação' },
-  { value: 'content', label: 'Conteúdo' },
-  { value: 'appearance', label: 'Aparência' },
-  { value: 'traceability', label: 'Rastreabilidade' },
-]
-
-const inspectorSections = [
-  { value: 'preview', label: 'Prévia' },
-  { value: 'templates', label: 'Modelos' },
-  { value: 'assignment', label: 'Âmbito' },
-]
 const labsList = computed(() => Array.isArray(props.labs) ? props.labs : [])
 const departmentsList = computed(() => Array.isArray(props.departments) ? props.departments : [])
 
@@ -680,21 +278,9 @@ const submitLabel = computed(() => props.label
   : trans('gestlab.general.labels.vap_labels.buttons.save_label'))
 
 const sourceTypeOptions = computed(() => [
-  {
-    value: 'sample_entry',
-    label: trans('gestlab.general.labels.vap_labels.editor.source_sample'),
-    description: trans('gestlab.general.labels.vap_labels.editor.source_sample_description'),
-  },
-  {
-    value: 'equipment',
-    label: trans('gestlab.general.labels.vap_labels.editor.source_equipment'),
-    description: trans('gestlab.general.labels.vap_labels.editor.source_equipment_description'),
-  },
-  {
-    value: 'reagent',
-    label: trans('gestlab.general.labels.vap_labels.editor.source_reagent'),
-    description: trans('gestlab.general.labels.vap_labels.editor.source_reagent_description'),
-  },
+  { value: 'sample_entry', label: trans('gestlab.general.labels.vap_labels.editor.source_sample'), description: trans('gestlab.general.labels.vap_labels.editor.source_sample_description') },
+  { value: 'equipment', label: trans('gestlab.general.labels.vap_labels.editor.source_equipment'), description: trans('gestlab.general.labels.vap_labels.editor.source_equipment_description') },
+  { value: 'reagent', label: trans('gestlab.general.labels.vap_labels.editor.source_reagent'), description: trans('gestlab.general.labels.vap_labels.editor.source_reagent_description') },
 ])
 
 const advancedElements = computed(() => [
@@ -707,7 +293,7 @@ const advancedElements = computed(() => [
     sizeField: 'qr_code_size',
     contentLabel: trans('gestlab.general.labels.vap_labels.qr_content'),
     sizeLabel: trans('gestlab.general.labels.vap_labels.qr_code_size'),
-    placeholder: '{verification_url}',
+    placeholder: '{code}',
   },
   {
     key: 'barcode',
@@ -725,29 +311,27 @@ const advancedElements = computed(() => [
 ])
 
 const alignmentOptions = computed(() => [
-  { value: 'left', label: trans('gestlab.general.labels.vap_labels.align_left'), short: 'L' },
-  { value: 'center', label: trans('gestlab.general.labels.vap_labels.align_center'), short: 'C' },
-  { value: 'right', label: trans('gestlab.general.labels.vap_labels.align_right'), short: 'R' },
-  { value: 'justify', label: trans('gestlab.general.labels.vap_labels.align_justify'), short: 'J' },
+  { value: 'left', label: trans('gestlab.general.labels.vap_labels.align_left') },
+  { value: 'center', label: trans('gestlab.general.labels.vap_labels.align_center') },
+  { value: 'right', label: trans('gestlab.general.labels.vap_labels.align_right') },
+  { value: 'justify', label: trans('gestlab.general.labels.vap_labels.align_justify') },
 ])
 
 const colorControls = computed(() => [
-  {
-    field: 'background_color',
-    label: trans('gestlab.general.labels.vap_labels.background_color'),
-    placeholder: '#ffffff',
-  },
-  {
-    field: 'text_color',
-    label: trans('gestlab.general.labels.vap_labels.text_color'),
-    placeholder: '#000000',
-  },
-  {
-    field: 'border_color',
-    label: trans('gestlab.general.labels.vap_labels.border_color'),
-    placeholder: '#000000',
-  },
+  { field: 'background_color', label: trans('gestlab.general.labels.vap_labels.background_color'), placeholder: '#ffffff' },
+  { field: 'text_color', label: trans('gestlab.general.labels.vap_labels.text_color'), placeholder: '#000000' },
+  { field: 'border_color', label: trans('gestlab.general.labels.vap_labels.border_color'), placeholder: '#000000' },
 ])
+
+// Formats sold for laboratory label printers, width × height in mm.
+const commonSizes = [
+  { label: '25 × 13', width: 25, height: 13 },
+  { label: '38 × 25', width: 38, height: 25 },
+  { label: '50 × 25', width: 50, height: 25 },
+  { label: '57 × 32', width: 57, height: 32 },
+  { label: '70 × 37', width: 70, height: 37 },
+  { label: '100 × 50', width: 100, height: 50 },
+]
 
 const form = useForm({
   name: props.label?.name || '',
@@ -758,11 +342,11 @@ const form = useForm({
   background_color: props.label?.background_color || props.label?.template_data?.background_color || '#ffffff',
   text_color: props.label?.text_color || props.label?.template_data?.text_color || '#000000',
   font_size: props.label?.font_size || props.defaultSettings?.font_size || 12,
-  border_width: props.label?.border_width || props.defaultSettings?.border_width || 1,
+  border_width: props.label?.border_width ?? props.defaultSettings?.border_width ?? 1,
   border_color: props.label?.border_color || props.label?.template_data?.border_color || '#000000',
   text_alignment: props.label?.text_alignment || 'center',
   department_id: props.label?.department_id || null,
-  logo_path: props.label?.logo_path || null,
+  logo_path: props.label?.logo_path ?? null,
   logo_size: props.label?.logo_size || null,
   has_qr_code: props.label?.has_qr_code || false,
   qr_code_content: props.label?.qr_code_content || null,
@@ -777,6 +361,59 @@ const form = useForm({
   source_id: props.label?.template_data?.source_id || props.sourcePreview?.source_id || null,
   template_id: props.label?.template_data?.template_id || null,
 })
+
+// A code switched on without a size gets one that fits this label, and reads {code}.
+watch(() => form.has_qr_code, (enabled) => {
+  if (enabled && !form.qr_code_size) {
+    form.qr_code_size = Math.max(6, Math.round(Math.min(labelHeight.value - 4, 14)))
+  }
+  if (enabled && !form.qr_code_content) {
+    form.qr_code_content = '{code}'
+  }
+})
+watch(() => form.has_barcode, (enabled) => {
+  if (enabled && !form.barcode_width) {
+    form.barcode_width = Math.max(10, Math.round(Math.min(labelWidth.value - 4, 40)))
+    form.barcode_height = Math.max(4, Math.round(Math.min(labelHeight.value / 3, 10)))
+  }
+  if (enabled && !form.barcode_content) {
+    form.barcode_content = '{code}'
+  }
+})
+
+const labelWidth = computed(() => Number(form.width) || 50)
+const labelHeight = computed(() => Number(form.height) || 25)
+
+// Real size on a 96 dpi screen, fitted to the stage, or twice the real size.
+const REAL_PX_PER_MM = 96 / 25.4
+const zoom = ref('fit')
+const zoomOptions = [
+  { value: 'fit', label: 'Ajustar' },
+  { value: 'real', label: 'Tamanho real' },
+  { value: 'double', label: '2×' },
+]
+// "Ajustar" fits the label to the stage as it is laid out on this screen.
+const stage = ref(null)
+const stageWidth = ref(560)
+let stageObserver = null
+onMounted(() => {
+  if (typeof ResizeObserver !== 'undefined' && stage.value) {
+    stageObserver = new ResizeObserver(([entry]) => { stageWidth.value = entry.contentRect.width })
+    stageObserver.observe(stage.value)
+  }
+})
+onBeforeUnmount(() => stageObserver?.disconnect())
+const stageScale = computed(() => ({
+  real: REAL_PX_PER_MM,
+  double: REAL_PX_PER_MM * 2,
+}[zoom.value] ?? Math.max(1, Math.min(stageWidth.value / labelWidth.value, 320 / labelHeight.value, REAL_PX_PER_MM * 6))))
+const zoomCaption = computed(() => `${Math.round((stageScale.value / REAL_PX_PER_MM) * 100)} % do tamanho real`)
+
+// What fills the placeholders: the chosen record, or recognisable example values.
+const previewValues = computed(() => ({
+  ...labelExampleValues(),
+  ...Object.fromEntries(Object.entries(props.sourcePreview || {}).filter(([, value]) => value !== null && value !== '')),
+}))
 
 const availableSources = computed(() => {
   if (form.source_type === 'sample_entry' || form.source_type === 'sample') {
@@ -794,19 +431,33 @@ const availableSources = computed(() => {
   return []
 })
 
-const previewStyle = computed(() => ({
-  width: `${Math.min(Number(form.width || 50) * 3, 320)}px`,
-  minHeight: `${Math.min(Number(form.height || 25) * 3, 220)}px`,
-  backgroundColor: form.background_color,
-  color: form.text_color,
-  fontSize: `${form.font_size}px`,
-  border: `${form.border_width}px solid ${form.border_color}`,
-  textAlign: form.text_alignment,
-}))
-
 const selectSourceType = (sourceType) => {
-  form.source_type = sourceType
+  form.source_type = form.source_type === sourceType ? null : sourceType
   form.source_id = null
+}
+
+// The server resolves the record; only the preview values are reloaded.
+const loadSourcePreview = (sourceId) => {
+  if (!sourceId || !form.source_type) {
+    return
+  }
+
+  router.reload({
+    data: { source_type: form.source_type, source_id: sourceId },
+    only: ['sourcePreview'],
+    preserveScroll: true,
+    preserveState: true,
+  })
+}
+
+const setSize = (size) => {
+  form.width = size.width
+  form.height = size.height
+}
+
+const insertPlaceholder = (placeholder) => {
+  const content = String(form.content || '')
+  form.content = content === '' || content.endsWith('\n') || content.endsWith(' ') ? `${content}${placeholder}` : `${content} ${placeholder}`
 }
 
 const applyTemplate = (template) => {

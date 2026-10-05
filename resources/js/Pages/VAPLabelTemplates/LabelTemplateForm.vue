@@ -1,5 +1,7 @@
 <script setup>
 import BaseInput from '@/Components/base/BaseInput.vue'
+import LabelPreview from '@/Components/labels/LabelPreview.vue'
+import { labelExampleValues } from '@/Support/label-codes.mjs'
 import PageHeader from '@/Components/plano/PageHeader.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
@@ -72,23 +74,9 @@ const form = useForm({
   is_featured: props.template?.is_featured ?? false,
 })
 
-const previewStyle = computed(() => {
-  const width = Math.min(Math.max(Number(form.template_data.width) * 2, 120), 300)
-  const height = Math.min(Math.max(Number(form.template_data.height) * 2, 64), 220)
-  const align = form.template_data.text_alignment
-
-  return {
-    width: `${width}px`,
-    height: `${height}px`,
-    backgroundColor: form.template_data.background_color,
-    color: form.template_data.text_color,
-    fontSize: `${Math.min(Math.max(Number(form.template_data.font_size), 8), 28)}px`,
-    borderWidth: `${form.template_data.border_width || 0}px`,
-    borderColor: form.template_data.border_color,
-    textAlign: align,
-    justifyContent: align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center',
-  }
-})
+// The label this template makes, at a size that fits the side panel.
+const exampleValues = labelExampleValues()
+const previewScale = computed(() => Math.max(1, Math.min(300 / (Number(form.template_data.width) || 50), 200 / (Number(form.template_data.height) || 25), 8)))
 
 async function loadLabels() {
   selectedLabel.value = ''
@@ -344,12 +332,8 @@ function submit() {
             <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.vap_labels.templates.preview') }}</h2>
           </div>
           <div class="bg-[var(--ds-panel-subtle)] p-5">
-            <div class="flex min-h-52 items-center justify-center overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
-              <div class="relative flex items-center overflow-hidden whitespace-pre-line p-3" :style="previewStyle">
-                <span v-if="form.template_data.has_qr_code" class="absolute left-2 top-2 grid h-8 w-8 place-items-center border border-current bg-white text-[0.55rem] font-bold text-slate-900">QR</span>
-                <span v-if="form.template_data.has_barcode" class="absolute bottom-2 left-2 border border-current bg-white px-2 py-1 text-[0.5rem] font-bold tracking-widest text-slate-900">||||||||</span>
-                <span class="w-full">{{ form.template_data.content || $t('gestlab.general.labels.vap_labels.templates.sample_content') }}</span>
-              </div>
+            <div class="label-stage min-h-52 p-4">
+              <LabelPreview :label="form.template_data" :values="exampleValues" :scale="previewScale" :title="form.name" :empty-text="$t('gestlab.general.labels.vap_labels.templates.sample_content')" />
             </div>
             <p class="mt-3 text-center text-xs font-bold text-[var(--ds-text-muted)]">{{ form.template_data.width }} × {{ form.template_data.height }} mm</p>
           </div>

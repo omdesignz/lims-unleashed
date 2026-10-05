@@ -1281,12 +1281,12 @@ test('operational settings and backup monitoring use semantic product surfaces',
   assert.doesNotMatch(backupsPageSource, /ModuleHero|commercialDocumentThemeClasses|setModalVisibility|axios|<svg|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|bg-white|bg-slate|border-slate|text-slate|shadow-sm|console\.log|alert\(|confirm\(/)
 })
 
-test('VAP label index uses shared product components and translated copy', () => {
-  assert.match(vapLabelsIndexSource, /<ModuleHero/)
+test('VAP label index shows each label as it prints, with shared components and translated copy', () => {
+  assert.match(vapLabelsIndexSource, /<PageHeader/)
   assert.match(vapLabelsIndexSource, /<BaseInput/)
-  assert.match(vapLabelsIndexSource, /<BaseSelect/)
-  assert.match(vapLabelsIndexSource, /class="ds-command-surface/)
-  assert.match(vapLabelsIndexSource, /class="ds-table-shell"/)
+  assert.match(vapLabelsIndexSource, /<section class="pl-panel">/)
+  assert.match(vapLabelsIndexSource, /<LabelPreview :label="label"/)
+  assert.match(vapLabelsIndexSource, /class="pl-segmented" role="radiogroup" aria-label="Tipo de etiqueta"/)
   assert.match(vapLabelsIndexSource, /<confirm-dialog/)
   assert.match(vapLabelsIndexSource, /vap_labels\.index\.filters_title/)
   assert.match(vapLabelsIndexSource, /route\('vap_labels\.label-templates\.index'\)/)
@@ -1295,20 +1295,22 @@ test('VAP label index uses shared product components and translated copy', () =>
   assert.doesNotMatch(vapLabelsIndexSource, /border-\[#ded3bf\]|bg-\[#fffdf7\]|text-\[#15231f\]/)
 })
 
-test('VAP label editor uses shared form primitives and semantic surfaces', () => {
-  assert.match(vapLabelsCreateSource, /<ModuleHero/)
+test('VAP label editor puts the label at the centre with shared form primitives', () => {
+  assert.match(vapLabelsCreateSource, /<PageHeader/)
   assert.match(vapLabelsCreateSource, /<BaseInput/)
   assert.match(vapLabelsCreateSource, /<BaseSelect/)
   assert.match(vapLabelsCreateSource, /<BaseTextarea/)
-  assert.match(vapLabelsCreateSource, /class="ds-panel/)
+  assert.match(vapLabelsCreateSource, /class="pl-panel/)
   assert.match(vapLabelsCreateSource, /vap_labels\.editor\.traceability_title/)
-  assert.match(vapLabelsCreateSource, /const previewStyle = computed/)
+  assert.match(vapLabelsCreateSource, /<LabelPreview :label="form" :values="previewValues" :scale="stageScale"/)
+  assert.match(vapLabelsCreateSource, /only: \['sourcePreview'\]/)
   assert.doesNotMatch(vapLabelsCreateSource, /<style scoped>/)
   assert.doesNotMatch(vapLabelsCreateSource, /border-\[#ded3bf\]|bg-\[#fffdf7\]|text-\[#15231f\]/)
 })
 
 test('VAP label show and print workflow use semantic surfaces and modal confirmations', () => {
-  assert.match(vapLabelsShowSource, /<ModuleHero/)
+  assert.match(vapLabelsShowSource, /<PageHeader/)
+  assert.match(vapLabelsShowSource, /<LabelPreview :label="label"/)
   assert.match(vapLabelsShowSource, /<BaseInput/)
   assert.match(vapLabelsShowSource, /<BaseTextarea/)
   assert.match(vapLabelsShowSource, /<LabelPrintSettings/)
@@ -1335,12 +1337,12 @@ test('Label Studio keeps lab assignment fixed and system presets read-only', () 
 })
 
 test('VAP label template index uses shared surfaces and safe destructive actions', () => {
-  assert.match(vapLabelTemplatesIndexSource, /<ModuleHero/)
+  assert.match(vapLabelTemplatesIndexSource, /<PageHeader/)
   assert.match(vapLabelTemplatesIndexSource, /<BaseInput/)
   assert.match(vapLabelTemplatesIndexSource, /<BaseSelect/)
   assert.match(vapLabelTemplatesIndexSource, /<confirm-dialog/)
-  assert.match(vapLabelTemplatesIndexSource, /class="ds-command-surface/)
-  assert.match(vapLabelTemplatesIndexSource, /class="ds-table-shell"/)
+  assert.match(vapLabelTemplatesIndexSource, /<section class="pl-panel">/)
+  assert.match(vapLabelTemplatesIndexSource, /<LabelPreview :label="templateLabel\(template\)"/)
   assert.match(vapLabelTemplatesIndexSource, /vap_labels\.templates\.usage_note/)
   assert.match(vapLabelTemplatesIndexSource, /router\.delete/)
   assert.doesNotMatch(vapLabelTemplatesIndexSource, /confirm\(/)
